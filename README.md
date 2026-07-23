@@ -47,11 +47,7 @@ cd backend/src && node server.js
 http://localhost:3000
 ```
 
-## Panel de administración
 
-**URL:** `/pages/admin.html`  
-**Usuario:** `iara`  
-**Contraseña:** `pulseras2026`
 
 ## Deploy
 
