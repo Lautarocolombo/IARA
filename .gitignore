@@ -32,6 +32,9 @@ iara.db
 *.swp
 *.swo
 
+# Backend local entry point (git uses backend/src/)
+backend/server.js
+
 # Docker (ignorar local, usar render.yaml)
 Dockerfile
 docker-compose.yml
