@@ -51,8 +51,42 @@ http://localhost:3000
 
 ## Deploy
 
-- **Vercel:** `https://iara-eight.vercel.app`
-- **Render:** `https://iara-yrdx.onrender.com`
+- **Vercel (producción):** `https://iara-ivory.vercel.app`
+- **Render (alternativo):** `https://iara-yrdx.onrender.com`
+
+### Variables de entorno en Vercel
+
+Configurar en **Vercel Dashboard > Settings > Environment Variables**:
+
+| Variable | Valor |
+|----------|-------|
+| `NODE_ENV` | `production` |
+| `JWT_SECRET` | string seguro aleatorio |
+| `ADMIN_USER` | tu usuario admin |
+| `ADMIN_PASS` | tu contraseña admin |
+| `ALLOWED_ORIGINS` | `https://iara-ivory.vercel.app,http://localhost:3000` |
+| `DATABASE_URL` | connection string de Neon |
+| `MP_ACCESS_TOKEN` | token real de MercadoPago |
+| `RESEND_API_KEY` | (opcional) |
+| `EMAIL_FROM` | `noreply@artesaniagualeguay.com` |
+| `ADMIN_NOTIFICATION_EMAIL` | `admin@artesaniagualeguay.com` |
+
+> Importante: No subas `backend/.env` a Git. Usá `vercel env add` o el Dashboard.
+
+### Analytics
+
+Reemplazar los placeholders en `frontend/js/config.js`:
+- `ANALYTICS.GOOGLE_ID` → tu ID de Google Analytics
+- `ANALYTICS.FACEBOOK_PIXEL_ID` → tu ID de Meta Pixel
+
+### Cloudinary / Uploads
+
+En Vercel los uploads se guardan en `/tmp` (efímero). Para persistencia de imágenes, configurar:
+- `CLOUDINARY_CLOUD_NAME`
+- `CLOUDINARY_API_KEY`
+- `CLOUDINARY_API_SECRET`
+
+Si no se configura Cloudinary, las imágenes subidas desde el admin se pierden en cada cold start de Vercel.
 
 ## Tecnologías
 
