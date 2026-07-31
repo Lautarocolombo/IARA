@@ -1,0 +1,39 @@
+{
+  "name": "artesania-gualeguay-backend",
+  "version": "1.0.0",
+  "private": true,
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "jest --testEnvironment node",
+    "lint": "eslint src/ --ext .js",
+    "format": "prettier --write \"**/*.{js,json}\"",
+    "lint:fix": "eslint src/ --ext .js --fix"
+  },
+  "dependencies": {
+    "@sentry/node": "^10.68.0",
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^1.41.3",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.2",
+    "express-rate-limit": "^7.4.0",
+    "helmet": "^8.2.0",
+    "jsonwebtoken": "^9.0.3",
+    "mercadopago": "^3.1.0",
+    "multer": "^1.4.5-lts.1",
+    "pg": "^8.22.0",
+    "pino": "^8.21.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.0",
+    "jest": "^29.7.0",
+    "jest-environment-node": "^29.7.0",
+    "prettier": "^3.0.0",
+    "sqlite3": "^5.1.7",
+    "supertest": "^7.2.2"
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "env": {
+    "browser": true,
+    "es2021": true,
+    "node": true
+  },
+  "extends": "eslint:recommended",
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "sourceType": "module"
+  },
+  "globals": {
+    "CONFIG": "readonly",
+    "formatARS": "readonly",
+    "getWhatsAppLink": "readonly",
+    "addToCart": "readonly",
+    "getCart": "readonly",
+    "removeFromCart": "readonly",
+    "updateCartQty": "readonly",
+    "saveCart": "readonly",
+    "updateCartBadge": "readonly",
+    "updateCartDisplay": "readonly",
+    "showToast": "readonly",
+    "renderProducts": "readonly",
+    "getProducts": "readonly",
+    "getProductsByCategory": "readonly",
+    "addToWishlist": "readonly",
+    "removeFromWishlist": "readonly",
+    "isInWishlist": "readonly",
+    "getWishlist": "readonly",
+    "MercadoPago": "readonly",
+    "adminFetch": "readonly",
+    "doLogin": "readonly",
+    "doLogout": "readonly",
+    "navigateTo": "readonly",
+    "openModal": "readonly",
+    "closeModal": "readonly",
+    "openTestimonialModal": "readonly",
+    "closeTestimonialModal": "readonly",
+    "openTextModal": "readonly",
+    "closeTextModal": "readonly",
+    "saveProduct": "readonly",
+    "deleteProduct": "readonly",
+    "saveTestimonial": "readonly",
+    "deleteTestimonial": "readonly",
+    "saveText": "readonly",
+    "loadProducts": "readonly",
+    "loadOrders": "readonly",
+    "loadTestimonials": "readonly",
+    "loadSiteTexts": "readonly",
+    "loadReviews": "readonly",
+    "exportCSV": "readonly",
+    "editProduct": "readonly",
+    "editTestimonial": "readonly",
+    "editText": "readonly",
+    "viewOrder": "readonly",
+    "cart": "readonly"
+  },
+  "overrides": [
+    {
+      "files": ["tests/**/*.js"],
+      "env": {
+        "jest": true
+      },
+      "globals": {
+        "describe": "readonly",
+        "test": "readonly",
+        "expect": "readonly",
+        "beforeEach": "readonly",
+        "afterEach": "readonly",
+        "jest": "readonly"
+      }
+    }
+  ],
+  "rules": {
+    "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "no-console": ["warn", { "allow": ["warn", "error"] }],
+    "no-undef": "error",
+    "semi": ["error", "always"],
+    "quotes": ["error", "single"]
+  }
+}

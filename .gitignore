@@ -1,0 +1,40 @@
+# Dependencias
+node_modules/
+backend/node_modules/
+
+# Variables de entorno
+.env
+.env.*.local
+.env.local
+
+# Backend data
+backend/data/
+
+# Uploads
+uploads/
+backend/uploads/
+
+# Logs
+*.log
+pino*
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.tmp
+*.temp
+iara.db
+*.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Vercel
+.vercel
+
+# Backend local entry point (git uses backend/src/)
+backend/server.js
+.env*

@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /backend/
+Disallow: /uploads/
+Sitemap: /sitemap.xml

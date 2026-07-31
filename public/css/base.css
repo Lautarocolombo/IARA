@@ -1,0 +1,39 @@
+/* ==================== BASE STYLES ==================== */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--rose-dark);
+  color: white;
+  padding: 8px 16px;
+  z-index: 10000;
+  transition: top 0.2s;
+}
+.skip-link:focus {
+  top: 0;
+}
+
+html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--cream);
+  color: var(--text-dark);
+  line-height: 1.7;
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5 { font-family: 'Playfair Display', serif; font-weight: 600; }
+h1 { font-size: 3.2rem; }
+h2 { font-size: 2.4rem; }
+h3 { font-size: 1.6rem; }
+
+a { color: var(--rose-dark); text-decoration: none; transition: var(--transition); }
+a:hover { color: var(--rose-mid); }
+
+button { font-family: inherit; cursor: pointer; }

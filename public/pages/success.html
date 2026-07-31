@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Resultado de pago | Artesanía Gualeguay</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/variables.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/animations.css" />
+  <link rel="stylesheet" href="../css/checkout.css" />
+  <style>
+    .wrap{max-width:900px;margin:0 auto;padding:7rem 1.5rem;}
+    .card{background:var(--white);border-radius:var(--radius-md);box-shadow:var(--shadow-sm);padding:2.5rem;}
+    .ok{font-size:4rem;}
+    p{color:var(--text-muted);margin-top:0.8rem;line-height:1.6;}
+    .actions{display:flex;gap:1rem;flex-wrap:wrap;margin-top:2rem;}
+    .order-detail{margin-top:1.5rem;padding:1rem;background:var(--blush);border-radius:var(--radius-sm);border:1px solid #f4c8d4;font-size:0.9rem;color:var(--text-dark);}
+    .order-detail strong{color:var(--rose-dark);}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card reveal visible" id="resultCard">
+      <div class="ok" id="resultIcon" aria-hidden="true">✅</div>
+      <h1 style="margin-top:1rem;" id="resultTitle">¡Pago aprobado!</h1>
+      <p id="resultMessage">Gracias por tu compra en Artesanía Gualeguay.</p>
+      <div id="orderDetail" class="order-detail"></div>
+      <div class="actions">
+        <a class="btn-primary" href="../index.html">Volver al inicio</a>
+        <a class="btn-secondary" style="text-decoration:none;padding:14px 24px;border-radius:var(--radius-xl);border:2px solid var(--rose-light);color:var(--rose-dark);font-weight:600;" href="../pages/cart.html">Ver carrito</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded',async()=>{
+      const params = new URLSearchParams(window.location.search);
+      const orderId = params.get('order_id');
+      const mpStatus = params.get('status');
+      const collectionId = params.get('collection_id');
+      const paymentId = params.get('payment_id');
+      const externalRef = params.get('external_reference');
+
+      const icon = document.getElementById('resultIcon');
+      const title = document.getElementById('resultTitle');
+      const message = document.getElementById('resultMessage');
+      const detail = document.getElementById('orderDetail');
+
+      if (!orderId) {
+        detail.innerHTML = `<strong>Información de pago:</strong><br/>Estado: ${mpStatus || 'procesando'}<br/>ID de pago: ${collectionId || paymentId || '—'}<br/>Referencia: ${externalRef || '—'}`;
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/orders/public/${orderId}`);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error consultando pedido');
+
+        const statusMap = {
+          approved: { icon: '✅', title: '¡Pago aprobado!', message: 'Gracias por tu compra en Artesanía Gualeguay. Te contactaremos si necesitamos coordinar algún detalle.' },
+          pending: { icon: '⏳', title: 'Pago en proceso', message: 'Tu pago está siendo procesado. Te avisaremos cuando se confirme.' },
+          in_process: { icon: '⏳', title: 'Pago en proceso', message: 'Tu pago está siendo procesado. Te avisaremos cuando se confirme.' },
+          rejected: { icon: '❌', title: 'Pago rechazado', message: 'Tu pago fue rechazado. Podés intentar nuevamente o contactarnos por WhatsApp.' },
+          cancelled: { icon: '❌', title: 'Pago cancelado', message: 'Tu pago fue cancelado. Si querés, podés volver a intentarlo.' },
+          charged_back: { icon: '⚠️', title: 'Contracargo', message: 'La compra tiene un contracargo. Contactanos para resolverlo.' },
+          failed: { icon: '❌', title: 'Pago fallido', message: 'Hubo un problema con el pago. Intentá de nuevo.' }
+        };
+
+        const result = statusMap[data.status] || { icon: 'ℹ️', title: 'Pedido registrado', message: 'Tu pedido fue registrado. Próximamente te informaremos el estado del pago.' };
+        icon.textContent = result.icon;
+        title.textContent = result.title;
+        message.textContent = result.message;
+        detail.innerHTML = `<strong>Pedido #${data.id}</strong><br/>Total: $${Number(data.total).toLocaleString('es-AR')}<br/>Estado: ${data.status}<br/>${data.mercadopago_id ? 'ID MercadoPago: ' + data.mercadopago_id + '<br/>' : ''}${externalRef ? 'Referencia: ' + externalRef + '<br/>' : ''}<br/><small>Guardá el número de pedido para cualquier consulta.</small>`;
+      } catch (err) {
+        icon.textContent = '⚠️';
+        title.textContent = 'Error al cargar el pedido';
+        message.textContent = err.message;
+        detail.innerHTML = `<br/><strong>Estado MP:</strong> ${mpStatus || 'desconocido'}<br/><strong>Colección:</strong> ${collectionId || paymentId || '—'}`;
+      }
+    });
+  </script>
+</body>
+</html>

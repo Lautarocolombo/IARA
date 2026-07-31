@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Favoritos | Artesanía Gualeguay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/variables.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/animations.css" />
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar" id="navbar">
+    <div class="navbar-container">
+      <div class="navbar-brand">
+        <a href="../index.html" class="logo">
+          <span class="logo-dot" aria-hidden="true"></span>
+          <span class="logo-text">Artesanía Gualeguay</span>
+        </a>
+      </div>
+      <div class="navbar-actions">
+        <a href="../index.html#catalog" class="btn-outline btn-sm">Ver catálogo</a>
+      </div>
+    </div>
+  </nav>
+
+  <main style="padding-top: 100px;">
+    <section class="catalog" style="padding: 3rem 40px;">
+      <div class="section-header">
+        <span class="section-tag reveal">Favoritos</span>
+        <h1 class="section-title reveal">Tu lista de deseos</h1>
+        <p class="section-subtitle reveal">Productos que te gustaron</p>
+      </div>
+
+      <div id="emptyWishlist" class="empty-cart-container reveal" style="display:none;">
+        <h2>No tenés favoritos aún</h2>
+        <p>Explorá el catálogo y guardá tus productos preferidos.</p>
+        <a href="../index.html#catalog" class="btn-primary">Explorar Productos</a>
+      </div>
+
+      <div id="wishlistContent">
+        <div class="catalog-grid" id="wishlistGrid"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/csrf.js"></script>
+  <script src="../js/cart.js"></script>
+  <script src="../js/wishlist.js"></script>
+  <script src="../js/ui.js"></script>
+  <script>
+    function renderWishlist() {
+      const items = getWishlist();
+      const grid = document.getElementById('wishlistGrid');
+      const empty = document.getElementById('emptyWishlist');
+      const content = document.getElementById('wishlistContent');
+
+      if (items.length === 0) {
+        empty.style.display = 'block';
+        content.style.display = 'none';
+        return;
+      }
+
+      empty.style.display = 'none';
+      content.style.display = 'block';
+
+      grid.innerHTML = items.map(product => `
+        <div class="product-card reveal">
+          <div class="product-image" aria-hidden="true">${product.image ? `<img src="${product.image}" alt="${product.name}" />` : (product.emoji || '📿')}</div>
+          <div class="product-info">
+            <span class="product-category">${product.category || ''}</span>
+            <h3 class="product-name">${product.name}</h3>
+            <p class="product-description">Producto artesanal único</p>
+            <div class="product-footer">
+              <span class="product-price">${formatARS(product.price)}</span>
+              <div style="display:flex;gap:0.5rem;">
+                <button class="btn-add-cart" onclick="addToCart({id: ${product.id}, name: '${product.name}', price: ${product.price}, emoji: '${product.emoji || '📿'}', image: '${product.image || ''}', unit: 'u', qty: 1}); event.stopPropagation();">Agregar</button>
+                <button class="btn-outline btn-sm" onclick="removeFromWishlist(${product.id}); renderWishlist();">Quitar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    document.addEventListener('DOMContentLoaded', renderWishlist);
+  </script>
+</body>
+</html>

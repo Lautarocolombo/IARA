@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#d47090" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="IARA" />
+  <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png" />
+  <link rel="manifest" href="/manifest.json" />
+  <title>Cargando producto...</title>
+  <meta name="description" content="Producto artesanal de IARA - Gualeguay" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/variables.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/animations.css" />
+</head>
+<body>
+  <div class="container" style="max-width:960px;margin:0 auto;padding:100px 24px 40px;">
+    <nav class="breadcrumbs" style="margin-bottom:1.5rem;font-size:0.85rem;color:var(--text-muted);" aria-label="Migas de pan">
+      <a href="../index.html" style="color:var(--text-mid);text-decoration:none;">Inicio</a>
+      <span style="margin:0 0.4rem;">/</span>
+      <a href="../index.html#catalog" style="color:var(--text-mid);text-decoration:none;">Catálogo</a>
+      <span style="margin:0 0.4rem;">/</span>
+      <span id="breadcrumbProduct" style="color:var(--text-dark);">Producto</span>
+    </nav>
+
+    <div id="productContainer" style="display:grid;grid-template-columns:1fr;gap:1.5rem;">
+      <div class="empty-state">Cargando producto...</div>
+    </div>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/csrf.js"></script>
+  <script src="../js/cart.js"></script>
+  <script src="../js/ui.js"></script>
+  <script src="../js/product.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js');
+      });
+    }
+  </script>
+</body>
+</html>

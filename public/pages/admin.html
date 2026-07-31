@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel Admin | Artesanía Gualeguay</title>
+  <meta name="theme-color" content="#d47090" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/variables.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/animations.css" />
+  <link rel="stylesheet" href="../css/admin.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+</head>
+<body>
+  <div class="login-overlay" id="loginOverlay">
+    <div class="login-card">
+      <div class="login-header">
+        <div class="login-icon-circle">
+          <span class="login-icon">🌸</span>
+        </div>
+        <h2>Artesanía Admin</h2>
+        <p id="loginMessage">Iniciá sesión para continuar</p>
+      </div>
+      <div class="server-badge" id="serverBadge">
+        <span class="server-dot" id="serverDot"></span>
+        <span class="server-text" id="serverText">Conectando...</span>
+      </div>
+      <div class="form-group">
+        <label for="loginUser">Usuario</label>
+        <div class="input-wrapper">
+          <span class="input-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+          <input type="text" id="loginUser" placeholder="Usuario" autocomplete="username" />
+        </div>
+      </div>
+      <div class="form-group password-group">
+        <label for="loginPass">Contraseña</label>
+        <div class="input-wrapper">
+          <span class="input-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          <input type="password" id="loginPass" placeholder="Contraseña" autocomplete="current-password" />
+          <button type="button" class="password-toggle" id="passwordToggle" aria-label="Mostrar contraseña">
+            <svg class="eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            <svg class="eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+          </button>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" id="loginBtn">Ingresar</button>
+    </div>
+  </div>
+
+<aside class="sidebar" id="adminSidebar">
+     <div class="sidebar-brand">
+       <span>🌸</span>
+       <span>Artesanía Admin</span>
+     </div>
+     <nav class="sidebar-nav">
+       <a href="#products" class="active" data-section="products">📦 Productos</a>
+       <a href="#orders" data-section="orders">🧾 Pedidos</a>
+       <a href="#testimonials" data-section="testimonials">💬 Testimonios</a>
+       <a href="#reviews" data-section="reviews">⭐ Reseñas</a>
+       <a href="#reports" data-section="reports">📊 Reportes</a>
+       <a href="#texts" data-section="texts">📝 Textos del Sitio</a>
+       <a href="#categories" data-section="categories">📂 Categorías</a>
+       <a href="#subscribers" data-section="subscribers">📧 Suscriptores</a>
+       <a href="#payments" data-section="payments">💳 Pagos</a>
+       <a href="#settings" data-section="settings">⚙️ Configuración</a>
+     </nav>
+     <div class="sidebar-footer">
+       <a href="../index.html" target="_blank" class="btn btn-secondary btn-full">← Ver sitio</a>
+       <button class="btn btn-danger btn-full" id="logoutBtn" style="margin-top: 0.5rem;">Cerrar sesión</button>
+     </div>
+   </aside>
+
+  <main class="main">
+    <div class="header">
+      <div>
+        <h1 id="sectionTitle">Productos</h1>
+        <p class="header-subtitle" id="sectionSubtitle">Gestioná productos, fotos y precios</p>
+      </div>
+      <button class="btn btn-primary" id="sectionAction">+ Nuevo Producto</button>
+    </div>
+
+    <!-- Dashboard Stats -->
+    <div class="stats-grid" id="dashboardStats" style="display:none;">
+      <div class="stat-card products">
+        <div class="stat-value" id="statProducts">0</div>
+        <div class="stat-label">Productos</div>
+      </div>
+      <div class="stat-card orders">
+        <div class="stat-value" id="statOrders">0</div>
+        <div class="stat-label">Pedidos</div>
+      </div>
+      <div class="stat-card revenue">
+        <div class="stat-value" id="statRevenue">$0</div>
+        <div class="stat-label">Ingresos</div>
+      </div>
+      <div class="stat-card reviews">
+        <div class="stat-value" id="statReviews">0</div>
+        <div class="stat-label">Reseñas</div>
+      </div>
+    </div>
+
+    <div class="charts-grid" id="dashboardCharts" style="display:none;">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-header-title">Ventas por día</h3>
+        </div>
+        <div class="card-body">
+          <canvas id="salesChart" height="220"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-header-title">Productos más vendidos</h3>
+        </div>
+        <div class="card-body">
+          <canvas id="topProductsChart" height="220"></canvas>
+</div>
+       </div>
+     </div>
+
+     <div id="ordersPagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:1rem;gap:0.5rem;flex-wrap:wrap;"></div>
+
+    <div class="card" id="productsSection">
+      <div class="card-header">
+        <h3 class="card-header-title">Catálogo de productos</h3>
+        <div class="card-controls">
+          <input type="text" id="productSearch" placeholder="Buscar producto..." class="card-search" oninput="loadProducts()" />
+          <select id="categoryFilter" class="card-filter" onchange="loadProducts()">
+            <option value="">Todas las categorías</option>
+            <option value="pulseras">Pulseras</option>
+            <option value="accesorios">Accesorios</option>
+            <option value="souvenirs">Souvenirs</option>
+          </select>
+          <button class="btn btn-secondary btn-sm" onclick="exportCSV('products')">📥 CSV</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <table>
+          <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Categoría</th>
+            <th>Precio</th>
+            <th>Stock</th>
+            <th>Imagen</th>
+            <th>Acciones</th>
+          </tr>
+          </thead>
+          <tbody id="tableBody">
+            <tr><td colspan="6" class="empty-state">Cargando productos...</td></tr>
+          </tbody>
+        </table>
+        <div id="productPagination" style="display:flex;justify-content:space-between;align-items:center;margin-top:1rem;gap:0.5rem;flex-wrap:wrap;"></div>
+      </div>
+      </div>
+    </div>
+
+    <div class="card" id="ordersSection" style="display:none;">
+      <div class="card-header">
+        <h3 class="card-header-title">Pedidos</h3>
+        <div class="card-controls">
+          <input type="text" id="orderSearchInput" placeholder="Buscar pedido..." class="card-search" oninput="renderOrdersTable()" />
+          <div class="status-filter" id="orderStatusFilter">
+            <button class="status-btn active" data-status="all" onclick="filterOrders('all')">Todos</button>
+            <button class="status-btn" data-status="pending" onclick="filterOrders('pending')">Pendientes</button>
+            <button class="status-btn" data-status="approved" onclick="filterOrders('approved')">Aprobados</button>
+            <button class="status-btn" data-status="cancelled" onclick="filterOrders('cancelled')">Cancelados</button>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="exportCSV('orders')">📥 CSV</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Cliente</th>
+              <th>Total</th>
+              <th>Estado</th>
+              <th>Fecha</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="ordersTableBody">
+            <tr><td colspan="6" class="empty-state">Cargando pedidos...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" id="testimonialsSection" style="display:none;">
+      <div class="card-header">
+        <h3 class="card-header-title">Testimonios de clientes</h3>
+        <div class="card-controls">
+          <button class="btn btn-primary btn-sm" onclick="openTestimonialModal()">+ Nuevo</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportCSV('testimonials')">📥 CSV</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <table>
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Comentario</th>
+              <th>Valoración</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="testimonialsTableBody">
+            <tr><td colspan="5" class="empty-state">Cargando testimonios...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" id="reviewsSection" style="display:none;">
+      <div class="card-header">
+        <h3 class="card-header-title">Reseñas de productos</h3>
+        <div class="card-controls">
+          <button class="btn btn-secondary btn-sm" onclick="exportCSV('reviews')">📥 CSV</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <table>
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Cliente</th>
+              <th>Comentario</th>
+              <th>Valoración</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="reviewsTableBody">
+            <tr><td colspan="6" class="empty-state">Cargando reseñas...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" id="reportsSection" style="display:none;">
+      <div class="card-header">
+        <h3 class="card-header-title">Reporte de ventas</h3>
+        <select id="reportRange" style="padding:0.4rem 0.6rem;border-radius:6px;">
+          <option value="7">Últimos 7 días</option>
+          <option value="30" selected>Últimos 30 días</option>
+          <option value="90">Últimos 90 días</option>
+        </select>
+      </div>
+      <div class="card-body">
+        <div class="stats-grid" style="margin-bottom:1.5rem;">
+          <div class="stat-card products">
+            <div class="stat-value" id="reportRevenue">$0</div>
+            <div class="stat-label">Ingresos</div>
+          </div>
+          <div class="stat-card orders">
+            <div class="stat-value" id="reportOrders">0</div>
+            <div class="stat-label">Pedidos pagos</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="reportAvgTicket">$0</div>
+            <div class="stat-label">Ticket promedio</div>
+          </div>
+        </div>
+        <h4 style="margin:1rem 0 0.5rem;">Ventas por día</h4>
+        <div id="reportByDayChart" style="display:flex;align-items:flex-end;gap:4px;height:120px;border-bottom:1px solid #eee;margin-bottom:1.5rem;overflow-x:auto;"></div>
+        <h4 style="margin:1rem 0 0.5rem;">Productos más vendidos</h4>
+        <table>
+          <thead>
+            <tr><th>Producto</th><th>Unidades</th><th>Ingresos</th></tr>
+          </thead>
+          <tbody id="reportTopProductsBody">
+            <tr><td colspan="3" class="empty-state">Cargando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+<div class="card" id="textsSection" style="display:none;">
+       <div class="card-header">
+         <h3 class="card-header-title">Textos del sitio</h3>
+         <button class="btn btn-primary" onclick="openTextModal()">+ Nuevo Texto</button>
+       </div>
+       <div class="card-body">
+         <table>
+           <thead>
+             <tr>
+               <th>Clave</th>
+               <th>Valor</th>
+               <th>Acciones</th>
+             </tr>
+           </thead>
+           <tbody id="textsTableBody">
+             <tr><td colspan="3" class="empty-state">Cargando textos...</td></tr>
+           </tbody>
+         </table>
+       </div>
+     </div>
+
+     <div class="card" id="categoriesSection" style="display:none;">
+       <div class="card-header">
+         <h3 class="card-header-title">Categorías</h3>
+         <div class="card-controls">
+           <button class="btn btn-primary btn-sm" onclick="openCategoryModal()">+ Nueva</button>
+         </div>
+       </div>
+       <div class="card-body">
+         <table>
+           <thead>
+             <tr>
+               <th>ID</th>
+               <th>Nombre</th>
+               <th>Slug</th>
+               <th>Icono</th>
+               <th>Activa</th>
+               <th>Acciones</th>
+             </tr>
+           </thead>
+           <tbody id="categoriesTableBody">
+             <tr><td colspan="6" class="empty-state">Cargando categorías...</td></tr>
+           </tbody>
+         </table>
+       </div>
+     </div>
+
+     <div class="card" id="subscribersSection" style="display:none;">
+       <div class="card-header">
+         <h3 class="card-header-title">Suscriptores</h3>
+         <div class="card-controls">
+           <input type="text" id="subscriberSearch" placeholder="Buscar email..." class="card-search" oninput="renderSubscribersTable()" />
+         </div>
+       </div>
+       <div class="card-body">
+         <table>
+           <thead>
+             <tr>
+               <th>ID</th>
+               <th>Email</th>
+               <th>Nombre</th>
+               <th>Activo</th>
+               <th>Fecha</th>
+               <th>Acciones</th>
+             </tr>
+           </thead>
+           <tbody id="subscribersTableBody">
+             <tr><td colspan="6" class="empty-state">Cargando suscriptores...</td></tr>
+           </tbody>
+         </table>
+       </div>
+     </div>
+
+     <div class="card" id="paymentsSection" style="display:none;">
+       <div class="card-header">
+         <h3 class="card-header-title">Pagos</h3>
+         <div class="card-controls">
+           <select id="paymentStatusFilter" class="card-filter" onchange="renderPaymentsTable()">
+             <option value="">Todos</option>
+             <option value="approved">Aprobados</option>
+             <option value="pending">Pendientes</option>
+             <option value="rejected">Rechazados</option>
+             <option value="cancelled">Cancelados</option>
+           </select>
+         </div>
+       </div>
+       <div class="card-body">
+         <table>
+           <thead>
+             <tr>
+               <th>ID</th>
+               <th>Orden</th>
+               <th>MP ID</th>
+               <th>Monto</th>
+               <th>Estado</th>
+               <th>Método</th>
+               <th>Fecha</th>
+               <th>Acciones</th>
+             </tr>
+           </thead>
+           <tbody id="paymentsTableBody">
+             <tr><td colspan="8" class="empty-state">Cargando pagos...</td></tr>
+           </tbody>
+         </table>
+       </div>
+     </div>
+
+     <div class="card" id="settingsSection" style="display:none;">
+       <div class="card-header">
+         <h3 class="card-header-title">Configuración del Sitio</h3>
+         <button class="btn btn-primary btn-sm" onclick="saveSettings()">Guardar</button>
+       </div>
+       <div class="card-body">
+         <div class="form-group">
+           <label>Nombre del negocio</label>
+           <input type="text" id="setBusinessName" placeholder="Artesanía Gualeguay" />
+         </div>
+         <div class="form-group">
+           <label>Email de contacto</label>
+           <input type="email" id="setBusinessEmail" placeholder="contacto@artesaniagualeguay.com" />
+         </div>
+         <div class="form-group">
+           <label>WhatsApp</label>
+           <input type="text" id="setWhatsapp" placeholder="+5493444634444" />
+         </div>
+         <div class="form-group">
+           <label>Costo de envío ($)</label>
+           <input type="number" id="setShippingCost" placeholder="200" min="0" />
+         </div>
+         <div class="form-group">
+           <label>Envío gratis a partir de ($)</label>
+           <input type="number" id="setShippingThreshold" placeholder="2000" min="0" />
+         </div>
+         <div class="form-group">
+           <label>URL de Instagram</label>
+           <input type="text" id="setInstagram" placeholder="https://instagram.com/tu-cuenta" />
+         </div>
+         <div class="form-group">
+           <label>URL de Facebook</label>
+           <input type="text" id="setFacebook" placeholder="https://facebook.com/tu-pagina" />
+         </div>
+         <div class="form-group">
+           <label>URL de Twitter</label>
+           <input type="text" id="setTwitter" placeholder="https://twitter.com/tu-cuenta" />
+         </div>
+         <button class="btn btn-primary" onclick="saveSettings()">Guardar Configuración</button>
+       </div>
+     </div>
+  </main>
+
+  <!-- Order Detail Modal -->
+  <div class="modal-overlay" id="orderDetailOverlay">
+    <div class="modal" style="max-width: 720px;">
+      <div class="modal-header">
+        <h3>Detalle de Pedido #<span id="orderDetailId"></span></h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeOrderDetail()">✕</button>
+      </div>
+      <div class="modal-body" id="orderDetailBody">
+        <div class="order-detail-grid">
+          <div>
+            <div class="order-detail-item">
+              <div class="order-detail-label">Estado actual</div>
+              <div class="order-detail-value">
+                <select id="orderStatusSelect" class="form-control" style="width:100%;margin-top:0.25rem;">
+                  <option value="pending">Pendiente</option>
+                  <option value="pending_payment">Pago pendiente</option>
+                  <option value="approved">Aprobado</option>
+                  <option value="in_process">En proceso</option>
+                  <option value="shipped">Enviado</option>
+                  <option value="delivered">Entregado</option>
+                  <option value="cancelled">Cancelado</option>
+                  <option value="rejected">Rechazado</option>
+                  <option value="failed">Fallido</option>
+                  <option value="chargeback">Chargeback</option>
+                </select>
+              </div>
+            </div>
+            <div class="order-detail-item">
+              <div class="order-detail-label">ID MercadoPago</div>
+              <div class="order-detail-value" id="orderMpId">—</div>
+            </div>
+          </div>
+          <div>
+            <div class="order-detail-item">
+              <div class="order-detail-label">Cliente</div>
+              <div class="order-detail-value" id="orderCustomerName">—</div>
+            </div>
+            <div class="order-detail-item">
+              <div class="order-detail-label">Email</div>
+              <div class="order-detail-value" id="orderCustomerEmail">—</div>
+            </div>
+            <div class="order-detail-item">
+              <div class="order-detail-label">Teléfono</div>
+              <div class="order-detail-value" id="orderCustomerPhone">—</div>
+            </div>
+            <div class="order-detail-item">
+              <div class="order-detail-label">Dirección</div>
+              <div class="order-detail-value" id="orderCustomerAddress">—</div>
+            </div>
+          </div>
+        </div>
+        <div class="order-items-list">
+          <div class="order-detail-label" style="margin-bottom:0.5rem;">Productos</div>
+          <div id="orderItemsList"></div>
+          <div style="margin-top:1rem;padding-top:0.75rem;border-top:2px solid var(--border);display:flex;justify-content:space-between;font-weight:700;font-size:1.1rem;">
+            <span>Total</span>
+            <span id="orderTotalAmount">$0</span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeOrderDetail()">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveOrderStatus()">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gallery Modal -->
+  <div class="modal-overlay" id="galleryOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Galería - <span id="galleryProductName"></span></h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeGallery()">✕</button>
+      </div>
+      <div class="modal-body" id="galleryBody">
+        <div class="gallery-grid" id="galleryGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalTitle">Nuevo Producto</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Nombre del producto</label>
+          <input type="text" id="pName" placeholder="Nombre del producto" />
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Categoría</label>
+            <select id="pCategory">
+              <option value="pulseras">Pulseras</option>
+              <option value="accesorios">Accesorios</option>
+              <option value="souvenirs">Souvenirs</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Precio ($)</label>
+            <input type="number" id="pPrice" placeholder="0" min="0" step="1" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Descripción</label>
+          <textarea id="pDesc" rows="3" placeholder="Descripción corta del producto"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Imagen del producto</label>
+          <input type="file" id="pImageFile" accept="image/*" />
+          <input type="text" id="pImage" placeholder="O pegá una URL directa" style="margin-top:0.5rem;" />
+        </div>
+        <div id="productGallery" style="display:none;">
+          <label>Galeria de imagenes</label>
+          <div id="galleryGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:0.75rem;margin-top:0.5rem;"></div>
+          <div style="margin-top:0.75rem;display:flex;gap:0.5rem;align-items:center;">
+            <input type="file" id="galleryImageFile" accept="image/*" style="flex:1;" disabled />
+            <button class="btn btn-secondary btn-sm" id="addGalleryImageBtn" type="button" disabled>Subir</button>
+          </div>
+          <p class="form-hint">Podés subir varias imagenes. Tocá una para establecerla como principal.</p>
+        </div>
+        <input type="hidden" id="pId" />
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveProduct()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="testimonialModalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="testimonialModalTitle">Nuevo Testimonio</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeTestimonialModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Nombre del cliente</label>
+          <input type="text" id="tName" placeholder="Nombre" />
+        </div>
+        <div class="form-group">
+          <label>Comentario</label>
+          <textarea id="tComment" rows="3" placeholder="Comentario del cliente"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Valoración (1-5)</label>
+          <input type="number" id="tRating" placeholder="5" min="1" max="5" value="5" />
+        </div>
+        <input type="hidden" id="tId" />
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeTestimonialModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveTestimonial()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="textModalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="textModalTitle">Editar Texto</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeTextModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Clave</label>
+          <input type="text" id="textKey" placeholder="hero_title" disabled />
+        </div>
+        <div class="form-group">
+          <label>Valor</label>
+          <textarea id="textValue" rows="3" placeholder="Texto del sitio"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeTextModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveText()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="../js/config.js"></script>
+  <script src="../js/admin-panel.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js');
+      });
+    }
+  </script>
+</body>
+</html>

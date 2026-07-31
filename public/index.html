@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Artesanía Gualeguay - Pulseras y souvenirs hechos a mano. Descubre nuestro catálogo exclusivo." />
+  <meta name="theme-color" content="#d47090" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="IARA" />
+  <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png" />
+  <link rel="manifest" href="/manifest.json" />
+  <title>Artesanía Gualeguay | Pulseras & Souvenirs Artesanales</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta property="og:title" content="Artesanía Gualeguay | Pulseras & Souvenirs Artesanales" />
+  <meta property="og:description" content="Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es única." />
+  <meta property="og:image" content="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%221200%22 height=%22630%22><rect width=%221200%22 height=%22630%22 fill=%22%23e8a0b5%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2280%22 fill=%22white%22>🌸 Artesanía Gualeguay 🌸</text></svg>" />
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Store",
+      "name": "Artesanía Gualeguay",
+      "description": "Pulseras y souvenirs hechos a mano en Gualeguay, Entre Ríos",
+      "url": "https://iara-eight.vercel.app",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Gualeguay",
+        "addressRegion": "ER",
+        "addressCountry": "AR"
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+
+<!-- Google Analytics -->
+    <script>
+      const GA_ID = 'G-XXXXXXXXXX';
+      if (GA_ID && GA_ID !== 'G-XXXXXXXXXX') {
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){ dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', GA_ID);
+      }
+    </script>
+
+    <!-- Meta Pixel -->
+    <script>
+      const FB_PIXEL_ID = 'XXXXXXXXXXXXX';
+      if (FB_PIXEL_ID && FB_PIXEL_ID !== 'XXXXXXXXXXXXX') {
+        !function(f,b,e,v,n,t,s)
+        {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+        n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+        n.queue=[];t=b.createElement(e);t.async=!0;
+        t.src=v;s=b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t,s)}(window, document,'script',
+        'https://connect.facebook.net/en_US/fbevents.js');
+        fbq('init', FB_PIXEL_ID);
+        fbq('track', 'PageView');
+      }
+    </script>
+</head>
+<body>
+  <a href="#home" class="skip-link">Saltar al contenido principal</a>
+  <!-- ============== NAVBAR ============== -->
+  <nav class="navbar" id="navbar">
+    <div class="navbar-container">
+      <div class="navbar-brand">
+        <a href="#home" class="logo">
+          <span class="logo-dot" aria-hidden="true"></span>
+          <span class="logo-text">Artesanía Gualeguay</span>
+        </a>
+      </div>
+
+      <button class="navbar-toggle" id="navbarToggle" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <ul class="navbar-menu" id="navbarMenu">
+        <li><a href="#home" class="nav-link">Inicio</a></li>
+        <li><a href="#catalog" class="nav-link">Catálogo</a></li>
+        <li><a href="#about" class="nav-link">Sobre Nosotros</a></li>
+        <li><a href="#contact" class="nav-link">Contacto</a></li>
+      </ul>
+
+      <div class="navbar-actions">
+        <button id="themeToggle" class="theme-toggle" title="Cambiar tema" aria-label="Toggle dark mode">
+          <span class="theme-icon-sun" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+          </span>
+          <span class="theme-icon-moon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          </span>
+        </button>
+        <a href="pages/wishlist.html" class="wishlist-link">
+          <span class="wishlist-icon" aria-hidden="true">❤️</span>
+          <span class="wishlist-count" id="wishlistCount">0</span>
+        </a>
+        <a href="pages/admin.html" class="admin-link" title="Panel de Administración" aria-label="Admin">
+          <span class="admin-icon" aria-hidden="true">🐰</span>
+        </a>
+        <a href="pages/cart.html" class="cart-link">
+          <span class="cart-icon" aria-hidden="true">🛒</span>
+          <span class="cart-count" id="cartCount">0</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <!-- ============== HERO SECTION ============== -->
+    <section class="hero" id="home">
+      <div class="hero-content reveal">
+        <div class="hero-tag">
+          <span class="hero-tag-dot" aria-hidden="true"></span>
+          Colección 2026
+        </div>
+        <h1 class="hero-title">Regalos <em>artesanales</em> que cuentan historias</h1>
+        <p class="hero-subtitle">Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es única.</p>
+        <div class="hero-buttons">
+          <a href="#catalog" class="btn-primary reveal">Explorar Catálogo</a>
+          <a href="#contact" class="btn-outline reveal">Contactanos</a>
+        </div>
+      </div>
+
+      <div class="hero-visual reveal" aria-hidden="true">
+        <div class="hero-card">
+          <div class="hero-card-img">📿</div>
+          <div class="hero-card-title">Pulsera Minimalista</div>
+          <div class="hero-card-price">$450</div>
+        </div>
+        <div class="hero-card">
+          <div class="hero-card-img">💎</div>
+          <div class="hero-card-title">Anillo Cerámica</div>
+          <div class="hero-card-price">$280</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== HIGHLIGHTS STRIP ============== -->
+    <section class="highlights">
+      <div class="highlight-item reveal">
+        <div class="highlight-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+        </div>
+        <div class="highlight-text">
+          <h4 id="feature1Title">Hecho a mano</h4>
+          <p id="feature1Desc">Cada pieza es artesanal y única</p>
+        </div>
+      </div>
+      <div class="highlight-item reveal">
+        <div class="highlight-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+        </div>
+        <div class="highlight-text">
+          <h4 id="feature2Title">Envío gratis</h4>
+          <p id="feature2Desc">En compras mayores a ARS 60.000</p>
+        </div>
+      </div>
+      <div class="highlight-item reveal">
+        <div class="highlight-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+        </div>
+        <div class="highlight-text">
+          <h4 id="feature3Title">Materiales premium</h4>
+          <p id="feature3Desc">Seleccionados con cuidado</p>
+        </div>
+      </div>
+      <div class="highlight-item reveal">
+        <div class="highlight-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v10H4V12"></path><path d="M2 7h20v5H2z"></path><path d="M12 22V7"></path><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path></svg>
+        </div>
+        <div class="highlight-text">
+          <h4 id="feature4Title">Para regalar</h4>
+          <p id="feature4Desc">Empaques especiales disponibles</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== STATS STRIP ============== -->
+    <section class="stats-strip">
+      <div class="stat-item reveal">
+        <span class="stat-icon" aria-hidden="true">👥</span>
+        <span class="stat-number" data-target="150">0</span>
+        <span class="stat-label">Clientes</span>
+      </div>
+      <div class="stat-item reveal">
+        <span class="stat-icon" aria-hidden="true">📦</span>
+        <span class="stat-number" data-target="320">0</span>
+        <span class="stat-label">Productos vendidos</span>
+      </div>
+      <div class="stat-item reveal">
+        <span class="stat-icon" aria-hidden="true">📅</span>
+        <span class="stat-number" data-target="5">0</span>
+        <span class="stat-label">Años de experiencia</span>
+      </div>
+      <div class="stat-item reveal">
+        <span class="stat-icon" aria-hidden="true">✋</span>
+        <span class="stat-number" data-target="100">0</span>
+        <span class="stat-label">% Artesanal</span>
+      </div>
+    </section>
+
+    <!-- ============== CÓMO FUNCIONA ============== -->
+    <section class="how-it-works" id="how-it-works">
+      <div class="section-header">
+        <span class="section-tag reveal">Proceso</span>
+        <h2 class="section-title reveal">Cómo funciona</h2>
+        <p class="section-subtitle reveal">Cinco pasos simples para comprar tu artesanía</p>
+      </div>
+
+      <div class="how-grid">
+        <div class="how-card reveal" data-step="1">
+          <h3 id="processStep1Title">1) Elegí productos</h3>
+          <p id="processStep1Desc">Filtrá por categoría y elegí tu pieza del catálogo.</p>
+        </div>
+        <div class="how-card reveal" data-step="2">
+          <h3 id="processStep2Title">2) Sumá al carrito</h3>
+          <p id="processStep2Desc">Presioná "Agregar" para guardar tu selección.</p>
+        </div>
+        <div class="how-card reveal" data-step="3">
+          <h3 id="processStep3Title">3) Revisá el carrito</h3>
+          <p id="processStep3Desc">Verificá cantidad, subtotal y total antes de pagar.</p>
+        </div>
+        <div class="how-card reveal" data-step="4">
+          <h3 id="processStep4Title">4) Pagá con MercadoPago</h3>
+          <p id="processStep4Desc">Ingresás al checkout para completar el pago de forma segura.</p>
+        </div>
+        <div class="how-card reveal" data-step="5">
+          <h3 id="processStep5Title">5) Confirmación</h3>
+          <p id="processStep5Desc">Al finalizar, vas a ver el comprobante en pantalla.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== CATALOG SECTION ============== -->
+    <section class="catalog" id="catalog">
+      <div class="section-header">
+        <span class="section-tag reveal">Catálogo</span>
+        <h2 class="section-title reveal">Nuestros Productos</h2>
+        <p class="section-subtitle reveal">Descubrí piezas únicas hechas a mano</p>
+      </div>
+
+      <div class="filter-bar">
+        <button class="filter-btn active" data-filter="all">Todos</button>
+        <button class="filter-btn" data-filter="pulseras">Pulseras</button>
+        <button class="filter-btn" data-filter="accesorios">Accesorios</button>
+        <button class="filter-btn" data-filter="souvenirs">Souvenirs</button>
+      </div>
+
+      <div class="products-grid" id="productsGrid"></div>
+    </section>
+
+    <!-- ============== ABOUT SECTION ============== -->
+    <section class="about" id="about">
+      <div class="section-header">
+        <span class="section-tag reveal">Nosotros</span>
+        <h2 class="section-title reveal">Sobre Nosotros</h2>
+        <p class="section-subtitle reveal">La historia detrás de cada creación</p>
+      </div>
+
+      <div class="about-content">
+        <div class="about-text reveal" id="aboutText">
+          <p>Cargando...</p>
+        </div>
+
+        <div class="about-stats">
+          <div class="stat reveal">
+            <div class="stat-number">500+</div>
+            <div class="stat-label">Clientes Satisfechos</div>
+          </div>
+          <div class="stat reveal">
+            <div class="stat-number">1000+</div>
+            <div class="stat-label">Productos Vendidos</div>
+          </div>
+          <div class="stat reveal">
+            <div class="stat-number">5+</div>
+            <div class="stat-label">Años de Experiencia</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== CONTACT SECTION ============== -->
+    <section class="contact" id="contact">
+      <div class="section-header">
+        <span class="section-tag reveal">Contacto</span>
+        <h2 class="section-title reveal">¿Preguntas?</h2>
+        <p class="section-subtitle reveal">Nos encantaría saber de ti</p>
+      </div>
+
+      <div class="contact-container">
+        <form class="contact-form" id="contactForm">
+          <div class="form-group">
+            <label for="name">Nombre *</label>
+            <input type="text" id="name" name="name" required placeholder="Tu nombre completo" />
+          </div>
+          <div class="form-group">
+            <label for="email">Email *</label>
+            <input type="email" id="email" name="email" required placeholder="tu@email.com" />
+          </div>
+          <div class="form-group">
+            <label for="message">Mensaje *</label>
+            <textarea id="message" name="message" required placeholder="¿En qué podemos ayudarte?" rows="5"></textarea>
+          </div>
+          <button type="submit" class="btn-primary">Enviar Mensaje</button>
+        </form>
+
+        <div class="contact-info reveal">
+          <div class="info-item">
+            <div class="info-icon" aria-hidden="true">📞</div>
+            <div>
+              <h4>Teléfono</h4>
+              <a href="tel:+5493444634444">+54 (3444) 634-4444</a>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-icon" aria-hidden="true">📧</div>
+            <div>
+              <h4>Email</h4>
+              <a href="mailto:contacto@artesaniagualeguay.com">contacto@artesaniagualeguay.com</a>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-icon" aria-hidden="true">📍</div>
+            <div>
+              <h4>Ubicación</h4>
+              <p>Gualeguay, Entre Ríos, Argentina</p>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-icon" aria-hidden="true">🕐</div>
+            <div>
+              <h4>Horario</h4>
+              <p>Lun - Vie: 9:00 - 18:00<br>Sáb: 10:00 - 14:00</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============== NEWSLETTER SECTION ============== -->
+    <section class="newsletter">
+      <div class="newsletter-content reveal">
+        <h3>Suscríbete a nuestro Newsletter</h3>
+        <p>Recibe ofertas exclusivas y descuentos en tu email</p>
+      </div>
+      <form class="newsletter-form" id="newsletterForm">
+        <input type="email" placeholder="tu@email.com" required />
+        <button type="submit" class="btn-primary">Suscribirse</button>
+      </form>
+    </section>
+  </main>
+
+  <!-- ============== FOOTER CTA STRIP ============== -->
+  <section class="footer-cta">
+    <h3>¿Tenés una consulta?</h3>
+    <p>Escribinos por WhatsApp y te respondemos al instante.</p>
+    <a href="https://wa.me/5493444634444" class="btn-primary">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d=".049 8.894c0-.277-.05-.546-.149-.804a2.41 2.41 0 0 1-.422-1.084c-.05-.266-.1-.528-.149-.789s-.074-.456-.099-.655c-.05-.3-.1-.556-.149-.766a2.93 2.93 0 0 0-.298-.655 3.6 3.6 0 0 0-.422-.556c-.174-.2-.348-.37-.522-.506a2.6 2.6 0 0 0-.571-.346A3.1 3.1 0 0 0 5.18 3.3c-.348-.074-.67-.1-.97-.1-.3 0-.547.026-.72.1a1.1 1.1 0 0 0-.422.247c-.1.1-.174.223-.222.348-.05.124-.074.273-.074.422 0 .174.05.356.149.546.1.19.2.38.298.57.1.19.2.38.298.57.05.1.074.223.074.372 0 .123-.025.247-.074.37a1.1 1.1 0 0 1-.198.323c-.075.074-.174.123-.298.15a1.6 1.6 0 0 1-.422.03c-.174 0-.356-.05-.546-.149-.19-.1-.38-.2-.57-.298a3.1 3.1 0 0 1-.422-.149c-.1-.074-.223-.074-.347 0a.66.66 0 0 0-.298.247c-.074.1-.1.223-.1.371 0 .1.025.223.074.348.05.124.1.247.149.37.05.124.1.247.149.37.05.124.074.223.074.347 0 .05-.025.1-.074.148-.05.05-.1.074-.149.074a.3.3 0 0 1-.198-.074.3.3 0 0 1-.074-.198c0-.05.025-.1.074-.148.05-.05.1-.074.149-.074.05 0 .1.025.148.074.05.05.074.1.074.148 0 .05-.025.1-.074.148-.05.05-.1.074-.148.074-.05 0-.1-.025-.148-.074-.05-.05-.074-.1-.074-.148 0-.05.025-.1.074-.148.05-.05.1-.074.148-.074.05 0 .1.025.148.074.05.05.074.1.074.148 0 .05-.025.1-.074.148-.05.05-.1.074-.148.074-.05 0-.1-.025-.148-.074a.3.3 0 0 1-.074-.198c0-.05.025-.1.074-.148.05-.05.1-.074.148-.074.05 0 .1.025.148.074.05.05.074.1.074.148 0 .05-.025.1-.074.148-.05.05-.1.074-.148.074-.05 0-.1-.025-.148-.074a.3.3 0 0 1-.074-.198c0-.05.025-.1.074-.148.05-.05.1-.074.148-.074.05 0 .1.025.148.074.05.05.074.1.074.148 0 .05-.025.1-.074.148-.05.05-.1.074-.148.074-.05 0-.1-.025-.148-.074-.05-.05-.074-.1-.074-.148 0-.05.025-.1.074-.148.05-.05.1-.074.148-.074.05 0 .1.025.148.074.05.05.074.1.074.148 0 .05-.025.1-.074.148-.05.05-.1.074-.148.074z"/></svg>
+      Escribinos por WhatsApp
+    </a>
+  </section>
+
+  <!-- ============== FOOTER ============== -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h4>Información</h4>
+        <ul>
+          <li><a href="pages/privacy.html">Política de Privacidad</a></li>
+          <li><a href="pages/terms.html">Términos de Servicio</a></li>
+          <li><a href="pages/shipping.html">Envíos y Devoluciones</a></li>
+          <li><a href="pages/faq.html">Preguntas Frecuentes</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Enlaces Rápidos</h4>
+        <ul>
+          <li><a href="#home">Inicio</a></li>
+          <li><a href="#catalog">Catálogo</a></li>
+          <li><a href="#about">Sobre Nosotros</a></li>
+          <li><a href="#contact">Contacto</a></li>
+        </ul>
+      </div>
+      <div class="footer-section footer-map">
+        <h4>Ubicación</h4>
+        <p>San Antonio Nte. 473, E2840 Gualeguay, Entre Ríos</p>
+        <div class="footer-map-container">
+          <iframe
+            src="https://maps.google.com/maps?q=San+Antonio+Nte.+473,+E2840+Gualeguay,+Entre+Ríos&output=embed"
+            width="100%"
+            height="220"
+            style="border:0; border-radius: 10px; border: 3px solid #f4c8d4;"
+            allowfullscreen=""
+            loading="lazy"
+            referrerpolicy="no-referrer-when-downgrade">
+          </iframe>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Artesanía Gualeguay. Todos los derechos reservados.</p>
+    </div>
+  </footer>
+
+  <!-- ============== TOAST CONTAINER ============== -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- ============== REVIEWS MODAL ============== -->
+  <div class="modal-overlay" id="reviewsModalOverlay">
+    <div class="modal" id="reviewsModal">
+      <div class="review-form-card">
+        <div class="review-form-card-header">
+          <h3 id="reviewsModalTitle">Reseñas</h3>
+          <button class="btn btn-secondary btn-sm" onclick="closeReviewsModal()" aria-label="Cerrar">✕</button>
+        </div>
+        <div id="reviewsList" class="review-form-card-body"></div>
+        <div class="review-form-divider">
+          <h3>Dejá tu reseña</h3>
+          <form id="reviewForm">
+            <div class="form-group">
+              <label for="reviewName">Tu nombre</label>
+              <input type="text" id="reviewName" placeholder="Nombre" required />
+            </div>
+            <div class="form-group">
+              <label>Valoración</label>
+              <div class="star-rating" id="starRating" role="radiogroup" aria-label="Valoración">
+                <span class="star active" data-value="5" role="radio" aria-checked="true" tabindex="0">⭐</span>
+                <span class="star" data-value="4" role="radio" aria-checked="false" tabindex="0">⭐</span>
+                <span class="star" data-value="3" role="radio" aria-checked="false" tabindex="0">⭐</span>
+                <span class="star" data-value="2" role="radio" aria-checked="false" tabindex="0">⭐</span>
+                <span class="star" data-value="1" role="radio" aria-checked="false" tabindex="0">⭐</span>
+              </div>
+              <input type="hidden" id="reviewRating" value="5" />
+            </div>
+            <div class="form-group">
+              <label for="reviewComment">Comentario</label>
+              <textarea id="reviewComment" rows="3" placeholder="Contanos tu experiencia..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Enviar reseña</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============== SCRIPTS ============== -->
+   <script src="js/config.js"></script>
+   <script src="js/csrf.js"></script>
+   <script src="js/theme.js"></script>
+   <script src="js/cart.js"></script>
+   <script src="js/wishlist.js"></script>
+   <script src="js/products.js"></script>
+    <script src="js/ui.js"></script>
+   <script src="js/navbar.js"></script>
+   <script>
+     if ('serviceWorker' in navigator) {
+       window.addEventListener('load', () => {
+         navigator.serviceWorker.register('/sw.js');
+       });
+     }
+
+     if (typeof loadSiteTexts === 'function') {
+       loadSiteTexts();
+     }
+   </script>
+</body>
+</html>

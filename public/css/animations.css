@@ -1,0 +1,160 @@
+/* ==================== ANIMATIONS ==================== */
+
+@keyframes ag-fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ag-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.8); }
+}
+
+@keyframes ag-slideInRight {
+  from { transform: translateX(80px); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes ag-popIn {
+  from { transform: scale(0); }
+  to   { transform: scale(1); }
+}
+
+@keyframes ag-bounce {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-8px); }
+}
+
+@keyframes ag-float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-16px); }
+}
+
+@keyframes ag-glow {
+  0%, 100% { box-shadow: 0 0 6px rgba(212,112,144,0.4); }
+  50%       { box-shadow: 0 0 18px rgba(212,112,144,0.7); }
+}
+
+@keyframes ag-shimmer {
+  0%   { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+@keyframes ag-rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes ag-scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes ag-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25%      { transform: rotate(-4deg); }
+  50%      { transform: rotate(4deg); }
+  75%      { transform: rotate(-4deg); }
+}
+
+@keyframes ag-heartBeat {
+  0%, 100% { transform: scale(1); }
+  15%      { transform: scale(1.1); }
+  30%      { transform: scale(1); }
+  45%      { transform: scale(1.1); }
+  60%      { transform: scale(1); }
+}
+
+@keyframes ag-slideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes ag-fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes ag-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.ag-hero-tag-dot, .ag-logo-dot {
+  animation: ag-pulse 2s ease-in-out infinite;
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Product cards stagger animation */
+.product-card {
+  animation: ag-slideUp 0.5s ease both;
+}
+
+.product-card:nth-child(1) { animation-delay: 0.0s; }
+.product-card:nth-child(2) { animation-delay: 0.07s; }
+.product-card:nth-child(3) { animation-delay: 0.14s; }
+.product-card:nth-child(4) { animation-delay: 0.21s; }
+.product-card:nth-child(5) { animation-delay: 0.28s; }
+.product-card:nth-child(6) { animation-delay: 0.35s; }
+.product-card:nth-child(7) { animation-delay: 0.42s; }
+.product-card:nth-child(8) { animation-delay: 0.49s; }
+
+/* Highlight cards */
+.highlight-item {
+  animation: ag-fadeUp 0.5s ease both;
+}
+.highlight-item:nth-child(1) { animation-delay: 0.0s; }
+.highlight-item:nth-child(2) { animation-delay: 0.1s; }
+.highlight-item:nth-child(3) { animation-delay: 0.2s; }
+.highlight-item:nth-child(4) { animation-delay: 0.3s; }
+
+/* Stats */
+.stat-item { animation: ag-fadeUp 0.5s ease both; }
+.stat-item:nth-child(1) { animation-delay: 0.0s; }
+.stat-item:nth-child(2) { animation-delay: 0.1s; }
+.stat-item:nth-child(3) { animation-delay: 0.2s; }
+.stat-item:nth-child(4) { animation-delay: 0.3s; }
+
+/* How cards */
+.how-card {
+  animation: ag-fadeUp 0.5s ease both;
+}
+.how-card:nth-child(1) { animation-delay: 0.0s; }
+.how-card:nth-child(2) { animation-delay: 0.1s; }
+.how-card:nth-child(3) { animation-delay: 0.2s; }
+.how-card:nth-child(4) { animation-delay: 0.3s; }
+.how-card:nth-child(5) { animation-delay: 0.4s; }
+
+/* Buttons */
+.btn-primary { position: relative; overflow: hidden; }
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.15);
+  opacity: 0;
+  transition: opacity .2s;
+}
+.btn-primary:hover::after { opacity: 1; }
+
+/* Toast */
+.toast { animation: ag-slideInRight 0.3s ease; }
+
+/* Admin stat cards */
+.stat-card {
+  animation: ag-fadeUp 0.5s ease both;
+}
+.stat-card:nth-child(1) { animation-delay: 0.0s; }
+.stat-card:nth-child(2) { animation-delay: 0.1s; }
+.stat-card:nth-child(3) { animation-delay: 0.2s; }
+.stat-card:nth-child(4) { animation-delay: 0.3s; }

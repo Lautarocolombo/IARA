@@ -1,0 +1,67 @@
+services:
+  - type: web
+    name: iara-backend
+    env: node
+    plan: free
+    buildCommand: cd backend && npm ci
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "10000"
+      - key: ADMIN_USER
+        value: Iara
+      - key: ADMIN_PASS
+        value: pulseras2026
+      - key: JWT_SECRET
+        value: de4a23c7e4554d9b8183f1357a6511a8174877948e5b25dda30ced3741bd5acd
+      - key: CSRF_SECRET
+        value: eadcf8f3f73b6b540ff41058e3b0b539b55948d35aa896ab26d10028d4fd
+      - key: ALLOWED_ORIGINS
+        value: https://iara-ivory.vercel.app,https://iara-os3h.onrender.com
+      - key: DATABASE_URL
+        value: ""
+      - key: MP_ACCESS_TOKEN
+        value: ""
+      - key: MP_PUBLIC_KEY
+        value: ""
+      - key: MP_WEBHOOK_SECRET
+        value: ""
+      - key: RESEND_API_KEY
+        value: ""
+      - key: EMAIL_FROM
+        value: noreply@artesaniagualeguay.com
+      - key: ADMIN_NOTIFICATION_EMAIL
+        value: admin@artesaniagualeguay.com
+      - key: SITE_URL
+        value: https://iara-ivory.vercel.app
+      - key: GOOGLE_PLACE_ID
+        value: ""
+      - key: GOOGLE_WRITE_REVIEW_URL
+        value: ""
+      - key: BUSINESS_NAME
+        value: Artesanía Gualeguay
+      - key: BUSINESS_EMAIL
+        value: contacto@artesaniagualeguay.com
+      - key: WHATSAPP
+        value: +5493444634444
+      - key: INSTAGRAM_URL
+        value: https://instagram.com/tu-cuenta
+      - key: FACEBOOK_URL
+        value: https://facebook.com/tu-pagina
+      - key: TWITTER_URL
+        value: https://twitter.com/tu-cuenta
+      - key: SHIPPING_COST
+        value: "200"
+      - key: SHIPPING_THRESHOLD
+        value: "2000"
+      - key: CLOUDINARY_CLOUD_NAME
+        value: ""
+      - key: CLOUDINARY_API_KEY
+        value: ""
+      - key: CLOUDINARY_API_SECRET
+        value: ""
+    autoDeploy: true
+    branch: main
+    repo: https://github.com/bonggiocrack-stack/IARA.git

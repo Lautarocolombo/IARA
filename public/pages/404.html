@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Página no encontrada | Artesanía Gualeguay</title>
+  <link rel="stylesheet" href="../css/variables.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/animations.css" />
+  <style>
+    .error-wrap { max-width: 600px; margin: 0 auto; padding: 120px 24px 40px; text-align: center; }
+    .error-code { font-family: 'Playfair Display', serif; font-size: 6rem; color: var(--rose); font-weight: 700; line-height: 1; }
+    .error-title { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--text-dark); margin: 1rem 0 0.5rem; }
+    .error-desc { color: var(--text-muted); margin-bottom: 2rem; }
+    .error-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .error-actions a { min-width: 160px; text-align: center; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-container">
+      <div class="navbar-brand">
+        <a href="../index.html" class="logo">
+          <span class="logo-dot" aria-hidden="true"></span>
+          <span class="logo-text">Artesanía Gualeguay</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="error-wrap reveal visible">
+    <div class="error-code">404</div>
+    <h1 class="error-title">Página no encontrada</h1>
+    <p class="error-desc">La página que estás buscando no existe o fue movida.</p>
+    <div class="error-actions">
+      <a href="../index.html" class="btn-primary">Volver al inicio</a>
+      <a href="../index.html#catalog" class="btn-outline">Ver catálogo</a>
+    </div>
+  </div>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/ui.js"></script>
+</body>
+</html>

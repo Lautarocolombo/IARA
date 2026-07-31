@@ -1,0 +1,22 @@
+{
+  "version": 2,
+  "framework": "vercel",
+  "builds": [
+    {
+      "src": "public/**/*",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/admin.html",
+      "dest": "/pages/admin.html"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/public/$1"
+    }
+  ],
+  "installCommand": "npm install --only=production",
+  "outputDirectory": "public"
+}
