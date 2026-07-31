@@ -2,9 +2,10 @@ services:
   - type: web
     name: iara-backend
     env: node
+    rootDirectory: backend
     plan: free
-    buildCommand: cd backend && npm install
-    startCommand: cd backend/src && node server.js
+    buildCommand: npm ci
+    startCommand: npm start
     envVars:
       - key: NODE_ENV
         value: production
