@@ -11,12 +11,19 @@ const getOrders = async (req, res) => {
 };
 
 const createOrder = async (req, res) => {
-  const { items, total, customer } = req.body || {};
+  const { items, total, customer, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, subtotal, shipping_cost } = req.body || {};
   if (!items || !total) return res.status(400).json({ error: 'Items y total son requeridos' });
   try {
+    const customerData = customer && typeof customer === 'object' ? customer : {};
+    if (shipping_name) customerData.name = shipping_name;
+    if (shipping_address) customerData.address = shipping_address;
+    if (shipping_phone) customerData.phone = shipping_phone;
+    if (shipping_email) customerData.email = shipping_email;
+    if (shipping_zip) customerData.zip = shipping_zip;
+    if (shipping_city) customerData.city = shipping_city;
     const result = await query(
       'INSERT INTO orders (items, total, customer, status) VALUES ($1, $2, $3, $4) RETURNING *',
-      [JSON.stringify(items), Number(total), JSON.stringify(customer || {}), 'pending']
+      [JSON.stringify(items), Number(total), JSON.stringify(customerData), 'pending']
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {

@@ -40,6 +40,12 @@ const CONFIG = {
     YEAR_FOUNDED: 2021
   },
 
+  // Analytics
+  ANALYTICS: {
+    GOOGLE_ID: 'G-XXXXXXXXXX',
+    FACEBOOK_PIXEL_ID: 'PIXEL_ID'
+  },
+
   // Animaciones
   ANIMATIONS: {
     REVEAL_THRESHOLD: 0.15,
