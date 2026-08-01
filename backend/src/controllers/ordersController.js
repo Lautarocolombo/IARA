@@ -71,4 +71,4 @@ const deleteOrder = async (req, res) => {
   }
 };
 
-module.exports = { getOrders, createOrder, updateOrderStatus, deleteOrder };
+module.exports = { getOrders, getUserOrders, createOrder, updateOrderStatus, deleteOrder };

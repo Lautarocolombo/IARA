@@ -13,28 +13,38 @@ const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
 
 process.on('uncaughtException', (err) => {
   logger.error('Uncaught Exception:', err);
+  process.exit(1);
 });
 
 process.on('unhandledRejection', (reason) => {
   logger.error('Unhandled Rejection:', reason);
+  process.exit(1);
 });
 
 dotenv.config();
+
+const requiredEnvVars = ['JWT_SECRET', 'ADMIN_USER', 'ADMIN_PASS'];
+const missingEnvVars = requiredEnvVars.filter(key => !process.env[key]);
+if (missingEnvVars.length > 0) {
+  console.error('Faltan variables de entorno requeridas:', missingEnvVars.join(', '));
+  console.error('Agregalas en el dashboard de Render → Environment');
+  process.exit(1);
+}
 
 const app = express();
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"],
-      styleSrc: ["'self'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:", "https:", "blob:"],
-      connectSrc: ["'self'", "https://api.mercadopago.com"],
-      frameSrc: ["'self'", "https://www.mercadopago.com.ar", "https://maps.google.com", "https://www.google.com"],
-      objectSrc: ["'none'"],
-      baseUri: ["'self'"],
-      formAction: ["'self'"]
+      defaultSrc: ['\'self\''],
+      scriptSrc: ['\'self\''],
+      styleSrc: ['\'self\'', 'https://fonts.googleapis.com'],
+      fontSrc: ['\'self\'', 'https://fonts.gstatic.com'],
+      imgSrc: ['\'self\'', 'data:', 'https:', 'blob:'],
+      connectSrc: ['\'self\'', 'https://api.mercadopago.com'],
+      frameSrc: ['\'self\'', 'https://www.mercadopago.com.ar', 'https://maps.google.com', 'https://www.google.com'],
+      objectSrc: ['\'none\''],
+      baseUri: ['\'self\''],
+      formAction: ['\'self\'']
     }
   },
   crossOriginEmbedderPolicy: false,
@@ -117,7 +127,7 @@ app.get('/*', (req, res) => {
   res.sendFile(path.join(staticDir, 'index.html'));
 });
 
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   logger.error('Server error:', err.message);
   const statusCode = err.statusCode || 500;
   const message = process.env.NODE_ENV === 'production' && statusCode === 500
@@ -126,8 +136,11 @@ app.use((err, req, res, next) => {
   res.status(statusCode).json({ error: message });
 });
 
-initDB().catch(err => {
-  logger.error('Error inicializando DB:', err.message);
+initDB().then(() => {
+  logger.info('Base de datos inicializada correctamente');
+}).catch(err => {
+  logger.error('Error inicializando DB:', err);
+  console.error('Error inicializando DB:', err);
 });
 
 if (require.main === module) {

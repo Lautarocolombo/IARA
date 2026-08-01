@@ -32,7 +32,7 @@ describe('products.js', () => {
   beforeEach(() => {
     jest.resetModules();
     global.fetch = jest.fn();
-    productsModule = require('../../../../frontend/js/products');
+    productsModule = require('../../../frontend/js/products');
   });
 
   afterEach(() => {

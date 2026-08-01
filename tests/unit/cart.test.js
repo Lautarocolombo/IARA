@@ -40,7 +40,7 @@ describe('cart.js', () => {
   beforeEach(() => {
     localStorage.clear();
     jest.resetModules();
-    cartModule = require('../js/cart');
+    cartModule = require('../../../frontend/js/cart');
     // Reset cart state
     cartModule.clearCart();
   });

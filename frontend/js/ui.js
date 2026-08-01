@@ -270,7 +270,7 @@ async function loadSiteTexts() {
     if (data.about_text && document.getElementById('aboutText')) {
       document.getElementById('aboutText').innerHTML = `<p>${data.about_text}</p>`;
     } else if (document.getElementById('aboutText')) {
-      document.getElementById('aboutText').innerHTML = `<p>En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.</p>`;
+      document.getElementById('aboutText').innerHTML = '<p>En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.</p>';
     }
 
     const featureMap = [
@@ -326,3 +326,4 @@ async function loadSiteSettings() {
 }
 
 window.loadSiteSettings = loadSiteSettings;
+window.loadSiteTexts = loadSiteTexts;
