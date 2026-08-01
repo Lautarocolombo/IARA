@@ -38,6 +38,11 @@ iara.db
 # Backend local entry point (git uses backend/src/)
 backend/server.js
 
+# Test artifacts
+test-results/
+.playwright/
+
 # Vercel
 .vercel
 .env.vercel
+.env*

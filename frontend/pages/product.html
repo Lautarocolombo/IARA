@@ -40,12 +40,26 @@
 </head>
 <body>
   <a href="#content" class="skip-link">Saltar al contenido</a>
+  <!-- ============== NAVBAR =============== -->
   <nav class="navbar" id="navbar">
     <div class="navbar-container">
       <div class="navbar-brand">
         <a href="../index.html" class="logo">
           <span class="logo-dot" aria-hidden="true"></span>
           <span class="logo-text">Artesanía Gualeguay</span>
+        </a>
+      </div>
+
+      <a href="../index.html" class="nav-back" aria-label="Volver al inicio">← Volver al inicio</a>
+
+      <div class="navbar-actions">
+        <button id="themeToggle" class="theme-toggle" title="Cambiar tema" aria-label="Alternar modo claro/oscuro" aria-pressed="false">
+          <svg class="theme-icon theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+          <svg class="theme-icon theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+        <a href="../pages/cart.html" class="cart-link">
+          <span class="cart-icon" aria-hidden="true">🛒</span>
+          <span class="cart-count" id="cartCount">0</span>
         </a>
       </div>
     </div>
@@ -57,6 +71,7 @@
     </div>
   </main>
   <script src="../js/config.js"></script>
+  <script src="../js/theme.js"></script>
   <script src="../js/cart.js"></script>
   <script src="../js/ui.js"></script>
   <script>
@@ -71,10 +86,12 @@
       }
       try {
         const [productRes, reviewsRes] = await Promise.all([
-          fetch(`${CONFIG.API.BASE}/api/products`).then(r => r.json()),
-          fetch(`${CONFIG.API.BASE}/api/products/${productId}/reviews`).then(r => r.json())
+          window.fetchWithRetry(`${CONFIG.API.BASE}/api/products`, {}, 2, 1000),
+          window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}/reviews`, {}, 2, 1000)
         ]);
-        const products = Array.isArray(productRes) ? productRes : [];
+        const productData = productRes ? await productRes.json() : [];
+        const reviewsData = reviewsRes ? await reviewsRes.json() : [];
+        const products = Array.isArray(productData) ? productData : [];
         const product = products.find(p => p.id === Number(productId));
         if (!product) {
           container.innerHTML = '<p>Producto no encontrado.</p>';
@@ -100,7 +117,7 @@
           <div class="reviews-section">
             <h2>Reseñas</h2>
             <div id="reviewsList">
-              ${reviewsRes.length ? reviewsRes.map(r => `
+              ${reviewsData.length ? reviewsData.map(r => `
                 <div class="review-card">
                   <div class="review-header">
                     <span class="review-name">${r.name || 'Anónimo'}</span>
@@ -147,8 +164,9 @@
             } else {
               showToast('', 'Error al enviar la reseña', 'error');
             }
-          } catch {
-            showToast('', 'Error de conexión', 'error');
+          } catch (error) {
+            console.error(error);
+            showToast('', window.getFetchErrorMessage(error) || 'Error de conexión. Intentá nuevamente.', 'error');
           }
         };
       } catch (err) {

@@ -9,7 +9,7 @@
     "lint:fix": "eslint frontend/js/ tests/ --ext .js --fix",
     "e2e": "playwright test",
     "build": "echo 'Build complete'",
-    "dev": "cd backend && npm run dev",
+    "dev": "cd backend && npm start",
     "start": "cd backend && npm start"
   },
   "devDependencies": {

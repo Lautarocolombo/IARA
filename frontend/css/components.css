@@ -71,6 +71,35 @@
 
 .nav-link:hover { color: var(--rose-dark); }
 
+/* Back button used on non-home pages (styled like the admin "← Volver" secondary button) */
+.nav-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--text-mid);
+  background: #fff;
+  border: 1.5px solid #f4c8d4;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .nav-back {
+  background: var(--blush);
+  border-color: #3a2028;
+}
+
+.nav-back:hover {
+  background: var(--blush);
+  border-color: var(--rose-mid);
+  color: var(--rose-dark);
+  transform: translateY(-1px);
+}
+
 .navbar-actions { display: flex; align-items: center; gap: 1.25rem; }
 
 .theme-toggle {

@@ -86,38 +86,41 @@ function initContactForm() {
   const form = document.getElementById('contactForm');
   if (!form) return;
 
-form.addEventListener('submit', (e) => {
-     e.preventDefault();
+form.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-     const name = document.getElementById('name').value;
-     const email = document.getElementById('email').value;
-     const message = document.getElementById('message').value;
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const message = document.getElementById('message').value;
 
-     if (!name || !email || !message) {
-       showToast('', 'Por favor completa todos los campos', 'error');
-       return;
-     }
+      if (!name || !email || !message) {
+        showToast('', 'Por favor completa todos los campos', 'error');
+        return;
+      }
 
-     const whatsappMessage = `Nuevo mensaje de contacto\n\nNombre: ${name}\nEmail: ${email}\n\nMensaje:\n${message}`;
+      const whatsappMessage = `Nuevo mensaje de contacto\n\nNombre: ${name}\nEmail: ${email}\n\nMensaje:\n${message}`;
 
-fetch(`${CONFIG.API.BASE}/api/contact`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, message })
-      }).then(res => {
-        if (!res.ok) {
+      try {
+        const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/contact`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, message })
+        });
+        if (!res) return;
+        const data = await res.json();
+        if (data && data.ok !== false) {
+          showToast('', 'Mensaje enviado con éxito. Nos pondremos en contacto pronto.', 'success');
+          form.reset();
+        } else {
           showToast('', 'Error al enviar el mensaje. Intentá de nuevo.', 'error');
-          return;
         }
-        showToast('', 'Mensaje enviado con éxito. Nos pondremos en contacto pronto.', 'success');
-        form.reset();
-      }).catch((err) => {
+      } catch (err) {
         console.error('Error enviando contacto:', err);
         showToast('', getFetchErrorMessage(err), 'error');
-      });
+      }
 
       window.open(getWhatsAppLink(whatsappMessage), '_blank');
-   });
+    });
 }
 
 // Newsletter Form Handler
@@ -125,31 +128,34 @@ function initNewsletterForm() {
    const form = document.getElementById('newsletterForm');
    if (!form) return;
 
-   form.addEventListener('submit', (e) => {
-     e.preventDefault();
-     const email = form.querySelector('input[type="email"]').value;
+   form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = form.querySelector('input[type="email"]').value;
 
-     if (!email) {
-       showToast('', 'Por favor ingresa tu email', 'error');
-       return;
-     }
+      if (!email) {
+        showToast('', 'Por favor ingresa tu email', 'error');
+        return;
+      }
 
-fetch(`${CONFIG.API.BASE}/api/subscribe`, {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({ email })
-       }).then(res => {
-        if (res.ok) {
+      try {
+        const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/subscribe`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        if (!res) return;
+        const data = await res.json();
+        if (data && data.ok !== false) {
           showToast('', 'Te has suscrito al newsletter. ¡Gracias!', 'success');
           form.reset();
         } else {
           showToast('', 'Error al suscribirse. Intentá de nuevo.', 'error');
         }
-      }).catch((err) => {
+      } catch (err) {
         console.error('Error suscribiendo:', err);
         showToast('', getFetchErrorMessage(err), 'error');
-      });
-   });
+      }
+    });
  }
 
 // Smooth Scroll for Anchor Links
@@ -258,46 +264,46 @@ function getFetchErrorMessage(err) {
     return 'Sin conexión a internet. Verificá tu red.';
   }
 
+  const status = (err && err.status) ? err.status : null;
   const msg = (err && err.message) ? String(err.message) : '';
 
   if (err && err.name === 'AbortError') {
     return 'El servidor está iniciando, esperá unos segundos.';
   }
 
-  if (msg.includes('HTTP 502') || msg.includes('HTTP 503') || msg.includes('HTTP 504')) {
+  if (status === 502 || status === 503 || status === 504) {
     return 'El servidor está iniciando, esperá unos segundos.';
+  }
+
+  if (status === 429) {
+    return 'Demasiadas solicitudes. Esperá un minuto y volvé a intentar.';
+  }
+
+  if (status === 500) {
+    return 'Error del servidor. Intentá de nuevo en unos minutos.';
+  }
+
+  if (status === 401 || status === 403) {
+    return 'Error de autorización. Contactá al administrador.';
   }
 
   if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
-    return 'El servidor está iniciando, esperá unos segundos.';
+    return 'No se pudo conectar con el servidor. Verificá tu conexión o intentá de nuevo en unos segundos.';
   }
 
-  if (msg.includes('HTTP 500')) {
-    return 'Error del servidor. Intentá de nuevo en unos minutos.';
+  if (status === 400) {
+    return 'Error en la solicitud. Verificá los datos e intentá de nuevo.';
+  }
+
+  if (status && status >= 400) {
+    return `Error del servidor (${status}). Intentá de nuevo en unos minutos.`;
   }
 
   return 'Error de conexión. Intentá nuevamente.';
 }
 
 async function safeFetch(url, opts = {}) {
-  try {
-    const res = await fetch(url, opts);
-    if (res.status === 404) {
-      console.warn('Endpoint no encontrado:', url);
-      showToast('', 'Recurso no disponible en este momento.', 'error');
-      return null;
-    }
-    if (!res.ok) {
-      const err = new Error(`HTTP ${res.status}: ${res.statusText}`);
-      err.status = res.status;
-      throw err;
-    }
-    return res;
-  } catch (err) {
-    console.error('Fetch error:', err);
-    showToast('', getFetchErrorMessage(err), 'error');
-    return null;
-  }
+  return fetchWithRetry(url, opts, 2, 1000);
 }
 
 async function fetchWithRetry(url, opts = {}, retries = 2, backoffMs = 1000) {
