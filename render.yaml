@@ -11,8 +11,16 @@ services:
         value: production
       - key: JWT_SECRET
         generateValue: true
+      - key: ADMIN_USER
+        value: Iara
+      - key: ADMIN_PASS
+        generateValue: true
       - key: ALLOWED_ORIGINS
-        value: https://iara-ivory.vercel.app,http://localhost:3000
+        value: https://iara-eight.vercel.app,https://iara-ivory.vercel.app,https://artesaniagualeguay.com,http://localhost:3000
+      - key: DATABASE_URL
+        value: from-dashboard
+      - key: MP_ACCESS_TOKEN
+        value: from-dashboard
       - key: RENDER_DOCKERFILE
         value: "false"
     autoDeploy: true

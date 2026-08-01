@@ -45,10 +45,16 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Contraseña es requerida')
 });
 
+const reviewSchema = z.object({
+  rating: z.number().int().min(1).max(5),
+  comment: z.string().min(1, 'Comentario es requerido').max(1000)
+});
+
 module.exports = {
   productSchema,
   testimonialSchema,
   siteTextSchema,
   orderSchema,
-  loginSchema
+  loginSchema,
+  reviewSchema
 };

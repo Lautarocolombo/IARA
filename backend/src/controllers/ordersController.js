@@ -1,12 +1,23 @@
 const { query } = require('../lib/db');
+const logger = require('../lib/logger');
 
 const getOrders = async (req, res) => {
   try {
     const result = await query('SELECT * FROM orders ORDER BY created_at DESC');
     res.json(result.rows);
   } catch (err) {
-    console.error('Error obteniendo pedidos:', err);
-    res.status(500).json({ error: err.message });
+    logger.error('Error obteniendo pedidos:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+const getUserOrders = async (req, res) => {
+  try {
+    const result = await query('SELECT * FROM orders ORDER BY created_at DESC');
+    res.json(result.rows);
+  } catch (err) {
+    logger.error('Error obteniendo tus pedidos:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
@@ -27,8 +38,8 @@ const createOrder = async (req, res) => {
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    console.error('Error creando pedido:', err);
-    res.status(500).json({ error: err.message });
+    logger.error('Error creando pedido:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
@@ -43,8 +54,8 @@ const updateOrderStatus = async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
     res.json(result.rows[0]);
   } catch (err) {
-    console.error('Error actualizando pedido:', err);
-    res.status(500).json({ error: err.message });
+    logger.error('Error actualizando pedido:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
