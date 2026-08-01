@@ -120,4 +120,4 @@ const syncToNeon = async (req, res) => {
   }
 };
 
-module.exports = { getPublicProducts, getAdminProducts, createProduct, updateProduct, deleteProduct, syncToNeon };
+module.exports = { getPublicProducts, getAdminProducts, createProduct, updateProduct, deleteProduct, searchProducts, syncToNeon };

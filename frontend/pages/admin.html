@@ -81,7 +81,6 @@
             <option value="accesorios">Accesorios</option>
             <option value="souvenirs">Souvenirs</option>
           </select>
-          <input type="date" id="dateFilter" class="card-filter" onchange="renderProductsTable()" />
           <button class="btn btn-secondary btn-sm" onclick="exportCSV('products')">📥 Exportar CSV</button>
           <button class="btn btn-primary btn-sm" id="syncProductsBtn" onclick="syncProductsToNeon()">💾 Guardar en base de datos</button>
           <span id="syncProductsStatus" style="font-size:0.8rem;margin-left:0.5rem;"></span>
@@ -544,12 +543,10 @@
     function renderProductsTable() {
       const q = (document.getElementById('productSearchInput')?.value || '').toLowerCase();
       const category = document.getElementById('categoryFilter')?.value || '';
-      const dateFilter = document.getElementById('dateFilter')?.value || '';
       const filtered = products.filter(p => {
         const matchesSearch = (p.name + ' ' + p.description + ' ' + p.category).toLowerCase().includes(q);
         const matchesCategory = !category || p.category === category;
-        const matchesDate = !dateFilter || (p.created_at && p.created_at.startsWith(dateFilter));
-        return matchesSearch && matchesCategory && matchesDate;
+        return matchesSearch && matchesCategory;
       });
       const tbody = document.getElementById('tableBody');
       if (filtered.length === 0) {

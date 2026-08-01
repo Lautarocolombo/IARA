@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { query } = require('../lib/db');
 const { reviewSchema } = require('../lib/validators');
+const logger = require('../lib/logger');
 
 const getProductReviews = async (req, res) => {
   try {

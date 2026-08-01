@@ -1,7 +1,14 @@
-const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs');
 const path = require('path');
 const logger = require('./logger');
+
+let sqlite3;
+try {
+  sqlite3 = require('sqlite3').verbose();
+} catch (err) {
+  logger.error('Error cargando sqlite3:', err.message);
+  sqlite3 = null;
+}
 
 const connectionString = process.env.DATABASE_URL;
 const isLocal = !connectionString;
@@ -9,26 +16,34 @@ let db = null;
 let pool = null;
 
 if (isLocal) {
-  const dbDir = process.env.VERCEL
-    ? '/tmp/ag-data'
-    : path.join(__dirname, '..', '..', 'data');
-  const dbPath = path.join(dbDir, 'iara.db');
-  if (!fs.existsSync(dbDir)) {
-    fs.mkdirSync(dbDir, { recursive: true });
+  if (!sqlite3) {
+    logger.error('sqlite3 no está disponible. Verificá que esté instalado correctamente.');
+  } else {
+    const dbDir = process.env.VERCEL
+      ? '/tmp/ag-data'
+      : path.join(__dirname, '..', '..', 'data');
+    const dbPath = path.join(dbDir, 'iara.db');
+    if (!fs.existsSync(dbDir)) {
+      fs.mkdirSync(dbDir, { recursive: true });
+    }
+    db = new sqlite3.Database(dbPath);
   }
-  db = new sqlite3.Database(dbPath);
 } else {
-  const { Pool } = require('pg');
-  pool = new Pool({
-    connectionString,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    connectionTimeoutMillis: 5000,
-    idleTimeoutMillis: 10000
-  });
+  try {
+    const { Pool } = require('pg');
+    pool = new Pool({
+      connectionString,
+      ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+      connectionTimeoutMillis: 5000,
+      idleTimeoutMillis: 10000
+    });
 
-  pool.on('error', (err) => {
-    logger.error('Pool error:', err.message);
-  });
+    pool.on('error', (err) => {
+      logger.error('Pool error:', err.message);
+    });
+  } catch (err) {
+    logger.error('Error inicializando pool de PostgreSQL:', err.message);
+  }
 }
 
 function toSqlite(sql) {
