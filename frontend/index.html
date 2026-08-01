@@ -376,6 +376,18 @@
 
   <!-- ============== SCRIPTS ============== -->
   <script src="js/config.js"></script>
+  <script>
+    (function() {
+      const API_BASE = 'https://iara-uxcu.onrender.com';
+      const originalFetch = window.fetch;
+      window.fetch = function(url, options) {
+        if (typeof url === 'string' && url.startsWith('/api/')) {
+          url = API_BASE + url;
+        }
+        return originalFetch.call(this, url, options);
+      };
+    })();
+  </script>
   <script src="js/theme.js"></script>
   <script src="js/cart.js"></script>
   <script src="js/products.js"></script>
