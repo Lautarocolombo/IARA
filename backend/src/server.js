@@ -31,7 +31,6 @@ const productionEnvVars = isTest
   : {
       DATABASE_URL: 'connection string de PostgreSQL (ej: postgresql://user:pass@host:5432/db?sslmode=require)',
       ALLOWED_ORIGINS: 'orígenes permitidos separados por coma (ej: https://tudominio.com,http://localhost:3000)',
-      MP_ACCESS_TOKEN: 'token de acceso de MercadoPago para procesar pagos',
     };
 const missingProductionVars = Object.keys(productionEnvVars).filter(key => !process.env[key]);
 if (missingEnvVars.length > 0 || missingProductionVars.length > 0) {
@@ -75,8 +74,8 @@ app.use(helmet({
       styleSrc: ['\'self\'', 'https://fonts.googleapis.com'],
       fontSrc: ['\'self\'', 'https://fonts.gstatic.com'],
       imgSrc: ['\'self\'', 'data:', 'https:', 'blob:'],
-      connectSrc: ['\'self\'', 'https://api.mercadopago.com'],
-      frameSrc: ['\'self\'', 'https://www.mercadopago.com.ar', 'https://maps.google.com', 'https://www.google.com'],
+      connectSrc: ['\'self\''],
+      frameSrc: ['\'self\'', 'https://maps.google.com', 'https://www.google.com'],
       objectSrc: ['\'none\''],
       baseUri: ['\'self\''],
       formAction: ['\'self\'']

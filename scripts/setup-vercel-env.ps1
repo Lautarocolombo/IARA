@@ -18,7 +18,6 @@ $envVars = @{
   'ADMIN_PASS' = ''
   'ALLOWED_ORIGINS' = 'https://iara-ivory.vercel.app'
   'DATABASE_URL' = ''
-  'MP_ACCESS_TOKEN' = ''
   'RESEND_API_KEY' = ''
   'EMAIL_FROM' = 'noreply@artesaniagualeguay.com'
   'ADMIN_NOTIFICATION_EMAIL' = 'admin@artesaniagualeguay.com'
