@@ -70,7 +70,11 @@
     <div class="card" id="productsSection">
       <div class="card-header">
         <h3 class="card-header-title">Catálogo de productos</h3>
-        <div class="card-controls">
+        <div class="card-controls card-controls--filters">
+          <div class="filter-input">
+            <svg class="filter-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="productSearchInput" placeholder="Buscar producto..." class="card-filter" oninput="renderProductsTable()" />
+          </div>
           <select id="categoryFilter" class="card-filter" onchange="renderProductsTable()">
             <option value="">Todas las categorías</option>
             <option value="pulseras">Pulseras</option>
@@ -78,7 +82,7 @@
             <option value="souvenirs">Souvenirs</option>
           </select>
           <input type="date" id="dateFilter" class="card-filter" onchange="renderProductsTable()" />
-          <button class="btn btn-secondary btn-sm" onclick="exportCSV('products')">📥 CSV</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportCSV('products')">📥 Exportar CSV</button>
           <button class="btn btn-primary btn-sm" id="syncProductsBtn" onclick="syncProductsToNeon()">💾 Guardar en base de datos</button>
           <span id="syncProductsStatus" style="font-size:0.8rem;margin-left:0.5rem;"></span>
         </div>
@@ -132,8 +136,9 @@
       <div class="card-header">
         <h3 class="card-header-title">Testimonios de clientes</h3>
         <div class="card-controls">
-          <button class="btn btn-primary btn-sm" onclick="openTestimonialModal()">+ Nuevo</button>
-          <button class="btn btn-secondary btn-sm" onclick="exportCSV('testimonials')">📥 CSV</button>
+          <button class="btn btn-primary btn-sm" onclick="openTestimonialModal()">+ Nuevo Testimonio</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportCSV('testimonials')">📥 Exportar CSV</button>
+          <button class="btn btn-neon btn-sm" id="saveTestimonialsBtn" onclick="saveTestimonialsChanges()" disabled>💾 Guardar cambios</button>
         </div>
       </div>
       <div class="card-body">
@@ -198,20 +203,29 @@
         </div>
       </div>
 
-      <div class="card" id="paymentSection" style="display:none;">
-        <div class="card-header">
-          <h3 class="card-header-title">Configuración de Pago</h3>
-        </div>
-        <div class="card-body">
-          <div class="form-group">
-            <label>Alias de MercadoPago</label>
-            <input type="text" id="paymentMpAlias" placeholder="Ej: artesania.gualeguay.mp" />
-            <p class="form-hint">Este alias se mostrará a los clientes en el checkout para que realicen la transferencia.</p>
-          </div>
-          <button class="btn btn-primary" onclick="savePaymentConfig()">Guardar alias</button>
-          <span id="paymentStatus" style="margin-left: 0.5rem; font-size: 0.85rem;"></span>
-        </div>
-      </div>
+       <div class="card" id="paymentSection" style="display:none;">
+         <div class="card-header">
+           <h3 class="card-header-title">Configuración de Pago</h3>
+         </div>
+         <div class="card-body">
+           <div class="form-group">
+             <label>Alias de MercadoPago</label>
+             <input type="text" id="paymentMpAlias" placeholder="Ej: artesania.gualeguay.mp" />
+             <p class="form-hint">Este alias se mostrará a los clientes en el checkout para que realicen la transferencia.</p>
+           </div>
+           <div class="form-group">
+             <label>WhatsApp para comprobantes</label>
+             <input type="text" id="paymentWhatsapp" placeholder="Ej: 5493444634444" />
+             <p class="form-hint">Número en formato internacional sin espacios ni signos +.</p>
+           </div>
+           <div class="form-group">
+             <label>Instrucciones de pago</label>
+             <textarea id="paymentInstructions" rows="3" placeholder="Ej: Transferí el total y envianos el comprobante por WhatsApp para confirmar tu pedido."></textarea>
+           </div>
+           <button class="btn btn-primary" onclick="savePaymentConfig()">Guardar cambios</button>
+           <span id="paymentStatus" style="margin-left: 0.5rem; font-size: 0.85rem;"></span>
+         </div>
+       </div>
   </main>
 
   <div class="modal-overlay" id="modalOverlay">
@@ -322,6 +336,7 @@
     let testimonials = [];
     let siteTexts = {};
     let editingId = null;
+    let testimonialsPendingChanges = false;
 
     function getApiUrl(path) {
       return `${API_BASE}${path.replace(/^\//, '')}`;
@@ -527,7 +542,7 @@
     }
 
     function renderProductsTable() {
-      const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
+      const q = (document.getElementById('productSearchInput')?.value || '').toLowerCase();
       const category = document.getElementById('categoryFilter')?.value || '';
       const dateFilter = document.getElementById('dateFilter')?.value || '';
       const filtered = products.filter(p => {
@@ -599,6 +614,7 @@
             <td>
               <div class="actions">
                 <button class="btn btn-secondary btn-sm" onclick="viewOrder(${o.id})">👁 Ver</button>
+                <button class="btn btn-danger btn-sm" onclick="deleteOrder(${o.id})">🗑</button>
               </div>
             </td>
           </tr>
@@ -613,6 +629,23 @@
       const items = Array.isArray(order.items) ? order.items : [];
       const itemsText = items.map((it, i) => `${i + 1}. ${it.name || 'Producto'} x${it.quantity || 1} — $${Number(it.price || 0).toLocaleString('es-AR')}`).join('\n');
       alert(`Pedido #${order.id}\n\nCliente: ${customer.name || '—'}\nEmail: ${customer.email || '—'}\nTeléfono: ${customer.phone || '—'}\nDirección: ${customer.address || '—'}\n\nItems:\n${itemsText}\n\nTotal: $${Number(order.total).toLocaleString('es-AR')}\nEstado: ${order.status || 'pending'}\nMercadoPago ID: ${order.mercadopago_id || '—'}`);
+    }
+
+    async function deleteOrder(id) {
+      const order = orders.find(o => o.id === id);
+      if (!order) return;
+      const customer = order.customer || {};
+      if (!window.confirm(`¿Seguro que querés eliminar el pedido #${id} de ${customer.name || 'cliente'}? Esta acción no se puede deshacer.`)) return;
+      try {
+        const res = await adminFetch(`/api/admin/orders/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error al eliminar');
+        orders = orders.filter(o => o.id !== id);
+        renderOrdersTable();
+        showToast('Pedido eliminado', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
     }
 
     async function loadTestimonials() {
@@ -840,6 +873,7 @@
         await loadTestimonials();
         closeTestimonialModal();
         showToast('Testimonio guardado', 'success');
+        markTestimonialsChanged();
       } catch (err) {
         showToast(err.message, 'error');
       }
@@ -852,8 +886,31 @@
         testimonials = testimonials.filter(t => t.id !== id);
         renderTestimonialsTable();
         showToast('Testimonio eliminado', 'success');
+        markTestimonialsChanged();
       } catch (err) {
         showToast(err.message, 'error');
+      }
+    }
+
+    function markTestimonialsChanged() {
+      testimonialsPendingChanges = true;
+      const btn = document.getElementById('saveTestimonialsBtn');
+      if (btn) btn.disabled = false;
+    }
+
+    async function saveTestimonialsChanges() {
+      const btn = document.getElementById('saveTestimonialsBtn');
+      try {
+        btn.disabled = true;
+        btn.textContent = 'Guardando...';
+        await loadTestimonials();
+        testimonialsPendingChanges = false;
+        btn.textContent = '💾 Guardar cambios';
+        showToast('Cambios guardados', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+        btn.disabled = false;
+        btn.textContent = '💾 Guardar cambios';
       }
     }
 
@@ -884,9 +941,10 @@
       try {
         const res = await adminFetch('/api/site-config');
         const data = await res.json();
-        if (data.payment && data.payment.mpAlias) {
-          document.getElementById('paymentMpAlias').value = data.payment.mpAlias;
-        }
+        const payment = data.payment || {};
+        document.getElementById('paymentMpAlias').value = payment.mpAlias || '';
+        document.getElementById('paymentWhatsapp').value = payment.whatsapp || '';
+        document.getElementById('paymentInstructions').value = payment.instructions || '';
       } catch (err) {
         console.error('Error cargando config de pago:', err);
       }
@@ -894,6 +952,8 @@
 
     async function savePaymentConfig() {
       const alias = document.getElementById('paymentMpAlias').value.trim();
+      const whatsapp = document.getElementById('paymentWhatsapp').value.trim();
+      const instructions = document.getElementById('paymentInstructions').value.trim();
       const statusEl = document.getElementById('paymentStatus');
       const btn = event.target;
       try {
@@ -903,18 +963,18 @@
         const res = await adminFetch('/api/admin/payment-config', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ mpAlias: alias })
+          body: JSON.stringify({ mpAlias: alias, whatsapp, instructions })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Error al guardar');
         statusEl.textContent = 'Guardado ✓';
         statusEl.style.color = '#10b981';
-        showToast('Alias de MercadoPago guardado', 'success');
+        showToast('Configuración de pago guardada', 'success');
         setTimeout(() => { statusEl.textContent = ''; }, 3000);
       } catch (err) {
         statusEl.textContent = 'En mantenimiento';
         statusEl.style.color = '#dc2626';
-        showToast('Error al guardar alias', 'error');
+        showToast('Error al guardar configuración de pago', 'error');
       } finally {
         btn.disabled = false;
       }
@@ -1099,46 +1159,6 @@
         statusEl.textContent = 'En mantenimiento';
         statusEl.style.color = '#dc2626';
         showToast('Error al guardar configuración', 'error');
-      } finally {
-        btn.disabled = false;
-      }
-    }
-
-    async function loadPaymentConfig() {
-      try {
-        const res = await adminFetch('/api/site-config');
-        const data = await res.json();
-        if (data.payment && data.payment.mpAlias) {
-          document.getElementById('paymentMpAlias').value = data.payment.mpAlias;
-        }
-      } catch (err) {
-        console.error('Error cargando config de pago:', err);
-      }
-    }
-
-    async function savePaymentConfig() {
-      const alias = document.getElementById('paymentMpAlias').value.trim();
-      const statusEl = document.getElementById('paymentStatus');
-      const btn = event.target;
-      try {
-        btn.disabled = true;
-        statusEl.textContent = 'Guardando...';
-        statusEl.style.color = '#334155';
-        const res = await adminFetch('/api/admin/payment-config', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ mpAlias: alias })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Error al guardar');
-        statusEl.textContent = 'Guardado ✓';
-        statusEl.style.color = '#10b981';
-        showToast('Alias de MercadoPago guardado', 'success');
-        setTimeout(() => { statusEl.textContent = ''; }, 3000);
-      } catch (err) {
-        statusEl.textContent = 'En mantenimiento';
-        statusEl.style.color = '#dc2626';
-        showToast('Error al guardar alias', 'error');
       } finally {
         btn.disabled = false;
       }

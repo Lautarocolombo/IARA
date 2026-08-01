@@ -17,9 +17,10 @@ const getSiteConfig = async (req, res) => {
       },
       payment: {
         mpPublicKey: '',
-        mpAlias: config['mp_alias'] || ''
+        mpAlias: config['mp_alias'] || '',
+        whatsapp: config['payment_whatsapp'] || process.env.WHATSAPP || '+5493444634444',
+        instructions: config['payment_instructions'] || ''
       },
-      whatsapp: process.env.WHATSAPP || '+5493444634444',
       siteName: 'Artesanía Gualeguay',
       environment: process.env.NODE_ENV || 'development'
     };
@@ -31,18 +32,26 @@ const getSiteConfig = async (req, res) => {
   }
 };
 
-const updateMpAlias = async (req, res) => {
-  const { mpAlias } = req.body || {};
+const updatePaymentConfig = async (req, res) => {
+  const { mpAlias, whatsapp, instructions } = req.body || {};
   try {
     await query(
       'INSERT INTO site_texts (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = CURRENT_TIMESTAMP',
       ['mp_alias', mpAlias || '']
     );
-    res.json({ ok: true, mpAlias: mpAlias || '' });
+    await query(
+      'INSERT INTO site_texts (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = CURRENT_TIMESTAMP',
+      ['payment_whatsapp', whatsapp || '']
+    );
+    await query(
+      'INSERT INTO site_texts (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = CURRENT_TIMESTAMP',
+      ['payment_instructions', instructions || '']
+    );
+    res.json({ ok: true, mpAlias: mpAlias || '', whatsapp: whatsapp || '', instructions: instructions || '' });
   } catch (err) {
-    logger.error('Error guardando alias de MercadoPago:', err);
+    logger.error('Error guardando config de pago:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
-module.exports = { getSiteConfig, updateMpAlias };
+module.exports = { getSiteConfig, updatePaymentConfig };

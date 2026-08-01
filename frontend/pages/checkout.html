@@ -78,23 +78,23 @@
         </form>
       </div>
 
-      <div class="checkout-card reveal" id="paymentInstructions" style="display:none;">
-        <h2>💳 Pagar con transferencia</h2>
-        <div class="payment-alias-box">
-          <p class="payment-label">Alias de MercadoPago</p>
-          <div class="payment-alias-row">
-            <span class="payment-alias-value" id="mpAliasValue">Cargando...</span>
-            <button class="btn btn-secondary btn-sm" id="copyAliasBtn" onclick="copyMpAlias()">📋 Copiar</button>
-          </div>
-        </div>
-        <div class="payment-total-box">
-          <span>Total a pagar</span>
-          <span class="payment-total-amount" id="paymentTotalAmount">ARS 0,00</span>
-        </div>
-        <p class="payment-note">Transferí el total a este alias de MercadoPago y envianos el comprobante por WhatsApp para confirmar tu pedido.</p>
-        <a id="whatsappComprobanteBtn" href="#" target="_blank" class="btn btn-primary btn-full">Enviar comprobante por WhatsApp</a>
-        <a href="cart.html" class="btn btn-secondary btn-full" style="margin-top:0.5rem;">Volver al carrito</a>
-      </div>
+       <div class="checkout-card reveal" id="paymentInstructions" style="display:none;">
+         <h2>💳 Pagar con transferencia</h2>
+         <div class="payment-alias-box">
+           <p class="payment-label">Alias de MercadoPago</p>
+           <div class="payment-alias-row">
+             <span class="payment-alias-value" id="mpAliasValue">Cargando...</span>
+             <button class="btn btn-secondary btn-sm" id="copyAliasBtn" onclick="copyMpAlias()">📋 Copiar</button>
+           </div>
+         </div>
+         <div class="payment-total-box">
+           <span>Total a pagar</span>
+           <span class="payment-total-amount" id="paymentTotalAmount">ARS 0,00</span>
+         </div>
+         <p class="payment-note" id="paymentInstructionsText">Transferí el total a este alias de MercadoPago y envianos el comprobante por WhatsApp para confirmar tu pedido.</p>
+         <a id="whatsappComprobanteBtn" href="#" target="_blank" class="btn btn-primary btn-full">Enviar comprobante por WhatsApp</a>
+         <a href="cart.html" class="btn btn-secondary btn-full" style="margin-top:0.5rem;">Volver al carrito</a>
+       </div>
 
       <div class="checkout-card reveal">
         <h2>🧾 Resumen</h2>
@@ -152,11 +152,14 @@
         const res = await fetch('/api/site-config');
         const data = await res.json();
         const alias = data.payment?.mpAlias || '';
+        const whatsapp = (data.payment?.whatsapp || CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, '');
+        const instructions = data.payment?.instructions || 'Transferí el total a este alias de MercadoPago y envianos el comprobante por WhatsApp para confirmar tu pedido.';
         document.getElementById('mpAliasValue').textContent = alias || 'No configurado';
-        return alias;
+        document.getElementById('paymentInstructionsText').textContent = instructions;
+        return { alias, whatsapp, instructions };
       } catch (err) {
         document.getElementById('mpAliasValue').textContent = 'Error al cargar';
-        return '';
+        return { alias: '', whatsapp: (CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, ''), instructions: '' };
       }
     }
 
@@ -217,16 +220,17 @@
         const orderData = await orderRes.json();
         if (!orderRes.ok) throw new Error(orderData.error || 'Error al guardar el pedido');
 
-        const alias = await loadMpAlias();
+        const paymentConfig = await loadMpAlias();
         document.getElementById('paymentTotalAmount').textContent = formatARS(total);
-        const waNumber = (CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, '');
+        const waNumber = paymentConfig.whatsapp || (CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, '');
         const orderId = orderData.id || 'NUEVO';
+        const customerName = shipping.name || 'Cliente';
         const itemsList = items.map(i => {
           const line = `• ${i.name} x${i.qty} - ${formatARS(i.price * i.qty)}`;
           if (i.image) return `${line}\n  Imagen: ${i.image}`;
           return line;
         }).join('\n');
-        const waMsg = encodeURIComponent(`Hola! Quiero confirmar el pago del pedido AG-${orderId} por un total de ${formatARS(total)}.\n\nProductos:\n${itemsList}\n\nYa realicé la transferencia al alias de MercadoPago. Te envío el comprobante por este medio.`);
+        const waMsg = encodeURIComponent(`Hola! Quiero confirmar el pago del pedido AG-${orderId} por un total de ${formatARS(total)}.\n\nCliente: ${customerName}\nProductos:\n${itemsList}\n\n${paymentConfig.instructions || 'Ya realicé la transferencia al alias de MercadoPago. Te envío el comprobante por este medio.'}`);
         document.getElementById('whatsappComprobanteBtn').href = `https://wa.me/${waNumber}?text=${waMsg}`;
 
         document.getElementById('checkoutContent').style.display = 'none';
