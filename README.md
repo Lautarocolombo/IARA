@@ -52,7 +52,7 @@ http://localhost:3000
 ## Deploy
 
 - **Vercel (producción):** `https://iara-ivory.vercel.app`
-- **Render (alternativo):** `https://iara-yrdx.onrender.com`
+- **Render (alternativo):** `https://iara-uxcu.onrender.com`
 
 ### Variables de entorno en Vercel
 

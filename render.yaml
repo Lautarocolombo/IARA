@@ -17,7 +17,7 @@ services:
       - key: ADMIN_PASS_HASH
         generateValue: true
       - key: ALLOWED_ORIGINS
-        value: https://iara-eight.vercel.app,https://iara-ivory.vercel.app,https://artesaniagualeguay.com,http://localhost:3000
+        value: https://iara-eight.vercel.app,https://iara-ivory.vercel.app,https://iara-alpha.vercel.app,https://artesaniagualeguay.com,http://localhost:3000
       - key: DATABASE_URL
         value: from-dashboard
       - key: MP_ACCESS_TOKEN

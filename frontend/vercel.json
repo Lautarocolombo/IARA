@@ -1,6 +1,6 @@
 {
   "version": 2,
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://iara-yrdx.onrender.com/api/$1" }
+    { "source": "/api/(.*)", "destination": "https://iara-uxcu.onrender.com/api/$1" }
   ]
 }
