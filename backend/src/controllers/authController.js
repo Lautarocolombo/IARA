@@ -26,6 +26,9 @@ const login = async (req, res) => {
     const cleanUsername = username.trim();
     const cleanPassword = password.trim();
 
+    // DIAGNÓSTICO TEMPORAL
+    logger.info('DIAG LOGIN: received_user="%s" expected_user="%s" pass_len=%d env_pass_len=%d', cleanUsername, ADMIN_USER, cleanPassword.length, ADMIN_PASS.length);
+
     if (cleanUsername.toLowerCase() === ADMIN_USER.toLowerCase() && cleanPassword === ADMIN_PASS) {
       role = 'admin';
       user = ADMIN_USER;
