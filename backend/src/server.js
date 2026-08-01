@@ -23,7 +23,7 @@ process.on('unhandledRejection', (reason) => {
 
 dotenv.config();
 
-const requiredEnvVars = ['JWT_SECRET', 'ADMIN_USER', 'ADMIN_PASS_HASH'];
+const requiredEnvVars = ['JWT_SECRET', 'ADMIN_USER', 'ADMIN_PASS'];
 const missingEnvVars = requiredEnvVars.filter(key => !process.env[key]);
 const isTest = process.env.NODE_ENV === 'test';
 const productionEnvVars = isTest
@@ -40,8 +40,8 @@ if (missingEnvVars.length > 0 || missingProductionVars.length > 0) {
   if (missingEnvVars.length > 0) {
     console.error('\nVariables de inicio (validadas al arrancar):');
     missingEnvVars.forEach(key => {
-      if (key === 'ADMIN_PASS_HASH') {
-        console.error(`  ${key} → generar con: cd backend && node -e "const bcrypt = require('bcrypt'); bcrypt.hash('tu-contraseña', 10).then(h => console.log(h))"`);
+      if (key === 'ADMIN_PASS') {
+        console.error(`  ${key} → contraseña de admin en texto plano (ej: pulseras2026)`);
       } else if (key === 'JWT_SECRET') {
         console.error(`  ${key} → generar con: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"`);
       } else if (key === 'ADMIN_USER') {

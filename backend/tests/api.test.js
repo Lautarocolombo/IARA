@@ -1,21 +1,13 @@
 const request = require('supertest');
-const bcrypt = require('bcrypt');
 
 process.env.NODE_ENV = process.env.NODE_ENV || 'test';
 process.env.ADMIN_USER = process.env.ADMIN_USER || 'testadmin';
+process.env.ADMIN_PASS = process.env.ADMIN_PASS || 'testpassword123';
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret';
 process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://test:test@localhost:5432/test';
 process.env.ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS || 'http://localhost:3000';
-process.env.ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH || '$2b$10$testhashtesthashtesthaste';
 
 const app = require('../src/server');
-
-let validAdminHash;
-
-beforeAll(async () => {
-  validAdminHash = await bcrypt.hash('testpassword123', 10);
-  process.env.ADMIN_PASS_HASH = validAdminHash;
-});
 
 describe('API Endpoints', () => {
   describe('GET /api/products', () => {
