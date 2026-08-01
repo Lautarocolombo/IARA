@@ -64,7 +64,7 @@ async function createPaymentPreference() {
     }
   } catch (error) {
     console.error(error);
-    showToast('', 'Error de conexión. Intenta nuevamente.', 'error');
+    showToast('', window.getFetchErrorMessage(error) || 'Error de conexión. Intentá nuevamente.', 'error');
   }
 }
 

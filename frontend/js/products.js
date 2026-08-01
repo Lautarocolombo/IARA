@@ -119,8 +119,8 @@ function setProducts(newProducts) {
 
 async function fetchProducts() {
   try {
-    const res = await fetch(`${CONFIG.API.BASE}/api/products`);
-    if (res.ok) {
+    const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products`, {}, 2, 1000);
+    if (res) {
       products = await res.json();
     }
   } catch {
@@ -135,13 +135,14 @@ async function searchProducts(query) {
     return;
   }
   try {
-    const res = await fetch(`${CONFIG.API.BASE}/api/products/search?q=${encodeURIComponent(query.trim())}`);
-    if (res.ok) {
+    const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/search?q=${encodeURIComponent(query.trim())}`, {}, 2, 1000);
+    if (res) {
       products = await res.json();
       renderProducts(getProducts());
     }
-  } catch {
-    showToast('', 'Error al buscar productos', 'error');
+  } catch (err) {
+    console.error('Error buscando productos:', err);
+    showToast('', window.getFetchErrorMessage(err), 'error');
   }
 }
 
