@@ -71,8 +71,8 @@
       }
       try {
         const [productRes, reviewsRes] = await Promise.all([
-          fetch(`/api/products`).then(r => r.json()),
-          fetch(`/api/products/${productId}/reviews`).then(r => r.json())
+          fetch(`${CONFIG.API.BASE}/api/products`).then(r => r.json()),
+          fetch(`${CONFIG.API.BASE}/api/products/${productId}/reviews`).then(r => r.json())
         ]);
         const products = Array.isArray(productRes) ? productRes : [];
         const product = products.find(p => p.id === Number(productId));
@@ -136,7 +136,7 @@
             return;
           }
           try {
-            const res = await fetch(`/api/products/${id}/reviews`, {
+            const res = await fetch(`${CONFIG.API.BASE}/api/products/${id}/reviews`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ rating: selectedRating, comment })

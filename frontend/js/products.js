@@ -119,7 +119,7 @@ function setProducts(newProducts) {
 
 async function fetchProducts() {
   try {
-    const res = await fetch('/api/products');
+    const res = await fetch(`${CONFIG.API.BASE}/api/products`);
     if (res.ok) {
       products = await res.json();
     }
@@ -135,7 +135,7 @@ async function searchProducts(query) {
     return;
   }
   try {
-    const res = await fetch(`/api/products/search?q=${encodeURIComponent(query.trim())}`);
+    const res = await fetch(`${CONFIG.API.BASE}/api/products/search?q=${encodeURIComponent(query.trim())}`);
     if (res.ok) {
       products = await res.json();
       renderProducts(getProducts());

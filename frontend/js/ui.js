@@ -100,7 +100,7 @@ form.addEventListener('submit', (e) => {
 
      const whatsappMessage = `Nuevo mensaje de contacto\n\nNombre: ${name}\nEmail: ${email}\n\nMensaje:\n${message}`;
 
-fetch('/api/contact', {
+fetch(`${CONFIG.API.BASE}/api/contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, message })
@@ -133,20 +133,20 @@ function initNewsletterForm() {
        return;
      }
 
-fetch('/api/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      }).then(res => {
-       if (res.ok) {
-         showToast('', 'Te has suscrito al newsletter. ¡Gracias!', 'success');
-         form.reset();
-       } else {
-         showToast('', 'Error al suscribirse. Intentá de nuevo.', 'error');
-       }
-     }).catch(() => {
-       showToast('', 'Error de conexión. Intentá nuevamente.', 'error');
-     });
+fetch(`${CONFIG.API.BASE}/api/subscribe`, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ email })
+       }).then(res => {
+        if (res.ok) {
+          showToast('', 'Te has suscrito al newsletter. ¡Gracias!', 'success');
+          form.reset();
+        } else {
+          showToast('', 'Error al suscribirse. Intentá de nuevo.', 'error');
+        }
+      }).catch(() => {
+        showToast('', 'Error de conexión. Intentá nuevamente.', 'error');
+      });
    });
  }
 
@@ -271,7 +271,7 @@ window.safeFetch = safeFetch;
 
 async function loadSiteTexts() {
   try {
-    const res = await safeFetch('/api/site-texts');
+    const res = await safeFetch(`${CONFIG.API.BASE}/api/site-texts`);
     if (!res) return;
     const data = await res.json();
 
@@ -320,7 +320,7 @@ async function loadSiteTexts() {
 
 async function loadSiteSettings() {
   try {
-    const res = await safeFetch('/api/site-settings');
+    const res = await safeFetch(`${CONFIG.API.BASE}/api/site-settings`);
     if (!res) return;
     const settings = await res.json();
 
