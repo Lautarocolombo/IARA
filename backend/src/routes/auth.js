@@ -1,8 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { login, debugAuth } = require('../controllers/authController');
+const { login } = require('../controllers/authController');
 
 router.post('/login', login);
-router.post('/debug-auth', debugAuth);
 
 module.exports = router;
