@@ -326,7 +326,7 @@
 
   <script src="../js/config.js"></script>
   <script>
-    const API_BASE = '/';
+    const API_BASE = CONFIG.API.BASE;
     let authToken = localStorage.getItem('ag_admin_jwt') || '';
     let userRole = localStorage.getItem('ag_admin_role') || 'admin';
     let currentSection = 'products';
@@ -467,7 +467,8 @@
     async function adminFetch(url, opts = {}) {
       if (!authToken) throw new Error('No autorizado');
       const headers = { Authorization: `Bearer ${authToken}`, ...(opts.headers || {}) };
-      const res = await fetch(url, { ...opts, headers });
+      const fullUrl = url.startsWith('/api/') ? `${CONFIG.API.BASE}${url}` : url;
+      const res = await fetch(fullUrl, { ...opts, headers });
       if (res.status === 401) {
         authToken = '';
         localStorage.removeItem('ag_admin_jwt');

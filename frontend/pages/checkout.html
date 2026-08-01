@@ -149,7 +149,7 @@
 
     async function loadMpAlias() {
       try {
-        const res = await fetch('/api/site-config');
+        const res = await fetch(`${CONFIG.API.BASE}/api/site-config`);
         const data = await res.json();
         const alias = data.payment?.mpAlias || '';
         const whatsapp = (data.payment?.whatsapp || CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, '');
@@ -203,7 +203,7 @@
       const total = subtotal + shippingCost;
 
       try {
-        const orderRes = await fetch('/api/orders', {
+        const orderRes = await fetch(`${CONFIG.API.BASE}/api/orders`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

@@ -32,7 +32,7 @@ async function createPaymentPreference() {
   try {
     showToast('⏳', 'Procesando pago...');
 
-    const response = await fetch('/api/create-preference', {
+    const response = await fetch(`${CONFIG.API.BASE}/api/create-preference`, {
       // Cambiar por tu backend si corresponde
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

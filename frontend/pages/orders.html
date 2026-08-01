@@ -57,7 +57,7 @@
       const container = document.getElementById('ordersContainer');
       if (!container) return;
       try {
-        const res = await fetch('/api/orders');
+        const res = await fetch(`${CONFIG.API.BASE}/api/orders`);
         if (!res.ok) throw new Error('Error al cargar pedidos');
         const orders = await res.json();
         if (!orders.length) {

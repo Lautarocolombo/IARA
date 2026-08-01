@@ -54,6 +54,11 @@ const CONFIG = {
     TRANSITION_SPEED: 0.4
   },
 
+  // API
+  API: {
+    BASE: 'https://iara-uxcu.onrender.com'
+  },
+
   // URLs externas
   LINKS: {
     INSTAGRAM: '#',
@@ -108,4 +113,3 @@ function formatARS(amount) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { CONFIG, getWhatsAppLink, getMailtoLink, getGoogleWriteReviewLink, formatARS };
 }
-
