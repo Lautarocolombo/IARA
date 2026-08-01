@@ -5,6 +5,10 @@ const DEV_MODE = process.env.NODE_ENV !== 'production';
 
 const login = async (req, res) => {
   try {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+
     const { username, password } = req.body || {};
     if (!username || !password) {
       return res.status(400).json({ error: 'Usuario y contraseña requeridos' });
