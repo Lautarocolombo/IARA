@@ -111,8 +111,9 @@ fetch(`${CONFIG.API.BASE}/api/contact`, {
         }
         showToast('', 'Mensaje enviado con éxito. Nos pondremos en contacto pronto.', 'success');
         form.reset();
-      }).catch(() => {
-        showToast('', 'Error de conexión. Intentá nuevamente.', 'error');
+      }).catch((err) => {
+        console.error('Error enviando contacto:', err);
+        showToast('', getFetchErrorMessage(err), 'error');
       });
 
       window.open(getWhatsAppLink(whatsappMessage), '_blank');
@@ -144,8 +145,9 @@ fetch(`${CONFIG.API.BASE}/api/subscribe`, {
         } else {
           showToast('', 'Error al suscribirse. Intentá de nuevo.', 'error');
         }
-      }).catch(() => {
-        showToast('', 'Error de conexión. Intentá nuevamente.', 'error');
+      }).catch((err) => {
+        console.error('Error suscribiendo:', err);
+        showToast('', getFetchErrorMessage(err), 'error');
       });
    });
  }
@@ -251,6 +253,32 @@ window.addEventListener('unhandledrejection', (event) => {
 
 // Si hay error 404 en fetch, NO redirigir a página 404 del sitio
 // (un endpoint API que no existe no debe romper la navegación del frontend)
+function getFetchErrorMessage(err) {
+  if (navigator.onLine === false) {
+    return 'Sin conexión a internet. Verificá tu red.';
+  }
+
+  const msg = (err && err.message) ? String(err.message) : '';
+
+  if (err && err.name === 'AbortError') {
+    return 'El servidor está iniciando, esperá unos segundos.';
+  }
+
+  if (msg.includes('HTTP 502') || msg.includes('HTTP 503') || msg.includes('HTTP 504')) {
+    return 'El servidor está iniciando, esperá unos segundos.';
+  }
+
+  if (msg.includes('Failed to fetch') || msg.includes('NetworkError')) {
+    return 'El servidor está iniciando, esperá unos segundos.';
+  }
+
+  if (msg.includes('HTTP 500')) {
+    return 'Error del servidor. Intentá de nuevo en unos minutos.';
+  }
+
+  return 'Error de conexión. Intentá nuevamente.';
+}
+
 async function safeFetch(url, opts = {}) {
   try {
     const res = await fetch(url, opts);
@@ -259,19 +287,54 @@ async function safeFetch(url, opts = {}) {
       showToast('', 'Recurso no disponible en este momento.', 'error');
       return null;
     }
+    if (!res.ok) {
+      const err = new Error(`HTTP ${res.status}: ${res.statusText}`);
+      err.status = res.status;
+      throw err;
+    }
     return res;
   } catch (err) {
     console.error('Fetch error:', err);
-    showToast('', 'Error de conexión. Verificá tu internet.', 'error');
+    showToast('', getFetchErrorMessage(err), 'error');
     return null;
   }
 }
 
+async function fetchWithRetry(url, opts = {}, retries = 2, backoffMs = 1000) {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, opts);
+      if (res.status === 404) {
+        console.warn('Endpoint no encontrado:', url);
+        showToast('', 'Recurso no disponible en este momento.', 'error');
+        return null;
+      }
+      if (!res.ok) {
+        const err = new Error(`HTTP ${res.status}: ${res.statusText}`);
+        err.status = res.status;
+        throw err;
+      }
+      return res;
+    } catch (err) {
+      if (attempt === retries) {
+        console.error('Fetch error after retries:', err);
+        showToast('', getFetchErrorMessage(err), 'error');
+        return null;
+      }
+      console.warn(`Intento ${attempt + 1} fallido para ${url}, reintentando en ${backoffMs}ms...`, err);
+      await new Promise(r => setTimeout(r, backoffMs));
+      backoffMs *= 2;
+    }
+  }
+}
+
 window.safeFetch = safeFetch;
+window.fetchWithRetry = fetchWithRetry;
+window.getFetchErrorMessage = getFetchErrorMessage;
 
 async function loadSiteTexts() {
   try {
-    const res = await safeFetch(`${CONFIG.API.BASE}/api/site-texts`);
+    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-texts`, {}, 2, 1000);
     if (!res) return;
     const data = await res.json();
 
@@ -320,7 +383,7 @@ async function loadSiteTexts() {
 
 async function loadSiteSettings() {
   try {
-    const res = await safeFetch(`${CONFIG.API.BASE}/api/site-settings`);
+    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-settings`, {}, 2, 1000);
     if (!res) return;
     const settings = await res.json();
 
