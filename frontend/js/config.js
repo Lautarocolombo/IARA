@@ -66,8 +66,8 @@ const CONFIG = {
     TWITTER: '#'
   },
 
-  // La configuración de pago (alias, WhatsApp, instrucciones) se obtiene
-  // dinámicamente desde /api/site-config en el backend. No se usa MercadoPago.
+  // La configuración de pago (alias, WhatsApp, mensaje, activo) se obtiene
+  // dinámicamente desde /api/payment-config en el backend. No se usa MercadoPago.
 
   // Horarios
   HOURS: {

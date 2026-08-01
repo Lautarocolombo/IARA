@@ -59,10 +59,12 @@
 
   <main class="main">
     <div class="header">
-      <a href="../index.html" class="btn btn-secondary btn-sm">← Volver</a>
-      <div>
-        <h1 id="sectionTitle">Productos</h1>
-        <p class="header-subtitle" id="sectionSubtitle">Gestioná productos, fotos y precios</p>
+      <div class="header-left">
+        <a href="../index.html" class="btn btn-secondary btn-sm">← Volver</a>
+        <div>
+          <h1 id="sectionTitle">Productos</h1>
+          <p class="header-subtitle" id="sectionSubtitle">Gestioná productos, fotos y precios</p>
+        </div>
       </div>
       <button class="btn btn-primary" id="sectionAction" onclick="openSectionModal()">+ Nuevo Producto</button>
     </div>
@@ -203,28 +205,45 @@
       </div>
 
        <div class="card" id="paymentSection" style="display:none;">
-         <div class="card-header">
-           <h3 class="card-header-title">Configuración de Pago</h3>
-         </div>
-         <div class="card-body">
-           <div class="form-group">
-             <label>Alias de MercadoPago</label>
-             <input type="text" id="paymentMpAlias" placeholder="Ej: artesania.gualeguay.mp" />
-             <p class="form-hint">Este alias se mostrará a los clientes en el checkout para que realicen la transferencia.</p>
-           </div>
-           <div class="form-group">
-             <label>WhatsApp para comprobantes</label>
-             <input type="text" id="paymentWhatsapp" placeholder="Ej: 5493444634444" />
-             <p class="form-hint">Número en formato internacional sin espacios ni signos +.</p>
-           </div>
-           <div class="form-group">
-             <label>Instrucciones de pago</label>
-             <textarea id="paymentInstructions" rows="3" placeholder="Ej: Transferí el total y envianos el comprobante por WhatsApp para confirmar tu pedido."></textarea>
-           </div>
-           <button class="btn btn-primary" onclick="savePaymentConfig()">Guardar cambios</button>
-           <span id="paymentStatus" style="margin-left: 0.5rem; font-size: 0.85rem;"></span>
-         </div>
-       </div>
+          <div class="card-header">
+            <h3 class="card-header-title">Configuración de Pago</h3>
+            <p class="card-header-subtitle">Alias de MercadoPago y datos de pago</p>
+          </div>
+          <div class="card-body">
+            <div class="form-group">
+              <label>Alias de MercadoPago</label>
+              <input type="text" id="paymentMpAlias" placeholder="Ej: artesania.gualeguay.mp" />
+              <p class="form-hint">Este alias se mostrará a los clientes en el checkout para que realicen la transferencia.</p>
+            </div>
+            <div class="form-group">
+              <label>Nombre del titular</label>
+              <input type="text" id="paymentHolderName" placeholder="Ej: María García" />
+              <p class="form-hint">Nombre de la cuenta bancaria para que el cliente confirme que coincide antes de transferir.</p>
+            </div>
+            <div class="form-group">
+              <label>WhatsApp para comprobantes</label>
+              <input type="text" id="paymentWhatsapp" placeholder="Ej: 3444634444" />
+              <p class="form-hint">Número sin espacios ni signos +. Se usará para armar el link de WhatsApp.</p>
+            </div>
+            <div class="form-group">
+              <label>Mensaje para el cliente</label>
+              <textarea id="paymentMessage" rows="3" placeholder="Ej: Transferí el total exacto y enviá el comprobante por WhatsApp para confirmar tu pedido."></textarea>
+            </div>
+            <div class="form-group">
+              <label>Cobro por alias activo</label>
+              <div class="toggle-row">
+                <label class="toggle">
+                  <input type="checkbox" id="paymentActive" checked />
+                  <span class="toggle-slider"></span>
+                </label>
+                <span class="toggle-label" id="paymentToggleLabel">Activo</span>
+              </div>
+              <p class="form-hint">Desactivá esta opción para pausar temporalmente el cobro por alias sin borrar la configuración.</p>
+            </div>
+            <button class="btn btn-primary" onclick="savePaymentConfig()">Guardar cambios</button>
+            <span id="paymentStatus" style="margin-left: 0.5rem; font-size: 0.85rem;"></span>
+          </div>
+        </div>
   </main>
 
   <div class="modal-overlay" id="modalOverlay">
@@ -338,7 +357,8 @@
     let testimonialsPendingChanges = false;
 
     function getApiUrl(path) {
-      return `${API_BASE}${path.replace(/^\//, '')}`;
+      if (!API_BASE) return path;
+      return `${API_BASE}${path}`;
     }
 
     async function checkServerHealth() {
@@ -502,14 +522,20 @@
       const titles = {
         products: ['Productos', 'Gestioná productos, fotos y precios', '+ Nuevo Producto'],
         orders: ['Pedidos', 'Gestioná pedidos y pagos', ''],
-        testimonials: ['Testimonios', 'Gestioná testimonios de clientes', '+ Nuevo Testimonio'],
-        texts: ['Textos del Sitio', 'Modificá los textos que aparecen en el sitio', '+ Nuevo Texto'],
+        testimonials: ['Testimonios', 'Gestioná testimonios de clientes', ''],
+        texts: ['Textos del Sitio', 'Modificá los textos que aparecen en el sitio', ''],
         payment: ['Configuración de Pago', 'Alias de MercadoPago y datos de pago', '']
       };
       const [title, subtitle, action] = titles[section] || titles.products;
       document.getElementById('sectionTitle').textContent = title;
       document.getElementById('sectionSubtitle').textContent = subtitle;
-      document.getElementById('sectionAction').textContent = action;
+      const actionBtn = document.getElementById('sectionAction');
+      if (action) {
+        actionBtn.textContent = action;
+        actionBtn.style.display = '';
+      } else {
+        actionBtn.style.display = 'none';
+      }
       if (section === 'products') loadProducts();
       if (section === 'orders') loadOrders();
       if (section === 'testimonials') loadTestimonials();
@@ -937,21 +963,31 @@
 
     async function loadPaymentConfig() {
       try {
-        const res = await adminFetch('/api/site-config');
+        const res = await adminFetch('/api/admin/payment-config');
         const data = await res.json();
-        const payment = data.payment || {};
-        document.getElementById('paymentMpAlias').value = payment.mpAlias || '';
-        document.getElementById('paymentWhatsapp').value = payment.whatsapp || '';
-        document.getElementById('paymentInstructions').value = payment.instructions || '';
+        document.getElementById('paymentMpAlias').value = data.mpAlias || '';
+        document.getElementById('paymentHolderName').value = data.holderName || '';
+        document.getElementById('paymentWhatsapp').value = data.whatsapp || '3444634444';
+        document.getElementById('paymentMessage').value = data.message || '';
+        const activeCheckbox = document.getElementById('paymentActive');
+        activeCheckbox.checked = data.active !== false;
+        document.getElementById('paymentToggleLabel').textContent = activeCheckbox.checked ? 'Activo' : 'Inactivo';
       } catch (err) {
         console.error('Error cargando config de pago:', err);
       }
     }
 
+    function updatePaymentToggleLabel() {
+      const active = document.getElementById('paymentActive').checked;
+      document.getElementById('paymentToggleLabel').textContent = active ? 'Activo' : 'Inactivo';
+    }
+
     async function savePaymentConfig() {
       const alias = document.getElementById('paymentMpAlias').value.trim();
+      const holderName = document.getElementById('paymentHolderName').value.trim();
       const whatsapp = document.getElementById('paymentWhatsapp').value.trim();
-      const instructions = document.getElementById('paymentInstructions').value.trim();
+      const message = document.getElementById('paymentMessage').value.trim();
+      const active = document.getElementById('paymentActive').checked;
       const statusEl = document.getElementById('paymentStatus');
       const btn = event.target;
       try {
@@ -961,7 +997,7 @@
         const res = await adminFetch('/api/admin/payment-config', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ mpAlias: alias, whatsapp, instructions })
+          body: JSON.stringify({ mpAlias: alias, holderName, whatsapp, message, active })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Error al guardar');
@@ -1097,6 +1133,7 @@
         document.getElementById('loginOverlay').classList.add('hidden');
       }
       navigateTo('products');
+      document.getElementById('paymentActive')?.addEventListener('change', updatePaymentToggleLabel);
     });
 
     document.getElementById('pImageFile')?.addEventListener('change', (e) => {

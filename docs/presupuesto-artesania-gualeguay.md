@@ -115,15 +115,16 @@ Desarrollo de un sitio web completo para la venta de productos artesanales, con 
 
 | Etapa | Duración |
 |-------|----------|
-| Diseño y aprobación | 3-5 días |
-| Desarrollo frontend | 10-15 días |
-| Desarrollo backend | 10-15 días |
-| Integración de pagos | 3-5 días |
-| Pruebas y ajustes | 3-5 días |
-| Deploy y capacitación | 2-3 días |
-| **Total** | **4-6 semanas** |
-(revisar y acomodar )
----
+| Diseño y aprobación | 4-6 días |
+| Desarrollo frontend | 12-18 días |
+| Desarrollo backend | 12-18 días |
+| Integración de pagos | 4-7 días |
+| Testing y corrección de bugs | 5-8 días |
+| Ajustes pedidos por el cliente | 3-5 días |
+| Deploy y capacitación | 2-4 días |
+| **Total** | **6-8 semanas** |
+
+
 
 ## 🔧 Requisitos del cliente
 

@@ -32,8 +32,7 @@ async function createPaymentPreference() {
   try {
     showToast('⏳', 'Procesando pago...');
 
-    const response = await fetch(`${CONFIG.API.BASE}/api/create-preference`, {
-      // Cambiar por tu backend si corresponde
+    const response = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/create-preference`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -54,7 +53,10 @@ async function createPaymentPreference() {
         }
       })
     });
-
+    if (!response) {
+      showToast('', 'No se pudo procesar el pago. Intentá de nuevo.', 'error');
+      return;
+    }
     const data = await response.json();
 
     if (data && data.init_point) {

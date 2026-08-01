@@ -156,11 +156,16 @@ app.use('/api', require('./routes/testimonials'));
 app.use('/api', require('./routes/newsletter'));
 app.use('/api', require('./routes/contact'));
 app.use('/api', require('./routes/siteConfig'));
+app.use('/api', require('./routes/paymentConfig'));
 app.use('/api', require('./routes/siteSettings'));
 app.use('/api', require('./routes/sitemap'));
 app.use('/api', require('./routes/reviews'));
 
 app.get('/health', (req, res) => {
+  res.json({ status: 'ok', uptime: process.uptime() });
+});
+
+app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
 

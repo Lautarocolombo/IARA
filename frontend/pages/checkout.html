@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="../css/checkout.css" />
 </head>
 <body>
+  <!-- ============== NAVBAR =============== -->
   <nav class="navbar" id="navbar">
     <div class="navbar-container">
       <div class="navbar-brand">
@@ -22,8 +23,15 @@
           <span class="logo-text">Artesanía Gualeguay</span>
         </a>
       </div>
+
+      <a href="../index.html" class="nav-back" aria-label="Volver al inicio">← Volver al inicio</a>
+
       <div class="navbar-actions">
-          <a href="cart.html" class="cart-link">
+        <button id="themeToggle" class="theme-toggle" title="Cambiar tema" aria-label="Alternar modo claro/oscuro" aria-pressed="false">
+          <svg class="theme-icon theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+          <svg class="theme-icon theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+        <a href="../pages/cart.html" class="cart-link">
           <span class="cart-icon" aria-hidden="true">🛒</span>
           <span class="cart-count" id="cartCount">0</span>
         </a>
@@ -106,6 +114,7 @@
   </div>
 
   <script src="../js/config.js"></script>
+  <script src="../js/theme.js"></script>
   <script src="../js/cart.js"></script>
   <script src="../js/ui.js"></script>
   <script src="../js/payment.js"></script>
@@ -149,17 +158,19 @@
 
     async function loadMpAlias() {
       try {
-        const res = await fetch(`${CONFIG.API.BASE}/api/site-config`);
+        const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/payment-config`, {}, 2, 1000);
+        if (!res) return { alias: '', whatsapp: (CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, ''), message: '', active: false };
         const data = await res.json();
-        const alias = data.payment?.mpAlias || '';
-        const whatsapp = (data.payment?.whatsapp || CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, '');
-        const instructions = data.payment?.instructions || 'Transferí el total a este alias de MercadoPago y envianos el comprobante por WhatsApp para confirmar tu pedido.';
+        const alias = data.mpAlias || '';
+        const whatsapp = (data.whatsapp || CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, '');
+        const message = data.message || 'Transferí el total exacto y enviá el comprobante por WhatsApp para confirmar tu pedido.';
+        const active = data.active !== false;
         document.getElementById('mpAliasValue').textContent = alias || 'No configurado';
-        document.getElementById('paymentInstructionsText').textContent = instructions;
-        return { alias, whatsapp, instructions };
+        document.getElementById('paymentInstructionsText').textContent = message;
+        return { alias, whatsapp, message, active };
       } catch (err) {
         document.getElementById('mpAliasValue').textContent = 'Error al cargar';
-        return { alias: '', whatsapp: (CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, ''), instructions: '' };
+        return { alias: '', whatsapp: (CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, ''), message: '', active: false };
       }
     }
 
@@ -203,7 +214,7 @@
       const total = subtotal + shippingCost;
 
       try {
-        const orderRes = await fetch(`${CONFIG.API.BASE}/api/orders`, {
+        const orderRes = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/orders`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -217,11 +228,20 @@
             subtotal, shipping_cost: shippingCost, total
           })
         });
+        if (!orderRes) throw new Error('Error al guardar el pedido');
         const orderData = await orderRes.json();
         if (!orderRes.ok) throw new Error(orderData.error || 'Error al guardar el pedido');
 
         const paymentConfig = await loadMpAlias();
         document.getElementById('paymentTotalAmount').textContent = formatARS(total);
+        
+        if (!paymentConfig.active) {
+          document.getElementById('paymentInstructions').style.display = 'none';
+          document.getElementById('checkoutContent').style.display = 'grid';
+          showToast('', 'El pago por transferencia está temporalmente deshabilitado. Contactanos por WhatsApp.', 'error');
+          return;
+        }
+        
         const waNumber = paymentConfig.whatsapp || (CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, '');
         const orderId = orderData.id || 'NUEVO';
         const customerName = shipping.name || 'Cliente';
@@ -230,14 +250,14 @@
           if (i.image) return `${line}\n  Imagen: ${i.image}`;
           return line;
         }).join('\n');
-        const waMsg = encodeURIComponent(`Hola! Quiero confirmar el pago del pedido AG-${orderId} por un total de ${formatARS(total)}.\n\nCliente: ${customerName}\nProductos:\n${itemsList}\n\n${paymentConfig.instructions || 'Ya realicé la transferencia al alias de MercadoPago. Te envío el comprobante por este medio.'}`);
+        const waMsg = encodeURIComponent(`Hola! Quiero confirmar el pago del pedido AG-${orderId} por un total de ${formatARS(total)}.\n\nCliente: ${customerName}\nProductos:\n${itemsList}\n\n${paymentConfig.message || 'Ya realicé la transferencia al alias de MercadoPago. Te envío el comprobante por este medio.'}`);
         document.getElementById('whatsappComprobanteBtn').href = `https://wa.me/${waNumber}?text=${waMsg}`;
 
         document.getElementById('checkoutContent').style.display = 'none';
         document.getElementById('emptyCart').style.display = 'none';
         document.getElementById('paymentInstructions').style.display = 'block';
       } catch (err) {
-        showToast('', 'Error al procesar tu compra. Intentá nuevamente o contactanos.', 'error');
+        showToast('', window.getFetchErrorMessage(err) || 'Error al procesar tu compra. Intentá nuevamente o contactanos.', 'error');
         console.error('Checkout error:', err);
       }
     });
