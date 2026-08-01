@@ -1,3 +1,7 @@
+node_modules
+backend/node_modules
+frontend/node_modules
+
 # Ignorar Dockerfile para Render (usa Node.js build)
 Dockerfile
 docker-compose.yml

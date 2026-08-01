@@ -12,6 +12,7 @@
     "lint:fix": "eslint src/server.js --ext .js --fix"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "cloudinary": "^1.41.3",
     "cors": "^2.8.6",
     "dotenv": "^16.6.1",

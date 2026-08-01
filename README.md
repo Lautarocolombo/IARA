@@ -63,7 +63,7 @@ Configurar en **Vercel Dashboard > Settings > Environment Variables**:
 | `NODE_ENV` | `production` |
 | `JWT_SECRET` | string seguro aleatorio |
 | `ADMIN_USER` | tu usuario admin |
-| `ADMIN_PASS` | tu contraseña admin |
+| `ADMIN_PASS_HASH` | hash bcrypt de tu contraseña admin (generar con `bcrypt.hash('contraseña', 10)`) |
 | `ALLOWED_ORIGINS` | `https://iara-ivory.vercel.app,http://localhost:3000` |
 | `DATABASE_URL` | connection string de Neon |
 | `MP_ACCESS_TOKEN` | token real de MercadoPago |

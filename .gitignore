@@ -4,8 +4,11 @@ backend/node_modules/
 
 # Variables de entorno
 .env
+.env.*
 .env.*.local
 .env.local
+**/.env
+**/.env.*
 
 # Backend data
 backend/data/
@@ -34,10 +37,6 @@ iara.db
 
 # Backend local entry point (git uses backend/src/)
 backend/server.js
-
-# Docker
-Dockerfile
-docker-compose.yml
 
 # Vercel
 .vercel

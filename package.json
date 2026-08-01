@@ -8,8 +8,9 @@
     "format": "prettier --write \"**/*.{js,json,css,html}\"",
     "lint:fix": "eslint frontend/js/ tests/ --ext .js --fix",
     "e2e": "playwright test",
-    "dev": "cd backend && node server.js",
-    "start": "cd backend && node server.js"
+    "build": "echo 'Build complete'",
+    "dev": "cd backend && npm run dev",
+    "start": "cd backend && npm start"
   },
   "devDependencies": {
     "@playwright/test": "^1.61.1",
@@ -23,6 +24,7 @@
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
+    "bcrypt": "^6.0.0",
     "cloudinary": "^1.41.3",
     "cors": "^2.8.6",
     "dotenv": "^16.6.1",

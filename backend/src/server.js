@@ -23,11 +23,11 @@ process.on('unhandledRejection', (reason) => {
 
 dotenv.config();
 
-const requiredEnvVars = ['JWT_SECRET', 'ADMIN_USER', 'ADMIN_PASS'];
+const requiredEnvVars = ['JWT_SECRET', 'ADMIN_USER', 'ADMIN_PASS_HASH'];
 const missingEnvVars = requiredEnvVars.filter(key => !process.env[key]);
 if (missingEnvVars.length > 0) {
   console.error('Faltan variables de entorno requeridas:', missingEnvVars.join(', '));
-  console.error('Agregalas en el dashboard de Render → Environment');
+  console.error('Agregalas en el dashboard de Render');
   process.exit(1);
 }
 
@@ -108,6 +108,10 @@ app.use('/api', require('./routes/siteConfig'));
 app.use('/api', require('./routes/siteSettings'));
 app.use('/api', require('./routes/sitemap'));
 app.use('/api', require('./routes/reviews'));
+
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', uptime: process.uptime() });
+});
 
 app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUploadError, saveFile);
 
