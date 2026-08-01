@@ -12,6 +12,7 @@
   <meta property="og:image" content="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%221200%22 height=%22630%22><rect width=%221200%22 height=%22630%22 fill=%22%23e8a0b5%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2280%22 fill=%22white%22>🌸 Artesanía Gualeguay 🌸</text></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" as="style">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/variables.css" />
   <link rel="stylesheet" href="css/base.css" />
@@ -19,7 +20,7 @@
   <link rel="stylesheet" href="css/animations.css" />
 
   <!-- Analytics -->
-  <script defer src="../js/analytics.js"></script>
+  <script defer src="js/analytics.js"></script>
 </head>
 <body>
   <a href="#home" class="skip-link">Saltar al contenido principal</a>
@@ -47,13 +48,9 @@
       </ul>
 
       <div class="navbar-actions">
-        <button id="themeToggle" class="theme-toggle" title="Cambiar tema" aria-label="Toggle dark mode">
-          <span class="theme-icon-sun" aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-          </span>
-          <span class="theme-icon-moon" aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-          </span>
+        <button id="themeToggle" class="theme-toggle" title="Cambiar tema" aria-label="Alternar modo claro/oscuro" aria-pressed="false">
+          <svg class="theme-icon theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+          <svg class="theme-icon theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
         </button>
         <a href="pages/wishlist.html" class="wishlist-link">
           <span class="wishlist-icon" aria-hidden="true">❤️</span>
@@ -73,7 +70,8 @@
   <main>
     <!-- ============== HERO SECTION ============== -->
     <section class="hero" id="home">
-      <div class="hero-content reveal">
+      <div class="hero-inner">
+        <div class="hero-content reveal">
         <div class="hero-tag">
           <span class="hero-tag-dot" aria-hidden="true"></span>
           Colección 2026
@@ -86,16 +84,17 @@
         </div>
       </div>
 
-      <div class="hero-visual reveal" aria-hidden="true">
-        <div class="hero-card">
-          <div class="hero-card-img">📿</div>
-          <div class="hero-card-title">Pulsera Minimalista</div>
-          <div class="hero-card-price">$450</div>
-        </div>
-        <div class="hero-card">
-          <div class="hero-card-img">💎</div>
-          <div class="hero-card-title">Anillo Cerámica</div>
-          <div class="hero-card-price">$280</div>
+        <div class="hero-visual reveal" aria-hidden="true">
+          <div class="hero-card">
+            <div class="hero-card-img">📿</div>
+            <div class="hero-card-title">Pulsera Minimalista</div>
+            <div class="hero-card-price">$450</div>
+          </div>
+          <div class="hero-card">
+            <div class="hero-card-img">💎</div>
+            <div class="hero-card-title">Anillo Cerámica</div>
+            <div class="hero-card-price">$280</div>
+          </div>
         </div>
       </div>
     </section>
@@ -143,20 +142,20 @@
     <!-- ============== STATS STRIP ============== -->
     <section class="stats-strip">
       <div class="stat-item reveal">
-        <span class="stat-number" data-target="500">0</span>
+        <span class="stat-number" data-target="500" data-suffix="+">0+</span>
         <span class="stat-label">Clientes</span>
       </div>
       <div class="stat-item reveal">
-        <span class="stat-number" data-target="1000">0</span>
+        <span class="stat-number" data-target="1000" data-suffix="+">0+</span>
         <span class="stat-label">Productos vendidos</span>
       </div>
       <div class="stat-item reveal">
-        <span class="stat-number" data-target="5">0</span>
+        <span class="stat-number" data-target="5" data-suffix="+">0+</span>
         <span class="stat-label">Años de experiencia</span>
       </div>
       <div class="stat-item reveal">
-        <span class="stat-number" data-target="100">0</span>
-        <span class="stat-label">% Artesanal</span>
+        <span class="stat-number" data-target="100" data-suffix="%">0%</span>
+        <span class="stat-label">Artesanal</span>
       </div>
     </section>
 
@@ -200,13 +199,16 @@
         <p class="section-subtitle reveal">Descubrí piezas únicas hechas a mano</p>
       </div>
 
-      <div class="filter-bar">
+<div class="filter-bar">
         <button class="filter-btn active" data-filter="all">Todos</button>
         <button class="filter-btn" data-filter="pulseras">Pulseras</button>
         <button class="filter-btn" data-filter="accesorios">Accesorios</button>
         <button class="filter-btn" data-filter="souvenirs">Souvenirs</button>
       </div>
-
+      <div class="search-bar">
+        <input type="text" id="searchInput" placeholder="Buscar productos..." aria-label="Buscar productos" />
+        <button id="searchBtn" aria-label="Buscar">🔍</button>
+      </div>
       <div class="products-grid" id="productsGrid"></div>
     </section>
 
@@ -284,8 +286,19 @@
             <div class="info-icon" aria-hidden="true">📍</div>
             <div>
               <h4>Ubicación</h4>
-              <p>Gualeguay, Entre Ríos, Argentina</p>
+              <p>476 San Antonio Nte.<br>Gualeguay, Entre Ríos, Argentina</p>
             </div>
+          </div>
+          <div class="map-wrapper reveal">
+            <iframe
+              src="https://www.google.com/maps?q=476+San+Antonio+Nte,+Gualeguay,+Entre+R%C3%ADos,+Argentina&amp;output=embed&amp;z=15"
+              width="100%"
+              height="250"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              title="Mapa del local - Artesanía Gualeguay"
+              style="width:100%;height:250px;border:0;display:block;"
+            ></iframe>
           </div>
           <div class="info-item">
             <div class="info-icon" aria-hidden="true">🕐</div>
@@ -304,10 +317,10 @@
         <h3>Suscríbete a nuestro Newsletter</h3>
         <p>Recibe ofertas exclusivas y descuentos en tu email</p>
       </div>
-      <form class="newsletter-form" id="newsletterForm">
-        <input type="email" placeholder="tu@email.com" required />
-        <button type="submit" class="btn-primary">Suscribirse</button>
-      </form>
+<form class="newsletter-form" id="newsletterForm">
+         <input type="email" id="newsletterEmail" placeholder="tu@email.com" required />
+         <button type="submit" class="btn-primary">Suscribirse</button>
+       </form>
     </section>
   </main>
 
@@ -328,8 +341,8 @@
         <h4>Artesanía Gualeguay</h4>
         <p>Creando pulseras y souvenirs únicos desde el corazón de Gualeguay, Entre Ríos.</p>
         <div class="social-links">
+          <a href="#" id="instagramLink" title="Instagram" class="social-icon" aria-label="Instagram">📷</a>
           <a href="https://wa.me/5493444634444" title="WhatsApp" class="social-icon" aria-label="WhatsApp">💬</a>
-          <a href="#" title="Instagram" class="social-icon" aria-label="Instagram">📷</a>
           <a href="#" title="Facebook" class="social-icon" aria-label="Facebook">👍</a>
         </div>
       </div>
@@ -345,10 +358,11 @@
       <div class="footer-section">
         <h4>Información</h4>
         <ul>
-          <li><a href="#">Política de Privacidad</a></li>
-          <li><a href="#">Términos de Servicio</a></li>
-          <li><a href="#">Envíos y Devoluciones</a></li>
-          <li><a href="#">Preguntas Frecuentes</a></li>
+          <li><a href="pages/orders.html">Mis Pedidos</a></li>
+          <li><a href="pages/privacy.html">Política de Privacidad</a></li>
+          <li><a href="pages/terms.html">Términos de Servicio</a></li>
+          <li><a href="pages/shipping.html">Envíos y Devoluciones</a></li>
+          <li><a href="pages/faq.html">Preguntas Frecuentes</a></li>
         </ul>
       </div>
     </div>
@@ -374,36 +388,27 @@
       function animateCount(el) {
         const target = parseInt(el.getAttribute('data-target'), 10);
         if (isNaN(target)) return;
+        const suffix = el.getAttribute('data-suffix') || '';
         const duration = 1400;
         const start = performance.now();
-        const suffix = el.textContent.replace(/[0-9]/g, '').trim();
 
         function tick(now) {
           const elapsed = now - start;
           const progress = Math.min(elapsed / duration, 1);
           const eased = 1 - Math.pow(1 - progress, 3);
           const current = Math.floor(eased * target);
-          el.textContent = current + (suffix || '');
+          el.textContent = current + suffix;
           if (progress < 1) {
             requestAnimationFrame(tick);
           } else {
-            el.textContent = target + (suffix || '');
+            el.textContent = target + suffix;
           }
         }
 
         requestAnimationFrame(tick);
       }
 
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            animateCount(entry.target);
-            observer.unobserve(entry.target);
-          }
-        });
-      }, { threshold: 0.5 });
-
-      counters.forEach(el => observer.observe(el));
+      counters.forEach(el => animateCount(el));
     })();
 
     (function() {

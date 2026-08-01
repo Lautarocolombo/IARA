@@ -13,7 +13,8 @@ const CONFIG = {
     WHATSAPP: '+5493444634444',
     PHONE: '+54 (3444) 634-4444',
     EMAIL: 'contacto@artesaniagualeguay.com',
-    ADDRESS: 'Gualeguay, Entre Ríos, Argentina'
+    ADDRESS: '476 San Antonio Nte., Gualeguay, Entre Ríos, Argentina',
+    COORDINATES: { lat: -33.1400009, lng: -59.3136349 }
   },
 
   // Configuración de carrito
@@ -42,8 +43,8 @@ const CONFIG = {
 
   // Analytics
   ANALYTICS: {
-    GOOGLE_ID: 'G-XXXXXXXXXX',
-    FACEBOOK_PIXEL_ID: 'PIXEL_ID'
+    GOOGLE_ID: '',
+    FACEBOOK_PIXEL_ID: ''
   },
 
   // Animaciones

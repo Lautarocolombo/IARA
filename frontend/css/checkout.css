@@ -121,6 +121,66 @@
   margin-bottom: 1.5rem;
 }
 
+.payment-alias-box {
+  background: var(--blush);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  text-align: center;
+}
+
+.payment-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.payment-alias-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.payment-alias-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  word-break: break-all;
+}
+
+.payment-total-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  border: 2px solid var(--rose-light);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.payment-total-amount {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--rose-dark);
+}
+
+.payment-note {
+  font-size: 0.9rem;
+  color: var(--text-mid);
+  line-height: 1.6;
+  margin-bottom: 1.25rem;
+  text-align: center;
+}
+
 @media (max-width: 768px) {
   .checkout-grid {
     grid-template-columns: 1fr;

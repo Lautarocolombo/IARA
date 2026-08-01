@@ -1,12 +1,13 @@
 const { query } = require('../lib/db');
+const logger = require('../lib/logger');
 
 const getPublicTestimonials = async (req, res) => {
   try {
     const result = await query('SELECT * FROM testimonials WHERE active = TRUE ORDER BY created_at DESC');
     res.json(result.rows);
   } catch (err) {
-    console.error('Error obteniendo testimonios:', err);
-    res.status(500).json({ error: err.message });
+    logger.error('Error obteniendo testimonios:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
@@ -15,8 +16,8 @@ const getAdminTestimonials = async (req, res) => {
     const result = await query('SELECT * FROM testimonials ORDER BY created_at DESC');
     res.json(result.rows);
   } catch (err) {
-    console.error('Error obteniendo testimonios (admin):', err);
-    res.status(500).json({ error: err.message });
+    logger.error('Error obteniendo testimonios (admin):', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
@@ -30,8 +31,8 @@ const createTestimonial = async (req, res) => {
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
-    console.error('Error creando testimonio:', err);
-    res.status(500).json({ error: err.message });
+    logger.error('Error creando testimonio:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
@@ -57,8 +58,8 @@ const updateTestimonial = async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Testimonio no encontrado' });
     res.json(result.rows[0]);
   } catch (err) {
-    console.error('Error actualizando testimonio:', err);
-    res.status(500).json({ error: err.message });
+    logger.error('Error actualizando testimonio:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
@@ -69,8 +70,8 @@ const deleteTestimonial = async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Testimonio no encontrado' });
     res.json({ ok: true });
   } catch (err) {
-    console.error('Error eliminando testimonio:', err);
-    res.status(500).json({ error: err.message });
+    logger.error('Error eliminando testimonio:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 

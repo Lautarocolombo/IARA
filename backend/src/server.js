@@ -3,15 +3,20 @@ const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const dotenv = require('dotenv');
+const rateLimit = require('express-rate-limit');
+const crypto = require('crypto');
+const pino = require('pino');
 const { initDB } = require('./lib/db');
 const { handleUploadError, saveFile } = require('./lib/upload');
 
+const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
+
 process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception:', err);
+  logger.error('Uncaught Exception:', err);
 });
 
 process.on('unhandledRejection', (reason) => {
-  console.error('Unhandled Rejection:', reason);
+  logger.error('Unhandled Rejection:', reason);
 });
 
 dotenv.config();
@@ -21,45 +26,81 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:", "blob:"],
       connectSrc: ["'self'", "https://api.mercadopago.com"],
-      frameSrc: ["'self'", "https://www.mercadopago.com.ar"],
+      frameSrc: ["'self'", "https://www.mercadopago.com.ar", "https://maps.google.com", "https://www.google.com"],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
       formAction: ["'self'"]
     }
   },
-  crossOriginEmbedderPolicy: false
+  crossOriginEmbedderPolicy: false,
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  }
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// CORS
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || '').split(',').filter(Boolean);
 const corsOptions = allowedOrigins.length
   ? { origin: allowedOrigins, credentials: true, methods: ['GET','POST','PUT','DELETE','OPTIONS'], allowedHeaders: ['Content-Type','Authorization'] }
   : { origin: '*', credentials: true };
 app.use(cors(corsOptions));
 
-// Health check & keep-alive
-app.get('/api/health', (req, res) => res.json({ ok: true, timestamp: Date.now() }));
-app.get('/api/ping', (req, res) => res.json({ ok: true, timestamp: Date.now() }));
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas solicitudes, intentá de nuevo en unos minutos' }
+});
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiados intentos de inicio de sesión, intentá de nuevo en 15 minutos' }
+});
+const contactLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiados envíos de formulario, intentá de nuevo en una hora' }
+});
 
-// Routes (MVC)
+app.use('/api/auth/login', authLimiter);
+app.use('/api/orders', contactLimiter);
+app.use(limiter);
+
+app.use((req, res, next) => {
+  res.setHeader('X-Request-ID', crypto.randomUUID());
+  res.locals.csrfToken = crypto.randomBytes(32).toString('hex');
+  next();
+});
+
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/admin', require('./routes/auth'));
 app.use('/api', require('./routes/products'));
 app.use('/api', require('./routes/orders'));
 app.use('/api', require('./routes/payments'));
 app.use('/api', require('./routes/siteTexts'));
 app.use('/api', require('./routes/testimonials'));
+app.use('/api', require('./routes/newsletter'));
+app.use('/api', require('./routes/contact'));
+app.use('/api', require('./routes/siteConfig'));
+app.use('/api', require('./routes/siteSettings'));
+app.use('/api', require('./routes/sitemap'));
+app.use('/api', require('./routes/reviews'));
 
-// Upload con multer
 app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUploadError, saveFile);
 
-// Static files
 app.use('/uploads', express.static(path.join(__dirname, '..', '..', 'uploads')));
 const staticDir = path.join(__dirname, '..', '..', 'frontend');
 
@@ -76,20 +117,22 @@ app.get('/*', (req, res) => {
   res.sendFile(path.join(staticDir, 'index.html'));
 });
 
-// Error handler
 app.use((err, req, res, next) => {
-  console.error('Server error:', err);
-  res.status(500).json({ error: err.message });
+  logger.error('Server error:', err.message);
+  const statusCode = err.statusCode || 500;
+  const message = process.env.NODE_ENV === 'production' && statusCode === 500
+    ? 'Error interno del servidor'
+    : err.message;
+  res.status(statusCode).json({ error: message });
 });
 
-// Init DB y start
 initDB().catch(err => {
-  console.error('Error inicializando DB:', err.message);
+  logger.error('Error inicializando DB:', err.message);
 });
 
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => console.log(`Backend escuchando en http://localhost:${PORT}`));
+  app.listen(PORT, () => logger.info(`Backend escuchando en http://localhost:${PORT}`));
 } else {
   module.exports = app;
 }

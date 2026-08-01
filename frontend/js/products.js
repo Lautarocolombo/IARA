@@ -128,6 +128,23 @@ async function fetchProducts() {
   }
 }
 
+async function searchProducts(query) {
+  if (!query || query.trim().length < 2) {
+    await fetchProducts();
+    renderProducts(getProducts());
+    return;
+  }
+  try {
+    const res = await fetch(`/api/products/search?q=${encodeURIComponent(query.trim())}`);
+    if (res.ok) {
+      products = await res.json();
+      renderProducts(getProducts());
+    }
+  } catch {
+    showToast('', 'Error al buscar productos', 'error');
+  }
+}
+
 function getProducts() {
   return products;
 }
@@ -141,34 +158,40 @@ function renderProducts(productsToRender) {
   const grid = document.getElementById('productsGrid');
   if (!grid) return;
 
+  if (!productsToRender.length) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;text-align:center;padding:3rem;"><h3>No se encontraron productos</h3><p>Intentá con otro filtro o búsqueda.</p></div>';
+    return;
+  }
+
   grid.innerHTML = productsToRender.map(product => {
     const imageHtml = product.image
-      ? `<img src="${product.image}" alt="${product.name}" loading="lazy" />`
+      ? `<img src="${product.image}" alt="${product.name}" loading="lazy" decoding="async" />`
       : product.emoji || '📿';
     const catClass = product.category ? `cat-${product.category}` : '';
     const badgeHtml = product.badge ? `<span class="product-badge">${product.badge}</span>` : '';
     const waMessage = encodeURIComponent(`Hola! Me interesa el producto: ${product.name} - ${formatARS(product.price)}`);
     const waLink = `https://wa.me/${CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g, '')}?text=${waMessage}`;
-    return `
+return `
       <div class="product-card reveal">
-        <div class="product-image ${catClass}" aria-hidden="true">${imageHtml}</div>
-        ${badgeHtml}
-        <div class="product-info">
-          <span class="product-category">${product.category}</span>
-          <h3 class="product-name">${product.name}</h3>
-          <p class="product-description">${product.description}</p>
-          <div class="product-footer">
-            <span class="product-price">${formatARS(product.price)}</span>
-            <div style="display:flex;gap:0.5rem;">
-              <button class="btn-add-cart" onclick="addToCart({id: ${product.id}, name: '${product.name}', price: ${product.price}, emoji: '${product.emoji || '📿'}', image: '${product.image || ''}', unit: 'u', qty: 1}); event.stopPropagation();">Agregar</button>
-              <a href="${waLink}" target="_blank" class="btn-outline btn-sm" rel="noopener" title="Consultar por WhatsApp">💬</a>
+        <a href="pages/product.html?id=${product.id}" style="text-decoration:none;color:inherit;">
+          <div class="product-image ${catClass}" aria-hidden="true">${imageHtml}</div>
+          ${badgeHtml}
+          <div class="product-info">
+            <span class="product-category">${product.category}</span>
+            <h3 class="product-name">${product.name}</h3>
+            <p class="product-description">${product.description}</p>
+            <div class="product-footer">
+              <span class="product-price">${formatARS(product.price)}</span>
             </div>
           </div>
+        </a>
+        <div style="display:flex;gap:0.5rem;padding:0 0.5rem 0.5rem;">
+          <button class="btn-add-cart" onclick="addToCart({id: ${product.id}, name: '${product.name.replace(/'/g, "\\'")}', price: ${product.price}, emoji: '${product.emoji || '📿'}', image: '${product.image || ''}', unit: 'u', qty: 1}); event.stopPropagation(); event.preventDefault();" aria-label="Agregar ${product.name} al carrito"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+          <a href="${waLink}" target="_blank" class="btn-outline btn-sm" rel="noopener" title="Consultar por WhatsApp">💬</a>
         </div>
       </div>
     `;
   }).join('');
-
 
   if (window.revealObserver) {
     grid.querySelectorAll('.reveal').forEach(el => {
@@ -192,6 +215,19 @@ document.addEventListener('DOMContentLoaded', async () => {
       renderProducts(getProductsByCategory(category));
     });
   });
+
+  const searchInput = document.getElementById('searchInput');
+  const searchBtn = document.getElementById('searchBtn');
+  if (searchInput && searchBtn) {
+    searchBtn.addEventListener('click', () => {
+      searchProducts(searchInput.value);
+    });
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        searchProducts(searchInput.value);
+      }
+    });
+  }
 });
 
 // Exportar para Node.js (si aplica)

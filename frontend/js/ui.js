@@ -86,45 +86,63 @@ function initContactForm() {
   const form = document.getElementById('contactForm');
   if (!form) return;
 
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
+form.addEventListener('submit', (e) => {
+     e.preventDefault();
 
-    const name = document.getElementById('name').value;
-    const email = document.getElementById('email').value;
-    const message = document.getElementById('message').value;
+     const name = document.getElementById('name').value;
+     const email = document.getElementById('email').value;
+     const message = document.getElementById('message').value;
 
-    if (!name || !email || !message) {
-      showToast('', 'Por favor completa todos los campos', 'error');
-      return;
-    }
+     if (!name || !email || !message) {
+       showToast('', 'Por favor completa todos los campos', 'error');
+       return;
+     }
 
-    const whatsappMessage = `Nuevo mensaje de contacto\n\nNombre: ${name}\nEmail: ${email}\n\nMensaje:\n${message}`;
+     const whatsappMessage = `Nuevo mensaje de contacto\n\nNombre: ${name}\nEmail: ${email}\n\nMensaje:\n${message}`;
 
-    showToast('', 'Mensaje enviado con éxito. Nos pondremos en contacto pronto.', 'success');
-    form.reset();
+     fetch('/api/contact', {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify({ name, email, message })
+     }).catch(() => {});
 
-    window.open(getWhatsAppLink(whatsappMessage), '_blank');
-  });
+     showToast('', 'Mensaje enviado con éxito. Nos pondremos en contacto pronto.', 'success');
+     form.reset();
+
+     window.open(getWhatsAppLink(whatsappMessage), '_blank');
+   });
 }
 
 // Newsletter Form Handler
 function initNewsletterForm() {
-  const form = document.getElementById('newsletterForm');
-  if (!form) return;
+   const form = document.getElementById('newsletterForm');
+   if (!form) return;
 
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const email = form.querySelector('input[type="email"]').value;
+   form.addEventListener('submit', (e) => {
+     e.preventDefault();
+     const email = form.querySelector('input[type="email"]').value;
 
-    if (!email) {
-      showToast('', 'Por favor ingresa tu email', 'error');
-      return;
-    }
+     if (!email) {
+       showToast('', 'Por favor ingresa tu email', 'error');
+       return;
+     }
 
-    showToast('', 'Te has suscrito al newsletter. ¡Gracias!', 'success');
-    form.reset();
-  });
-}
+     fetch('/api/newsletter/subscribe', {
+       method: 'POST',
+       headers: { 'Content-Type': 'application/json' },
+       body: JSON.stringify({ email })
+     }).then(res => {
+       if (res.ok) {
+         showToast('', 'Te has suscrito al newsletter. ¡Gracias!', 'success');
+         form.reset();
+       } else {
+         showToast('', 'Error al suscribirse. Intentá de nuevo.', 'error');
+       }
+     }).catch(() => {
+       showToast('', 'Error de conexión. Intentá nuevamente.', 'error');
+     });
+   });
+ }
 
 // Smooth Scroll for Anchor Links
 function initSmoothScroll() {
@@ -290,4 +308,19 @@ async function loadSiteTexts() {
   }
 }
 
-window.loadSiteTexts = loadSiteTexts;
+async function loadSiteSettings() {
+  try {
+    const res = await safeFetch('/api/site-settings');
+    if (!res) return;
+    const settings = await res.json();
+
+    const instagramLink = document.getElementById('instagramLink');
+    if (instagramLink && settings.instagram_url) {
+      instagramLink.href = settings.instagram_url;
+    }
+  } catch (err) {
+    console.error('Error cargando settings:', err);
+  }
+}
+
+window.loadSiteSettings = loadSiteSettings;

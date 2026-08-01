@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const logger = require('../lib/logger');
 
 const login = (req, res) => {
   try {
@@ -7,6 +8,9 @@ const login = (req, res) => {
       return res.status(400).json({ error: 'Usuario y contraseña requeridos' });
     }
 
+    if (typeof username !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ error: 'Formato de solicitud inválido' });
+    }
     const ADMIN_USER = process.env.ADMIN_USER;
     const ADMIN_PASS = process.env.ADMIN_PASS;
     const EDITOR_USER = process.env.EDITOR_USER;
@@ -19,10 +23,10 @@ const login = (req, res) => {
     let role = null;
     let user = null;
 
-    if (username === ADMIN_USER && password === ADMIN_PASS) {
+    if (username.toLowerCase() === ADMIN_USER.toLowerCase() && password === ADMIN_PASS) {
       role = 'admin';
       user = ADMIN_USER;
-    } else if (EDITOR_USER && username === EDITOR_USER && password === EDITOR_PASS) {
+    } else if (EDITOR_USER && username.toLowerCase() === EDITOR_USER.toLowerCase() && password === EDITOR_PASS) {
       role = 'editor';
       user = EDITOR_USER;
     }
@@ -38,8 +42,8 @@ const login = (req, res) => {
     const token = jwt.sign({ role, user }, JWT_SECRET, { expiresIn: '8h' });
     res.json({ token, user, role });
   } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).json({ error: err.message });
+    logger.error('Login error:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 

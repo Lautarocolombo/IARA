@@ -1,4 +1,5 @@
 const { query } = require('../lib/db');
+const logger = require('../lib/logger');
 
 const getSiteTexts = async (req, res) => {
   try {
@@ -7,8 +8,8 @@ const getSiteTexts = async (req, res) => {
     result.rows.forEach(r => { map[r.key] = r.value; });
     res.json(map);
   } catch (err) {
-    console.error('Error obteniendo textos:', err);
-    res.status(500).json({ error: err.message });
+    logger.error('Error obteniendo textos:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
@@ -19,9 +20,31 @@ const upsertSiteText = async (req, res) => {
     await query('INSERT INTO site_texts (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = CURRENT_TIMESTAMP', [key, value]);
     res.json({ ok: true });
   } catch (err) {
-    console.error('Error guardando texto:', err);
-    res.status(500).json({ error: err.message });
+    logger.error('Error guardando texto:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
-module.exports = { getSiteTexts, upsertSiteText };
+const syncTextsToNeon = async (req, res) => {
+  try {
+    const texts = req.body && typeof req.body === 'object' ? req.body : {};
+    const keys = Object.keys(texts);
+    const results = { saved: 0, errors: 0 };
+
+    for (const key of keys) {
+      try {
+        await query('INSERT INTO site_texts (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = CURRENT_TIMESTAMP', [key, String(texts[key] || '')]);
+        results.saved += 1;
+      } catch (err) {
+        results.errors += 1;
+      }
+    }
+
+    res.json({ ok: true, results });
+  } catch (err) {
+    logger.error('Error sincronizando textos:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+module.exports = { getSiteTexts, upsertSiteText, syncTextsToNeon };

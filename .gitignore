@@ -35,9 +35,10 @@ iara.db
 # Backend local entry point (git uses backend/src/)
 backend/server.js
 
-# Docker (ignorar local, usar render.yaml)
+# Docker
 Dockerfile
 docker-compose.yml
 
 # Vercel
 .vercel
+.env.vercel

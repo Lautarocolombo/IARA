@@ -1,6 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const logger = require('./logger');
 
 const isVercel = process.env.VERCEL === 'true';
 const uploadsDir = isVercel ? '/tmp/uploads/products' : path.join(__dirname, '..', '..', 'uploads', 'products');
@@ -9,7 +10,7 @@ if (!fs.existsSync(uploadsDir)) {
   try {
     fs.mkdirSync(uploadsDir, { recursive: true });
   } catch (err) {
-    console.error('Error creando directorio de uploads:', err.message);
+    logger.error('Error creando directorio de uploads:', err.message);
   }
 }
 

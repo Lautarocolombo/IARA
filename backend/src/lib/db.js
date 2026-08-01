@@ -1,6 +1,7 @@
 const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs');
 const path = require('path');
+const logger = require('./logger');
 
 const connectionString = process.env.DATABASE_URL;
 const isLocal = !connectionString;
@@ -8,7 +9,9 @@ let db = null;
 let pool = null;
 
 if (isLocal) {
-  const dbDir = path.join(__dirname, '..', '..', 'data');
+  const dbDir = process.env.VERCEL
+    ? '/tmp/ag-data'
+    : path.join(__dirname, '..', '..', 'data');
   const dbPath = path.join(dbDir, 'iara.db');
   if (!fs.existsSync(dbDir)) {
     fs.mkdirSync(dbDir, { recursive: true });
@@ -24,7 +27,7 @@ if (isLocal) {
   });
 
   pool.on('error', (err) => {
-    console.error('Pool error:', err.message);
+    logger.error('Pool error:', err.message);
   });
 }
 
@@ -52,7 +55,7 @@ async function query(text, params) {
   const start = Date.now();
   const result = await pool.query(text, params);
   const duration = Date.now() - start;
-  console.debug('Query executed', { text, duration, rows: result.rowCount });
+  logger.debug('Query executed', { text, duration, rows: result.rowCount });
   return result;
 }
 
@@ -110,7 +113,21 @@ async function initDB() {
       comment TEXT DEFAULT '',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
-    console.log('Tablas de base de datos inicializadas (SQLite)');
+    await query(`CREATE TABLE IF NOT EXISTS contacts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL,
+      message TEXT NOT NULL,
+      status TEXT DEFAULT 'new',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS site_settings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      key TEXT UNIQUE NOT NULL,
+      value TEXT DEFAULT '',
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    logger.info('Tablas de base de datos inicializadas (SQLite)');
     return;
   }
 
@@ -120,18 +137,20 @@ async function initDB() {
     `CREATE TABLE IF NOT EXISTS testimonials (id SERIAL PRIMARY KEY, name TEXT NOT NULL, comment TEXT NOT NULL, rating INTEGER DEFAULT 5 CHECK (rating >= 1 AND rating <= 5), image TEXT DEFAULT '', avatar TEXT DEFAULT '', role TEXT DEFAULT '', active BOOLEAN DEFAULT TRUE, featured BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS orders (id SERIAL PRIMARY KEY, items JSONB NOT NULL, total REAL NOT NULL, customer JSONB, status TEXT DEFAULT 'pending', mercadopago_id TEXT, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS subscribers (id SERIAL PRIMARY KEY, email TEXT UNIQUE NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`,
-    `CREATE TABLE IF NOT EXISTS reviews (id SERIAL PRIMARY KEY, product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE, rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5), comment TEXT DEFAULT '', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`
+    `CREATE TABLE IF NOT EXISTS reviews (id SERIAL PRIMARY KEY, product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE, rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5), comment TEXT DEFAULT '', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS contacts (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL, message TEXT NOT NULL, status TEXT DEFAULT 'new', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`,
+    `CREATE TABLE IF NOT EXISTS site_settings (id SERIAL PRIMARY KEY, key TEXT UNIQUE NOT NULL, value TEXT DEFAULT '', updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`
   ];
 
   for (const sql of statements) {
     try {
       await query(sql);
     } catch (err) {
-      console.error('Error ejecutando SQL:', err.message);
+    logger.error('Error ejecutando SQL:', err.message);
     }
   }
 
-  console.log('Tablas de base de datos inicializadas (PostgreSQL)');
+  logger.info('Tablas de base de datos inicializadas (PostgreSQL)');
 }
 
 module.exports = { query, initDB, pool, connectionString: !!connectionString };

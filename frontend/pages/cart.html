@@ -32,7 +32,10 @@
       </ul>
 
       <div class="navbar-actions">
-        <button id="themeToggle" class="theme-toggle" title="Cambiar tema" aria-label="Toggle dark mode">Tema</button>
+        <button id="themeToggle" class="theme-toggle" title="Cambiar tema" aria-label="Alternar modo claro/oscuro" aria-pressed="false">
+          <svg class="theme-icon theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+          <svg class="theme-icon theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
         <a href="cart.html" class="cart-link active">
           <span class="cart-icon" aria-hidden="true">🛒</span>
           <span class="cart-count" id="cartCount">0</span>
@@ -137,10 +140,10 @@
       <div class="footer-section">
         <h4>Información</h4>
         <ul>
-          <li><a href="#">Política de Privacidad</a></li>
-          <li><a href="#">Términos de Servicio</a></li>
-          <li><a href="#">Envíos y Devoluciones</a></li>
-          <li><a href="#">FAQ</a></li>
+          <li><a href="privacy.html">Política de Privacidad</a></li>
+          <li><a href="terms.html">Términos de Servicio</a></li>
+          <li><a href="shipping.html">Envíos y Devoluciones</a></li>
+          <li><a href="faq.html">FAQ</a></li>
         </ul>
       </div>
     </div>
@@ -152,7 +155,6 @@
   <!-- Toast Container -->
   <div id="toastContainer" class="toast-container"></div>
 
-  <script src="../js/config.js"></script>
   <script src="../js/config.js"></script>
   <script src="../js/theme.js"></script>
   <script src="../js/cart.js"></script>
@@ -176,9 +178,10 @@
       const itemsContainer = document.getElementById('cartItems');
       itemsContainer.innerHTML = cartItems.map((item, index) => `
         <div class="cart-item reveal" style="animation-delay: ${index * 0.05}s">
-          <div class="item-image">${item.image ? `<img src="${item.image}" alt="" />` : (item.emoji || '🛍️')}</div>
+          <div class="item-image">${item.image ? `<img src="${item.image}" alt="${item.name}" />` : (item.emoji || '🛍️')}</div>
           <div class="item-details">
             <h4>${item.name}</h4>
+            ${item.description ? `<p class="item-description">${item.description}</p>` : ''}
             <p>${formatARS(item.price)} c/u</p>
           </div>
           <div class="item-price">${formatARS(item.price * item.qty)}</div>
@@ -187,7 +190,9 @@
             <input type="number" value="${item.qty}" onchange="updateCartQty(${item.id}, this.value); updateCartDisplay();">
             <button onclick="updateCartQty(${item.id}, ${item.qty + 1}); updateCartDisplay();">+</button>
           </div>
-          <button class="remove-btn" onclick="removeFromCart(${item.id}); updateCartDisplay(); showToast('', 'Producto eliminado')" title="Eliminar">×</button>
+          <button class="remove-btn" onclick="removeFromCart(${item.id}); updateCartDisplay(); showToast('', 'Producto eliminado')" title="Eliminar producto" aria-label="Eliminar ${item.name} del carrito">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+          </button>
         </div>
       `).join('');
 
@@ -205,7 +210,11 @@
       if (hint) hint.style.display = shipping === 0 ? 'inline' : 'none';
     }
 
-    document.addEventListener('DOMContentLoaded', updateCartDisplay);
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', updateCartDisplay);
+    } else {
+      updateCartDisplay();
+    }
   </script>
 </body>
 </html>

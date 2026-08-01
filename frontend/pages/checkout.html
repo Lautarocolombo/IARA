@@ -23,7 +23,7 @@
         </a>
       </div>
       <div class="navbar-actions">
-        <a href="pages/cart.html" class="cart-link">
+          <a href="cart.html" class="cart-link">
           <span class="cart-icon" aria-hidden="true">🛒</span>
           <span class="cart-count" id="cartCount">0</span>
         </a>
@@ -78,6 +78,24 @@
         </form>
       </div>
 
+      <div class="checkout-card reveal" id="paymentInstructions" style="display:none;">
+        <h2>💳 Pagar con transferencia</h2>
+        <div class="payment-alias-box">
+          <p class="payment-label">Alias de MercadoPago</p>
+          <div class="payment-alias-row">
+            <span class="payment-alias-value" id="mpAliasValue">Cargando...</span>
+            <button class="btn btn-secondary btn-sm" id="copyAliasBtn" onclick="copyMpAlias()">📋 Copiar</button>
+          </div>
+        </div>
+        <div class="payment-total-box">
+          <span>Total a pagar</span>
+          <span class="payment-total-amount" id="paymentTotalAmount">ARS 0,00</span>
+        </div>
+        <p class="payment-note">Transferí el total a este alias de MercadoPago y envianos el comprobante por WhatsApp para confirmar tu pedido.</p>
+        <a id="whatsappComprobanteBtn" href="#" target="_blank" class="btn btn-primary btn-full">Enviar comprobante por WhatsApp</a>
+        <a href="cart.html" class="btn btn-secondary btn-full" style="margin-top:0.5rem;">Volver al carrito</a>
+      </div>
+
       <div class="checkout-card reveal">
         <h2>🧾 Resumen</h2>
         <div id="summaryItems"></div>
@@ -123,6 +141,41 @@
       updateCartBadge();
     }
 
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', updateSummary);
+    } else {
+      updateSummary();
+    }
+
+    async function loadMpAlias() {
+      try {
+        const res = await fetch('/api/site-config');
+        const data = await res.json();
+        const alias = data.payment?.mpAlias || '';
+        document.getElementById('mpAliasValue').textContent = alias || 'No configurado';
+        return alias;
+      } catch (err) {
+        document.getElementById('mpAliasValue').textContent = 'Error al cargar';
+        return '';
+      }
+    }
+
+    function copyMpAlias() {
+      const alias = document.getElementById('mpAliasValue').textContent;
+      if (!alias || alias === 'No configurado' || alias === 'Error al cargar') {
+        showToast('', 'Alias no disponible', 'error');
+        return;
+      }
+      navigator.clipboard.writeText(alias).then(() => {
+        const btn = document.getElementById('copyAliasBtn');
+        btn.textContent = '✓ Copiado';
+        setTimeout(() => { btn.textContent = '📋 Copiar'; }, 2000);
+        showToast('', 'Alias copiado', 'success');
+      }).catch(() => {
+        showToast('', 'No se pudo copiar', 'error');
+      });
+    }
+
     document.getElementById('shippingForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const items = getCart();
@@ -146,7 +199,6 @@
       const shippingCost = subtotal > CONFIG.CART.SHIPPING_THRESHOLD ? 0 : CONFIG.CART.SHIPPING_COST;
       const total = subtotal + shippingCost;
 
-      // Guardar orden (pending hasta que MP confirme)
       try {
         const orderRes = await fetch('/api/orders', {
           method: 'POST',
@@ -163,46 +215,29 @@
           })
         });
         const orderData = await orderRes.json();
-        if (!orderRes.ok) throw new Error(orderData.error || 'Error guardando orden');
+        if (!orderRes.ok) throw new Error(orderData.error || 'Error al guardar el pedido');
 
-        const payer = { name: shipping.name, email: shipping.email || 'cliente@artesaniagualeguay.com' };
-        const mpItems = items.map(i => ({
-          title: i.name,
-          unit_price: i.price,
-          quantity: i.qty,
-          currency_id: 'ARS',
-          description: i.description || 'Producto de Artesanía Gualeguay'
-        }));
+        const alias = await loadMpAlias();
+        document.getElementById('paymentTotalAmount').textContent = formatARS(total);
+        const waNumber = (CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, '');
+        const orderId = orderData.id || 'NUEVO';
+        const itemsList = items.map(i => {
+          const line = `• ${i.name} x${i.qty} - ${formatARS(i.price * i.qty)}`;
+          if (i.image) return `${line}\n  Imagen: ${i.image}`;
+          return line;
+        }).join('\n');
+        const waMsg = encodeURIComponent(`Hola! Quiero confirmar el pago del pedido AG-${orderId} por un total de ${formatARS(total)}.\n\nProductos:\n${itemsList}\n\nYa realicé la transferencia al alias de MercadoPago. Te envío el comprobante por este medio.`);
+        document.getElementById('whatsappComprobanteBtn').href = `https://wa.me/${waNumber}?text=${waMsg}`;
 
-        showToast('⏳', 'Procesando pago...');
-        const prefRes = await fetch('/api/create-preference', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            items: mpItems,
-            payer,
-            external_reference: `AG-${orderData.id}`,
-            back_urls: {
-              success: `${window.location.origin}/pages/success.html`,
-              failure: `${window.location.origin}/pages/cart.html`,
-              pending: `${window.location.origin}/pages/cart.html`
-            },
-            auto_return: 'approved',
-            shipment: { free_shipping: shippingCost === 0 }
-          })
-        });
-        const prefData = await prefRes.json();
-        if (prefData && prefData.init_point) {
-          window.location.href = prefData.init_point;
-        } else {
-          showToast('', 'Error al generar el pago', 'error');
-        }
+        document.getElementById('checkoutContent').style.display = 'none';
+        document.getElementById('emptyCart').style.display = 'none';
+        document.getElementById('paymentInstructions').style.display = 'block';
       } catch (err) {
-        showToast('', err.message, 'error');
+        showToast('', 'Error al procesar tu compra. Intentá nuevamente o contactanos.', 'error');
+        console.error('Checkout error:', err);
       }
     });
 
-    document.addEventListener('DOMContentLoaded', updateSummary);
     window.addEventListener('storage', updateSummary);
   </script>
 </body>

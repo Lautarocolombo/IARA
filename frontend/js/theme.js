@@ -9,7 +9,8 @@ function initTheme() {
 function updateThemeIcon(theme) {
   const toggle = document.getElementById('themeToggle');
   if (toggle) {
-    toggle.setAttribute('aria-label', theme === 'dark' ? 'Modo claro' : 'Modo oscuro');
+    toggle.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+    toggle.setAttribute('aria-label', theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro');
   }
 }
 

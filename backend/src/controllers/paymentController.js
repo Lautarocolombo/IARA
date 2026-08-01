@@ -1,4 +1,5 @@
 const mercadopago = require('mercadopago');
+const logger = require('../lib/logger');
 
 async function createPreference(req, res) {
   try {
@@ -26,8 +27,8 @@ async function createPreference(req, res) {
       sandbox_init_point: result.body.sandbox_init_point
     });
   } catch (err) {
-    console.error('Error creando preferencia MP:', err);
-    res.status(500).json({ error: err.message || 'Error al crear la preferencia de pago' });
+    logger.error('Error creando preferencia MP:', err);
+    res.status(500).json({ error: 'Error al crear la preferencia de pago' });
   }
 }
 
