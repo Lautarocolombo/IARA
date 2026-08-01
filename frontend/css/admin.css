@@ -216,6 +216,25 @@ body {
   background: #fecaca;
 }
 
+.btn-neon {
+  background: #1f2937;
+  color: #fff;
+  border: 1px solid #ec4899;
+  box-shadow: 0 0 0 0 rgba(236, 72, 153, 0);
+  transition: all 0.2s ease;
+}
+
+.btn-neon:hover:not(:disabled) {
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.25);
+  background: #111827;
+}
+
+.btn-neon:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 .btn-sm {
   padding: 0.4rem 0.75rem;
   font-size: 0.8rem;
@@ -260,6 +279,54 @@ body {
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
+}
+
+.card-controls--filters {
+  gap: 0.75rem;
+}
+
+.filter-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.filter-icon {
+  position: absolute;
+  left: 0.75rem;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.filter-input .card-filter {
+  padding-left: 2.25rem;
+  width: 220px;
+}
+
+.card-filter {
+  height: 38px;
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  background: #fff;
+  color: var(--text-dark);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-filter:focus {
+  outline: none;
+  border-color: #f4a7c0;
+  box-shadow: 0 0 0 3px rgba(244, 167, 192, 0.15);
+}
+
+select.card-filter {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2rem;
 }
 
 .sync-status {
