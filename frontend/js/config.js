@@ -12,8 +12,8 @@ const CONFIG = {
   CONTACT: {
     WHATSAPP: '+5493444634444',
     PHONE: '+54 (3444) 634-4444',
-    EMAIL: 'contacto@artesaniagualeguay.com',
-    ADDRESS: '476 San Antonio Nte., Gualeguay, Entre Ríos, Argentina',
+    EMAIL: 'chicafittargentina@gmail.com',
+    ADDRESS: 'San Antonio Norte 473, Gualeguay, Entre Ríos, Argentina',
     COORDINATES: { lat: -33.1400009, lng: -59.3136349 }
   },
 
