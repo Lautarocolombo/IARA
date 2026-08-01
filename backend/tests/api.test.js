@@ -6,7 +6,6 @@ process.env.ADMIN_USER = process.env.ADMIN_USER || 'testadmin';
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret';
 process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://test:test@localhost:5432/test';
 process.env.ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS || 'http://localhost:3000';
-process.env.MP_ACCESS_TOKEN = process.env.MP_ACCESS_TOKEN || 'TEST-ACCESS-TOKEN';
 process.env.ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH || '$2b$10$testhashtesthashtesthaste';
 
 const app = require('../src/server');
