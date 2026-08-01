@@ -56,7 +56,7 @@ const CONFIG = {
 
   // API
   API: {
-    BASE: 'https://iara-uxcu.onrender.com'
+    BASE: ''
   },
 
   // URLs externas

@@ -25,9 +25,44 @@ dotenv.config();
 
 const requiredEnvVars = ['JWT_SECRET', 'ADMIN_USER', 'ADMIN_PASS_HASH'];
 const missingEnvVars = requiredEnvVars.filter(key => !process.env[key]);
-if (missingEnvVars.length > 0) {
-  console.error('Faltan variables de entorno requeridas:', missingEnvVars.join(', '));
-  console.error('Agregalas en el dashboard de Render');
+const isTest = process.env.NODE_ENV === 'test';
+const productionEnvVars = isTest
+  ? {}
+  : {
+      DATABASE_URL: 'connection string de PostgreSQL (ej: postgresql://user:pass@host:5432/db?sslmode=require)',
+      ALLOWED_ORIGINS: 'orígenes permitidos separados por coma (ej: https://tudominio.com,http://localhost:3000)',
+      MP_ACCESS_TOKEN: 'token de acceso de MercadoPago para procesar pagos',
+    };
+const missingProductionVars = Object.keys(productionEnvVars).filter(key => !process.env[key]);
+if (missingEnvVars.length > 0 || missingProductionVars.length > 0) {
+  console.error('='.repeat(60));
+  console.error('FALTAN VARIABLES DE ENTORNO REQUERIDAS');
+  console.error('='.repeat(60));
+  if (missingEnvVars.length > 0) {
+    console.error('\nVariables de inicio (validadas al arrancar):');
+    missingEnvVars.forEach(key => {
+      if (key === 'ADMIN_PASS_HASH') {
+        console.error(`  ${key} → generar con: cd backend && node -e "const bcrypt = require('bcrypt'); bcrypt.hash('tu-contraseña', 10).then(h => console.log(h))"`);
+      } else if (key === 'JWT_SECRET') {
+        console.error(`  ${key} → generar con: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"`);
+      } else if (key === 'ADMIN_USER') {
+        console.error(`  ${key} → nombre de usuario admin, ej: Iara`);
+      } else {
+        console.error(`  ${key} → ${productionEnvVars[key] || 'valor requerido'}`);
+      }
+    });
+  }
+  if (missingProductionVars.length > 0) {
+    console.error('\nVariables de producción necesarias para el funcionamiento:');
+    missingProductionVars.forEach(key => {
+      console.error(`  ${key} → ${productionEnvVars[key]}`);
+    });
+  }
+  console.error('\nCómo cargarlas en Render:');
+  console.error('  1. https://dashboard.render.com → tu servicio → Settings');
+  console.error('  2. Sección "Environment" → "Add Environment Variable"');
+  console.error('  3. Agregá cada variable con su nombre y valor');
+  console.error('='.repeat(60));
   process.exit(1);
 }
 
@@ -58,10 +93,27 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || '').split(',').filter(Boolean);
+
+if (!allowedOrigins.length && process.env.NODE_ENV === 'production') {
+  logger.warn('ALLOWED_ORIGINS no está configurado en producción. El CORS puede fallar para orígenes no permitidos.');
+}
+
 const corsOptions = allowedOrigins.length
-  ? { origin: allowedOrigins, credentials: true, methods: ['GET','POST','PUT','DELETE','OPTIONS'], allowedHeaders: ['Content-Type','Authorization'] }
-  : { origin: '*', credentials: true };
+  ? {
+      origin: allowedOrigins,
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With'],
+    }
+  : {
+      origin: true,
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With'],
+    };
+
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,

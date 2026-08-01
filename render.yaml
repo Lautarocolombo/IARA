@@ -14,14 +14,10 @@ services:
         generateValue: true
       - key: ADMIN_USER
         value: Iara
-      - key: ADMIN_PASS_HASH
-        generateValue: true
+      # ADMIN_PASS_HASH and DATABASE_URL must be set manually in the Render dashboard.
+      # See comments in backend/src/server.js for the generation command.
       - key: ALLOWED_ORIGINS
         value: https://iara-eight.vercel.app,https://iara-ivory.vercel.app,https://iara-alpha.vercel.app,https://artesaniagualeguay.com,http://localhost:3000
-      - key: DATABASE_URL
-        value: from-dashboard
-      - key: MP_ACCESS_TOKEN
-        value: from-dashboard
     autoDeploy: true
     branch: main
-    repo: https://github.com/bonggiocrack-stack/IARA.git
+    repo: https://github.com/Lautarocolombo/IARA.git
