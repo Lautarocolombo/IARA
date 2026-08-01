@@ -5,6 +5,6 @@
   "framework": "other",
   "outputDirectory": "frontend",
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://iara-uxcu.onrender.com/api/$1" }
+    { "source": "/api/(.*)", "destination": "http://iara-uxcu.onrender.com/api/$1" }
   ]
 }
