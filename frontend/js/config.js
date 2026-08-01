@@ -66,10 +66,8 @@ const CONFIG = {
     TWITTER: '#'
   },
 
-  // MercadoPago
-  PAYMENT: {
-    PUBLIC_KEY: 'TEST-XXXXXXXXXXXXXX'
-  },
+  // La configuración de pago (alias, WhatsApp, instrucciones) se obtiene
+  // dinámicamente desde /api/site-config en el backend. No se usa MercadoPago.
 
   // Horarios
   HOURS: {
