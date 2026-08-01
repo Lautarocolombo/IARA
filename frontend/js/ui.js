@@ -249,12 +249,14 @@ window.addEventListener('unhandledrejection', (event) => {
   }
 });
 
-// Si hay error 404 en fetch, redirigir a página 404
+// Si hay error 404 en fetch, NO redirigir a página 404 del sitio
+// (un endpoint API que no existe no debe romper la navegación del frontend)
 async function safeFetch(url, opts = {}) {
   try {
     const res = await fetch(url, opts);
     if (res.status === 404) {
-      window.location.href = 'pages/404.html';
+      console.warn('Endpoint no encontrado:', url);
+      showToast('', 'Recurso no disponible en este momento.', 'error');
       return null;
     }
     return res;
