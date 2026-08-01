@@ -4,7 +4,6 @@ process.env.NODE_ENV = process.env.NODE_ENV || 'test';
 process.env.ADMIN_USER = process.env.ADMIN_USER || 'testadmin';
 process.env.ADMIN_PASS = process.env.ADMIN_PASS || 'testpassword123';
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret';
-process.env.DATABASE_URL = process.env.DATABASE_URL || 'postgresql://test:test@localhost:5432/test';
 process.env.ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS || 'http://localhost:3000';
 
 const app = require('../src/server');
