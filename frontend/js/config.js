@@ -68,9 +68,9 @@ const CONFIG = {
 
   // Horarios
   HOURS: {
-    WEEKDAY: { open: '09:00', close: '18:00' },
-    SATURDAY: { open: '10:00', close: '14:00' },
-    CLOSED: ['domingo']
+    WEEKDAY: { open: '00:00', close: '23:59' },
+    SATURDAY: { open: '00:00', close: '23:59' },
+    CLOSED: []
   }
 };
 
