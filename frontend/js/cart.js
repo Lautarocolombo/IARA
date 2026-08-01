@@ -1,6 +1,12 @@
 /* ==================== CART MANAGEMENT ==================== */
 
-let cart = JSON.parse(localStorage.getItem(CONFIG.CART.STORAGE_KEY) || '[]');
+let cart = [];
+try {
+  cart = JSON.parse(localStorage.getItem(CONFIG.CART.STORAGE_KEY) || '[]');
+} catch (e) {
+  console.error('Error leyendo carrito desde localStorage:', e);
+  cart = [];
+}
 
 function saveCart() {
   localStorage.setItem(CONFIG.CART.STORAGE_KEY, JSON.stringify(cart));
