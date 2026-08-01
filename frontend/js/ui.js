@@ -100,16 +100,22 @@ form.addEventListener('submit', (e) => {
 
      const whatsappMessage = `Nuevo mensaje de contacto\n\nNombre: ${name}\nEmail: ${email}\n\nMensaje:\n${message}`;
 
-     fetch('/api/contact', {
-       method: 'POST',
-       headers: { 'Content-Type': 'application/json' },
-       body: JSON.stringify({ name, email, message })
-     }).catch(() => {});
+fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, message })
+      }).then(res => {
+        if (!res.ok) {
+          showToast('', 'Error al enviar el mensaje. Intentá de nuevo.', 'error');
+          return;
+        }
+        showToast('', 'Mensaje enviado con éxito. Nos pondremos en contacto pronto.', 'success');
+        form.reset();
+      }).catch(() => {
+        showToast('', 'Error de conexión. Intentá nuevamente.', 'error');
+      });
 
-     showToast('', 'Mensaje enviado con éxito. Nos pondremos en contacto pronto.', 'success');
-     form.reset();
-
-     window.open(getWhatsAppLink(whatsappMessage), '_blank');
+      window.open(getWhatsAppLink(whatsappMessage), '_blank');
    });
 }
 
@@ -127,11 +133,11 @@ function initNewsletterForm() {
        return;
      }
 
-     fetch('/api/newsletter/subscribe', {
-       method: 'POST',
-       headers: { 'Content-Type': 'application/json' },
-       body: JSON.stringify({ email })
-     }).then(res => {
+fetch('/api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      }).then(res => {
        if (res.ok) {
          showToast('', 'Te has suscrito al newsletter. ¡Gracias!', 'success');
          form.reset();

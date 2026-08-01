@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contacto | Artesanía Gualeguay</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/variables.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/animations.css" />
+</head>
+<body>
+  <a href="#home" class="skip-link">Saltar al contenido principal</a>
+  <nav class="navbar" id="navbar">
+    <div class="navbar-container">
+      <div class="navbar-brand">
+        <a href="../index.html" class="logo">
+          <span class="logo-dot" aria-hidden="true"></span>
+          <span class="logo-text">Artesanía Gualeguay</span>
+        </a>
+      </div>
+      <button class="navbar-toggle" id="navbarToggle" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+      <ul class="navbar-menu" id="navbarMenu">
+        <li><a href="../index.html#home" class="nav-link">Inicio</a></li>
+        <li><a href="../index.html#catalog" class="nav-link">Catálogo</a></li>
+        <li><a href="../index.html#about" class="nav-link">Sobre Nosotros</a></li>
+        <li><a href="../index.html#contact" class="nav-link">Contacto</a></li>
+      </ul>
+      <div class="navbar-actions">
+        <a href="../index.html" class="btn btn-secondary btn-sm">← Volver</a>
+      </div>
+    </div>
+  </nav>
+  <main>
+    <section class="contact" id="contact" style="padding-top:120px;">
+      <div class="section-header">
+        <span class="section-tag reveal">Contacto</span>
+        <h2 class="section-title reveal">¿Preguntas?</h2>
+        <p class="section-subtitle reveal">Nos encantaría saber de ti</p>
+      </div>
+      <div class="contact-container">
+        <form class="contact-form" id="contactForm">
+          <div class="form-group">
+            <label for="name">Nombre *</label>
+            <input type="text" id="name" name="name" required placeholder="Tu nombre completo" />
+          </div>
+          <div class="form-group">
+            <label for="email">Email *</label>
+            <input type="email" id="email" name="email" required placeholder="tu@email.com" />
+          </div>
+          <div class="form-group">
+            <label for="message">Mensaje *</label>
+            <textarea id="message" name="message" required placeholder="¿En qué podemos ayudarte?" rows="5"></textarea>
+          </div>
+          <button type="submit" class="btn-primary">Enviar Mensaje</button>
+        </form>
+        <div class="contact-info reveal">
+          <div class="info-item">
+            <div class="info-icon" aria-hidden="true">📞</div>
+            <div>
+              <h4>Teléfono</h4>
+              <a href="tel:+5493444634444">+54 (3444) 634-4444</a>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-icon" aria-hidden="true">📧</div>
+            <div>
+              <h4>Email</h4>
+              <a href="mailto:chicafittargentina@gmail.com">chicafittargentina@gmail.com</a>
+            </div>
+          </div>
+          <div class="info-item">
+            <div class="info-icon" aria-hidden="true">📍</div>
+            <div>
+              <h4>Ubicación</h4>
+              <p>San Antonio Norte 473<br>Gualeguay, Entre Ríos, Argentina</p>
+            </div>
+          </div>
+          <div class="map-wrapper reveal">
+            <iframe src="https://www.google.com/maps?q=San+Antonio+Norte+473,+Gualeguay,+Entre+R%C3%ADos,+Argentina&amp;output=embed&amp;z=15" width="100%" height="250" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Mapa del local - Artesanía Gualeguay" style="width:100%;height:250px;border:0;display:block;"></iframe>
+          </div>
+          <div class="info-item">
+            <div class="info-icon" aria-hidden="true">🕐</div>
+            <div>
+              <h4>Horario</h4>
+              <p>Abierto full time<br>Todos los días</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="footer">
+    <div class="footer-bottom">
+      <p>&copy; 2026 Artesanía Gualeguay. Todos los derechos reservados.</p>
+    </div>
+  </footer>
+  <div id="toastContainer" class="toast-container"></div>
+  <script src="../js/config.js"></script>
+  <script src="../js/theme.js"></script>
+  <script src="../js/ui.js"></script>
+</body>
+</html>

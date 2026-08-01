@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "buildCommand": "echo 'Build complete'",
+  "installCommand": "npm ci",
+  "framework": "other",
+  "outputDirectory": "frontend",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://iara-yrdx.onrender.com/api/$1" }
+  ]
+}

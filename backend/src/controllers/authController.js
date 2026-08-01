@@ -1,7 +1,8 @@
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const logger = require('../lib/logger');
 
-const login = (req, res) => {
+const login = async (req, res) => {
   try {
     const { username, password } = req.body || {};
     if (!username || !password) {
@@ -12,23 +13,39 @@ const login = (req, res) => {
       return res.status(400).json({ error: 'Formato de solicitud inválido' });
     }
     const ADMIN_USER = process.env.ADMIN_USER;
-    const ADMIN_PASS = process.env.ADMIN_PASS;
+    const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH;
     const EDITOR_USER = process.env.EDITOR_USER;
-    const EDITOR_PASS = process.env.EDITOR_PASS;
+    const EDITOR_PASS_HASH = process.env.EDITOR_PASS_HASH;
 
-    if (!ADMIN_USER || !ADMIN_PASS) {
+    if (!ADMIN_USER || !ADMIN_PASS_HASH) {
       return res.status(500).json({ error: 'Credenciales de administrador no configuradas en el servidor' });
     }
 
     let role = null;
     let user = null;
 
-    if (username.toLowerCase() === ADMIN_USER.toLowerCase() && password === ADMIN_PASS) {
-      role = 'admin';
-      user = ADMIN_USER;
-    } else if (EDITOR_USER && username.toLowerCase() === EDITOR_USER.toLowerCase() && password === EDITOR_PASS) {
-      role = 'editor';
-      user = EDITOR_USER;
+    if (username.toLowerCase() === ADMIN_USER.toLowerCase()) {
+      try {
+        const match = await bcrypt.compare(password, ADMIN_PASS_HASH);
+        if (match) {
+          role = 'admin';
+          user = ADMIN_USER;
+        }
+      } catch {
+        return res.status(401).json({ error: 'Credenciales inválidas' });
+      }
+    }
+
+    if (!role && EDITOR_USER && username.toLowerCase() === EDITOR_USER.toLowerCase()) {
+      try {
+        const match = await bcrypt.compare(password, EDITOR_PASS_HASH);
+        if (match) {
+          role = 'editor';
+          user = EDITOR_USER;
+        }
+      } catch {
+        return res.status(401).json({ error: 'Credenciales inválidas' });
+      }
     }
 
     if (!role) {
