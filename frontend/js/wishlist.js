@@ -35,10 +35,16 @@ function removeFromWishlist(productId) {
 
 function updateWishlistBadge() {
   const badge = document.getElementById('wishlistCount');
+  const toggle = document.getElementById('wishlistToggle');
   if (badge) {
     const count = getWishlist().length;
     badge.textContent = count;
     badge.classList.toggle('show', count > 0);
+  }
+  if (toggle) {
+    const count = getWishlist().length;
+    toggle.classList.toggle('active', count > 0);
+    toggle.setAttribute('aria-pressed', count > 0 ? 'true' : 'false');
   }
 }
 

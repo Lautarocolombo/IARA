@@ -1,0 +1,363 @@
+/* ==================== PILL BUTTONS SYSTEM ==================== */
+
+/* ---------- Base ---------- */
+.pill-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1.5px solid var(--rose-light, #f5c6d4);
+  border-radius: 999px;
+  color: var(--text-dark, #3a1f28);
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  text-decoration: none;
+}
+
+[data-theme="dark"] .pill-btn {
+  background: var(--blush, #2d1f24);
+  border-color: #3a2028;
+  color: var(--text-mid, #d8c4cc);
+}
+
+.pill-btn:hover {
+  background: var(--blush, #fff0f4);
+  transform: scale(1.05);
+  border-color: var(--rose-mid, #d47090);
+}
+
+[data-theme="dark"] .pill-btn:hover {
+  background: #3a2028;
+  border-color: var(--rose-mid, #d47090);
+}
+
+.pill-btn:active {
+  transform: scale(0.98);
+}
+
+.pill-btn:focus-visible {
+  box-shadow: 0 0 0 3px rgba(212, 112, 144, 0.25);
+  border-color: var(--rose-mid, #d47090);
+}
+
+/* ---------- Sizes ---------- */
+.pill-btn--sm {
+  width: 40px;
+  height: 40px;
+  font-size: 18px;
+}
+
+.pill-btn--md {
+  width: 46px;
+  height: 46px;
+  font-size: 20px;
+}
+
+/* ---------- Icon wrapper ---------- */
+.pill-btn__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 55%;
+  height: 55%;
+  pointer-events: none;
+}
+
+.pill-btn__icon svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ==================== THEME TOGGLE (oval slider) ==================== */
+.pill-btn--theme {
+  width: 78px;
+  height: 40px;
+  padding: 0;
+  gap: 0;
+  overflow: hidden;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  border-color: var(--rose-mid, #d47090);
+}
+
+[data-theme="dark"] .pill-btn--theme {
+  background: var(--blush, #2d1f24);
+}
+
+.pill-btn--theme:hover {
+  background: var(--blush, #fff0f4);
+  border-color: var(--rose-dark, #c47d91);
+}
+
+[data-theme="dark"] .pill-btn--theme:hover {
+  background: #3a2028;
+}
+
+.pill-btn__theme-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.pill-btn__theme-slider {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--rose-light, #f5c6d4);
+  border: 1.5px solid var(--rose-mid, #d47090);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(212, 112, 144, 0.15);
+}
+
+[data-theme="dark"] .pill-btn__theme-slider {
+  transform: translateX(36px);
+  background: var(--rose-mid, #d47090);
+  border-color: var(--rose-dark, #c47d91);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.pill-btn__theme-icon {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+  z-index: 3;
+  pointer-events: none;
+  transition: color 0.3s ease;
+}
+
+.pill-btn__theme-icon--sun { color: var(--rose-dark, #c47d91); }
+.pill-btn__theme-icon--moon { color: var(--text-muted, #9a7a88); }
+
+[data-theme="dark"] .pill-btn__theme-icon--sun { color: var(--text-muted, #9a7a88); }
+[data-theme="dark"] .pill-btn__theme-icon--moon { color: #fff; }
+
+/* ==================== WISHLIST (vibrant heart) ==================== */
+.pill-btn--wishlist {
+  border-color: var(--rose-light, #f5c6d4);
+}
+
+.pill-btn--wishlist .pill-btn__icon {
+  color: var(--text-mid, #9a7a88);
+  transition: color 0.2s ease;
+}
+
+.pill-btn--wishlist:hover .pill-btn__icon {
+  color: #e11d48;
+}
+
+.pill-btn--wishlist.active {
+  border-color: #f43f5e;
+  background: #fff1f2;
+}
+
+[data-theme="dark"] .pill-btn--wishlist.active {
+  background: #4a1525;
+  border-color: #f43f5e;
+}
+
+.pill-btn--wishlist.active .pill-btn__icon {
+  color: #e11d48;
+}
+
+.pill-btn--wishlist.active:hover {
+  background: #ffe4e6;
+  border-color: #be123c;
+}
+
+[data-theme="dark"] .pill-btn--wishlist.active:hover {
+  background: #5c1a2e;
+}
+
+/* Heart fill animation */
+.pill-btn__heart-fill {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* ==================== MASCOT / BRAND ==================== */
+.pill-btn--mascot {
+  border-color: var(--rose-light, #f5c6d4);
+}
+
+.pill-btn--mascot .pill-btn__icon {
+  color: var(--text-muted, #9a7a88);
+  font-size: 22px;
+  transition: color 0.2s ease;
+}
+
+.pill-btn--mascot:hover .pill-btn__icon {
+  color: var(--text-dark, #3a1f28);
+}
+
+[data-theme="dark"] .pill-btn--mascot:hover .pill-btn__icon {
+  color: var(--text-dark, #f4e6ec);
+}
+
+/* ==================== CART ==================== */
+.pill-btn--cart {
+  border-color: var(--rose-light, #f5c6d4);
+}
+
+.pill-btn--cart .pill-btn__icon {
+  color: var(--text-mid, #9a7a88);
+  transition: color 0.2s ease;
+}
+
+.pill-btn--cart:hover .pill-btn__icon {
+  color: var(--rose-dark, #c47d91);
+}
+
+/* Badge */
+.pill-btn__badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--rose-dark, #d47090);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  font-family: 'DM Sans', sans-serif;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #fff;
+  line-height: 1;
+  z-index: 5;
+  transition: transform 0.2s ease;
+}
+
+[data-theme="dark"] .pill-btn__badge {
+  border-color: var(--blush, #2d1f24);
+}
+
+.pill-btn__badge.show {
+  display: flex;
+  animation: ag-pop 0.25s ease;
+}
+
+/* ==================== NAVBAR ACTIONS LAYOUT ==================== */
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+@media (max-width: 768px) {
+  .navbar-actions {
+    gap: 10px;
+  }
+
+  .pill-btn--theme {
+    width: 64px;
+    height: 36px;
+  }
+
+  .pill-btn__theme-slider {
+    width: 28px;
+    height: 28px;
+    top: 3px;
+    left: 3px;
+  }
+
+  [data-theme="dark"] .pill-btn__theme-slider {
+    transform: translateX(28px);
+  }
+
+  .pill-btn__theme-track {
+    padding: 0 8px;
+  }
+
+  .pill-btn__theme-icon {
+    font-size: 12px;
+  }
+
+  .pill-btn--sm,
+  .pill-btn--md {
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
+  }
+
+  .pill-btn__badge {
+    min-width: 15px;
+    height: 15px;
+    font-size: 0.6rem;
+    top: -4px;
+    right: -4px;
+  }
+}
+
+@media (max-width: 480px) {
+  .navbar-actions {
+    gap: 8px;
+  }
+
+  .pill-btn--theme {
+    width: 56px;
+    height: 32px;
+  }
+
+  .pill-btn__theme-slider {
+    width: 24px;
+    height: 24px;
+    top: 3px;
+    left: 3px;
+  }
+
+  [data-theme="dark"] .pill-btn__theme-slider {
+    transform: translateX(22px);
+  }
+
+  .pill-btn__theme-track {
+    padding: 0 7px;
+  }
+
+  .pill-btn__theme-icon {
+    font-size: 11px;
+  }
+
+  .pill-btn--sm,
+  .pill-btn--md {
+    width: 34px;
+    height: 34px;
+    font-size: 15px;
+  }
+}
+
+/* ==================== ANIMATIONS ==================== */
+@keyframes ag-pop {
+  0% { transform: scale(0.5); opacity: 0; }
+  70% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
