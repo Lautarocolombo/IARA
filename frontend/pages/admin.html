@@ -204,46 +204,60 @@
         </div>
       </div>
 
-       <div class="card" id="paymentSection" style="display:none;">
-          <div class="card-header">
-            <h3 class="card-header-title">Configuración de Pago</h3>
-            <p class="card-header-subtitle">Alias de MercadoPago y datos de pago</p>
-          </div>
-          <div class="card-body">
-            <div class="form-group">
-              <label>Alias de MercadoPago</label>
-              <input type="text" id="paymentMpAlias" placeholder="Ej: artesania.gualeguay.mp" />
-              <p class="form-hint">Este alias se mostrará a los clientes en el checkout para que realicen la transferencia.</p>
-            </div>
-            <div class="form-group">
-              <label>Nombre del titular</label>
-              <input type="text" id="paymentHolderName" placeholder="Ej: María García" />
-              <p class="form-hint">Nombre de la cuenta bancaria para que el cliente confirme que coincide antes de transferir.</p>
-            </div>
-            <div class="form-group">
-              <label>WhatsApp para comprobantes</label>
-              <input type="text" id="paymentWhatsapp" placeholder="Ej: 3444634444" />
-              <p class="form-hint">Número sin espacios ni signos +. Se usará para armar el link de WhatsApp.</p>
-            </div>
-            <div class="form-group">
-              <label>Mensaje para el cliente</label>
-              <textarea id="paymentMessage" rows="3" placeholder="Ej: Transferí el total exacto y enviá el comprobante por WhatsApp para confirmar tu pedido."></textarea>
-            </div>
-            <div class="form-group">
-              <label>Cobro por alias activo</label>
-              <div class="toggle-row">
-                <label class="toggle">
-                  <input type="checkbox" id="paymentActive" checked />
-                  <span class="toggle-slider"></span>
-                </label>
-                <span class="toggle-label" id="paymentToggleLabel">Activo</span>
-              </div>
-              <p class="form-hint">Desactivá esta opción para pausar temporalmente el cobro por alias sin borrar la configuración.</p>
-            </div>
-            <button class="btn btn-primary" onclick="savePaymentConfig()">Guardar cambios</button>
-            <span id="paymentStatus" style="margin-left: 0.5rem; font-size: 0.85rem;"></span>
-          </div>
-        </div>
+        <div class="card" id="paymentSection" style="display:none;">
+           <div class="card-header">
+             <h3 class="card-header-title">Configuración de Pago</h3>
+             <p class="card-header-subtitle">Alias de MercadoPago y datos de pago</p>
+           </div>
+           <div class="card-body">
+             <div class="info-note">
+               <div class="info-note-icon">ℹ️</div>
+               <div class="info-note-content">
+                 <strong>El alias se configura desde acá:</strong>
+                 <ol style="margin: 0.5rem 0 0 1rem; padding-left: 1rem;">
+                   <li>Completá "Alias de MercadoPago" con el alias real (ej: artesania.gualeguay.mp)</li>
+                   <li>Completá los demás datos: nombre del titular, WhatsApp para comprobantes y mensaje</li>
+                   <li>Activá el cobro con el toggle y presioná "Guardar cambios"</li>
+                 </ol>
+                 <small style="display: block; margin-top: 0.5rem; opacity: 0.8;">Estos datos van a aparecer automáticamente en la pantalla de pago del checkout del sitio.</small>
+               </div>
+             </div>
+
+             <div class="form-group" style="margin-top: 1rem;">
+               <label>Alias de MercadoPago</label>
+               <input type="text" id="paymentMpAlias" placeholder="Ej: artesania.gualeguay.mp" />
+               <p class="form-hint">Este alias se mostrará a los clientes en el checkout para que realicen la transferencia.</p>
+             </div>
+             <div class="form-group">
+               <label>Nombre del titular de la cuenta</label>
+               <input type="text" id="paymentHolderName" placeholder="Ej: María González" />
+               <p class="form-hint">Nombre de la cuenta bancaria para que el cliente confirme que coincide antes de transferir.</p>
+             </div>
+             <div class="form-group">
+               <label>WhatsApp para comprobantes</label>
+               <input type="text" id="paymentWhatsapp" placeholder="Ej: 3444634444" />
+               <p class="form-hint">Número sin espacios ni signos +. Se usará para armar el link de WhatsApp.</p>
+             </div>
+             <div class="form-group">
+               <label>Mensaje para el cliente</label>
+               <textarea id="paymentMessage" rows="3" placeholder="Ej: Transferí el total exacto y enviá el comprobante por WhatsApp para confirmar tu pedido."></textarea>
+               <p class="form-hint">Este mensaje se mostrará en el checkout y en el link de WhatsApp al cliente.</p>
+             </div>
+             <div class="form-group">
+               <label>Cobro por alias activo</label>
+               <div class="toggle-row">
+                 <label class="toggle">
+                   <input type="checkbox" id="paymentActive" checked />
+                   <span class="toggle-slider"></span>
+                 </label>
+                 <span class="toggle-label" id="paymentToggleLabel">Activo</span>
+               </div>
+               <p class="form-hint">Desactivá esta opción para pausar temporalmente el cobro por alias sin borrar la configuración.</p>
+             </div>
+             <button class="btn btn-primary" onclick="savePaymentConfig()">Guardar cambios</button>
+             <span id="paymentStatus" style="margin-left: 0.5rem; font-size: 0.85rem;"></span>
+           </div>
+         </div>
   </main>
 
   <div class="modal-overlay" id="modalOverlay">
@@ -967,8 +981,9 @@
         const data = await res.json();
         document.getElementById('paymentMpAlias').value = data.mpAlias || '';
         document.getElementById('paymentHolderName').value = data.holderName || '';
-        document.getElementById('paymentWhatsapp').value = data.whatsapp || '3444634444';
-        document.getElementById('paymentMessage').value = data.message || '';
+        const whatsapp = data.whatsapp || '3444634444';
+        document.getElementById('paymentWhatsapp').value = whatsapp;
+        document.getElementById('paymentMessage').value = data.message || data.instructions || 'Transferí el total exacto y enviá el comprobante por WhatsApp para confirmar tu pedido.';
         const activeCheckbox = document.getElementById('paymentActive');
         activeCheckbox.checked = data.active !== false;
         document.getElementById('paymentToggleLabel').textContent = activeCheckbox.checked ? 'Activo' : 'Inactivo';
