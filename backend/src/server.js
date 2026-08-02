@@ -23,6 +23,20 @@ process.on('unhandledRejection', (reason) => {
 
 dotenv.config();
 
+if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+  try {
+    const cloudinary = require('cloudinary').v2;
+    cloudinary.config({
+      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+      api_key: process.env.CLOUDINARY_API_KEY,
+      api_secret: process.env.CLOUDINARY_API_SECRET
+    });
+    logger.info('Cloudinary configurado correctamente');
+  } catch (err) {
+    logger.warn('Error configurando Cloudinary:', err.message);
+  }
+}
+
 const requiredEnvVars = ['JWT_SECRET', 'ADMIN_USER', 'ADMIN_PASS'];
 const missingEnvVars = requiredEnvVars.filter(key => !process.env[key]);
 const isTest = process.env.NODE_ENV === 'test';
@@ -173,6 +187,18 @@ app.use('/api', require('./routes/siteSettings'));
 app.use('/api', require('./routes/sitemap'));
 app.use('/api', require('./routes/reviews'));
 app.use('/api', require('./routes/productImages'));
+app.use('/api/health', require('./routes/health'));
+
+const TIMEOUT_MS = 10000;
+app.use((req, res, next) => {
+  const timeout = setTimeout(() => {
+    if (!res.headersSent) {
+      res.status(408).json({ error: 'Request timeout', message: 'El servidor tardó demasiado en responder. Intentá de nuevo.' });
+    }
+  }, TIMEOUT_MS);
+  res.on('finish', () => clearTimeout(timeout));
+  next();
+});
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
