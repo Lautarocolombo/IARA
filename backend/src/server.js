@@ -244,7 +244,8 @@ initDB().then(() => {
 
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => logger.info(`Backend escuchando en http://localhost:${PORT}`));
+  const HOST = process.env.HOST || '0.0.0.0';
+  app.listen(PORT, HOST, () => logger.info(`Backend escuchando en http://${HOST}:${PORT}`));
 } else {
   module.exports = app;
 }
