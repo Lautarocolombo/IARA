@@ -207,9 +207,23 @@ return `
   }
 }
 
+function renderFeaturedProducts() {
+  const grid = document.getElementById('featuredGrid');
+  if (!grid) return;
+  const featured = getFeaturedProducts();
+  if (!featured.length) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;text-align:center;padding:2rem;"><p>Aún no hay productos destacados.</p></div>';
+    return;
+  }
+  renderProducts(featured);
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   await fetchProducts();
   renderProducts(getProducts());
+  if (typeof renderFeaturedProducts === 'function') {
+    renderFeaturedProducts();
+  }
 
   const filterButtons = document.querySelectorAll('.filter-btn');
   filterButtons.forEach(btn => {
