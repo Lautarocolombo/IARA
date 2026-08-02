@@ -13,11 +13,11 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: ADMIN_USER
-        value: Iara
+        value: lara
       - key: ADMIN_PASS
         value: pulseras2026
       - key: ALLOWED_ORIGINS
-        value: https://iara-eight.vercel.app,https://iara-ivory.vercel.app,https://iara-alpha.vercel.app,https://artesaniagualeguay.com,http://localhost:3000
+        value: https://iara-eight.vercel.app,https://iara-ivory.vercel.app,https://iara-alpha.vercel.app,https://*.vercel.app,https://artesaniagualeguay.com,http://localhost:3000
     autoDeploy: true
     branch: main
     repo: https://github.com/Lautarocolombo/IARA.git
