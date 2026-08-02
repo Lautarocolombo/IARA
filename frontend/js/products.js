@@ -155,6 +155,10 @@ function getProductsByCategory(category) {
   return products.filter(p => p.category === category);
 }
 
+function getFeaturedProducts() {
+  return products.filter(p => p.featured).slice(0, 4);
+}
+
 function renderProducts(productsToRender) {
   const grid = document.getElementById('productsGrid');
   if (!grid) return;
@@ -233,5 +237,5 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Exportar para Node.js (si aplica)
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { getProducts, getProductsByCategory, renderProducts, fetchProducts, setProducts };
+  module.exports = { getProducts, getProductsByCategory, getFeaturedProducts, renderProducts, fetchProducts, setProducts };
 }

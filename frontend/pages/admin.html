@@ -109,12 +109,13 @@
               <th>Producto</th>
               <th>Categoría</th>
               <th>Precio</th>
+              <th>Stock</th>
               <th>Imagen</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody id="tableBody">
-            <tr><td colspan="5" class="empty-state">Cargando productos...</td></tr>
+            <tr><td colspan="6" class="empty-state">Cargando productos...</td></tr>
           </tbody>
         </table>
       </div>
@@ -280,6 +281,21 @@
           <div class="form-group">
             <label>Precio ($)</label>
             <input type="number" id="pPrice" placeholder="0" min="0" step="1" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Stock disponible</label>
+          <input type="number" id="pStock" placeholder="0" min="0" step="1" />
+          <p class="form-hint">Dejar en 0 para indicar sin stock / producto no disponible.</p>
+        </div>
+        <div class="form-group">
+          <label>Producto destacado</label>
+          <div class="toggle-row">
+            <label class="toggle">
+              <input type="checkbox" id="pFeatured">
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="toggle-label" id="featuredLabel">No</span>
           </div>
         </div>
         <div class="form-group">
@@ -710,6 +726,7 @@ function openSectionModal() {
           </td>
           <td><span class="badge badge-${p.category}">${p.category}</span></td>
           <td><span class="price-cell">$${Number(p.price).toLocaleString('es-AR')}</span></td>
+          <td><span class="badge badge-stock ${p.stock > 0 ? 'badge-stock--ok' : 'badge-stock--out'}">${p.stock > 0 ? `✅ ${p.stock}` : '❌ Sin stock'}</span></td>
               <td>${p.image ? `<div class="thumb"><img src="${p.image}" alt="${p.name}" /></div>` : '<div class="thumb">📷</div>'}</td>
           <td>
             <div class="actions">
@@ -1031,7 +1048,10 @@ function renderTextsTable() {
       document.getElementById('pPrice').value = product ? product.price : '';
       document.getElementById('pDesc').value = product ? product.description : '';
       document.getElementById('pImage').value = product ? (product.image || '') : '';
-      document.getElementById('pImageFile').value = '';
+      document.getElementById('productImageFiles').value = '';
+      document.getElementById('pStock').value = product ? (product.stock ?? 0) : 0;
+      document.getElementById('pFeatured').checked = product ? (product.featured || false) : false;
+      updateFeaturedLabel();
       const preview = document.getElementById('imagePreview');
       preview.style.display = 'none';
       preview.innerHTML = '';
@@ -1099,6 +1119,10 @@ function renderTextsTable() {
       openTextModal(key);
     }
 
+    function getAuthToken() {
+      return authToken || localStorage.getItem('ag_admin_jwt') || '';
+    }
+
     async function saveProduct() {
       const name = document.getElementById('pName').value.trim();
       const category = document.getElementById('pCategory').value;
@@ -1130,7 +1154,9 @@ function renderTextsTable() {
           image = uploadData.url;
         }
 
-        const payload = { name, category, price, description, image, emoji: '📿', badge: '' };
+        const stock = Number(document.getElementById('pStock').value) || 0;
+      const featured = document.getElementById('pFeatured').checked;
+      const payload = { name, category, price, description, image, emoji: '📿', badge: '', stock, featured };
 
         if (id) {
           await adminFetch(`/api/admin/products/${id}`, {
@@ -1382,7 +1408,16 @@ function renderTextsTable() {
       }
     }
 
+    function updateFeaturedLabel() {
+      const checkbox = document.getElementById('pFeatured');
+      const label = document.getElementById('featuredLabel');
+      if (checkbox && label) {
+        label.textContent = checkbox.checked ? 'Sí' : 'No';
+      }
+    }
+
     document.getElementById('settingPaymentActive')?.addEventListener('change', updatePaymentActiveLabel);
+    document.getElementById('pFeatured')?.addEventListener('change', updateFeaturedLabel);
 
     async function saveSettings() {
       const instagram = document.getElementById('settingInstagram').value.trim();
@@ -1471,120 +1506,6 @@ function renderTextsTable() {
   </script>
   <script src="../js/productImages.js"></script>
   <script>
-    const originalSaveProduct = window.saveProduct;
-    window.saveProduct = async function () {
-      const name = document.getElementById('pName').value.trim();
-      const category = document.getElementById('pCategory').value;
-      const price = Number(document.getElementById('pPrice').value);
-      const description = document.getElementById('pDesc').value.trim();
-      const id = Number(document.getElementById('pId').value) || null;
-
-      if (!name || !price) {
-        showSaveStatus('productSaveStatus', 'error', '❌ Nombre y precio son obligatorios');
-        return;
-      }
-
-      try {
-        showSaveStatus('productSaveStatus', 'saving', 'Guardando...');
-        const payload = { name, category, price, description, emoji: '📿', badge: '' };
-
-        let productId = id;
-        if (productId) {
-          const res = await adminFetch(`/api/admin/products/${productId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          if (!res.ok) {
-            const data = await res.json().catch(() => ({}));
-            throw new Error(data.error || 'Error al guardar');
-          }
-        } else {
-          const res = await adminFetch('/api/admin/products', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          if (!res.ok) {
-            const data = await res.json().catch(() => ({}));
-            throw new Error(data.error || 'Error al guardar');
-          }
-          const data = await res.json();
-          productId = data.id;
-        }
-
-        showSaveStatus('productSaveStatus', 'success', '✅ Verificado');
-        await loadProducts();
-        setTimeout(() => {
-          hideSaveStatus('productSaveStatus');
-          closeModal();
-        }, 1500);
-
-        if (productId && window.ProductImages) {
-          window.ProductImages.init(productId);
-        }
-      } catch (err) {
-        showSaveStatus('productSaveStatus', 'error', '❌ Reintente');
-        setTimeout(() => hideSaveStatus('productSaveStatus'), 3500);
-        showToast(err.message, 'error');
-      }
-    };
-
-    async function safeSave(fn, options) {
-      const btn = options?.button;
-      if (btn) btn.disabled = true;
-      const loadingToast = window.Toasts?.loading?.(options?.loadingMessage || 'Guardando...');
-      try {
-        await fn();
-        window.Toasts?.success?.(options?.successMessage || 'Cambios guardados');
-        return true;
-      } catch (err) {
-        const isNetwork = err.message.includes('fetch') || err.message.includes('Failed to fetch') || err.message.includes('NetworkError');
-        if (isNetwork && options?.autoRetry !== false) {
-          window.Toasts?.warning?.('Reintentando guardado...');
-          await new Promise(r => setTimeout(r, 1500));
-          try {
-            await fn();
-            window.Toasts?.success?.(options?.successMessage || 'Cambios guardados');
-            return true;
-          } catch (err2) {
-            window.Toasts?.error?.(options?.errorMessage || err2.message || 'No se pudo guardar');
-            return false;
-          }
-        }
-        window.Toasts?.error?.(options?.errorMessage || err.message || 'No se pudo guardar');
-        return false;
-      } finally {
-        if (btn) btn.disabled = false;
-        loadingToast?.remove?.();
-      }
-    }
-
-    async function checkServerHealth() {
-      try {
-        const res = await fetch(`${CONFIG.API.BASE}/api/health`, { method: 'GET', headers: { 'Accept': 'application/json' } });
-        const data = await res.json().catch(() => ({}));
-        const ok = res.ok && (data.status === 'ok' || data.status === 'sqlite-fallback');
-        const el = document.getElementById('loginHint');
-        const errEl = document.getElementById('loginError');
-        if (ok) {
-          el.textContent = 'Conexión verificada';
-          el.style.color = '#10b981';
-          errEl.style.display = 'none';
-          if (window.Connection) window.Connection.retryNow();
-        } else {
-          throw new Error(data.dbError || 'Servidor no disponible');
-        }
-      } catch (err) {
-        const el = document.getElementById('loginHint');
-        const errEl = document.getElementById('loginError');
-        el.textContent = 'Sin conexión con el servidor';
-        el.style.color = '#dc2626';
-        errEl.textContent = err.message;
-        errEl.style.display = 'block';
-      }
-    }
-
     function updateConnectionIndicator(status) {
       const el = document.getElementById('connectionIndicator');
       if (!el) return;

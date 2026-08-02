@@ -8,7 +8,8 @@ const productSchema = z.object({
   emoji: z.string().max(10).optional().default('📿'),
   image: z.string().url('URL de imagen inválida').optional().or(z.literal('')).default(''),
   badge: z.string().max(50).optional().default(''),
-  stock: z.number().int().nonnegative().optional().default(0)
+  stock: z.number().int().nonnegative().optional().default(0),
+  featured: z.boolean().optional().default(false)
 });
 
 const testimonialSchema = z.object({

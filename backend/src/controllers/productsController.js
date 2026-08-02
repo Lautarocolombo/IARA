@@ -42,8 +42,8 @@ const createProduct = async (req, res) => {
   try {
     const data = productSchema.parse(req.body);
     const result = await query(
-      'INSERT INTO products (name, category, price, description, emoji, image, badge, stock) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-      [data.name, data.category, Number(data.price), data.description || '', data.emoji || '📿', data.image || '', data.badge || '', Number(data.stock)]
+      'INSERT INTO products (name, category, price, description, emoji, image, badge, stock, featured) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+      [data.name, data.category, Number(data.price), data.description || '', data.emoji || '📿', data.image || '', data.badge || '', Number(data.stock), data.featured || false]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -104,14 +104,14 @@ const syncToNeon = async (req, res) => {
         const exists = await query('SELECT id FROM products WHERE id = $1', [Number(p.id)]);
         if (exists.rows.length > 0) {
           await query(
-            'UPDATE products SET name = $1, category = $2, price = $3, description = $4, emoji = $5, image = $6, badge = $7, stock = $8, updated_at = CURRENT_TIMESTAMP WHERE id = $9',
-            [p.name, p.category, Number(p.price), p.description || '', p.emoji || '📿', p.image || '', p.badge || '', Number(p.stock), Number(p.id)]
+            'UPDATE products SET name = $1, category = $2, price = $3, description = $4, emoji = $5, image = $6, badge = $7, stock = $8, featured = $9, updated_at = CURRENT_TIMESTAMP WHERE id = $10',
+            [p.name, p.category, Number(p.price), p.description || '', p.emoji || '📿', p.image || '', p.badge || '', Number(p.stock), p.featured || false, Number(p.id)]
           );
           results.updated += 1;
         } else {
           await query(
-            'INSERT INTO products (name, category, price, description, emoji, image, badge, stock) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-            [p.name, p.category, Number(p.price), p.description || '', p.emoji || '📿', p.image || '', p.badge || '', Number(p.stock)]
+            'INSERT INTO products (name, category, price, description, emoji, image, badge, stock, featured) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+            [p.name, p.category, Number(p.price), p.description || '', p.emoji || '📿', p.image || '', p.badge || '', Number(p.stock), p.featured || false]
           );
           results.created += 1;
         }

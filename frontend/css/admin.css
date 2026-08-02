@@ -505,6 +505,10 @@ tr:last-child td {
 .badge-accesorios { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
 .badge-souvenirs { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
 
+.badge-stock { font-size: 0.7rem; padding: 0.15rem 0.5rem; }
+.badge-stock--ok { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
+.badge-stock--out { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
+
 .modal-overlay {
   position: fixed;
   inset: 0;
