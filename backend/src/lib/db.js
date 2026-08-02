@@ -156,11 +156,17 @@ async function initDB() {
       product_id INTEGER NOT NULL,
       url TEXT NOT NULL,
       filename TEXT DEFAULT '',
+      cloudinary_public_id TEXT DEFAULT '',
       orden INTEGER DEFAULT 0,
       es_principal BOOLEAN DEFAULT FALSE,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
     logger.info('Tablas de base de datos inicializadas (SQLite)');
+    try {
+      await query(`ALTER TABLE product_images ADD COLUMN cloudinary_public_id TEXT DEFAULT ''`);
+    } catch (err) {
+      logger.debug('Columna cloudinary_public_id ya existe o no se pudo agregar (SQLite):', err.message);
+    }
     return;
   }
 
@@ -174,7 +180,7 @@ async function initDB() {
     `CREATE TABLE IF NOT EXISTS contacts (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL, message TEXT NOT NULL, status TEXT DEFAULT 'new', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS payment_config (id SERIAL PRIMARY KEY, mp_alias TEXT DEFAULT '', holder_name TEXT DEFAULT '', whatsapp TEXT DEFAULT '', message TEXT DEFAULT '', active BOOLEAN DEFAULT TRUE, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`,
     `CREATE TABLE IF NOT EXISTS site_settings (id SERIAL PRIMARY KEY, key TEXT UNIQUE NOT NULL, value TEXT DEFAULT '', updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`,
-    `CREATE TABLE IF NOT EXISTS product_images (id SERIAL PRIMARY KEY, product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE, url TEXT NOT NULL, filename TEXT DEFAULT '', orden INTEGER DEFAULT 0, es_principal BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`
+    `CREATE TABLE IF NOT EXISTS product_images (id SERIAL PRIMARY KEY, product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE, url TEXT NOT NULL, filename TEXT DEFAULT '', cloudinary_public_id TEXT DEFAULT '', orden INTEGER DEFAULT 0, es_principal BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`
   ];
 
   for (const sql of statements) {
@@ -183,6 +189,12 @@ async function initDB() {
     } catch (err) {
     logger.error('Error ejecutando SQL:', err.message);
     }
+  }
+
+  try {
+    await query(`ALTER TABLE product_images ADD COLUMN IF NOT EXISTS cloudinary_public_id TEXT DEFAULT ''`);
+  } catch (err) {
+    logger.debug('Columna cloudinary_public_id ya existe o no se pudo agregar (PostgreSQL):', err.message);
   }
 
   logger.info('Tablas de base de datos inicializadas (PostgreSQL)');

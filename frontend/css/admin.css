@@ -1035,6 +1035,7 @@ tr:last-child td {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 
 .product-image-item-preview img {
