@@ -386,6 +386,7 @@
     uploadFiles,
     replaceImage,
     markPrincipal,
+    updateImageMeta,
     deleteImage,
     syncOrder
   };

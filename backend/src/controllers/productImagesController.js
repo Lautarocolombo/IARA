@@ -2,7 +2,7 @@ const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const path = require('path');
 const fs = require('fs');
-const { uploadMultiple, handleUploadError, getPublicUrl, deleteFromCloudinary, uploadSingle, processFile } = require('../lib/upload');
+const { getPublicUrl, deleteFromCloudinary, processFile } = require('../lib/upload');
 
 async function getProductImages(req, res) {
   try {
