@@ -12,6 +12,10 @@
   <link rel="stylesheet" href="../css/components.css" />
   <link rel="stylesheet" href="../css/animations.css" />
   <link rel="stylesheet" href="../css/admin.css" />
+  <script src="../js/config.js"></script>
+  <script src="../js/theme.js"></script>
+  <script src="../js/ui.js"></script>
+  <script src="../js/productImages.js"></script>
 </head>
 <body>
   <div class="login-overlay" id="loginOverlay">
@@ -274,9 +278,14 @@
           <textarea id="pDesc" rows="3" placeholder="Descripción corta del producto"></textarea>
         </div>
         <div class="form-group">
-          <label>Imagen del producto</label>
-          <input type="file" id="pImageFile" accept="image/jpeg,image/png,image/webp,image/gif" />
-          <div class="image-preview" id="imagePreview" style="display:none;"></div>
+          <label>Imágenes del producto</label>
+          <div class="product-image-dropzone" id="productImageDropzone">
+            <input type="file" id="productImageFiles" accept="image/jpeg,image/png,image/webp,image/gif" multiple />
+            <div class="dropzone-text">Arrastrá imágenes acá o tocá para seleccionar</div>
+            <div class="dropzone-hint">JPG, PNG, WEBP o GIF — máx 5MB c/u</div>
+          </div>
+          <div class="save-status" id="productImageUploadStatus"></div>
+          <div class="product-image-gallery" id="productImageGallery"></div>
           <input type="hidden" id="pImage" />
         </div>
         <input type="hidden" id="pId" />
@@ -1033,6 +1042,9 @@ function renderTextsTable() {
     function editProduct(id) {
       const p = products.find(x => x.id === id);
       if (p) openModal(p);
+      if (p && window.ProductImages) {
+        setTimeout(() => window.ProductImages.init(p.id), 100);
+      }
     }
 
     function editTestimonial(id) {
@@ -1444,6 +1456,67 @@ document.getElementById('pImageFile')?.addEventListener('change', (e) => {
       URL.revokeObjectURL(link.href);
       showToast('CSV exportado correctamente', 'success');
     }
+  </script>
+  <script src="../js/productImages.js"></script>
+  <script>
+    const originalSaveProduct = window.saveProduct;
+    window.saveProduct = async function () {
+      const name = document.getElementById('pName').value.trim();
+      const category = document.getElementById('pCategory').value;
+      const price = Number(document.getElementById('pPrice').value);
+      const description = document.getElementById('pDesc').value.trim();
+      const id = Number(document.getElementById('pId').value) || null;
+
+      if (!name || !price) {
+        showSaveStatus('productSaveStatus', 'error', '❌ Nombre y precio son obligatorios');
+        return;
+      }
+
+      try {
+        showSaveStatus('productSaveStatus', 'saving', 'Guardando...');
+        const payload = { name, category, price, description, emoji: '📿', badge: '' };
+
+        let productId = id;
+        if (productId) {
+          const res = await adminFetch(`/api/admin/products/${productId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data.error || 'Error al guardar');
+          }
+        } else {
+          const res = await adminFetch('/api/admin/products', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            throw new Error(data.error || 'Error al guardar');
+          }
+          const data = await res.json();
+          productId = data.id;
+        }
+
+        showSaveStatus('productSaveStatus', 'success', '✅ Verificado');
+        await loadProducts();
+        setTimeout(() => {
+          hideSaveStatus('productSaveStatus');
+          closeModal();
+        }, 1500);
+
+        if (productId && window.ProductImages) {
+          window.ProductImages.init(productId);
+        }
+      } catch (err) {
+        showSaveStatus('productSaveStatus', 'error', '❌ Reintente');
+        setTimeout(() => hideSaveStatus('productSaveStatus'), 3500);
+        showToast(err.message, 'error');
+      }
+    };
   </script>
 </body>
 </html>
