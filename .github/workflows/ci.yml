@@ -40,7 +40,7 @@ jobs:
       - name: Run frontend tests
         run: npm test
       - name: Run backend tests
-        run: cd backend && npm test
+        run: cd backend && node --version && npm --version && ls -la && cat jest.config.js && npm test
         env:
           ADMIN_USER: testadmin
           JWT_SECRET: test-jwt-secret
