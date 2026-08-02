@@ -93,13 +93,25 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || '').split(',').filter(Boolean);
 
+function isOriginAllowed(origin) {
+  if (!origin) return true;
+  return allowedOrigins.some(allowed => {
+    if (allowed === origin) return true;
+    if (allowed.includes('*')) {
+      const pattern = allowed.replace(/\*/g, '.*');
+      return new RegExp('^' + pattern + '$').test(origin);
+    }
+    return false;
+  });
+}
+
 if (!allowedOrigins.length && process.env.NODE_ENV === 'production') {
-  logger.warn('ALLOWED_ORIGINS no está configurado en producción. El CORS puede fallar para orígenes no permitidos.');
+  logger.warn('ALLOWED_ORIGINS no estÃ¡ configurado en producciÃ³n. El CORS puede fallar para orÃ­genes no permitidos.');
 }
 
 const corsOptions = allowedOrigins.length
   ? {
-      origin: allowedOrigins,
+      origin: isOriginAllowed,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With'],
