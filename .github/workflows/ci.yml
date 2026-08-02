@@ -14,7 +14,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
       - name: Install root dependencies
         run: npm ci
       - name: Install backend dependencies
@@ -26,7 +25,7 @@ jobs:
       - name: Run frontend tests
         run: npm test
       - name: Run backend tests
-        run: cd backend && npm test
+        run: cd backend && mkdir -p data && npm test
         env:
           ADMIN_USER: testadmin
           JWT_SECRET: test-jwt-secret
