@@ -761,6 +761,41 @@ tr:last-child td {
   min-width: 60px;
 }
 
+.info-note {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+}
+
+.info-note-icon {
+  flex-shrink: 0;
+  font-size: 1.25rem;
+}
+
+.info-note-content {
+  flex: 1;
+}
+
+.info-note-content strong {
+  color: #1e40af;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.info-note-content small {
+  color: #64748b;
+  opacity: 0.8;
+}
+
+.form-group + .info-note {
+  margin-top: 1rem;
+}
+
 @media (max-width: 768px) {
   .sidebar {
     width: 100%;
