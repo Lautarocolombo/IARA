@@ -15,9 +15,9 @@ jobs:
         with:
           node-version: '18'
       - name: Install root dependencies
-        run: npm ci
+        run: npm ci --no-audit --no-fund
       - name: Install backend dependencies
-        run: cd backend && npm ci
+        run: cd backend && npm ci --no-audit --no-fund
       - name: Lint frontend
         run: npm run lint
       - name: Lint backend
