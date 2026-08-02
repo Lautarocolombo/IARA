@@ -51,6 +51,7 @@
         <a href="#testimonials" data-section="testimonials">💬 Testimonios</a>
         <a href="#texts" data-section="texts">📝 Textos del Sitio</a>
         <a href="#heroImages" data-section="heroImages">🖼 Imágenes del Hero</a>
+        <a href="#settings" data-section="settings">⚙️ Configuración</a>
       </nav>
       <div class="sidebar-footer">
         <a href="../index.html" target="_blank" class="btn btn-secondary btn-full">← Ver sitio</a>
@@ -200,24 +201,46 @@
        </div>
      </div>
 
-       <div class="card" id="settingsSection" style="display:none;">
-        <div class="card-header">
-          <h3 class="card-header-title">Configuración del sitio</h3>
-        </div>
-        <div class="card-body">
-          <div class="form-group">
-            <label>URL de Instagram</label>
-            <input type="text" id="settingInstagram" placeholder="https://instagram.com/tucuenta" />
-          </div>
-          <div class="form-group">
-            <label>Alias de MercadoPago</label>
-            <input type="text" id="settingMpAlias" placeholder="Ej: artesania.gualeguay.mp" />
-            <p class="form-hint">Los clientes usarán este alias para transferirte el pago.</p>
-          </div>
-          <button class="btn btn-primary" onclick="saveSettings()">Guardar configuración</button>
-          <div class="save-status" id="settingsSaveStatus"></div>
-        </div>
-      </div>
+        <div class="card" id="settingsSection" style="display:none;">
+         <div class="card-header">
+           <h3 class="card-header-title">Configuración del sitio</h3>
+         </div>
+         <div class="card-body">
+           <div class="form-group">
+             <label>URL de Instagram</label>
+             <input type="text" id="settingInstagram" placeholder="https://instagram.com/tucuenta" />
+           </div>
+           <div class="form-group">
+             <label>Alias de MercadoPago</label>
+             <input type="text" id="settingMpAlias" placeholder="Ej: artesania.gualeguay.mp" />
+             <p class="form-hint">Los clientes usarán este alias para transferirte el pago.</p>
+           </div>
+           <div class="form-group">
+             <label>Titular de la cuenta</label>
+             <input type="text" id="settingHolderName" placeholder="Nombre del titular" />
+           </div>
+           <div class="form-group">
+             <label>WhatsApp para comprobantes</label>
+             <input type="text" id="settingWhatsapp" placeholder="Ej: 5493444634444" />
+           </div>
+           <div class="form-group">
+             <label>Mensaje de pago</label>
+             <textarea id="settingPaymentMessage" rows="3" placeholder="Mensaje que se muestra al cliente en el checkout...">Transferí el total exacto y enviá el comprobante por WhatsApp para confirmar tu pedido.</textarea>
+           </div>
+           <div class="form-group">
+             <label>Transferencia activa</label>
+             <div class="toggle-row">
+               <label class="toggle">
+                 <input type="checkbox" id="settingPaymentActive" checked>
+                 <span class="toggle-slider"></span>
+               </label>
+               <span class="toggle-label" id="paymentActiveLabel">Activo</span>
+             </div>
+           </div>
+           <button class="btn btn-primary" onclick="saveSettings()">Guardar configuración</button>
+           <div class="save-status" id="settingsSaveStatus"></div>
+         </div>
+       </div>
    </main>
 
   <div class="modal-overlay" id="modalOverlay">
@@ -580,12 +603,14 @@ function navigateTo(section) {
        document.getElementById('testimonialsSection').style.display = section === 'testimonials' ? 'block' : 'none';
        document.getElementById('textsSection').style.display = section === 'texts' ? 'block' : 'none';
        document.getElementById('heroImagesSection').style.display = section === 'heroImages' ? 'block' : 'none';
+       document.getElementById('settingsSection').style.display = section === 'settings' ? 'block' : 'none';
        const titles = {
          products: ['Productos', 'Gestioná productos, fotos y precios', '+ Nuevo Producto'],
          orders: ['Pedidos', 'Gestioná pedidos y pagos', ''],
          testimonials: ['Testimonios', 'Gestioná testimonios de clientes', ''],
          texts: ['Textos del Sitio', 'Modificá los textos que aparecen en el sitio', ''],
-         heroImages: ['Imágenes del Hero', 'Editá las imágenes y textos de las cards del hero', '']
+         heroImages: ['Imágenes del Hero', 'Editá las imágenes y textos de las cards del hero', ''],
+         settings: ['Configuración', 'Gestioná la configuración general y de pago', '']
        };
        const [title, subtitle, action] = titles[section] || titles.products;
        document.getElementById('sectionTitle').textContent = title;
@@ -602,6 +627,7 @@ function navigateTo(section) {
        if (section === 'testimonials') loadTestimonials();
        if (section === 'texts') loadSiteTexts();
        if (section === 'heroImages') loadHeroCardsAdmin();
+       if (section === 'settings') loadSettings();
      }
 
 function openSectionModal() {
@@ -1193,7 +1219,6 @@ function renderTextsTable() {
         setTimeout(() => hideSaveStatus('textSaveStatus'), 3500);
         showToast(err.message, 'error');
       }
-      }
     }
 
     async function syncProductsToNeon() {
@@ -1310,16 +1335,38 @@ document.getElementById('pImageFile')?.addEventListener('change', (e) => {
       try {
         const res = await adminFetch('/api/site-config');
         const data = await res.json();
-        document.getElementById('settingInstagram').value = data.instagram || '';
+        document.getElementById('settingInstagram').value = data.instagram_url || '';
         document.getElementById('settingMpAlias').value = data.payment?.mpAlias || '';
+        document.getElementById('settingHolderName').value = data.payment?.holderName || '';
+        document.getElementById('settingWhatsapp').value = data.payment?.whatsapp || '';
+        document.getElementById('settingPaymentMessage').value = data.payment?.message || 'Transferí el total exacto y enviá el comprobante por WhatsApp para confirmar tu pedido.';
+        const activeCheckbox = document.getElementById('settingPaymentActive');
+        if (activeCheckbox) {
+          activeCheckbox.checked = data.payment?.active !== false;
+          updatePaymentActiveLabel();
+        }
       } catch (err) {
         console.error('Error cargando configuración:', err);
       }
     }
 
+    function updatePaymentActiveLabel() {
+      const checkbox = document.getElementById('settingPaymentActive');
+      const label = document.getElementById('paymentActiveLabel');
+      if (checkbox && label) {
+        label.textContent = checkbox.checked ? 'Activo' : 'Inactivo';
+      }
+    }
+
+    document.getElementById('settingPaymentActive')?.addEventListener('change', updatePaymentActiveLabel);
+
     async function saveSettings() {
       const instagram = document.getElementById('settingInstagram').value.trim();
       const mpAlias = document.getElementById('settingMpAlias').value.trim();
+      const holderName = document.getElementById('settingHolderName').value.trim();
+      const whatsapp = document.getElementById('settingWhatsapp').value.trim();
+      const message = document.getElementById('settingPaymentMessage').value.trim();
+      const active = document.getElementById('settingPaymentActive').checked;
       const statusEl = document.getElementById('settingsSaveStatus');
       const btn = event.target;
       try {
@@ -1332,11 +1379,11 @@ document.getElementById('pImageFile')?.addEventListener('change', (e) => {
             body: JSON.stringify({ key: 'instagram_url', value: instagram })
           });
         }
-        if (mpAlias !== undefined) {
+        if (mpAlias !== undefined || holderName !== undefined || whatsapp !== undefined || message !== undefined) {
           await adminFetch('/api/admin/payment-config', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mpAlias })
+            body: JSON.stringify({ mpAlias, holderName, whatsapp, message, active })
           });
         }
         showSaveStatus('settingsSaveStatus', 'success', '✅ Verificado');

@@ -341,13 +341,16 @@ window.getFetchErrorMessage = getFetchErrorMessage;
 async function loadSiteTexts() {
   try {
     const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-texts`, {}, 2, 1000);
-    if (!res) return;
+    if (!res) {
+      applyAboutFallback();
+      return;
+    }
     const data = await res.json();
 
     if (data.about_text && document.getElementById('aboutText')) {
       document.getElementById('aboutText').innerHTML = `<p>${data.about_text}</p>`;
-    } else if (document.getElementById('aboutText')) {
-      document.getElementById('aboutText').innerHTML = '<p>En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.</p>';
+    } else {
+      applyAboutFallback();
     }
 
     const featureMap = [
@@ -382,9 +385,42 @@ async function loadSiteTexts() {
       if (titleEl && data[step.titleKey]) titleEl.textContent = data[step.titleKey];
       if (descEl && data[step.descKey]) descEl.textContent = data[step.descKey];
     });
+
+    updateStatsFromTexts(data);
   } catch (err) {
     console.error('Error cargando textos del sitio:', err);
+    applyAboutFallback();
   }
+}
+
+function applyAboutFallback() {
+  const aboutText = document.getElementById('aboutText');
+  if (aboutText && !aboutText.innerHTML.trim()) {
+    aboutText.innerHTML = '<p>En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.</p>';
+  }
+}
+
+function updateStatsFromTexts(data) {
+  const statsMap = {
+    statClients: { target: 'stat_clients', suffix: '+' },
+    statProductsSold: { target: 'stat_products_sold', suffix: '+' },
+    statYears: { target: 'stat_years', suffix: '+' },
+    statArtesanal: { target: 'stat_artesanal', suffix: '%' }
+  };
+
+  Object.keys(statsMap).forEach(id => {
+    const el = document.getElementById(id);
+    const key = statsMap[id].target;
+    const suffix = statsMap[id].suffix;
+    if (!el || !data[key]) return;
+    const target = parseInt(data[key], 10);
+    if (isNaN(target)) return;
+    el.setAttribute('data-target', target);
+    el.textContent = '0' + suffix;
+    if (typeof window.animateCount === 'function') {
+      window.animateCount(el);
+    }
+  });
 }
 
 async function loadSiteSettings() {
@@ -397,14 +433,78 @@ async function loadSiteSettings() {
     if (instagramLink && settings.instagram_url) {
       instagramLink.href = settings.instagram_url;
     }
+
+    updateContactFromSettings(settings);
   } catch (err) {
     console.error('Error cargando settings:', err);
+  }
+}
+
+function updateContactFromSettings(settings) {
+  const phoneEl = document.querySelector('.info-item a[href^="tel:"]');
+  const emailEl = document.querySelector('.info-item a[href^="mailto:"]');
+  const addressEl = document.querySelector('.info-item p');
+
+  if (phoneEl && settings.phone) {
+    phoneEl.textContent = settings.phone;
+    phoneEl.href = `tel:${settings.phone.replace(/[^\d+]/g, '')}`;
+  }
+  if (emailEl && settings.email) {
+    emailEl.textContent = settings.email;
+    emailEl.href = `mailto:${settings.email}`;
+  }
+  if (addressEl && settings.address && addressEl.textContent.includes('San Antonio')) {
+    addressEl.innerHTML = settings.address.replace(/, /g, '<br>');
+  }
+}
+
+async function loadTestimonials() {
+  try {
+    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/testimonials`, {}, 2, 1000);
+    if (!res) return;
+    const testimonials = await res.json();
+    renderTestimonials(testimonials);
+  } catch (err) {
+    console.error('Error cargando testimonios:', err);
+  }
+}
+
+function renderTestimonials(testimonials) {
+  const grid = document.getElementById('testimonialsGrid');
+  if (!grid) return;
+
+  if (!testimonials.length) {
+    grid.innerHTML = '<p style="text-align:center;color:var(--text-muted);grid-column:1/-1;">Aún no hay testimonios.</p>';
+    return;
+  }
+
+  grid.innerHTML = testimonials.map(t => `
+    <div class="testimonial-card reveal">
+      <div class="testimonial-header">
+        <div class="testimonial-avatar">${t.avatar || '😊'}</div>
+        <div>
+          <div class="testimonial-name">${t.name}</div>
+          ${t.role ? `<div style="font-size:0.8rem;color:var(--text-muted);">${t.role}</div>` : ''}
+        </div>
+        <div class="testimonial-rating">${'⭐'.repeat(t.rating)}</div>
+      </div>
+      <p class="testimonial-comment">${t.comment}</p>
+    </div>
+  `).join('');
+
+  if (window.revealObserver) {
+    grid.querySelectorAll('.reveal').forEach(el => {
+      if (!el.classList.contains('visible')) {
+        window.revealObserver.observe(el);
+      }
+    });
   }
 }
 
 window.loadSiteSettings = loadSiteSettings;
 window.loadSiteTexts = loadSiteTexts;
 window.loadHeroCards = loadHeroCards;
+window.loadTestimonials = loadTestimonials;
 
 async function loadHeroCards() {
   try {
