@@ -243,6 +243,19 @@
 
 .admin-link:hover .admin-icon { transform: scale(1.06); background: var(--rose-light); }
 
+.cart-icon svg, .wishlist-icon svg, .admin-icon svg {
+  width: 16px;
+  height: 16px;
+  color: var(--text-dark);
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .cart-icon svg,
+[data-theme="dark"] .wishlist-icon svg,
+[data-theme="dark"] .admin-icon svg {
+  color: var(--text-muted);
+}
+
 .navbar-toggle {
   display: none;
   flex-direction: column;
