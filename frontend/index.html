@@ -172,6 +172,19 @@
       </div>
     </section>
 
+    <!-- ============== FEATURED PRODUCTS ============== -->
+    <section class="featured" id="featured">
+      <div class="section-header">
+        <span class="section-tag reveal">Destacados</span>
+        <h2 class="section-title reveal">Productos Destacados</h2>
+        <p class="section-subtitle reveal">Selección especial de nuestras piezas más queridas</p>
+      </div>
+      <div class="products-grid" id="featuredGrid"></div>
+      <div style="text-align:center;margin-top:1.5rem;">
+        <a href="#catalog" class="btn-primary reveal">Ver catálogo completo</a>
+      </div>
+    </section>
+
     <!-- ============== CÓMO FUNCIONA ============== -->
     <section class="how-it-works" id="how-it-works">
       <div class="section-header">
@@ -465,6 +478,9 @@
     }
     if (typeof loadTestimonials === 'function') {
       loadTestimonials();
+    }
+    if (typeof renderFeaturedProducts === 'function') {
+      renderFeaturedProducts();
     }
   </script>
   <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>

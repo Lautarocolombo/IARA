@@ -98,7 +98,7 @@
         <div class="checkout-card reveal" id="paymentInstructions" style="display:none;">
           <h2>💳 Pagar por transferencia</h2>
           <div class="payment-alias-box">
-            <p class="payment-label">Aliu00ads de transferencia</p>
+            <p class="payment-label">Alias de transferencia</p>
            <div class="payment-alias-row">
              <span class="payment-alias-value" id="mpAliasValue">Cargando...</span>
              <button class="btn btn-secondary btn-sm" id="copyAliasBtn" onclick="copyMpAlias()">📋 Copiar</button>
@@ -259,7 +259,7 @@
           if (i.image) return `${line}\n  Imagen: ${i.image}`;
           return line;
         }).join('\n');
-        const waMsg = encodeURIComponent(`Hola! Quiero confirmar el pago del pedido AG-${orderId} por un total de ${formatARS(total)}.\n\nCliente: ${customerName}\nProductos:\n${itemsList}\n\n${paymentConfig.message || 'Ya realicé la transferencia al alias de MercadoPago. Te envío el comprobante por este medio.'}`);
+        const waMsg = encodeURIComponent(`Hola! Quiero confirmar el pago del pedido AG-${orderId} por un total de ${formatARS(total)}.\n\nCliente: ${customerName}\nProductos:\n${itemsList}\n\n${paymentConfig.message || 'Ya realicé la transferencia. Te envío el comprobante por este medio.'}`);
         document.getElementById('whatsappComprobanteBtn').href = `https://wa.me/${waNumber}?text=${waMsg}`;
 
         document.getElementById('checkoutContent').style.display = 'none';

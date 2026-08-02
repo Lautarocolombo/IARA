@@ -56,7 +56,7 @@ async function uploadProductImages(req, res) {
 
     res.status(201).json({ ok: true, images: uploaded });
   } catch (err) {
-    logger.error('Error subiendo imágenes:', err);
+    logger.error({ err: err.message }, 'Error subiendo imágenes');
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 }

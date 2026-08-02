@@ -1,4 +1,4 @@
-name: CI/CD
+name: CI
 
 on:
   push:
@@ -39,23 +39,3 @@ jobs:
         with:
           name: backend-test-output
           path: backend/test-output.txt
-
-  deploy-vercel:
-    needs: lint-and-test
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push' && needs.lint-and-test.result == 'success'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-      - name: Install Vercel CLI
-        run: npm install -g vercel
-      - name: Pull Vercel environment
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      - name: Build and deploy
-        run: vercel build --prod && vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

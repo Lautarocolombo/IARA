@@ -3,7 +3,7 @@ const router = express.Router();
 const { query, pool, connectionString } = require('../lib/db');
 const logger = require('../lib/logger');
 
-router.get('/', async (req, res) => {
+router.get(['/', '/health'], async (req, res) => {
   const start = Date.now();
   try {
     let dbStatus = 'disconnected';

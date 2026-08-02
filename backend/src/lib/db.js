@@ -303,11 +303,31 @@ async function initDB() {
     } catch (err) {
       logger.debug({ err: err.message }, 'Columna categoria ya existe o no se pudo agregar (SQLite)');
     }
+    try {
+      await query('ALTER TABLE product_images ADD COLUMN filename TEXT DEFAULT \'\'');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna filename ya existe o no se pudo agregar (SQLite)');
+    }
+    try {
+      await query('ALTER TABLE product_images RENAME COLUMN sort_order TO orden');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna sort_order -> orden ya migrada (SQLite)');
+    }
+    try {
+      await query('ALTER TABLE product_images RENAME COLUMN is_primary TO es_principal');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna is_primary -> es_principal ya migrada (SQLite)');
+    }
+    try {
+      await query('ALTER TABLE products ADD COLUMN featured BOOLEAN DEFAULT FALSE');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna featured ya existe o no se pudo agregar (SQLite)');
+    }
     return;
   }
 
   const statements = [
-    'CREATE TABLE IF NOT EXISTS products (id SERIAL PRIMARY KEY, name TEXT NOT NULL, category TEXT DEFAULT \'pulseras\', price REAL NOT NULL, description TEXT DEFAULT \'\', emoji TEXT DEFAULT \'📿\', image TEXT DEFAULT \'\', badge TEXT DEFAULT \'\', stock INTEGER DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
+    'CREATE TABLE IF NOT EXISTS products (id SERIAL PRIMARY KEY, name TEXT NOT NULL, category TEXT DEFAULT \'pulseras\', price REAL NOT NULL, description TEXT DEFAULT \'\', emoji TEXT DEFAULT \'📿\', image TEXT DEFAULT \'\', badge TEXT DEFAULT \'\', stock INTEGER DEFAULT 0, featured BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS site_texts (id SERIAL PRIMARY KEY, key TEXT UNIQUE NOT NULL, value TEXT DEFAULT \'\', updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS testimonials (id SERIAL PRIMARY KEY, name TEXT NOT NULL, comment TEXT NOT NULL, rating INTEGER DEFAULT 5 CHECK (rating >= 1 AND rating <= 5), image TEXT DEFAULT \'\', avatar TEXT DEFAULT \'\', role TEXT DEFAULT \'\', active BOOLEAN DEFAULT TRUE, featured BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS orders (id SERIAL PRIMARY KEY, items JSONB NOT NULL, total REAL NOT NULL, customer JSONB, status TEXT DEFAULT \'pending\', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
@@ -345,6 +365,8 @@ async function initDB() {
     'ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_cost REAL DEFAULT 0',
     'ALTER TABLE product_images ADD COLUMN IF NOT EXISTS descripcion TEXT DEFAULT \'\'',
     'ALTER TABLE product_images ADD COLUMN IF NOT EXISTS categoria TEXT DEFAULT \'\'',
+    'ALTER TABLE products ADD COLUMN IF NOT EXISTS featured BOOLEAN DEFAULT FALSE',
+    'ALTER TABLE product_images ADD COLUMN IF NOT EXISTS filename TEXT DEFAULT \'\'',
     'CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)',
     'CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at)',
     'CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)',
@@ -357,6 +379,17 @@ async function initDB() {
     } catch (err) {
       logger.debug({ err: err.message }, 'Migración de esquema');
     }
+  }
+
+  try {
+    await query('ALTER TABLE product_images RENAME COLUMN sort_order TO orden');
+  } catch (err) {
+    logger.debug({ err: err.message }, 'Columna sort_order -> orden ya migrada (PostgreSQL)');
+  }
+  try {
+    await query('ALTER TABLE product_images RENAME COLUMN is_primary TO es_principal');
+  } catch (err) {
+    logger.debug({ err: err.message }, 'Columna is_primary -> es_principal ya migrada (PostgreSQL)');
   }
 
   logger.info('Tablas de base de datos inicializadas (PostgreSQL)');
