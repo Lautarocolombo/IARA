@@ -14,8 +14,8 @@ services:
         generateValue: true
       - key: ADMIN_USER
         value: Iara
-      # ADMIN_PASS_HASH and DATABASE_URL must be set manually in the Render dashboard.
-      # See comments in backend/src/server.js for the generation command.
+      - key: ADMIN_PASS
+        value: pulseras2026
       - key: ALLOWED_ORIGINS
         value: https://iara-eight.vercel.app,https://iara-ivory.vercel.app,https://iara-alpha.vercel.app,https://artesaniagualeguay.com,http://localhost:3000
     autoDeploy: true
