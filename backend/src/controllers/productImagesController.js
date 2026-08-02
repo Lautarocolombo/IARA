@@ -45,8 +45,8 @@ async function uploadProductImages(req, res) {
       const file = req.files[i];
       const processed = await processFile(file);
       const result = await query(
-        'INSERT INTO product_images (product_id, url, filename, cloudinary_public_id, orden, es_principal) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-        [productId, processed.url, processed.filename, processed.cloudinary_public_id || '', startOrden + i, false]
+        'INSERT INTO product_images (product_id, url, filename, cloudinary_public_id, orden, es_principal, descripcion, categoria) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+        [productId, processed.url, processed.filename, processed.cloudinary_public_id || '', startOrden + i, false, req.body.descripcion || '', req.body.categoria || '']
       );
       uploaded.push({
         ...result.rows[0],
@@ -65,7 +65,7 @@ async function updateProductImage(req, res) {
   try {
     const productId = Number(req.params.id);
     const imageId = Number(req.params.imageId);
-    const { es_principal, orden } = req.body;
+    const { es_principal, orden, descripcion, categoria } = req.body;
 
     const imageCheck = await query(
       'SELECT id FROM product_images WHERE id = $1 AND product_id = $2',
@@ -78,6 +78,8 @@ async function updateProductImage(req, res) {
     const updates = {};
     if (typeof es_principal === 'boolean') updates.es_principal = es_principal;
     if (typeof orden === 'number') updates.orden = orden;
+    if (typeof descripcion === 'string') updates.descripcion = descripcion;
+    if (typeof categoria === 'string') updates.categoria = categoria;
 
     if (es_principal === true) {
       await query('UPDATE product_images SET es_principal = false WHERE product_id = $1', [productId]);

@@ -18,10 +18,10 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadsDir);
   },
-  filename: (req, file, cb) => {
+    filename: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     const safe = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_');
-    cb(null, `${Date.now()}_${safe}`);
+    cb(null, `${Date.now()}_${safe}${ext}`);
   }
 });
 
@@ -81,7 +81,7 @@ async function optimizeWithSharp(filePath) {
   }
 }
 
-async function uploadToCloudinary(filePath, originalName) {
+async function uploadToCloudinary(filePath, _originalName) {
   try {
     const cloudinary = require('cloudinary').v2;
     if (!cloudinary.config().cloud_name) {
@@ -145,7 +145,7 @@ async function saveFile(req, res) {
 }
 
 function getPublicUrl(relativePath) {
-  const apiBase = process.env.API_BASE || process.env.SITE_URL || 'https://iara-uxcu.onrender.com';
+  const apiBase = process.env.SITE_URL || '';
   if (!relativePath) return '';
   if (relativePath.startsWith('http')) return relativePath;
   return `${apiBase}${relativePath}`;

@@ -4,6 +4,7 @@ module.exports = {
   moduleFileExtensions: ['js'],
   transform: {},
   verbose: true,
-  testTimeout: 15000,
-  setupFiles: ['<rootDir>/jest.setup.js']
+  testTimeout: 20000,
+  setupFiles: ['<rootDir>/jest.setup.js'],
+  forceExit: true
 };

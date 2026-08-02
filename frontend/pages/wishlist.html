@@ -89,8 +89,8 @@
       content.style.display = 'block';
 
       grid.innerHTML = items.map(product => `
-        <div class="product-card reveal">
-          <div class="product-image" aria-hidden="true">${product.image ? `<img src="${product.image}" alt="${product.name}" />` : (product.emoji || '📿')}</div>
+        <div class="product-card reveal" data-product-id="${product.id}">
+          <div class="product-image" aria-hidden="true">${product.image ? `<img src="${product.image}" alt="${product.name}" loading="lazy" />` : (product.emoji || '📿')}</div>
           <div class="product-info">
             <span class="product-category">${product.category || ''}</span>
             <h3 class="product-name">${product.name}</h3>
@@ -98,7 +98,7 @@
             <div class="product-footer">
               <span class="product-price">${formatARS(product.price)}</span>
               <div style="display:flex;gap:0.5rem;">
-                <button class="btn-add-cart" onclick="addToCart({id: ${product.id}, name: '${product.name}', price: ${product.price}, emoji: '${product.emoji || '📿'}', image: '${product.image || ''}', unit: 'u', qty: 1}); event.stopPropagation();" aria-label="Agregar ${product.name} al carrito"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+                <button class="btn-add-cart" onclick="addToCart({id: ${product.id}, name: '${product.name}', price: ${product.price}, emoji: '${product.emoji || '📿'}', image: '${product.image || ''}', unit: 'u', qty: 1}); renderWishlist();" aria-label="Agregar ${product.name} al carrito"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
                 <button class="btn-outline btn-sm" onclick="removeFromWishlist(${product.id}); renderWishlist();">Quitar</button>
               </div>
             </div>

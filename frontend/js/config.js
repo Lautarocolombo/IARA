@@ -54,9 +54,10 @@ const CONFIG = {
     TRANSITION_SPEED: 0.4
   },
 
-  // API
+   // API — usar URLs relativas para aprovechar el rewrite de Vercel
+  // (/api/* → Render backend), evitando problemas de CORS y cold starts
   API: {
-    BASE: 'https://iara-uxcu.onrender.com'
+    BASE: ''
   },
 
   // URLs externas

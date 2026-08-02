@@ -8,20 +8,38 @@ const crypto = require('crypto');
 const pino = require('pino');
 const { initDB } = require('./lib/db');
 const { handleUploadError, saveFile } = require('./lib/upload');
+const { errorHandler } = require('./middleware/errorHandler');
+const { notFound } = require('./middleware/errorHandler');
 
 const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
 
+dotenv.config({ override: false });
+
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
+
 process.on('uncaughtException', (err) => {
-  logger.error('Uncaught Exception:', err);
-  process.exit(1);
+  logger.error({ err: err.message, stack: err.stack }, 'Uncaught Exception');
+  gracefulShutdown();
 });
 
 process.on('unhandledRejection', (reason) => {
-  logger.error('Unhandled Rejection:', reason);
-  process.exit(1);
+  logger.error({ reason }, 'Unhandled Rejection');
 });
 
-dotenv.config();
+async function gracefulShutdown(signal) {
+  logger.info(`${signal || 'SIGTERM'} recibido, cerrando servidor gracefully...`);
+  try {
+    const { pool } = require('./lib/db');
+    if (pool) {
+      await pool.end();
+      logger.info('Pool de base de datos cerrado');
+    }
+  } catch (err) {
+    logger.error({ err: err.message }, 'Error cerrando pool de DB');
+  }
+  process.exit(0);
+}
 
 if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
   try {
@@ -33,20 +51,25 @@ if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && proce
     });
     logger.info('Cloudinary configurado correctamente');
   } catch (err) {
-    logger.warn('Error configurando Cloudinary:', err.message);
+    logger.warn({ err: err.message }, 'Error configurando Cloudinary');
   }
 }
 
-const requiredEnvVars = ['JWT_SECRET', 'ADMIN_USER', 'ADMIN_PASS'];
+const requiredEnvVars = ['JWT_SECRET', 'ADMIN_USER'];
 const missingEnvVars = requiredEnvVars.filter(key => !process.env[key]);
-const isTest = process.env.NODE_ENV === 'test';
-const productionEnvVars = isTest
-  ? {}
-  : {
+const hasAdminPass = !!(process.env.ADMIN_PASS_HASH || process.env.ADMIN_PASS);
+if (!hasAdminPass && process.env.NODE_ENV !== 'test') {
+  missingEnvVars.push('ADMIN_PASS_HASH');
+}
+const isProduction = process.env.NODE_ENV === 'production';
+const productionEnvVars = isProduction
+  ? {
       DATABASE_URL: 'connection string de PostgreSQL (ej: postgresql://user:pass@host:5432/db?sslmode=require)',
       ALLOWED_ORIGINS: 'orígenes permitidos separados por coma (ej: https://tudominio.com,http://localhost:3000)',
-    };
+    }
+  : {};
 const missingProductionVars = Object.keys(productionEnvVars).filter(key => !process.env[key]);
+
 if (missingEnvVars.length > 0 || missingProductionVars.length > 0) {
   console.error('='.repeat(60));
   console.error('FALTAN VARIABLES DE ENTORNO REQUERIDAS');
@@ -54,9 +77,9 @@ if (missingEnvVars.length > 0 || missingProductionVars.length > 0) {
   if (missingEnvVars.length > 0) {
     console.error('\nVariables de inicio (validadas al arrancar):');
     missingEnvVars.forEach(key => {
-      if (key === 'ADMIN_PASS') {
-        console.error(`  ${key} → contraseña de admin en texto plano (ej: pulseras2026)`);
-      } else if (key === 'JWT_SECRET') {
+      if (key === 'ADMIN_PASS_HASH') {
+          console.error(`  ${key} → hash bcrypt de la contraseña de admin (o ADMIN_PASS en texto plano como fallback)`);
+        } else if (key === 'JWT_SECRET') {
         console.error(`  ${key} → generar con: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"`);
       } else if (key === 'ADMIN_USER') {
         console.error(`  ${key} → nombre de usuario admin, ej: Iara`);
@@ -80,6 +103,8 @@ if (missingEnvVars.length > 0 || missingProductionVars.length > 0) {
 }
 
 const app = express();
+app.set('trust proxy', 1);
+
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -102,39 +127,37 @@ app.use(helmet({
     preload: true
   }
 }));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || '').split(',').filter(Boolean);
 
-function isOriginAllowed(origin) {
-  if (!origin) return true;
-  return allowedOrigins.some(allowed => {
-    if (allowed === origin) return true;
-    if (allowed.includes('*')) {
-      const pattern = allowed.replace(/\*/g, '.*');
-      return new RegExp('^' + pattern + '$').test(origin);
-    }
-    return false;
-  });
-}
-
-if (!allowedOrigins.length && process.env.NODE_ENV === 'production') {
-  logger.warn('ALLOWED_ORIGINS no estÃ¡ configurado en producciÃ³n. El CORS puede fallar para orÃ­genes no permitidos.');
-}
-
 const corsOptions = allowedOrigins.length
   ? {
-      origin: isOriginAllowed,
+      origin: function(origin, callback) {
+        if (!origin) {
+          return callback(null, true);
+        }
+        const allowed = allowedOrigins.some(allowed => {
+          if (allowed === origin) return true;
+          if (allowed.includes('*')) {
+            const pattern = allowed.replace(/\*/g, '.*');
+            return new RegExp('^' + pattern + '$').test(origin);
+          }
+          return false;
+        });
+        callback(null, allowed);
+      },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With', 'X-Request-ID'],
     }
   : {
       origin: true,
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With', 'X-Request-ID'],
     };
 
 app.use(cors(corsOptions));
@@ -167,8 +190,21 @@ app.use('/api/orders', contactLimiter);
 app.use(limiter);
 
 app.use((req, res, next) => {
-  res.setHeader('X-Request-ID', crypto.randomUUID());
+  res.setHeader('X-Request-ID', req.headers['x-request-id'] || crypto.randomUUID());
   res.locals.csrfToken = crypto.randomBytes(32).toString('hex');
+  logger.debug({ reqId: res.getHeader('X-Request-ID'), method: req.method, url: req.url }, 'Request recibida');
+  next();
+});
+
+const TIMEOUT_MS = 30000;
+app.use((req, res, next) => {
+  const timeout = setTimeout(() => {
+    if (!res.headersSent) {
+      res.status(408).json({ error: 'Request timeout', message: 'El servidor tardó demasiado en responder. Intentá de nuevo.' });
+    }
+  }, TIMEOUT_MS);
+  res.on('finish', () => clearTimeout(timeout));
+  res.on('close', () => clearTimeout(timeout));
   next();
 });
 
@@ -187,24 +223,9 @@ app.use('/api', require('./routes/siteSettings'));
 app.use('/api', require('./routes/sitemap'));
 app.use('/api', require('./routes/reviews'));
 app.use('/api', require('./routes/productImages'));
-app.use('/api/health', require('./routes/health'));
-
-const TIMEOUT_MS = 10000;
-app.use((req, res, next) => {
-  const timeout = setTimeout(() => {
-    if (!res.headersSent) {
-      res.status(408).json({ error: 'Request timeout', message: 'El servidor tardó demasiado en responder. Intentá de nuevo.' });
-    }
-  }, TIMEOUT_MS);
-  res.on('finish', () => clearTimeout(timeout));
-  next();
-});
+app.use('/api', require('./routes/health'));
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', uptime: process.uptime() });
-});
-
-app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
 
@@ -226,26 +247,28 @@ app.get('/*', (req, res) => {
   res.sendFile(path.join(staticDir, 'index.html'));
 });
 
-app.use((err, req, res, _next) => {
-  logger.error('Server error:', err.message);
-  const statusCode = err.statusCode || 500;
-  const message = process.env.NODE_ENV === 'production' && statusCode === 500
-    ? 'Error interno del servidor'
-    : err.message;
-  res.status(statusCode).json({ error: message });
-});
+app.use(notFound);
+app.use(errorHandler);
 
 initDB().then(() => {
   logger.info('Base de datos inicializada correctamente');
 }).catch(err => {
-  logger.error('Error inicializando DB:', err);
+  logger.error({ err: err.message, stack: err.stack }, 'Error inicializando DB');
   console.error('Error inicializando DB:', err);
 });
 
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;
   const HOST = process.env.HOST || '0.0.0.0';
-  app.listen(PORT, HOST, () => logger.info(`Backend escuchando en http://${HOST}:${PORT}`));
+  const server = app.listen(PORT, HOST, () => logger.info(`Backend escuchando en http://${HOST}:${PORT}`));
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      logger.error(`Puerto ${PORT} en uso. Usá PORT=${Number(PORT) + 1}`);
+      process.exit(1);
+    }
+    throw err;
+  });
 } else {
   module.exports = app;
 }

@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { createPreference } = require('../controllers/paymentController');
+const { confirmTransferPayment, getPaymentStatus } = require('../controllers/paymentController');
 
-router.post('/create-preference', createPreference);
+router.post('/transfer', confirmTransferPayment);
+router.get('/transfer/status', getPaymentStatus);
 
 module.exports = router;

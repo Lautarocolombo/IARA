@@ -14,10 +14,11 @@ if (-not $vercelCmd) {
 $envVars = @{
   'NODE_ENV' = 'production'
   'JWT_SECRET' = ''
-  'ADMIN_USER' = ''
-  'ADMIN_PASS' = ''
+  'ADMIN_USER' = 'Iara'
+  'ADMIN_PASS_HASH' = ''
   'ALLOWED_ORIGINS' = 'https://iara-ivory.vercel.app'
   'DATABASE_URL' = ''
+  'SITE_URL' = 'https://iara-ivory.vercel.app'
   'RESEND_API_KEY' = ''
   'EMAIL_FROM' = 'noreply@artesaniagualeguay.com'
   'ADMIN_NOTIFICATION_EMAIL' = 'admin@artesaniagualeguay.com'
