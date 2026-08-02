@@ -7,7 +7,7 @@ const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
 const pino = require('pino');
 const { initDB } = require('./lib/db');
-const { handleUploadError, saveFile } = require('./lib/upload');
+const { handleUploadError, processFile, uploadSingle } = require('./lib/upload');
 const { errorHandler } = require('./middleware/errorHandler');
 const { notFound } = require('./middleware/errorHandler');
 
@@ -229,7 +229,23 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
 });
 
-app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUploadError, saveFile);
+app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUploadError, uploadSingle, async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se recibió imagen' });
+    }
+    const processed = await processFile(req.file);
+    res.json({
+      url: processed.url,
+      filename: processed.filename,
+      size: req.file.size,
+      isCloudinary: processed.isCloudinary
+    });
+  } catch (err) {
+    logger.error({ err: err.message }, 'Error procesando imagen');
+    res.status(500).json({ error: 'Error al procesar la imagen' });
+  }
+});
 
 app.use('/uploads', express.static(path.join(__dirname, '..', '..', 'uploads')));
 const staticDir = path.join(__dirname, '..', '..', 'frontend');
@@ -259,9 +275,8 @@ const dbReady = initDB().then(() => {
 
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;
-  const HOST = process.env.HOST || '0.0.0.0';
   dbReady.then(() => {
-    const server = app.listen(PORT, HOST, () => logger.info(`Backend escuchando en http://${HOST}:${PORT}`));
+    const server = app.listen(PORT, '0.0.0.0', () => logger.info(`Backend escuchando en puerto ${PORT}`));
 
     server.on('error', (err) => {
       if (err.code === 'EADDRINUSE') {
