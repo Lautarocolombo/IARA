@@ -3,10 +3,10 @@
 function initTheme() {
   const savedTheme = localStorage.getItem('ag_theme') || 'light';
   document.documentElement.setAttribute('data-theme', savedTheme);
-  updateThemeIcon(savedTheme);
+  updateThemeUI(savedTheme);
 }
 
-function updateThemeIcon(theme) {
+function updateThemeUI(theme) {
   const toggle = document.getElementById('themeToggle');
   if (toggle) {
     toggle.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
@@ -19,7 +19,7 @@ function toggleTheme() {
   const newTheme = current === 'dark' ? 'light' : 'dark';
   document.documentElement.setAttribute('data-theme', newTheme);
   localStorage.setItem('ag_theme', newTheme);
-  updateThemeIcon(newTheme);
+  updateThemeUI(newTheme);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
