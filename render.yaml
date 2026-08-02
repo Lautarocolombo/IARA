@@ -18,8 +18,10 @@ services:
         value: lara
       - key: ADMIN_PASS
         value: pulseras2026
+      - key: DATABASE_URL
+        value: postgresql://neondb_owner:npg_FKbM0xfQ3Lpd@ep-purple-water-axuf1ls3-pooler.c-4.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
       - key: ALLOWED_ORIGINS
-        value: https://iara-anm6r4tx5-iara3.vercel.app,https://iara-peach.vercel.app,https://iara-eight.vercel.app,https://iara-ivory.vercel.app,https://iara-alpha.vercel.app,https://*.vercel.app,https://artesaniagualeguay.com,http://localhost:3000
+        value: https://iara-peach.vercel.app,https://*.vercel.app,https://artesaniagualeguay.com,http://localhost:3000
     autoDeploy: true
     branch: main
     repo: https://github.com/Lautarocolombo/IARA.git
