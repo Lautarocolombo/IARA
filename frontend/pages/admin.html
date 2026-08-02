@@ -49,7 +49,6 @@
       <a href="#orders" data-section="orders">🧾 Pedidos</a>
       <a href="#testimonials" data-section="testimonials">💬 Testimonios</a>
       <a href="#texts" data-section="texts">📝 Textos del Sitio</a>
-      <a href="#payment" data-section="payment">💳 Configuración de Pago</a>
     </nav>
     <div class="sidebar-footer">
       <a href="../index.html" target="_blank" class="btn btn-secondary btn-full">← Ver sitio</a>
@@ -203,62 +202,7 @@
           <span id="settingsStatus" style="margin-left: 0.5rem; font-size: 0.85rem;"></span>
         </div>
       </div>
-
-        <div class="card" id="paymentSection" style="display:none;">
-           <div class="card-header">
-             <h3 class="card-header-title">Configuración de Pago</h3>
-             <p class="card-header-subtitle">Alias de MercadoPago y datos de pago</p>
-           </div>
-           <div class="card-body">
-             <div class="info-note">
-               <div class="info-note-icon">ℹ️</div>
-               <div class="info-note-content">
-                 <strong>El alias se configura desde acá:</strong>
-                 <ol style="margin: 0.5rem 0 0 1rem; padding-left: 1rem;">
-                   <li>Completá "Alias de MercadoPago" con el alias real (ej: artesania.gualeguay.mp)</li>
-                   <li>Completá los demás datos: nombre del titular, WhatsApp para comprobantes y mensaje</li>
-                   <li>Activá el cobro con el toggle y presioná "Guardar cambios"</li>
-                 </ol>
-                 <small style="display: block; margin-top: 0.5rem; opacity: 0.8;">Estos datos van a aparecer automáticamente en la pantalla de pago del checkout del sitio.</small>
-               </div>
-             </div>
-
-             <div class="form-group" style="margin-top: 1rem;">
-               <label>Alias de MercadoPago</label>
-               <input type="text" id="paymentMpAlias" placeholder="Ej: artesania.gualeguay.mp" />
-               <p class="form-hint">Este alias se mostrará a los clientes en el checkout para que realicen la transferencia.</p>
-             </div>
-             <div class="form-group">
-               <label>Nombre del titular de la cuenta</label>
-               <input type="text" id="paymentHolderName" placeholder="Ej: María González" />
-               <p class="form-hint">Nombre de la cuenta bancaria para que el cliente confirme que coincide antes de transferir.</p>
-             </div>
-             <div class="form-group">
-               <label>WhatsApp para comprobantes</label>
-               <input type="text" id="paymentWhatsapp" placeholder="Ej: 3444634444" />
-               <p class="form-hint">Número sin espacios ni signos +. Se usará para armar el link de WhatsApp.</p>
-             </div>
-             <div class="form-group">
-               <label>Mensaje para el cliente</label>
-               <textarea id="paymentMessage" rows="3" placeholder="Ej: Transferí el total exacto y enviá el comprobante por WhatsApp para confirmar tu pedido."></textarea>
-               <p class="form-hint">Este mensaje se mostrará en el checkout y en el link de WhatsApp al cliente.</p>
-             </div>
-             <div class="form-group">
-               <label>Cobro por alias activo</label>
-               <div class="toggle-row">
-                 <label class="toggle">
-                   <input type="checkbox" id="paymentActive" checked />
-                   <span class="toggle-slider"></span>
-                 </label>
-                 <span class="toggle-label" id="paymentToggleLabel">Activo</span>
-               </div>
-               <p class="form-hint">Desactivá esta opción para pausar temporalmente el cobro por alias sin borrar la configuración.</p>
-             </div>
-             <button class="btn btn-primary" onclick="savePaymentConfig()">Guardar cambios</button>
-             <span id="paymentStatus" style="margin-left: 0.5rem; font-size: 0.85rem;"></span>
-           </div>
-         </div>
-  </main>
+   </main>
 
   <div class="modal-overlay" id="modalOverlay">
     <div class="modal">
@@ -537,8 +481,7 @@
         products: ['Productos', 'Gestioná productos, fotos y precios', '+ Nuevo Producto'],
         orders: ['Pedidos', 'Gestioná pedidos y pagos', ''],
         testimonials: ['Testimonios', 'Gestioná testimonios de clientes', ''],
-        texts: ['Textos del Sitio', 'Modificá los textos que aparecen en el sitio', ''],
-        payment: ['Configuración de Pago', 'Alias de MercadoPago y datos de pago', '']
+        texts: ['Textos del Sitio', 'Modificá los textos que aparecen en el sitio', '']
       };
       const [title, subtitle, action] = titles[section] || titles.products;
       document.getElementById('sectionTitle').textContent = title;
@@ -554,8 +497,6 @@
       if (section === 'orders') loadOrders();
       if (section === 'testimonials') loadTestimonials();
       if (section === 'texts') loadSiteTexts();
-      if (section === 'settings') loadSettings();
-      if (section === 'payment') loadPaymentConfig();
     }
 
     function openSectionModal() {
@@ -975,107 +916,6 @@
       }
     }
 
-    async function loadPaymentConfig() {
-      try {
-        const res = await adminFetch('/api/admin/payment-config');
-        const data = await res.json();
-        document.getElementById('paymentMpAlias').value = data.mpAlias || '';
-        document.getElementById('paymentHolderName').value = data.holderName || '';
-        const whatsapp = data.whatsapp || '3444634444';
-        document.getElementById('paymentWhatsapp').value = whatsapp;
-        document.getElementById('paymentMessage').value = data.message || data.instructions || 'Transferí el total exacto y enviá el comprobante por WhatsApp para confirmar tu pedido.';
-        const activeCheckbox = document.getElementById('paymentActive');
-        activeCheckbox.checked = data.active !== false;
-        document.getElementById('paymentToggleLabel').textContent = activeCheckbox.checked ? 'Activo' : 'Inactivo';
-      } catch (err) {
-        console.error('Error cargando config de pago:', err);
-      }
-    }
-
-    function updatePaymentToggleLabel() {
-      const active = document.getElementById('paymentActive').checked;
-      document.getElementById('paymentToggleLabel').textContent = active ? 'Activo' : 'Inactivo';
-    }
-
-    async function savePaymentConfig() {
-      const alias = document.getElementById('paymentMpAlias').value.trim();
-      const holderName = document.getElementById('paymentHolderName').value.trim();
-      const whatsapp = document.getElementById('paymentWhatsapp').value.trim();
-      const message = document.getElementById('paymentMessage').value.trim();
-      const active = document.getElementById('paymentActive').checked;
-      const statusEl = document.getElementById('paymentStatus');
-      const btn = event.target;
-      try {
-        btn.disabled = true;
-        statusEl.textContent = 'Guardando...';
-        statusEl.style.color = '#334155';
-        const res = await adminFetch('/api/admin/payment-config', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ mpAlias: alias, holderName, whatsapp, message, active })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Error al guardar');
-        statusEl.textContent = 'Guardado ✓';
-        statusEl.style.color = '#10b981';
-        showToast('Configuración de pago guardada', 'success');
-        setTimeout(() => { statusEl.textContent = ''; }, 3000);
-      } catch (err) {
-        statusEl.textContent = 'En mantenimiento';
-        statusEl.style.color = '#dc2626';
-        showToast('Error al guardar configuración de pago', 'error');
-      } finally {
-        btn.disabled = false;
-      }
-    }
-
-    async function loadSettings() {
-      try {
-        const res = await adminFetch('/api/site-config');
-        const data = await res.json();
-        document.getElementById('settingInstagram').value = data.instagram || '';
-        document.getElementById('settingMpAlias').value = data.payment?.mpAlias || '';
-      } catch (err) {
-        console.error('Error cargando configuración:', err);
-      }
-    }
-
-    async function saveSettings() {
-      const instagram = document.getElementById('settingInstagram').value.trim();
-      const mpAlias = document.getElementById('settingMpAlias').value.trim();
-      const statusEl = document.getElementById('settingsStatus');
-      const btn = event.target;
-      try {
-        btn.disabled = true;
-        statusEl.textContent = 'Guardando...';
-        statusEl.style.color = '#334155';
-        if (instagram) {
-          await adminFetch('/api/admin/site-texts', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key: 'instagram_url', value: instagram })
-          });
-        }
-        if (mpAlias !== undefined) {
-          await adminFetch('/api/admin/payment-config', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mpAlias })
-          });
-        }
-        statusEl.textContent = 'Guardado ✓';
-        statusEl.style.color = '#10b981';
-        showToast('Configuración guardada', 'success');
-        setTimeout(() => { statusEl.textContent = ''; }, 3000);
-      } catch (err) {
-        statusEl.textContent = 'En mantenimiento';
-        statusEl.style.color = '#dc2626';
-        showToast('Error al guardar configuración', 'error');
-      } finally {
-        btn.disabled = false;
-      }
-    }
-
     async function syncProductsToNeon() {
       const statusEl = document.getElementById('syncProductsStatus');
       const btn = document.getElementById('syncProductsBtn');
@@ -1148,7 +988,6 @@
         document.getElementById('loginOverlay').classList.add('hidden');
       }
       navigateTo('products');
-      document.getElementById('paymentActive')?.addEventListener('change', updatePaymentToggleLabel);
     });
 
     document.getElementById('pImageFile')?.addEventListener('change', (e) => {
