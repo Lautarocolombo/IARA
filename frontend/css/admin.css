@@ -1044,6 +1044,48 @@ tr:last-child td {
   object-fit: cover;
 }
 
+.product-image-item-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0,0,0,0.65);
+  color: #fff;
+  font-size: 0.7rem;
+  padding: 3px 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0;
+  transition: opacity .2s;
+  z-index: 2;
+}
+
+.product-image-item-preview:hover .product-image-item-label {
+  opacity: 1;
+}
+
+.product-image-item-category {
+  position: absolute;
+  top: 0.4rem;
+  left: 0.4rem;
+  background: var(--accent);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 40px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  z-index: 2;
+}
+
+.product-image-item-meta-form {
+  padding: 8px;
+  border-top: 1px dashed var(--border);
+  background: var(--blush, #fff0f4);
+}
+
 .product-image-item-actions {
   display: flex;
   gap: 0.35rem;
