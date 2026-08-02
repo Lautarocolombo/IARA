@@ -39,16 +39,20 @@ const upload = multer({
   fileFilter,
   limits: {
     fileSize: 5 * 1024 * 1024,
-    filesLimit: 1
+    filesLimit: 10
   }
 });
 
 const uploadSingle = upload.single('image');
+const uploadMultiple = upload.array('images', 10);
 
 function handleUploadError(err, req, res, next) {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({ error: 'La imagen es muy grande (máximo 5MB)' });
+    }
+    if (err.code === 'LIMIT_FILE_COUNT') {
+      return res.status(400).json({ error: 'Máximo 10 imágenes por envío' });
     }
     return res.status(400).json({ error: err.message });
   }
@@ -56,6 +60,64 @@ function handleUploadError(err, req, res, next) {
     return res.status(400).json({ error: err.message });
   }
   next();
+}
+
+async function optimizeWithSharp(filePath) {
+  try {
+    const sharp = require('sharp');
+    const ext = path.extname(filePath).toLowerCase();
+    const optimizedPath = filePath.replace(ext, '.webp');
+    await sharp(filePath)
+      .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+      .webp({ quality: 80 })
+      .toFile(optimizedPath);
+    if (optimizedPath !== filePath && fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+    return path.basename(optimizedPath);
+  } catch (err) {
+    logger.warn('Sharp no disponible o error en optimización, usando archivo original:', err.message);
+    return path.basename(filePath);
+  }
+}
+
+async function uploadToCloudinary(filePath, originalName) {
+  try {
+    const cloudinary = require('cloudinary').v2;
+    if (!cloudinary.config().cloud_name) {
+      return null;
+    }
+    const result = await new Promise((resolve, reject) => {
+      cloudinary.uploader.upload(filePath, {
+        folder: 'artesania-gualeguay/products',
+        resource_type: 'image',
+        transformation: [{ quality: 'auto', fetch_format: 'auto' }]
+      }, (error, result) => {
+        if (error) return reject(error);
+        resolve(result);
+      });
+    });
+    return result.secure_url;
+  } catch (err) {
+    logger.warn('Error subiendo a Cloudinary, usando local:', err.message);
+    return null;
+  }
+}
+
+async function processFile(file) {
+  const useCloudinary = process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY;
+  
+  if (useCloudinary) {
+    const cloudinaryUrl = await uploadToCloudinary(file.path, file.originalname);
+    if (cloudinaryUrl) {
+      fs.unlinkSync(file.path);
+      return { url: cloudinaryUrl, filename: path.basename(file.path), isCloudinary: true };
+    }
+  }
+
+  const optimizedFilename = await optimizeWithSharp(file.path);
+  const relativePath = `/uploads/products/${optimizedFilename}`;
+  return { url: relativePath, filename: optimizedFilename, isCloudinary: false };
 }
 
 async function saveFile(req, res) {
@@ -70,8 +132,18 @@ async function saveFile(req, res) {
   });
 }
 
+function getPublicUrl(relativePath) {
+  const apiBase = process.env.API_BASE || process.env.SITE_URL || 'https://iara-uxcu.onrender.com';
+  if (!relativePath) return '';
+  if (relativePath.startsWith('http')) return relativePath;
+  return `${apiBase}${relativePath}`;
+}
+
 module.exports = {
   uploadSingle,
+  uploadMultiple,
   handleUploadError,
-  saveFile
+  saveFile,
+  processFile,
+  getPublicUrl
 };

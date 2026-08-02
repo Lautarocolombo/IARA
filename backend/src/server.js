@@ -172,6 +172,7 @@ app.use('/api', require('./routes/paymentConfig'));
 app.use('/api', require('./routes/siteSettings'));
 app.use('/api', require('./routes/sitemap'));
 app.use('/api', require('./routes/reviews'));
+app.use('/api', require('./routes/productImages'));
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });
