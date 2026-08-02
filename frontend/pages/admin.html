@@ -15,6 +15,8 @@
   <script src="../js/config.js"></script>
   <script src="../js/theme.js"></script>
   <script src="../js/ui.js"></script>
+  <script src="../js/toasts.js"></script>
+  <script src="../js/connection.js"></script>
   <script src="../js/productImages.js"></script>
 </head>
 <body>
@@ -72,7 +74,13 @@
           <p class="header-subtitle" id="sectionSubtitle">Gestioná productos, fotos y precios</p>
         </div>
       </div>
-      <button class="btn btn-primary" id="sectionAction" onclick="openSectionModal()">+ Nuevo Producto</button>
+      <div class="header-right">
+        <div class="connection-indicator checking" id="connectionIndicator" title="Estado de conexión">
+          <span class="dot"></span>
+          <span class="connection-text">Verificando...</span>
+        </div>
+        <button class="btn btn-primary" id="sectionAction" onclick="openSectionModal()">+ Nuevo Producto</button>
+      </div>
     </div>
 
     <div class="card" id="productsSection">
@@ -255,6 +263,7 @@
       </div>
       <div class="modal-body">
         <div class="save-status" id="productSaveStatus"></div>
+        <div class="autosave-indicator" id="autosaveIndicator" style="display:none;font-size:0.8rem;color:#64748b;margin-bottom:0.5rem;"></div>
         <div class="form-group">
           <label>Nombre del producto</label>
           <input type="text" id="pName" placeholder="Nombre del producto" />
@@ -285,6 +294,7 @@
             <div class="dropzone-hint">JPG, PNG, WEBP o GIF — máx 5MB c/u</div>
           </div>
           <div class="save-status" id="productImageUploadStatus"></div>
+          <div class="product-image-upload-progress" id="productImageUploadProgress"></div>
           <div class="product-image-gallery" id="productImageGallery"></div>
           <input type="hidden" id="pImage" />
         </div>
@@ -1517,6 +1527,124 @@ document.getElementById('pImageFile')?.addEventListener('change', (e) => {
         showToast(err.message, 'error');
       }
     };
+
+    async function safeSave(fn, options) {
+      const btn = options?.button;
+      if (btn) btn.disabled = true;
+      const loadingToast = window.Toasts?.loading?.(options?.loadingMessage || 'Guardando...');
+      try {
+        await fn();
+        window.Toasts?.success?.(options?.successMessage || 'Cambios guardados');
+        return true;
+      } catch (err) {
+        const isNetwork = err.message.includes('fetch') || err.message.includes('Failed to fetch') || err.message.includes('NetworkError');
+        if (isNetwork && options?.autoRetry !== false) {
+          window.Toasts?.warning?.('Reintentando guardado...');
+          await new Promise(r => setTimeout(r, 1500));
+          try {
+            await fn();
+            window.Toasts?.success?.(options?.successMessage || 'Cambios guardados');
+            return true;
+          } catch (err2) {
+            window.Toasts?.error?.(options?.errorMessage || err2.message || 'No se pudo guardar');
+            return false;
+          }
+        }
+        window.Toasts?.error?.(options?.errorMessage || err.message || 'No se pudo guardar');
+        return false;
+      } finally {
+        if (btn) btn.disabled = false;
+        loadingToast?.remove?.();
+      }
+    }
+
+    async function checkServerHealth() {
+      try {
+        const res = await fetch(`${CONFIG.API.BASE}/api/health`, { method: 'GET', headers: { 'Accept': 'application/json' } });
+        const data = await res.json().catch(() => ({}));
+        const ok = res.ok && (data.status === 'ok' || data.status === 'sqlite-fallback');
+        const el = document.getElementById('loginHint');
+        const errEl = document.getElementById('loginError');
+        if (ok) {
+          el.textContent = 'Conexión verificada';
+          el.style.color = '#10b981';
+          errEl.style.display = 'none';
+          if (window.Connection) window.Connection.retryNow();
+        } else {
+          throw new Error(data.dbError || 'Servidor no disponible');
+        }
+      } catch (err) {
+        const el = document.getElementById('loginHint');
+        const errEl = document.getElementById('loginError');
+        el.textContent = 'Sin conexión con el servidor';
+        el.style.color = '#dc2626';
+        errEl.textContent = err.message;
+        errEl.style.display = 'block';
+      }
+    }
+
+    function updateConnectionIndicator(status) {
+      const el = document.getElementById('connectionIndicator');
+      if (!el) return;
+      const textEl = el.querySelector('.connection-text');
+      el.classList.remove('connected', 'error', 'offline', 'checking');
+      if (status.backend === 'connected') {
+        el.classList.add('connected');
+        textEl.textContent = 'Conectado';
+      } else if (status.backend === 'offline') {
+        el.classList.add('offline');
+        textEl.textContent = 'Sin conexión';
+      } else if (status.backend === 'error') {
+        el.classList.add('error');
+        textEl.textContent = 'Error';
+      } else {
+        el.classList.add('checking');
+        textEl.textContent = 'Reconectando...';
+      }
+    }
+
+    if (window.Connection) {
+      window.Connection.subscribe(updateConnectionIndicator);
+      window.Connection.startMonitoring();
+    }
+
+    let autosaveTimer = null;
+    const autosaveFields = ['pName', 'pCategory', 'pPrice', 'pDesc'];
+    const autosaveIndicator = document.getElementById('autosaveIndicator');
+
+    function showAutosave(status, message) {
+      if (!autosaveIndicator) return;
+      autosaveIndicator.style.display = 'inline-flex';
+      autosaveIndicator.className = 'autosave-indicator ' + status;
+      autosaveIndicator.textContent = message;
+    }
+
+    autosaveFields.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('input', () => {
+        if (autosaveIndicator) showAutosave('saving', 'Guardando...');
+        clearTimeout(autosaveTimer);
+        autosaveTimer = setTimeout(() => {
+          const name = document.getElementById('pName')?.value.trim();
+          const price = Number(document.getElementById('pPrice')?.value);
+          if (name && price) {
+            showAutosave('saved', 'Guardado');
+            setTimeout(() => { if (autosaveIndicator) autosaveIndicator.style.display = 'none'; }, 2000);
+          } else {
+            showAutosave('error', 'Faltan datos');
+            setTimeout(() => { if (autosaveIndicator) autosaveIndicator.style.display = 'none'; }, 3000);
+          }
+        }, 2000);
+      });
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (document.getElementById('connectionIndicator')) {
+        updateConnectionIndicator(window.Connection?.getStatus?.() || { backend: 'checking' });
+      }
+      setTimeout(checkServerHealth, 800);
+    });
   </script>
 </body>
 </html>
