@@ -250,7 +250,7 @@ app.get('/*', (req, res) => {
 app.use(notFound);
 app.use(errorHandler);
 
-initDB().then(() => {
+const dbReady = initDB().then(() => {
   logger.info('Base de datos inicializada correctamente');
 }).catch(err => {
   logger.error({ err: err.message, stack: err.stack }, 'Error inicializando DB');
@@ -260,15 +260,17 @@ initDB().then(() => {
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;
   const HOST = process.env.HOST || '0.0.0.0';
-  const server = app.listen(PORT, HOST, () => logger.info(`Backend escuchando en http://${HOST}:${PORT}`));
+  dbReady.then(() => {
+    const server = app.listen(PORT, HOST, () => logger.info(`Backend escuchando en http://${HOST}:${PORT}`));
 
-  server.on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-      logger.error(`Puerto ${PORT} en uso. Usá PORT=${Number(PORT) + 1}`);
-      process.exit(1);
-    }
-    throw err;
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        logger.error(`Puerto ${PORT} en uso. Usá PORT=${Number(PORT) + 1}`);
+        process.exit(1);
+      }
+      throw err;
+    });
   });
 } else {
-  module.exports = app;
+  module.exports = { app, dbReady };
 }
