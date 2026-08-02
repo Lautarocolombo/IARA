@@ -34,6 +34,7 @@
       </div>
       <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">Ingresar</button>
       <p class="login-hint" id="loginHint">Verificando conexión con el servidor...</p>
+      <button class="btn btn-secondary btn-sm" id="retryHealthBtn" style="display:none;margin-top:0.5rem;" onclick="checkServerHealth()">Reintentar conexión</button>
       <p id="loginError" class="login-error" style="display:none;color:var(--accent, #d47090);text-align:center;font-size:0.85rem;margin-top:0.5rem;"></p>
       <a href="../index.html" class="btn btn-secondary" style="width:100%;margin-top:0.75rem;">← Volver al sitio</a>
     </div>
@@ -380,16 +381,26 @@
     async function checkServerHealth() {
       const btn = document.getElementById('loginBtn');
       const hint = document.getElementById('loginHint');
+      const retryBtn = document.getElementById('retryHealthBtn');
+      let controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
       try {
         btn.textContent = 'Verificando...';
         btn.disabled = true;
-        const res = await fetch(getApiUrl('/api/health'), { method: 'GET', signal: AbortSignal.timeout(15000) });
+        const res = await fetch(getApiUrl('/api/health'), { method: 'GET', signal: controller.signal });
+        clearTimeout(timeoutId);
         if (!res.ok) throw new Error(`Servidor respondió con estado ${res.status}`);
         hint.textContent = '✅ Servidor conectado';
         hint.style.color = '#10b981';
+        if (retryBtn) retryBtn.style.display = 'none';
       } catch (err) {
-        hint.textContent = `❌ No se pudo conectar al servidor: ${err.message}`;
-        hint.style.color = '#ef4444';
+        clearTimeout(timeoutId);
+        hint.textContent = '⚠️ El servidor no responde. Podés intentar igualmente iniciar sesión.';
+        hint.style.color = '#f59e0b';
+        if (retryBtn) {
+          retryBtn.style.display = 'inline-block';
+          retryBtn.onclick = () => { checkServerHealth(); };
+        }
       } finally {
         btn.textContent = 'Ingresar';
         btn.disabled = false;
