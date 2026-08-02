@@ -2,7 +2,8 @@
   'use strict';
 
   const CHECK_INTERVAL = 30000;
-  const MAX_RETRIES = 3;
+  const KEEP_ALIVE_INTERVAL = 10 * 60 * 1000;
+  const MAX_RETRIES = 4;
   const BASE_DELAY = 1000;
   const TIMEOUT = 10000;
 
@@ -92,6 +93,24 @@
         checkBackend();
       }
     }, CHECK_INTERVAL);
+
+    setInterval(() => {
+      if (navigator.onLine) {
+        keepAlive();
+      }
+    }, KEEP_ALIVE_INTERVAL);
+  }
+
+  async function keepAlive() {
+    try {
+      await fetch(`${CONFIG.API.BASE}/api/health`, {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(5000)
+      });
+    } catch (e) {
+      // silencioso: solo mantenemos el intento
+    }
   }
 
   function getStatus() {
