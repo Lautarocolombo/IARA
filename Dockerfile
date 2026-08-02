@@ -9,10 +9,8 @@ RUN npm ci --only=production && npm ci --prefix backend --only=production
 
 COPY backend/ ./backend/
 COPY frontend/ ./frontend/
-COPY public/ ./public/
-COPY scripts/ ./scripts/
 
-RUN node scripts/backup.js
+RUN mkdir -p /app/uploads/products
 
 EXPOSE 3000
 

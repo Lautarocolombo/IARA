@@ -173,8 +173,8 @@ function renderProducts(productsToRender) {
     const waMessage = encodeURIComponent(`Hola! Me interesa el producto: ${product.name} - ${formatARS(product.price)}`);
     const waLink = `https://wa.me/${CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g, '')}?text=${waMessage}`;
 return `
-      <div class="product-card reveal">
-        <a href="pages/product.html?id=${product.id}" style="text-decoration:none;color:inherit;">
+    <div class="product-card reveal" data-product-id="${product.id}">
+      <a href="pages/product.html?id=${product.id}" style="text-decoration:none;color:inherit;">
           <div class="product-image ${catClass}" aria-hidden="true">${imageHtml}</div>
           ${badgeHtml}
           <div class="product-info">

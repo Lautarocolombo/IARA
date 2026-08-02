@@ -1,1 +1,40 @@
-{"version":2,"buildCommand":"echo Build complete","installCommand":"npm ci","framework":"parcel","outputDirectory":"frontend","rewrites":[{"source":"/api/(.*)","destination":"https://iara-uxcu.onrender.com/api/$1"}]}
+{
+  "version": 2,
+  "outputDirectory": "frontend",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://iara-uxcu.onrender.com/api/$1",
+      "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
+    },
+    {
+      "source": "/uploads/(.*)",
+      "destination": "https://iara-uxcu.onrender.com/uploads/$1",
+      "methods": ["GET", "HEAD"]
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*).(js|css|png|jpg|jpeg|webp|gif|svg|woff|woff2|ico)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*).html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
+      ]
+    }
+  ]
+}

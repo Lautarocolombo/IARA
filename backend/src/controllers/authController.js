@@ -1,7 +1,6 @@
 const jwt = require('jsonwebtoken');
+const bcrypt = require('bcrypt');
 const logger = require('../lib/logger');
-
-const DEV_MODE = process.env.NODE_ENV !== 'production';
 
 const login = async (req, res) => {
   try {
@@ -17,10 +16,12 @@ const login = async (req, res) => {
     if (typeof username !== 'string' || typeof password !== 'string') {
       return res.status(400).json({ error: 'Formato de solicitud inválido' });
     }
+
     const ADMIN_USER = process.env.ADMIN_USER;
+    const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH;
     const ADMIN_PASS = process.env.ADMIN_PASS;
 
-    if (!ADMIN_USER || !ADMIN_PASS) {
+    if (!ADMIN_USER || (!ADMIN_PASS_HASH && !ADMIN_PASS)) {
       return res.status(500).json({ error: 'Credenciales de administrador no configuradas en el servidor' });
     }
 
@@ -30,9 +31,26 @@ const login = async (req, res) => {
     const cleanUsername = username.trim();
     const cleanPassword = password.trim();
 
-    if (cleanUsername.toLowerCase() === ADMIN_USER.toLowerCase() && cleanPassword === ADMIN_PASS) {
-      role = 'admin';
-      user = ADMIN_USER;
+    if (cleanUsername.toLowerCase() === ADMIN_USER.toLowerCase()) {
+      if (ADMIN_PASS_HASH) {
+        try {
+          if (await bcrypt.compare(cleanPassword, ADMIN_PASS_HASH)) {
+            role = 'admin';
+            user = ADMIN_USER;
+          }
+        } catch (err) {
+          logger.warn('ADMIN_PASS_HASH no es un hash bcrypt válido, intentando con ADMIN_PASS fallback');
+          if (ADMIN_PASS && cleanPassword === ADMIN_PASS) {
+            role = 'admin';
+            user = ADMIN_USER;
+          }
+        }
+      } else if (ADMIN_PASS) {
+        if (cleanPassword === ADMIN_PASS) {
+          role = 'admin';
+          user = ADMIN_USER;
+        }
+      }
     }
 
     if (!role) {

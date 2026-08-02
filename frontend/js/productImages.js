@@ -40,16 +40,32 @@
       item.draggable = true;
       item.dataset.id = img.id;
       item.dataset.orden = img.orden;
-      item.innerHTML = `
+       item.innerHTML = `
         <div class="${ITEM_CLASS}-preview">
-          <img src="${escapeHtml(img.url)}" alt="Producto" loading="lazy" />
+          <img src="${escapeHtml(img.url)}" alt="${escapeHtml(img.descripcion || 'Producto')}" loading="lazy" />
+          ${img.descripcion ? `<div class="${ITEM_CLASS}-label" title="${escapeHtml(img.descripcion)}">${escapeHtml(img.descripcion)}</div>` : ''}
+          ${img.categoria ? `<span class="${ITEM_CLASS}-category cat-${img.categoria}" title="${escapeHtml(img.categoria)}">${escapeHtml(img.categoria)}</span>` : ''}
         </div>
         <div class="${ITEM_CLASS}-actions">
           <button class="btn btn-sm btn-secondary" data-action="principal" title="Marcar como principal">${img.es_principal ? '⭐ Principal' : '⭐'}</button>
+          <button class="btn btn-sm btn-secondary" data-action="edit-meta" title="Editar descripción/categoría">✏️</button>
           <button class="btn btn-sm btn-secondary" data-action="replace" title="Reemplazar imagen">🔄</button>
           <button class="btn btn-sm btn-danger" data-action="delete" title="Eliminar">🗑</button>
         </div>
         <input type="file" class="${ITEM_CLASS}-replace-input" accept="image/jpeg,image/png,image/webp" data-image-id="${img.id}" style="display:none" />
+        <div class="${ITEM_CLASS}-meta-form" style="display:none;padding:8px;border-top:1px dashed #f4c0d0;">
+          <input type="text" class="${ITEM_CLASS}-desc-input" placeholder="Descripción" value="${escapeHtml(img.descripcion || '')}" style="width:100%;padding:4px 8px;margin-bottom:4px;font-size:0.8rem;" />
+          <select class="${ITEM_CLASS}-cat-input" style="width:100%;padding:4px 8px;font-size:0.8rem;border:1.5px solid #f4c8d4;border-radius:6px;background:#fff;">
+            <option value="">Sin categoría</option>
+            <option value="pulseras" ${img.categoria === 'pulseras' ? 'selected' : ''}>Pulseras</option>
+            <option value="accesorios" ${img.categoria === 'accesorios' ? 'selected' : ''}>Accesorios</option>
+            <option value="souvenirs" ${img.categoria === 'souvenirs' ? 'selected' : ''}>Souvenirs</option>
+          </select>
+          <div style="display:flex;gap:4px;margin-top:4px;">
+            <button class="btn btn-sm btn-secondary" data-action="save-meta">💾</button>
+            <button class="btn btn-sm btn-secondary" data-action="cancel-meta">✕</button>
+          </div>
+        </div>
       `;
       item.addEventListener('dragstart', (e) => {
         e.dataTransfer.setData('text/plain', String(img.id));
@@ -78,6 +94,23 @@
       item.querySelector('[data-action="principal"]')?.addEventListener('click', async () => {
         await markPrincipal(productId, img.id);
         await loadImages(productId);
+      });
+      item.querySelector('[data-action="edit-meta"]')?.addEventListener('click', () => {
+        const metaForm = item.querySelector(`.${ITEM_CLASS}-meta-form`);
+        if (metaForm) metaForm.style.display = 'block';
+      });
+      item.querySelector('[data-action="save-meta"]')?.addEventListener('click', async () => {
+        const descInput = item.querySelector(`.${ITEM_CLASS}-desc-input`);
+        const catInput = item.querySelector(`.${ITEM_CLASS}-cat-input`);
+        await updateImageMeta(productId, img.id, {
+          descripcion: descInput ? descInput.value : '',
+          categoria: catInput ? catInput.value : ''
+        });
+        await loadImages(productId);
+      });
+      item.querySelector('[data-action="cancel-meta"]')?.addEventListener('click', () => {
+        const metaForm = item.querySelector(`.${ITEM_CLASS}-meta-form`);
+        if (metaForm) metaForm.style.display = 'none';
       });
       item.querySelector('[data-action="replace"]')?.addEventListener('click', () => {
         const input = item.querySelector(`.${ITEM_CLASS}-replace-input`);
@@ -109,6 +142,7 @@
       dropzone.classList.remove('drag-over');
       const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
       if (!files.length) return;
+      showMetaInputs();
       uploadFiles(productId, files);
     });
     const input = dropzone.querySelector('input[type="file"]');
@@ -116,11 +150,17 @@
       input.addEventListener('change', async () => {
         const files = Array.from(input.files);
         if (!files.length) return;
+        showMetaInputs();
         await uploadFiles(productId, files);
         input.value = '';
       });
     }
-  }
+   }
+
+   function showMetaInputs() {
+     const metaDiv = document.querySelector('.image-meta-inputs');
+     if (metaDiv) metaDiv.style.display = 'block';
+   }
 
   async function uploadFiles(productId, files) {
     const status = document.getElementById('productImageUploadStatus');
@@ -147,8 +187,12 @@
       progressContainer.innerHTML = '<div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div><div class="progress-text">0%</div>';
     }
     try {
-      const formData = new FormData();
+       const formData = new FormData();
       files.forEach(file => formData.append('images', file));
+      const descInput = document.getElementById('pImageDescripcion');
+      const catInput = document.getElementById('pImageCategoria');
+      if (descInput && descInput.value) formData.append('descripcion', descInput.value);
+      if (catInput && catInput.value) formData.append('categoria', catInput.value);
       const xhr = new XMLHttpRequest();
       const url = `${CONFIG.API.BASE}/api/products/${productId}/images`;
       const token = getAuthToken();
@@ -256,6 +300,27 @@
         throw new Error(data.error || 'Error al actualizar');
       }
       showToast('Imagen principal actualizada', 'success');
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  }
+
+  async function updateImageMeta(productId, imageId, meta) {
+    try {
+      const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}/images/${imageId}`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${getAuthToken()}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(meta)
+      }, 2, 1000);
+      if (!res) throw new Error('Error de red');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Error al actualizar metadatos');
+      }
+      showToast('Metadatos actualizados', 'success');
     } catch (err) {
       showToast(err.message, 'error');
     }

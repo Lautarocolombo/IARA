@@ -10,18 +10,32 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: "3000"
       - key: JWT_SECRET
         generateValue: true
-      - key: SITE_URL
-        value: https://iara-peach.vercel.app
       - key: ADMIN_USER
-        value: lara
-      - key: ADMIN_PASS
-        value: pulseras2026
+        value: Iara
+      # --- Set these in Render Dashboard → Environment → Add Environment Variable ---
+      # ADMIN_PASS_HASH: bcrypt hash of admin password
+      #   Generate: node -e "const bcrypt=require('bcrypt'); bcrypt.hash('tu-pass',10).then(h=>console.log(h))"
+      # ADMIN_PASS: plaintext password (fallback, less secure)
+      # DATABASE_URL: Neon PostgreSQL connection string (with sslmode=require)
+      # DO NOT commit actual credentials to git
+      - key: ADMIN_PASS_HASH
+        generateValue: true
       - key: DATABASE_URL
-        value: postgresql://neondb_owner:npg_FKbM0xfQ3Lpd@ep-purple-water-axuf1ls3-pooler.c-4.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+        generateValue: true
+      - key: SITE_URL
+        value: https://iara-ivory.vercel.app
       - key: ALLOWED_ORIGINS
-        value: https://iara-peach.vercel.app,https://*.vercel.app,https://artesaniagualeguay.com,http://localhost:3000
+        value: https://iara-ivory.vercel.app,https://*.vercel.app,https://artesaniagualeguay.com,http://localhost:3000,http://localhost:3001
+      - key: SHIPPING_COST
+        value: "200"
+      - key: SHIPPING_THRESHOLD
+        value: "2000"
+      - key: WHATSAPP
+        value: "+5493444634444"
     autoDeploy: true
     branch: main
     repo: https://github.com/Lautarocolombo/IARA.git

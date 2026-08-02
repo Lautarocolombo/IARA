@@ -161,16 +161,17 @@
             showToast('', 'Completá la calificación y el comentario', 'error');
             return;
           }
-          try {
-            const res = await fetch(`${CONFIG.API.BASE}/api/products/${id}/reviews`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ rating: selectedRating, comment })
-            });
-            if (res.ok) {
-              showToast('', '¡Reseña enviada! Gracias.', 'success');
-              location.reload();
-            } else {
+           try {
+             const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${id}/reviews`, {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ rating: selectedRating, comment })
+             }, 2, 1000);
+             if (!res) throw new Error('Error de red');
+             if (res.ok) {
+               showToast('', '¡Reseña enviada! Gracias.', 'success');
+               location.reload();
+             } else {
               showToast('', 'Error al enviar la reseña', 'error');
             }
           } catch (error) {

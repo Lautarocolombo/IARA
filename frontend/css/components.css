@@ -268,35 +268,26 @@
 }
 
 .hero-visual {
-  position: relative;
-  height: 280px;
-  z-index: 2;
+  display: flex;
+  gap: 1.75rem;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .hero-card {
-  position: absolute;
+  position: relative;
   background: #fff;
   border-radius: 20px;
   box-shadow: var(--shadow-md);
   padding: 20px;
   width: 190px;
+  min-width: 160px;
   border: 1px solid #f4d0da;
   transition: var(--transition);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.75rem;
-}
-
-.hero-card:nth-child(1) {
-  transform: rotate(-6deg) translate(-55px, 10px);
-  z-index: 2;
-}
-
-.hero-card:nth-child(2) {
-  transform: rotate(5deg) translate(55px, -15px);
-  z-index: 3;
-  background: var(--blush);
 }
 
 .hero-card:hover {
@@ -493,7 +484,7 @@
 }
 
 /* ==================== PRODUCTS GRID ==================== */
-.products-grid {
+.products-grid, .catalog-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   gap: 1.75rem;
@@ -1094,8 +1085,10 @@
     grid-template-columns: 1fr;
     padding: 40px 20px;
   }
-  .hero-visual { display: none; }
+   .hero-visual { display: none; }
   .hero-content { padding: 20px 0; }
+  .hero-buttons { justify-content: center; }
+  .hero-card { width: 160px; }
   .highlights { flex-direction: column; padding: 0 20px; }
   .highlight-item { border-right: none; border-bottom: 1px solid #f4c8d4; }
   .highlight-item:last-child { border-bottom: none; }
@@ -1103,7 +1096,7 @@
   .stat-item { border-right: none; border-bottom: 1px solid #f4d0da; }
   .stat-item:last-child { border-bottom: none; }
   .catalog, .about, .contact, .how-it-works { padding: 3rem 20px; }
-  .products-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+   .products-grid, .catalog-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
   .about-content, .contact-container { grid-template-columns: 1fr; }
   .about-stats { grid-template-columns: 1fr; }
   .newsletter { padding: 3rem 20px; }
@@ -1120,7 +1113,7 @@
   .logo-text { display: none; }
   .hero-content h1 { font-size: 1.8rem; }
   .filter-bar { gap: 0.5rem; }
-  .products-grid { grid-template-columns: 1fr; }
+   .products-grid, .catalog-grid { grid-template-columns: 1fr; }
 }
 
 .search-bar {
