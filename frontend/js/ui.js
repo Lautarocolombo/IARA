@@ -404,3 +404,33 @@ async function loadSiteSettings() {
 
 window.loadSiteSettings = loadSiteSettings;
 window.loadSiteTexts = loadSiteTexts;
+window.loadHeroCards = loadHeroCards;
+
+async function loadHeroCards() {
+  try {
+    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-texts`, {}, 2, 1000);
+    if (!res) return;
+    const data = await res.json();
+
+    const heroCards = [1, 2];
+    heroCards.forEach(cardNum => {
+      const name = data[`hero_card_${cardNum}_name`];
+      const price = data[`hero_card_${cardNum}_price`];
+      const image = data[`hero_card_${cardNum}_image`];
+
+      const nameEl = document.getElementById(`heroCard${cardNum}Name`);
+      const priceEl = document.getElementById(`heroCard${cardNum}Price`);
+      const imgEl = document.getElementById(`heroCard${cardNum}Img`);
+
+      if (nameEl && name) nameEl.textContent = name;
+      if (priceEl && price) priceEl.textContent = price;
+      if (imgEl && image) {
+        imgEl.innerHTML = `<img src="${image}" alt="${name || 'Card imagen'}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" />`;
+      } else if (imgEl && !image) {
+        imgEl.textContent = cardNum === 1 ? '📿' : '💎';
+      }
+    });
+  } catch (err) {
+    console.error('Error cargando cards del hero:', err);
+  }
+}
