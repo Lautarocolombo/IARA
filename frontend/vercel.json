@@ -3,8 +3,35 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://iara-uxcu.onrender.com/api/$1",
-      "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
+      "destination": "https://iara-uxcu.onrender.com/api/$1"
+    },
+    {
+      "source": "/uploads/(.*)",
+      "destination": "https://iara-uxcu.onrender.com/uploads/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*).(js|css|png|jpg|jpeg|webp|gif|svg|woff|woff2|ico)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*).html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
+      ]
     }
   ]
 }
