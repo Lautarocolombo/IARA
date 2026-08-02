@@ -50,3 +50,4 @@ test-results/
 # Diagnostic scripts (contain Render API key)
 backend/_check_prod.js
 backend/_inspect_env.js
+backend/test-output.txt
