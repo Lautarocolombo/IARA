@@ -12,15 +12,18 @@
   <link rel="stylesheet" href="../css/components.css" />
   <link rel="stylesheet" href="../css/animations.css" />
   <style>
-    .content{max-width:800px;margin:0 auto;padding:100px 24px 40px;}
-    .content h1{font-family:'Playfair Display',serif;font-size:2rem;margin-bottom:0.5rem;}
-    .content h2{font-family:'Playfair Display',serif;font-size:1.4rem;margin-top:2rem;margin-bottom:0.75rem;color:var(--text-dark);}
-    .content p{color:var(--text-mid);line-height:1.8;margin-bottom:1rem;}
-    .back-link{display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-mid);font-size:0.9rem;font-weight:500;margin-bottom:2rem;}
+    .legal-content { max-width: 800px; margin: 0 auto; padding: 100px 24px 60px; }
+    .legal-content h1 { font-family: 'Playfair Display', serif; font-size: 2rem; margin-bottom: 0.5rem; }
+    .legal-content h2 { font-family: 'Playfair Display', serif; font-size: 1.4rem; margin-top: 2rem; margin-bottom: 0.75rem; color: var(--text-dark); }
+    .legal-content p { color: var(--text-mid); line-height: 1.8; margin-bottom: 1rem; }
+    .legal-content ul { margin: 0.5rem 0 1.5rem 1.5rem; color: var(--text-mid); }
+    .legal-content li { margin-bottom: 0.5rem; }
+    .back-link { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--text-mid); font-size: 0.9rem; font-weight: 500; margin-bottom: 2rem; }
+    .last-updated { color: var(--text-mid); font-size: 0.85rem; margin-bottom: 1.5rem; }
   </style>
 </head>
 <body>
-  <a href="#content" class="skip-link">Saltar al contenido</a>
+  <a href="#content" class="skip-link">Saltar al contenido principal</a>
   <!-- ============== NAVBAR =============== -->
   <nav class="navbar" id="navbar">
     <div class="navbar-container">
@@ -45,28 +48,92 @@
       </div>
     </div>
   </nav>
-  <main id="content" class="content">
+  <main id="content" class="legal-content">
     <a href="../index.html" class="back-link">← Volver al sitio</a>
     <h1>Términos y Condiciones</h1>
-    <p>Última actualización: 2026</p>
+    <p class="last-updated">Última actualización: 2026</p>
+
     <h2>1. Aceptación de términos</h2>
-    <p>Al utilizar nuestro sitio y realizar compras, aceptás los presentes términos y condiciones. Si no estás de acuerdo, no deberías usar el sitio ni realizar compras.</p>
-    <h2>2. Productos y disponibilidad</h2>
-    <p>Todos los productos son artesanales y únicos. Las imágenes pueden variar ligeramente respecto al producto final debido a la naturaleza artesanal. Nos reservamos el derecho de modificar el catálogo y los precios sin previo aviso.</p>
-    <h2>3. Precios y pagos</h2>
-    <p>Los precios están expresados en pesos argentinos (ARS). Aceptamos pagos a través de MercadoPago. El precio final se confirma al momento de la compra.</p>
-    <h2>4. Envíos</h2>
-    <p>Realizamos envíos a todo el territorio argentino. El costo de envío se calcula según la ubicación y el monto de la compra. El envío es gratuito para compras superiores a ARS 2.000.</p>
-    <h2>5. Devoluciones y cambios</h2>
-    <p>Dado la naturaleza artesanal de nuestros productos, no se aceptan devoluciones por cambio de opinión. En caso de productos con defectos de fabricación, ofrecimos cambio o reembolso dentro de los 30 días posteriores a la compra.</p>
-    <h2>6. Propiedad intelectual</h2>
-    <p>Todo el contenido del sitio, incluyendo diseños, textos, imágenes y logotipos, es propiedad de Artesanía Gualeguay y no puede ser reproducido sin autorización.</p>
-    <h2>7. Responsabilidad</h2>
-    <p>No nos hacemos responsables por daños indirectos o incidentales derivados del uso de nuestros productos.</p>
-    <h2>8. Contacto</h2>
-    <p>Para cualquier consulta sobre estos términos, escribinos a chicafittargentina@gmail.com o llamá al +54 9 3444 634-4444.</p>
+    <p>Al hacer click en "Continuar al pago" y completar tu pedido en nuestro sitio, estás aceptando nuestros términos y condiciones. Si no estás de acuerdo con alguna parte, te pedimos no realices la compra.</p>
+
+    <h2>2. Sobre nosotros</h2>
+    <p>Artesanía Gualeguay es un emprendimiento artesanal con sede en Gualeguay, Entre Ríos, Argentina. Fabricamos a mano pulseras, souvenirs, llaveros y otros accesorios únicos usando técnicas tradicionales.</p>
+
+    <h2>3. Productos y disponibilidad</h2>
+    <p>Todos nuestros productos son artesanales y únicos. Las fotos son referenciales: cada pieza puede variar ligeramente en color, textura o tamaño debido a su elaboración manual. Nos reservamos el derecho de suspender la venta de cualquier artículo cuyo stock se agote o que presente modificaciones.</p>
+
+    <h2>4. Proceso de compra</h2>
+    <p>El proceso de compra es el siguiente:</p>
+    <ul>
+      <li><strong>Explorar el catálogo</strong>: Podés navegar por todos los productos disponibles.</li>
+      <li><strong>Agregar al carrito</strong>: Seleccioná los productos que desees y agregálos al carrito.</li>
+      <li><strong>Completar datos de envío</strong>: En la página de checkout, completá tu nombre, dirección, teléfono y email.</li>
+      <li><strong>Confirmar compra</strong>: Al enviar el formulario, se crea tu pedido y se muestra la pantalla de pago.</li>
+    </ul>
+
+    <h2>5. Forma de pago</h2>
+    <p>No utilizamos pasarelas de pago automáticas. El método de pago es el siguiente:</p>
+    <ul>
+      <li><strong>Transferencia por alias de MercadoPago</strong>: Te mostramos un alias de MercadoPago para que realices la transferencia del total de tu compra.</li>
+      <li><strong>Confirmación por WhatsApp</strong>: Una vez realizada la transferencia, debés enviar el comprobante por WhatsApp al +54 9 3444 634-4444 para confirmar tu pedido.</li>
+      <li><strong>Envío de MercadoPago</strong>: Si preferís, también podés usar el botón de MercadoPago disponible en la página de checkout.</li>
+    </ul>
+    <p>Tu pedido será confirmado manualmente una vez que recibamos tu comprobante de pago.</p>
+
+    <h2>6. Precios</h2>
+    <p>Todos los precios están expresados en pesos argentinos (ARS) e incluyen IVA. Nos reservamos el derecho de modificar los precios en cualquier momento, aunque estos cambios no afectarán a los pedidos ya confirmados.</p>
+
+    <h2>7. Envíos</h2>
+    <p>Hacemos envíos a todo el territorio argentino mediante las empresas de mensajería que consideramos más confiables. El costo de envío es de $200 ARS, o es <strong>gratuito</strong> para compras superiores a $2.000 ARS. El tiempo estimado de entrega es de 3 a 10 días hábiles después de la confirmación del pago.</p>
+
+    <h2>8. Política de cambios y devoluciones</h2>
+    <p>Dado que nuestros productos son artesanales y únicos, no realizamos devoluciones por arrepentimiento. En caso de que el producto llegue con algún daño por defecto de fabricación o no coincida con lo pedido, deberás contactarnos dentro de los 7 días posteriores a la recepción para gestionar el cambio o reempazo correspondiente. Consultá nuestra <a href="../pages/devoluciones.html">Política de Cambios y Devoluciones</a> completa.</p>
+
+    <h2>9. Propiedad intelectual</h2>
+    <p>Todo el contenido del sitio —incluyendo textos, imágenes, diseños, logos y software— es propiedad de Artesanía Gualeguay y está protegido por las leyes de propiedad intelectual. No está permitida su reproducción, distribución o uso comercial sin autorización expresa.</p>
+
+    <h2>10. Limitación de responsabilidad</h2>
+    <p>No somos responsables por daños indirectos, pérdidas de datos o perjuicios conexos que pudieran surgir del uso del sitio o de los productos adquiridos, salvo en los casos previstos por la legislación argentina.</p>
+
+    <h2>11. Modificaciones de estos términos</h2>
+    <p>Nos reservamos el derecho de modificar estos términos y condiciones en cualquier momento. Las modificaciones entrarán en vigor desde su publicación en el sitio.</p>
+
+    <h2>12. Contacto</h2>
+    <p>Para cualquier duda sobre estos términos, podés contactarnos a:</p>
+    <ul>
+      <li>Email: chicafittargentina@gmail.com</li>
+      <li>WhatsApp: +54 9 3444 634-4444</li>
+      <li>Instagram: @artesanias_gualeguay</li>
+    </ul>
   </main>
   <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h4>Artesanía Gualeguay</h4>
+        <p>Creando pulseras y souvenirs únicos desde el corazón de Gualeguay, Entre Ríos.</p>
+        <div class="social-links">
+          <a href="https://instagram.com/artesanias_gualeguay" title="Instagram" class="social-icon" aria-label="Instagram">📷</a>
+          <a href="https://wa.me/5493444634444" title="WhatsApp" class="social-icon" aria-label="WhatsApp">💬</a>
+        </div>
+      </div>
+      <div class="footer-section">
+        <h4>Enlaces Rápidos</h4>
+        <ul>
+          <li><a href="../index.html">Inicio</a></li>
+          <li><a href="../index.html#catalog">Catálogo</a></li>
+          <li><a href="../index.html#about">Sobre Nosotros</a></li>
+          <li><a href="../pages/contact.html">Contacto</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="../pages/terms.html">Términos y Condiciones</a></li>
+          <li><a href="../pages/privacy.html">Política de Privacidad</a></li>
+          <li><a href="../pages/devoluciones.html">Cambios y Devoluciones</a></li>
+        </ul>
+      </div>
+    </div>
     <div class="footer-bottom">
       <p>&copy; 2026 Artesanía Gualeguay. Todos los derechos reservados.</p>
     </div>
