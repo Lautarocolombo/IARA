@@ -230,6 +230,7 @@ async function initDB() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       product_id INTEGER NOT NULL,
       url TEXT NOT NULL,
+      alt TEXT DEFAULT '',
       filename TEXT DEFAULT '',
       cloudinary_public_id TEXT DEFAULT '',
       orden INTEGER DEFAULT 0,
@@ -252,6 +253,11 @@ async function initDB() {
       await query('ALTER TABLE product_images ADD COLUMN cloudinary_public_id TEXT DEFAULT \'\'');
     } catch (err) {
       logger.debug({ err: err.message }, 'Columna cloudinary_public_id ya existe o no se pudo agregar (SQLite)');
+    }
+    try {
+      await query('ALTER TABLE product_images ADD COLUMN alt TEXT DEFAULT \'\'');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna alt ya existe o no se pudo agregar (SQLite)');
     }
     try {
       await query('ALTER TABLE orders ADD COLUMN shipping_name TEXT DEFAULT \'\'');
@@ -308,15 +314,22 @@ async function initDB() {
     } catch (err) {
       logger.debug({ err: err.message }, 'Columna filename ya existe o no se pudo agregar (SQLite)');
     }
-    try {
-      await query('ALTER TABLE product_images RENAME COLUMN sort_order TO orden');
-    } catch (err) {
-      logger.debug({ err: err.message }, 'Columna sort_order -> orden ya migrada (SQLite)');
-    }
-    try {
-      await query('ALTER TABLE product_images RENAME COLUMN is_primary TO es_principal');
-    } catch (err) {
-      logger.debug({ err: err.message }, 'Columna is_primary -> es_principal ya migrada (SQLite)');
+    await query('CREATE TABLE IF NOT EXISTS migrations (name TEXT PRIMARY KEY, applied_at DATETIME DEFAULT CURRENT_TIMESTAMP)');
+
+    const sqliteRenameMigrations = [
+      { name: 'rename_sort_order_to_orden', oldCol: 'sort_order', sql: 'ALTER TABLE product_images RENAME COLUMN sort_order TO orden' },
+      { name: 'rename_is_primary_to_es_principal', oldCol: 'is_primary', sql: 'ALTER TABLE product_images RENAME COLUMN is_primary TO es_principal' }
+    ];
+
+    for (const mig of sqliteRenameMigrations) {
+      const applied = await query('SELECT COUNT(*) AS count FROM migrations WHERE name = ?', [mig.name]);
+      if (applied.rows[0].count > 0) continue;
+      const pragmaResult = await query('PRAGMA table_info(product_images)');
+      const colExists = pragmaResult.rows.some(row => row.name === mig.oldCol);
+      if (colExists) {
+        await query(mig.sql);
+      }
+      await query('INSERT OR IGNORE INTO migrations (name) VALUES (?)', [mig.name]);
     }
     try {
       await query('ALTER TABLE products ADD COLUMN featured BOOLEAN DEFAULT FALSE');
@@ -336,7 +349,7 @@ async function initDB() {
     'CREATE TABLE IF NOT EXISTS contacts (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL, message TEXT NOT NULL, status TEXT DEFAULT \'new\', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS payment_config (id SERIAL PRIMARY KEY, mp_alias TEXT DEFAULT \'\', holder_name TEXT DEFAULT \'\', whatsapp TEXT DEFAULT \'\', message TEXT DEFAULT \'\', active BOOLEAN DEFAULT TRUE, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS site_settings (id SERIAL PRIMARY KEY, key TEXT UNIQUE NOT NULL, value TEXT DEFAULT \'\', updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
-    'CREATE TABLE IF NOT EXISTS product_images (id SERIAL PRIMARY KEY, product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE, url TEXT NOT NULL, filename TEXT DEFAULT \'\', cloudinary_public_id TEXT DEFAULT \'\', orden INTEGER DEFAULT 0, es_principal BOOLEAN DEFAULT FALSE, descripcion TEXT DEFAULT \'\', categoria TEXT DEFAULT \'\', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
+    'CREATE TABLE IF NOT EXISTS product_images (id SERIAL PRIMARY KEY, product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE, url TEXT NOT NULL, alt TEXT DEFAULT \'\', filename TEXT DEFAULT \'\', cloudinary_public_id TEXT DEFAULT \'\', orden INTEGER DEFAULT 0, es_principal BOOLEAN DEFAULT FALSE, descripcion TEXT DEFAULT \'\', categoria TEXT DEFAULT \'\', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS webhook_events (id SERIAL PRIMARY KEY, event_id TEXT UNIQUE NOT NULL, source TEXT DEFAULT \'transfer\', payload JSONB NOT NULL, status TEXT DEFAULT \'pending\', processed_at TIMESTAMP, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)'
   ];
 
@@ -352,6 +365,12 @@ async function initDB() {
     await query('ALTER TABLE product_images ADD COLUMN IF NOT EXISTS cloudinary_public_id TEXT DEFAULT \'\'');
   } catch (err) {
     logger.debug({ err: err.message }, 'Columna cloudinary_public_id ya existe o no se pudo agregar (PostgreSQL)');
+  }
+
+  try {
+    await query('ALTER TABLE product_images ADD COLUMN IF NOT EXISTS alt TEXT DEFAULT \'\'');
+  } catch (err) {
+    logger.debug({ err: err.message }, 'Columna alt ya existe o no se pudo agregar (PostgreSQL)');
   }
 
   const alterStatements = [
@@ -381,15 +400,24 @@ async function initDB() {
     }
   }
 
-  try {
-    await query('ALTER TABLE product_images RENAME COLUMN sort_order TO orden');
-  } catch (err) {
-    logger.debug({ err: err.message }, 'Columna sort_order -> orden ya migrada (PostgreSQL)');
-  }
-  try {
-    await query('ALTER TABLE product_images RENAME COLUMN is_primary TO es_principal');
-  } catch (err) {
-    logger.debug({ err: err.message }, 'Columna is_primary -> es_principal ya migrada (PostgreSQL)');
+  await query('CREATE TABLE IF NOT EXISTS migrations (name TEXT PRIMARY KEY, applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)');
+
+  const pgRenameMigrations = [
+    { name: 'rename_sort_order_to_orden', oldCol: 'sort_order', sql: 'ALTER TABLE product_images RENAME COLUMN sort_order TO orden' },
+    { name: 'rename_is_primary_to_es_principal', oldCol: 'is_primary', sql: 'ALTER TABLE product_images RENAME COLUMN is_primary TO es_principal' }
+  ];
+
+  for (const mig of pgRenameMigrations) {
+    const applied = await query('SELECT COUNT(*) AS count FROM migrations WHERE name = $1', [mig.name]);
+    if (applied.rows[0].count > 0) continue;
+    const colExists = await query(
+      'SELECT COUNT(*) AS count FROM information_schema.columns WHERE table_name = \'product_images\' AND column_name = $1',
+      [mig.oldCol]
+    );
+    if (colExists.rows[0].count > 0) {
+      await query(mig.sql);
+    }
+    await query('INSERT INTO migrations (name) VALUES ($1) ON CONFLICT (name) DO NOTHING', [mig.name]);
   }
 
   logger.info('Tablas de base de datos inicializadas (PostgreSQL)');
