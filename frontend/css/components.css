@@ -407,6 +407,60 @@
   z-index: 2;
 }
 
+.admin-float {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255,255,255,0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1.5px solid var(--rose-mid);
+  border-radius: 999px;
+  padding: 6px 14px 6px 8px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-float:hover {
+  background: rgba(255,255,255,1);
+  border-color: var(--rose-dark);
+  transform: scale(1.05);
+  box-shadow: var(--shadow-md);
+}
+
+.admin-float-heart {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.admin-float-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--rose-dark);
+  transition: var(--transition);
+}
+
+.admin-float:hover .admin-float-icon {
+  color: var(--rose-dark);
+  transform: scale(1.1);
+}
+
+[data-theme="dark"] .admin-float {
+  background: rgba(30,20,24,0.85);
+  border-color: var(--rose-mid);
+}
+
+[data-theme="dark"] .admin-float:hover {
+  background: rgba(30,20,24,1);
+  border-color: var(--rose-dark);
+}
+
 .hero-card {
   position: absolute;
   background: #fff;
@@ -1156,6 +1210,13 @@
   .theme-toggle { width: 64px; height: 36px; }
   .wishlist-icon, .cart-icon { width: 40px; height: 40px; }
   .wishlist-count, .cart-count { width: 16px; height: 16px; font-size: 0.65rem; top: -3px; right: -3px; }
+  .admin-float {
+    top: 8px;
+    right: 8px;
+    padding: 4px 10px 4px 6px;
+  }
+  .admin-float-heart { font-size: 14px; }
+  .admin-float-icon svg { width: 12px; height: 12px; }
   .hero-inner {
     grid-template-columns: 1fr;
     padding: 40px 20px;
