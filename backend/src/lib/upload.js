@@ -97,10 +97,22 @@ async function uploadToCloudinary(filePath, originalName) {
         resolve(result);
       });
     });
-    return result.secure_url;
+    return { url: result.secure_url, public_id: result.public_id };
   } catch (err) {
     logger.warn('Error subiendo a Cloudinary, usando local:', err.message);
     return null;
+  }
+}
+
+async function deleteFromCloudinary(publicId) {
+  try {
+    const cloudinary = require('cloudinary').v2;
+    if (!publicId || !cloudinary.config().cloud_name) return false;
+    await cloudinary.uploader.destroy(publicId, { resource_type: 'image' });
+    return true;
+  } catch (err) {
+    logger.warn('Error eliminando de Cloudinary:', err.message);
+    return false;
   }
 }
 
@@ -108,16 +120,16 @@ async function processFile(file) {
   const useCloudinary = process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY;
   
   if (useCloudinary) {
-    const cloudinaryUrl = await uploadToCloudinary(file.path, file.originalname);
-    if (cloudinaryUrl) {
+    const cloudinaryResult = await uploadToCloudinary(file.path, file.originalname);
+    if (cloudinaryResult) {
       fs.unlinkSync(file.path);
-      return { url: cloudinaryUrl, filename: path.basename(file.path), isCloudinary: true };
+      return { url: cloudinaryResult.url, filename: path.basename(file.path), cloudinary_public_id: cloudinaryResult.public_id, isCloudinary: true };
     }
   }
 
   const optimizedFilename = await optimizeWithSharp(file.path);
   const relativePath = `/uploads/products/${optimizedFilename}`;
-  return { url: relativePath, filename: optimizedFilename, isCloudinary: false };
+  return { url: relativePath, filename: optimizedFilename, cloudinary_public_id: '', isCloudinary: false };
 }
 
 async function saveFile(req, res) {
@@ -145,5 +157,6 @@ module.exports = {
   handleUploadError,
   saveFile,
   processFile,
-  getPublicUrl
+  getPublicUrl,
+  deleteFromCloudinary
 };

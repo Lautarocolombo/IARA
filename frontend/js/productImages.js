@@ -36,7 +36,7 @@
     }
     images.forEach((img, idx) => {
       const item = document.createElement('div');
-      item.className = ITEM_CLASS;
+      item.className = ITEM_CLASS + (img.es_principal ? ' es-principal' : '');
       item.draggable = true;
       item.dataset.id = img.id;
       item.dataset.orden = img.orden;
@@ -46,8 +46,10 @@
         </div>
         <div class="${ITEM_CLASS}-actions">
           <button class="btn btn-sm btn-secondary" data-action="principal" title="Marcar como principal">${img.es_principal ? '⭐ Principal' : '⭐'}</button>
+          <button class="btn btn-sm btn-secondary" data-action="replace" title="Reemplazar imagen">🔄</button>
           <button class="btn btn-sm btn-danger" data-action="delete" title="Eliminar">🗑</button>
         </div>
+        <input type="file" class="${ITEM_CLASS}-replace-input" accept="image/jpeg,image/png,image/webp" data-image-id="${img.id}" style="display:none" />
       `;
       item.addEventListener('dragstart', (e) => {
         e.dataTransfer.setData('text/plain', String(img.id));
@@ -77,6 +79,16 @@
         await markPrincipal(productId, img.id);
         await loadImages(productId);
       });
+      item.querySelector('[data-action="replace"]')?.addEventListener('click', () => {
+        const input = item.querySelector(`.${ITEM_CLASS}-replace-input`);
+        if (input) input.click();
+      });
+      item.querySelector(`.${ITEM_CLASS}-replace-input`)?.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        await replaceImage(productId, img.id, file, item);
+        e.target.value = '';
+      });
       item.querySelector('[data-action="delete"]')?.addEventListener('click', async () => {
         if (!confirm('¿Eliminar imagen?')) return;
         await deleteImage(productId, img.id);
@@ -90,10 +102,14 @@
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
       dropzone.addEventListener(evt, preventDefaults);
     });
-    dropzone.addEventListener('drop', async (e) => {
+    dropzone.addEventListener('dragenter', () => dropzone.classList.add('drag-over'));
+    dropzone.addEventListener('dragover', () => dropzone.classList.add('drag-over'));
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+    dropzone.addEventListener('drop', (e) => {
+      dropzone.classList.remove('drag-over');
       const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
       if (!files.length) return;
-      await uploadFiles(productId, files);
+      uploadFiles(productId, files);
     });
     const input = dropzone.querySelector('input[type="file"]');
     if (input) {
@@ -107,25 +123,109 @@
   }
 
   async function uploadFiles(productId, files) {
-    const dropzone = document.getElementById('productImageDropzone');
     const status = document.getElementById('productImageUploadStatus');
+    const progressContainer = document.getElementById('productImageUploadProgress');
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const maxSize = 5 * 1024 * 1024;
+    const invalid = files.filter(f => !allowedTypes.includes(f.type));
+    const oversized = files.filter(f => f.size > maxSize);
+    if (invalid.length || oversized.length) {
+      const msgs = [];
+      if (invalid.length) msgs.push(`${invalid.length} archivo(s) con formato no permitido (solo JPG, PNG, WEBP)`);
+      if (oversized.length) msgs.push(`${oversized.length} archivo(s) superan los 5MB`);
+      if (status) { status.textContent = msgs.join('. '); status.style.color = '#dc2626'; }
+      showToast(msgs.join('. '), 'error');
+      setTimeout(() => { if (status) status.textContent = ''; }, 4000);
+      return;
+    }
     if (status) {
-      status.textContent = 'Subiendo...';
+      status.textContent = `Subiendo ${files.length} imagen(es)...`;
       status.style.color = '#334155';
+    }
+    if (progressContainer) {
+      progressContainer.style.display = 'block';
+      progressContainer.innerHTML = '<div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div><div class="progress-text">0%</div>';
     }
     try {
       const formData = new FormData();
       files.forEach(file => formData.append('images', file));
-      const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}/images`, {
-        method: 'POST',
+      const xhr = new XMLHttpRequest();
+      const url = `${CONFIG.API.BASE}/api/products/${productId}/images`;
+      const token = getAuthToken();
+      const result = await new Promise((resolve, reject) => {
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable && progressContainer) {
+            const pct = Math.round((e.loaded / e.total) * 100);
+            const fill = progressContainer.querySelector('.progress-fill');
+            const text = progressContainer.querySelector('.progress-text');
+            if (fill) fill.style.width = pct + '%';
+            if (text) text.textContent = pct + '%';
+          }
+        });
+        xhr.addEventListener('load', () => resolve({ status: xhr.status, data: JSON.parse(xhr.responseText || '{}') }));
+        xhr.addEventListener('error', () => reject(new Error('Error de red')));
+        xhr.open('POST', url);
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        xhr.send(formData);
+      });
+      if (result.status < 200 || result.status >= 300) {
+        throw new Error(result.data.error || 'Error al subir');
+      }
+      if (status) {
+        status.textContent = `Subidas: ${result.data.images?.length || files.length}`;
+        status.style.color = '#10b981';
+      }
+      await loadImages(productId);
+    } catch (err) {
+      if (status) {
+        status.textContent = err.message;
+        status.style.color = '#dc2626';
+      }
+      showToast(err.message, 'error');
+    } finally {
+      setTimeout(() => {
+        if (status) status.textContent = '';
+        if (progressContainer) {
+          progressContainer.style.display = 'none';
+          progressContainer.innerHTML = '';
+        }
+      }, 3000);
+    }
+  }
+
+  async function replaceImage(productId, imageId, file, itemElement) {
+    const status = document.getElementById('productImageUploadStatus');
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const maxSize = 5 * 1024 * 1024;
+    if (!allowedTypes.includes(file.type)) {
+      if (status) { status.textContent = 'Formato no permitido (solo JPG, PNG, WEBP)'; status.style.color = '#dc2626'; }
+      showToast('Formato no permitido', 'error');
+      setTimeout(() => { if (status) status.textContent = ''; }, 3000);
+      return;
+    }
+    if (file.size > maxSize) {
+      if (status) { status.textContent = 'La imagen supera los 5MB'; status.style.color = '#dc2626'; }
+      showToast('Imagen muy grande (máx 5MB)', 'error');
+      setTimeout(() => { if (status) status.textContent = ''; }, 3000);
+      return;
+    }
+    if (status) {
+      status.textContent = 'Reemplazando imagen...';
+      status.style.color = '#334155';
+    }
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}/images/${imageId}/replace`, {
+        method: 'PUT',
         headers: { Authorization: `Bearer ${getAuthToken()}` },
         body: formData
       }, 2, 1000);
       if (!res) throw new Error('Error de red');
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error al subir');
+      if (!res.ok) throw new Error(data.error || 'Error al reemplazar');
       if (status) {
-        status.textContent = `Subidas: ${data.images?.length || files.length}`;
+        status.textContent = 'Imagen reemplazada';
         status.style.color = '#10b981';
       }
       await loadImages(productId);
@@ -204,7 +304,7 @@
   }
 
   function getAuthToken() {
-    return localStorage.getItem('ag_admin_token') || '';
+    return localStorage.getItem('ag_admin_jwt') || '';
   }
 
   function escapeHtml(str) {
@@ -219,6 +319,7 @@
     init,
     loadImages,
     uploadFiles,
+    replaceImage,
     markPrincipal,
     deleteImage,
     syncOrder

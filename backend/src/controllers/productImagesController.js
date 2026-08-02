@@ -2,7 +2,7 @@ const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const path = require('path');
 const fs = require('fs');
-const { uploadMultiple, handleUploadError, getPublicUrl } = require('../lib/upload');
+const { uploadMultiple, handleUploadError, getPublicUrl, deleteFromCloudinary, uploadSingle, processFile } = require('../lib/upload');
 
 async function getProductImages(req, res) {
   try {
@@ -35,22 +35,22 @@ async function uploadProductImages(req, res) {
     }
 
     const existingImages = await query(
-      'SELECT MAX(orden) as maxOrden FROM product_images WHERE product_id = $1',
+      'SELECT MAX(orden) as max_orden FROM product_images WHERE product_id = $1',
       [productId]
     );
-    const startOrden = (existingImages.rows[0]?.max_orden || -1) + 1;
+    const startOrden = (existingImages.rows[0]?.max_orden ?? -1) + 1;
 
     const uploaded = [];
     for (let i = 0; i < req.files.length; i++) {
       const file = req.files[i];
-      const relativePath = `/uploads/products/${file.filename}`;
+      const processed = await processFile(file);
       const result = await query(
-        'INSERT INTO product_images (product_id, url, filename, orden, es_principal) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-        [productId, relativePath, file.filename, startOrden + i, false]
+        'INSERT INTO product_images (product_id, url, filename, cloudinary_public_id, orden, es_principal) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+        [productId, processed.url, processed.filename, processed.cloudinary_public_id || '', startOrden + i, false]
       );
       uploaded.push({
         ...result.rows[0],
-        url: getPublicUrl(relativePath)
+        url: getPublicUrl(processed.url)
       });
     }
 
@@ -119,6 +119,10 @@ async function deleteProductImage(req, res) {
     }
 
     const image = result.rows[0];
+    if (image.cloudinary_public_id) {
+      await deleteFromCloudinary(image.cloudinary_public_id);
+    }
+
     const filePath = path.join(__dirname, '..', '..', 'uploads', 'products', image.filename);
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
@@ -128,6 +132,43 @@ async function deleteProductImage(req, res) {
     res.json({ ok: true });
   } catch (err) {
     logger.error('Error eliminando imagen:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}
+
+async function replaceProductImage(req, res) {
+  try {
+    const productId = Number(req.params.id);
+    const imageId = Number(req.params.imageId);
+
+    const imageCheck = await query(
+      'SELECT * FROM product_images WHERE id = $1 AND product_id = $2',
+      [imageId, productId]
+    );
+    if (imageCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Imagen no encontrada' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se recibió imagen' });
+    }
+
+    const oldImage = imageCheck.rows[0];
+    if (oldImage.cloudinary_public_id) {
+      await deleteFromCloudinary(oldImage.cloudinary_public_id);
+    }
+
+    const processed = await processFile(req.file);
+    const result = await query(
+      'UPDATE product_images SET url = $1, filename = $2, cloudinary_public_id = $3 WHERE id = $4 RETURNING *',
+      [processed.url, processed.filename, processed.cloudinary_public_id || '', imageId]
+    );
+
+    const updated = result.rows[0];
+    updated.url = getPublicUrl(processed.url);
+    res.json(updated);
+  } catch (err) {
+    logger.error('Error reemplazando imagen:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
@@ -160,5 +201,6 @@ module.exports = {
   uploadProductImages,
   updateProductImage,
   deleteProductImage,
+  replaceProductImage,
   syncProductImages
 };

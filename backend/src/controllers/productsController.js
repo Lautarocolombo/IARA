@@ -1,6 +1,7 @@
 const { query } = require('../lib/db');
 const { productSchema } = require('../lib/validators');
 const logger = require('../lib/logger');
+const { deleteFromCloudinary } = require('../lib/upload');
 
 const getPublicProducts = async (req, res) => {
   try {
@@ -78,6 +79,12 @@ const updateProduct = async (req, res) => {
 const deleteProduct = async (req, res) => {
   const id = Number(req.params.id);
   try {
+    const imagesResult = await query('SELECT cloudinary_public_id FROM product_images WHERE product_id = $1', [id]);
+    for (const img of imagesResult.rows) {
+      if (img.cloudinary_public_id) {
+        await deleteFromCloudinary(img.cloudinary_public_id);
+      }
+    }
     const result = await query('DELETE FROM products WHERE id = $1 RETURNING id', [id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
     res.json({ ok: true });
