@@ -114,5 +114,28 @@ const logout = (req, res) => {
   res.json({ ok: true });
 };
 
-module.exports = { login, refresh, logout, hashPassword };
+const changePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body || {};
+  if (!currentPassword || !newPassword) return res.status(400).json({ error: 'Datos incompletos' });
+  if (newPassword.length < 6) return res.status(400).json({ error: 'La nueva contraseña debe tener al menos 6 caracteres' });
+
+  const ADMIN_USER = process.env.ADMIN_USER;
+  const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH;
+  const ADMIN_PASS = process.env.ADMIN_PASS;
+
+  let hashMatch = false;
+  if (ADMIN_PASS_HASH) {
+    try { hashMatch = await bcrypt.compare(currentPassword, ADMIN_PASS_HASH); } catch(e) {}
+    if (!hashMatch && ADMIN_PASS) hashMatch = currentPassword === ADMIN_PASS;
+  } else if (ADMIN_PASS) {
+    hashMatch = currentPassword === ADMIN_PASS;
+  }
+
+  if (!hashMatch) return res.status(401).json({ error: 'Contraseña actual incorrecta' });
+
+  const newHash = await bcrypt.hash(newPassword, 10);
+  res.json({ ok: true, message: 'Contraseña actualizada. Recordá actualizar ADMIN_PASS_HASH en las variables de entorno del servidor.', newHash });
+};
+
+module.exports = { login, refresh, logout, hashPassword, changePassword };
 

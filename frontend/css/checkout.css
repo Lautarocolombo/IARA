@@ -201,6 +201,56 @@
   margin-top: 1rem;
 }
 
+.transfer-data-box {
+  background: var(--blush);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+}
+
+.transfer-field {
+  margin-bottom: 1rem;
+}
+
+.transfer-field:last-child {
+  margin-bottom: 0;
+}
+
+.transfer-label {
+  display: block;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+  font-weight: 600;
+}
+
+.transfer-value-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.transfer-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  word-break: break-all;
+  flex: 1;
+}
+
+.transfer-note {
+  font-size: 0.85rem;
+  color: var(--text-mid);
+  line-height: 1.6;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
 .btn-block {
   display: inline-block;
   text-align: center;

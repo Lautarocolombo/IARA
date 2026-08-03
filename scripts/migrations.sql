@@ -17,6 +17,7 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_city TEXT DEFAULT '';
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_email TEXT DEFAULT '';
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS subtotal REAL DEFAULT 0;
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_cost REAL DEFAULT 0;
+ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS cbu_cvu TEXT DEFAULT '';
 
 -- Tabla de idempotencia de webhooks
 CREATE TABLE IF NOT EXISTS webhook_events (

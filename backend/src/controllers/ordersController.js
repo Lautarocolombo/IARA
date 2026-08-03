@@ -1,6 +1,9 @@
 const { query, transaction } = require('../lib/db');
 const logger = require('../lib/logger');
 const { orderSchema } = require('../lib/validators');
+const path = require('path');
+const fs = require('fs');
+const PDFDocument = require('pdfkit');
 
 async function logActivity(user, action, entityType = '', entityId = 0, details = '', ip = '') {
   try {
@@ -13,10 +16,38 @@ async function logActivity(user, action, entityType = '', entityId = 0, details 
   }
 }
 
+const VALID_STATUSES = ['pending', 'confirmed', 'preparing', 'shipped', 'delivered', 'cancelled'];
+
 const getOrders = async (req, res) => {
   try {
-    const result = await query('SELECT * FROM orders ORDER BY created_at DESC');
-    res.json(result.rows);
+    const { status, start_date, end_date, page, limit } = req.query;
+    let where = 'WHERE TRUE';
+    const params = [];
+
+    if (status) { params.push(status); where += ` AND status = $${params.length}`; }
+    if (start_date) { params.push(start_date); where += ` AND date(created_at) >= $${params.length}`; }
+    if (end_date) { params.push(end_date); where += ` AND date(created_at) <= $${params.length}`; }
+
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 30;
+    const offset = (pageNum - 1) * limitNum;
+
+    const countResult = await query(`SELECT COUNT(*) as total FROM orders ${where}`, params);
+    const total = Number(countResult.rows[0]?.total || 0);
+
+    params.push(limitNum, offset);
+    const result = await query(
+      `SELECT * FROM orders ${where} ORDER BY created_at DESC LIMIT $${params.length - 1} OFFSET $${params.length}`,
+      params
+    );
+
+    res.json({
+      orders: result.rows,
+      total,
+      page: pageNum,
+      pages: Math.ceil(total / limitNum),
+      hasMore: pageNum * limitNum < total
+    });
   } catch (err) {
     logger.error({ err: err.message }, 'Error obteniendo pedidos');
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -109,22 +140,58 @@ const createOrder = async (req, res) => {
   }
 };
 
-const VALID_STATUSES = ['pending', 'confirmed', 'preparing', 'shipped', 'delivered', 'cancelled'];
+async function restoreStockForOrder(items) {
+  const itemsArr = typeof items === 'string' ? JSON.parse(items) : items;
+  if (!Array.isArray(itemsArr)) return;
+  for (const item of itemsArr) {
+    const productId = Number(item.id);
+    const qty = Number(item.quantity || 1);
+    await query('UPDATE products SET stock = stock + $1 WHERE id = $2', [qty, productId]);
+  }
+}
 
 const updateOrderStatus = async (req, res) => {
   const id = Number(req.params.id);
-  const { status } = req.body || {};
-  if (!status || !VALID_STATUSES.includes(status)) {
-    return res.status(400).json({ error: `Estado inválido. Estados válidos: ${VALID_STATUSES.join(', ')}` });
+  const { status, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, subtotal, shipping_cost, notes, payment_method } = req.body || {};
+  const updates = {};
+  const logMsgs = [];
+  if (status !== undefined) {
+    if (!VALID_STATUSES.includes(status)) {
+      return res.status(400).json({ error: `Estado inválido. Estados válidos: ${VALID_STATUSES.join(', ')}` });
+    }
+    updates.status = status;
+    logMsgs.push(`Estado cambiado a ${status}`);
   }
+  if (shipping_name !== undefined) updates.shipping_name = shipping_name;
+  if (shipping_address !== undefined) updates.shipping_address = shipping_address;
+  if (shipping_phone !== undefined) updates.shipping_phone = shipping_phone;
+  if (shipping_zip !== undefined) updates.shipping_zip = shipping_zip;
+  if (shipping_city !== undefined) updates.shipping_city = shipping_city;
+  if (shipping_email !== undefined) updates.shipping_email = shipping_email;
+  if (subtotal !== undefined) updates.subtotal = Number(subtotal);
+  if (shipping_cost !== undefined) updates.shipping_cost = Number(shipping_cost);
+  if (payment_method !== undefined) updates.payment_method = payment_method;
+  if (notes !== undefined) updates.notes = notes;
+
+  const fields = Object.keys(updates);
+  if (!fields.length) return res.status(400).json({ error: 'Sin datos para actualizar' });
+  const values = fields.map(f => updates[f]);
+  values.push(id);
+  const setClause = fields.map((_, i) => `${fields[i]} = $${i + 1}`).join(', ');
+
   try {
-    const result = await query(
-      'UPDATE orders SET status = $1 WHERE id = $2 RETURNING *',
-      [status, id]
-    );
+    if (status === 'cancelled') {
+      const existing = await query('SELECT items, status FROM orders WHERE id = $1', [id]);
+      if (existing.rows.length > 0 && existing.rows[0].status !== 'cancelled') {
+        await restoreStockForOrder(existing.rows[0].items);
+        logMsgs.push('Stock restaurado');
+      }
+    }
+
+    const result = await query(`UPDATE orders SET ${setClause} WHERE id = $${values.length} RETURNING *`, values);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
     const user = req.user?.user || 'admin';
-    await logActivity(user, 'update_status', 'order', id, `Estado cambiado a ${status}`, req.ip || '');
+    await logActivity(user, 'update', 'order', id, logMsgs.join('; '), req.ip || '');
     res.json(result.rows[0]);
   } catch (err) {
     logger.error({ err: err.message }, 'Error actualizando pedido');
@@ -139,13 +206,8 @@ const deleteOrder = async (req, res) => {
     if (orderResult.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
     const order = orderResult.rows[0];
     const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
-    if (order.status === 'pending' || order.status === 'confirmed') {
-      for (const item of items) {
-        await query(
-          'UPDATE products SET stock = stock + $1 WHERE id = $2',
-          [Number(item.quantity), Number(item.id)]
-        );
-      }
+    if (order.status === 'pending' || order.status === 'confirmed' || order.status === 'cancelled') {
+      await restoreStockForOrder(items);
     }
     const user = req.user?.user || 'admin';
     await logActivity(user, 'delete', 'order', id, `Pedido #${id} eliminado`, req.ip || '');
@@ -170,7 +232,7 @@ const updateOrderNotes = async (req, res) => {
     await logActivity(user, 'update_notes', 'order', id, 'Nota interna actualizada', req.ip || '');
     res.json(result.rows[0]);
   } catch (err) {
-    logger.error({ err: err.message }, 'Error actualizando nota del pedido');
+    logger.error('Error actualizando nota del pedido:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
@@ -187,4 +249,75 @@ const getOrderDetail = async (req, res) => {
   }
 };
 
-module.exports = { getOrders, getUserOrders, createOrder, updateOrderStatus, deleteOrder, updateOrderNotes, getOrderDetail };
+const exportOrders = async (req, res) => {
+  const { format = 'csv' } = req.query;
+  try {
+    const { status, start_date, end_date } = req.query;
+    let where = 'WHERE TRUE';
+    const params = [];
+
+    if (status) { params.push(status); where += ` AND status = $${params.length}`; }
+    if (start_date) { params.push(start_date); where += ` AND date(created_at) >= $${params.length}`; }
+    if (end_date) { params.push(end_date); where += ` AND date(created_at) <= $${params.length}`; }
+    if (q) { params.push(`%${q}%`); where += ` AND (customer->>'name' ILIKE $${params.length} OR customer->>'email' ILIKE $${params.length})`; }
+
+    const result = await query(`SELECT * FROM orders ${where} ORDER BY created_at DESC`, params);
+
+    if (format === 'pdf') {
+      const filepath = path.join(__dirname, '..', '..', 'uploads', 'receipts', `pedidos-export-${Date.now()}.pdf`);
+      if (!fs.existsSync(path.dirname(filepath))) fs.mkdirSync(path.dirname(filepath), { recursive: true });
+      const doc = new PDFDocument({ size: 'A4', margin: 50 });
+      const stream = fs.createWriteStream(filepath);
+      doc.pipe(stream);
+
+      doc.fontSize(16).font('Helvetica-Bold').text('Reporte de Pedidos - Artesanía Gualeguay');
+      doc.moveDown();
+      doc.fontSize(10).font('Helvetica').text(`Total: ${result.rows.length} pedidos`);
+      doc.moveDown();
+
+      result.rows.forEach(o => {
+        const customer = typeof o.customer === 'string' ? JSON.parse(o.customer) : (o.customer || {});
+        const items = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || []);
+        doc.font('Helvetica-Bold').text(`Pedido #${o.id}`, { underline: true });
+        doc.font('Helvetica').text(`Cliente: ${customer?.name || '—'} | Email: ${customer?.email || '—'} | Total: $${Number(o.total).toLocaleString('es-AR')} | Estado: ${o.status}`);
+        doc.text(`Items: ${items.map(i => `${i.name || 'Producto'} x${i.quantity || 1}`).join(', ')}`);
+        doc.text(`Fecha: ${new Date(o.created_at).toLocaleString('es-AR')}`);
+        doc.moveDown();
+      });
+
+      doc.end();
+      stream.on('finish', () => {
+        res.download(filepath, `pedidos-${Date.now()}.pdf`, () => {
+          if (fs.existsSync(filepath)) fs.unlinkSync(filepath);
+        });
+      });
+      return;
+    }
+
+    const lines = ['ID,Cliente,Número,Email,Teléfono,Total,Estado,Pago,Fecha'];
+    result.rows.forEach(o => {
+      const customer = typeof o.customer === 'string' ? JSON.parse(o.customer) : (o.customer || {});
+      const escape = v => `"${String(v || '').replace(/"/g, '""')}"`;
+      lines.push([
+        o.id,
+        escape(customer?.name || ''),
+        escape(customer?.phone || ''),
+        escape(customer?.email || ''),
+        escape(o.payment_method || ''),
+        Number(o.total).toLocaleString('es-AR'),
+        o.status || 'pending',
+        new Date(o.created_at).toISOString().split('T')[0]
+      ].join(','));
+    });
+
+    const csv = lines.join('\n');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename=pedidos-${Date.now()}.csv`);
+    res.send(csv);
+  } catch (err) {
+    logger.error('Error exportando pedidos:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+module.exports = { getOrders, getUserOrders, createOrder, updateOrderStatus, deleteOrder, updateOrderNotes, getOrderDetail, exportOrders };

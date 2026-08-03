@@ -1,8 +1,6 @@
 (function () {
   'use strict';
 
-  const DROP_ZONE_CLASS = 'product-image-dropzone';
-  const GALLERY_CLASS = 'product-image-gallery';
   const ITEM_CLASS = 'product-image-item';
 
   function init(productId) {
@@ -34,7 +32,7 @@
       container.innerHTML = '<p class="empty-state">Sin imágenes</p>';
       return;
     }
-    images.forEach((img, idx) => {
+    images.forEach((img) => {
       const item = document.createElement('div');
       item.className = ITEM_CLASS + (img.es_principal ? ' es-principal' : '');
       item.draggable = true;
@@ -86,7 +84,6 @@
       });
       item.addEventListener('drop', async (e) => {
         e.preventDefault();
-        const draggedId = Number(e.dataTransfer.getData('text/plain'));
         const ordered = Array.from(container.querySelectorAll(`.${ITEM_CLASS}`)).map(el => Number(el.dataset.id));
         await syncOrder(productId, ordered);
         await loadImages(productId);
@@ -237,7 +234,7 @@
     }
   }
 
-  async function replaceImage(productId, imageId, file, itemElement) {
+  async function replaceImage(productId, imageId, file) {
     const status = document.getElementById('productImageUploadStatus');
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
     const maxSize = 5 * 1024 * 1024;

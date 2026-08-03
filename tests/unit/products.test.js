@@ -36,7 +36,7 @@ describe('products.js', () => {
       API: { BASE: '' },
       ANIMATIONS: { TOAST_DURATION: 3000, REVEAL_THRESHOLD: 0.15 }
     };
-    window.fetchWithRetry = async (url, opts = {}, retries = 2, backoffMs = 1000) => {
+    window.fetchWithRetry = async (url, opts = {}, _retries = 2, _backoffMs = 1000) => {
       const res = await global.fetch(url, opts);
       if (!res.ok) {
         const err = new Error(`HTTP ${res.status}: ${res.statusText}`);

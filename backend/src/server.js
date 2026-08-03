@@ -109,7 +109,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ['\'self\''],
-      scriptSrc: ['\'self\''],
+      scriptSrc: ['\'self\'', 'https://cdn.jsdelivr.net'],
       styleSrc: ['\'self\'', 'https://fonts.googleapis.com'],
       fontSrc: ['\'self\'', 'https://fonts.gstatic.com'],
       imgSrc: ['\'self\'', 'data:', 'https:', 'blob:'],
@@ -225,10 +225,7 @@ app.use('/api', require('./routes/reviews'));
 app.use('/api', require('./routes/productImages'));
 app.use('/api', require('./routes/health'));
 app.use('/api', require('./routes/categories'));
-app.use('/api', require('./routes/activityLog'));
-app.use('/api', require('./routes/customers'));
 app.use('/api', require('./routes/reports'));
-app.use('/api', require('./routes/users'));
 app.use('/api', require('./routes/receipts'));
 app.use('/api', require('./routes/heroCards'));
 

@@ -2,6 +2,7 @@ const { z } = require('zod');
 
 const productSchema = z.object({
   name: z.string().min(1, 'Nombre es requerido').max(200),
+  slug: z.string().max(200).optional().default(''),
   category: z.string().default('pulseras'),
   price: z.number().positive('Precio debe ser mayor a 0'),
   description: z.string().max(2000).optional().default(''),
@@ -10,7 +11,8 @@ const productSchema = z.object({
   badge: z.string().max(50).optional().default(''),
   stock: z.number().int().nonnegative().optional().default(0),
   featured: z.boolean().optional().default(false),
-  active: z.boolean().optional().default(true)
+  active: z.boolean().optional().default(true),
+  sku: z.string().max(50).optional().default('')
 });
 
 const testimonialSchema = z.object({
