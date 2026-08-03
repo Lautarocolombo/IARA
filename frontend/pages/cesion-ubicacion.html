@@ -100,10 +100,15 @@
         <div class="cesion-card reveal" id="storeCard">
           <h2>Nuestra ubicación</h2>
           <div class="map-container" id="storeMapContainer">
-            <div class="map-loading" id="storeMapLoading">
-              <div class="map-spinner" aria-hidden="true"></div>
-              <p>Cargando mapa del local...</p>
-            </div>
+            <iframe
+              src="https://www.google.com/maps?q=San+Antonio+Norte+473,+Gualeguay,+Entre+R%C3%ADos,+Argentina&output=embed"
+              width="100%"
+              height="300"
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
+              title="Mapa del local - Artesanía Gualeguay"
+              style="width:100%;height:300px;border:0;display:block;"
+            ></iframe>
           </div>
           <div class="store-info">
             <div class="info-item">
@@ -134,7 +139,8 @@
         <div class="social-links">
           <a href="#" id="instagramLink" title="Instagram" class="social-icon" aria-label="Instagram">📷</a>
           <a href="https://wa.me/5493444634444" title="WhatsApp" class="social-icon" aria-label="WhatsApp">💬</a>
-          <a href="#" title="Facebook" class="social-icon" aria-label="Facebook">👝</a>
+          <a href="#" id="facebookLink" title="Facebook" class="social-icon" aria-label="Facebook">👝</a>
+          <a href="#" id="twitterLink" title="Twitter" class="social-icon" aria-label="Twitter">🐦</a>
         </div>
       </div>
       <div class="footer-section">
@@ -169,7 +175,7 @@
   <script src="../js/ui.js"></script>
   <script>
     (function() {
-      var API_KEY = 'TU_API_KEY_DE_GOOGLE_MAPS';
+       var API_KEY = '';
 
       var map = null;
       var userMarker = null;
@@ -359,83 +365,47 @@
         );
       }
 
-      function initStoreMap() {
-        var storeContainer = document.getElementById('storeMapContainer');
-        var storeLoading = document.getElementById('storeMapLoading');
+       function loadGoogleMaps() {
+         if (!API_KEY) {
+           if (mapLoading) mapLoading.innerHTML = '<p style="color:var(--text-muted);">El mapa no está disponible. Verificá tu conexión.</p>';
+           return;
+         }
 
-        if (!storeContainer || !map) return;
+         if (typeof google !== 'undefined' && google.maps) {
+           initMap();
+           return;
+         }
 
-        var storeMap = new google.maps.Map(storeContainer, {
-          center: { lat: -33.1400009, lng: -59.3136349 },
-          zoom: 15,
-          mapTypeId: 'roadmap',
-          styles: [
-            { featureType: 'all', elementType: 'labels.text.fill', stylers: [{ color: '#3a1f28' }] },
-            { featureType: 'all', elementType: 'labels.text.stroke', stylers: [{ color: '#ffffff' }, { weight: 2 }] },
-            { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#f5f0f2' }] },
-            { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#fde8ef' }] },
-            { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#ffffff' }] },
-            { featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-            { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#e8f4f0' }] }
-          ]
-        });
+         var existing = document.querySelector('script[src*="maps.googleapis.com"]');
+         if (existing) return;
 
-        var storePos = { lat: -33.1400009, lng: -59.3136349 };
-        var marker = new google.maps.Marker({
-          position: storePos,
-          map: storeMap,
-          title: 'Artesanía Gualeguay'
-        });
+         var script = document.createElement('script');
+         script.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(API_KEY) + '&callback=initMap';
+         script.async = true;
+         script.defer = true;
+         script.onerror = function() {
+           if (mapLoading) mapLoading.innerHTML = '<p style="color:var(--text-muted);">No se pudo cargar Google Maps. Verificá tu conexión.</p>';
+         };
+         document.head.appendChild(script);
+       }
 
-        var infoWindow = new google.maps.InfoWindow({
-          content: '<div style="font-family:DM Sans,sans-serif;padding:4px;"><strong>Artesanía Gualeguay</strong><br>San Antonio Norte 473, Gualeguay</div>'
-        });
-        marker.addListener('click', function() {
-          infoWindow.open(storeMap, marker);
-        });
+       function showMapCard() {
+         if (permissionCard) permissionCard.style.display = 'none';
+         if (mapCard) mapCard.style.display = 'block';
 
-        if (storeLoading) storeLoading.style.display = 'none';
-      }
-
-      function loadGoogleMaps() {
-        if (typeof google !== 'undefined' && google.maps) {
-          initMap();
-          initStoreMap();
-          return;
-        }
-
-        var existing = document.querySelector('script[src*="maps.googleapis.com"]');
-        if (existing) return;
-
-        var script = document.createElement('script');
-        script.src = 'https://maps.googleapis.com/maps/api/js?key=' + encodeURIComponent(API_KEY) + '&callback=initMap';
-        script.async = true;
-        script.defer = true;
-        script.onerror = function() {
-          if (mapLoading) mapLoading.innerHTML = '<p style="color:var(--text-muted);">No se pudo cargar Google Maps. Verificá tu conexión.</p>';
-          if (storeMapLoading) storeMapLoading.innerHTML = '<p style="color:var(--text-muted);">No se pudo cargar Google Maps.</p>';
-        };
-        document.head.appendChild(script);
-      }
-
-      function showMapCard() {
-        if (permissionCard) permissionCard.style.display = 'none';
-        if (mapCard) mapCard.style.display = 'block';
-
-        setTimeout(function() {
-          if (map && typeof google !== 'undefined' && google.maps) {
-            google.maps.event.trigger(map, 'resize');
-            if (userLocation) {
-              map.setCenter(userLocation);
-              map.setZoom(16);
-            } else {
-              map.setCenter({ lat: -33.1400009, lng: -59.3136349 });
-              map.setZoom(15);
-            }
-          }
-          if (storeMapLoading) storeMapLoading.style.display = 'none';
-        }, 100);
-      }
+         setTimeout(function() {
+           if (map && typeof google !== 'undefined' && google.maps) {
+             google.maps.event.trigger(map, 'resize');
+             if (userLocation) {
+               map.setCenter(userLocation);
+               map.setZoom(16);
+             } else {
+               map.setCenter({ lat: -33.1400009, lng: -59.3136349 });
+               map.setZoom(15);
+             }
+           }
+         }, 100);
+       }
 
       function init() {
         if (allowBtn) {

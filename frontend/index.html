@@ -303,15 +303,24 @@
               <p>San Antonio Norte 473<br>Gualeguay, Entre Ríos, Argentina</p>
             </div>
           </div>
-          <div class="map-wrapper reveal">
+          <div class="map-wrapper reveal" id="locationMap">
             <iframe
-              src="https://www.openstreetmap.org/embed?bbox=-59.01%2C-33.01%2C-58.99%2C-32.99&layer=mapnik&marker=-33.0%2C-59.0"
+              src="https://www.google.com/maps?q=San+Antonio+Norte+473,+Gualeguay,+Entre+R%C3%ADos,+Argentina&output=embed"
               width="100%"
-              height="250"
+              height="300"
               loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade"
               title="Mapa del local - Artesanía Gualeguay"
-              style="width:100%;height:250px;border:0;display:block;"
+              style="width:100%;height:300px;border:0;display:block;"
+              onerror="this.style.display='none';var f=document.getElementById('mapFallback');if(f)f.style.display='flex';"
             ></iframe>
+            <div id="mapFallback" class="map-fallback" style="display:none;">
+              <div class="map-fallback-content">
+                <span aria-hidden="true">📍</span>
+                <p>No se pudo cargar el mapa</p>
+                <a href="https://www.google.com/maps/search/?api=1&query=San+Antonio+Norte+473,+Gualeguay,+Entre+R%C3%ADos,+Argentina" target="_blank" rel="noopener" class="btn-primary map-fallback-btn">Ver en Google Maps</a>
+              </div>
+            </div>
           </div>
           <div class="info-item">
             <div class="info-icon" aria-hidden="true">🕝</div>
@@ -354,8 +363,8 @@
         <p>Creando pulseras y souvenirs únicos desde el corazón de Gualeguay, Entre Ríos.</p>
         <div class="social-links">
           <a href="#" id="instagramLink" title="Instagram" class="social-icon" aria-label="Instagram">📷</a>
-          <a href="https://wa.me/5493444634444" title="WhatsApp" class="social-icon" aria-label="WhatsApp">💬</a>
-          <a href="#" title="Facebook" class="social-icon" aria-label="Facebook">👝</a>
+          <a href="#" id="facebookLink" title="Facebook" class="social-icon" aria-label="Facebook">👝</a>
+          <a href="#" id="twitterLink" title="Twitter" class="social-icon" aria-label="Twitter">🐦</a>
         </div>
       </div>
       <div class="footer-section">
@@ -458,6 +467,35 @@
       script.type = 'application/ld+json';
       script.text = JSON.stringify(schema);
       document.head.appendChild(script);
+    })();
+  </script>
+  <script>
+    (function() {
+      var mapWrapper = document.getElementById('locationMap');
+      if (!mapWrapper) return;
+      var iframe = mapWrapper.querySelector('iframe');
+      var fallback = document.getElementById('mapFallback');
+      if (!iframe || !fallback) return;
+
+      var loaded = false;
+      var timeout = setTimeout(function() {
+        if (!loaded) {
+          iframe.style.display = 'none';
+          fallback.style.display = 'flex';
+        }
+      }, 10000);
+
+      iframe.addEventListener('load', function() {
+        loaded = true;
+        clearTimeout(timeout);
+      });
+
+      iframe.addEventListener('error', function() {
+        if (!loaded) {
+          iframe.style.display = 'none';
+          fallback.style.display = 'flex';
+        }
+      });
     })();
   </script>
   <script>

@@ -330,6 +330,10 @@
                 <input type="text" id="settingFacebook" placeholder="https://facebook.com/tucuenta" />
               </div>
               <div class="form-group">
+                <label>Twitter / X</label>
+                <input type="text" id="settingTwitter" placeholder="https://twitter.com/tucuenta" />
+              </div>
+              <div class="form-group">
                 <label>WhatsApp Business</label>
                 <input type="text" id="settingWhatsappBusiness" placeholder="https://wa.me/5493444634444" />
               </div>
@@ -2084,9 +2088,10 @@ async function loadSettings() {
          if (data.email) document.getElementById('settingEmail').value = data.email;
          if (data.whatsapp) document.getElementById('settingWhatsapp').value = data.whatsapp;
          if (data.address) document.getElementById('settingAddress').value = data.address;
-         if (data.instagram) document.getElementById('settingInstagram').value = data.instagram;
-         if (data.facebook) document.getElementById('settingFacebook').value = data.facebook;
-         if (data.whatsapp_business) document.getElementById('settingWhatsappBusiness').value = data.whatsapp_business;
+          if (data.instagram) document.getElementById('settingInstagram').value = data.instagram;
+          if (data.facebook) document.getElementById('settingFacebook').value = data.facebook;
+          if (data.twitter) document.getElementById('settingTwitter').value = data.twitter;
+          if (data.whatsapp_business) document.getElementById('settingWhatsappBusiness').value = data.whatsapp_business;
           const payment = data.payment || data || {};
           if (payment.mp_enabled !== undefined) document.getElementById('settingMpEnabled').checked = payment.mp_enabled === true || payment.mp_enabled === 'true';
           if (payment.cash_enabled !== undefined) document.getElementById('settingCashEnabled').checked = payment.cash_enabled === true || payment.cash_enabled === 'true';
@@ -2113,9 +2118,10 @@ async function saveSettings() {
          email: document.getElementById('settingEmail').value.trim(),
          whatsapp: document.getElementById('settingWhatsapp').value.trim(),
          address: document.getElementById('settingAddress').value.trim(),
-         instagram: document.getElementById('settingInstagram').value.trim(),
-         facebook: document.getElementById('settingFacebook').value.trim(),
-         whatsapp_business: document.getElementById('settingWhatsappBusiness').value.trim(),
+          instagram: document.getElementById('settingInstagram').value.trim(),
+          facebook: document.getElementById('settingFacebook').value.trim(),
+          twitter: document.getElementById('settingTwitter').value.trim(),
+          whatsapp_business: document.getElementById('settingWhatsappBusiness').value.trim(),
          mp_enabled: document.getElementById('settingMpEnabled').checked,
          cash_enabled: document.getElementById('settingCashEnabled').checked,
          mp_alias: document.getElementById('settingMpAlias').value.trim(),
