@@ -17,9 +17,9 @@ services:
       - key: ADMIN_USER
         value: Iara
       - key: ADMIN_PASS_HASH
-        value: $2b$10$ZPX53uqrfUH6G.AfC.nFVeD5.TAi/VN3xH7pdak4a/54uzdOonlme
+        generateValue: true
       - key: ADMIN_PASS
-        value: pulseras2026
+        generateValue: true
       - key: DATABASE_URL
         generateValue: true
       - key: SITE_URL
@@ -33,11 +33,11 @@ services:
       - key: WHATSAPP
         value: "+5493444634444"
       - key: CLOUDINARY_CLOUD_NAME
-        value: Raíz
+        generateValue: true
       - key: CLOUDINARY_API_KEY
-        value: "568617337347394"
+        generateValue: true
       - key: CLOUDINARY_API_SECRET
-        value: Dd5mLjzHF4YyC3NWd6Ge7QQ_NJg
+        generateValue: true
     autoDeploy: true
     branch: main
     repo: https://github.com/Lautarocolombo/IARA.git
