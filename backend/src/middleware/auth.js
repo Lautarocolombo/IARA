@@ -55,8 +55,9 @@ async function login(req, res, next) {
 
     const ADMIN_USER = process.env.ADMIN_USER;
     const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH;
+    const ADMIN_PASS = process.env.ADMIN_PASS;
 
-    if (!ADMIN_USER || !ADMIN_PASS_HASH) {
+    if (!ADMIN_USER || (!ADMIN_PASS_HASH && !ADMIN_PASS)) {
       logger.warn('Credenciales de admin no configuradas');
       return res.status(500).json({ error: 'Credenciales de administrador no configuradas en el servidor' });
     }
@@ -67,12 +68,35 @@ async function login(req, res, next) {
     const cleanUsername = username.trim();
     const cleanPassword = password.trim();
 
+    logger.info({ username: cleanUsername, hasHash: !!ADMIN_PASS_HASH, hasPlainPass: !!ADMIN_PASS }, 'Intento de login');
+
     if (cleanUsername.toLowerCase() === ADMIN_USER.toLowerCase()) {
-      const match = await bcrypt.compare(cleanPassword, ADMIN_PASS_HASH);
-      if (match) {
-        role = 'admin';
-        user = ADMIN_USER;
+      if (ADMIN_PASS_HASH) {
+        let hashMatch = false;
+        try {
+          hashMatch = await bcrypt.compare(cleanPassword, ADMIN_PASS_HASH);
+          logger.info({ username: cleanUsername, hashMatch, hashPrefix: ADMIN_PASS_HASH.slice(0, 7) }, 'bcrypt.compare result');
+        } catch (err) {
+          logger.warn({ username: cleanUsername, error: err.message }, 'ADMIN_PASS_HASH no es un hash bcrypt válido');
+        }
+        if (hashMatch) {
+          role = 'admin';
+          user = ADMIN_USER;
+        } else if (ADMIN_PASS) {
+          logger.info({ username: cleanUsername, reason: 'hash_no_match' }, 'bcrypt.compare devolvió false, intentando ADMIN_PASS fallback');
+          if (cleanPassword === ADMIN_PASS) {
+            role = 'admin';
+            user = ADMIN_USER;
+          }
+        }
+      } else if (ADMIN_PASS) {
+        if (cleanPassword === ADMIN_PASS) {
+          role = 'admin';
+          user = ADMIN_USER;
+        }
       }
+    } else {
+      logger.info({ username: cleanUsername, expectedUser: ADMIN_USER, usernameMatch: false }, 'Username no coincide');
     }
 
     if (!role) {

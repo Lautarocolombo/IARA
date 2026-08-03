@@ -14,7 +14,7 @@ if (-not $vercelCmd) {
 $envVars = @{
   'NODE_ENV' = 'production'
   'JWT_SECRET' = ''
-  'ADMIN_USER' = 'Iara'
+  'ADMIN_USER' = 'lara'
   'ADMIN_PASS_HASH' = ''
   'ALLOWED_ORIGINS' = 'https://iara-ivory.vercel.app'
   'DATABASE_URL' = ''

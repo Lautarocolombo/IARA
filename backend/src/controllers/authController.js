@@ -31,16 +31,23 @@ const login = async (req, res) => {
     const cleanUsername = username.trim();
     const cleanPassword = password.trim();
 
+    logger.info({ username: cleanUsername, hasHash: !!ADMIN_PASS_HASH, hasPlainPass: !!ADMIN_PASS }, 'Intento de login');
+
     if (cleanUsername.toLowerCase() === ADMIN_USER.toLowerCase()) {
       if (ADMIN_PASS_HASH) {
+        let hashMatch = false;
         try {
-          if (await bcrypt.compare(cleanPassword, ADMIN_PASS_HASH)) {
-            role = 'admin';
-            user = ADMIN_USER;
-          }
+          hashMatch = await bcrypt.compare(cleanPassword, ADMIN_PASS_HASH);
+          logger.info({ username: cleanUsername, hashMatch }, 'bcrypt.compare result');
         } catch (err) {
-          logger.warn('ADMIN_PASS_HASH no es un hash bcrypt válido, intentando con ADMIN_PASS fallback');
-          if (ADMIN_PASS && cleanPassword === ADMIN_PASS) {
+          logger.warn({ username: cleanUsername, error: err.message }, 'ADMIN_PASS_HASH no es un hash bcrypt válido');
+        }
+        if (hashMatch) {
+          role = 'admin';
+          user = ADMIN_USER;
+        } else if (ADMIN_PASS) {
+          logger.info({ username: cleanUsername, reason: 'hash_no_match' }, 'bcrypt.compare devolvió false, intentando ADMIN_PASS fallback');
+          if (cleanPassword === ADMIN_PASS) {
             role = 'admin';
             user = ADMIN_USER;
           }
@@ -51,6 +58,8 @@ const login = async (req, res) => {
           user = ADMIN_USER;
         }
       }
+    } else {
+      logger.debug({ username: cleanUsername, expectedUser: ADMIN_USER, usernameMatch: false }, 'Username no coincide');
     }
 
     if (!role) {
