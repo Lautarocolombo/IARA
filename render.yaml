@@ -32,6 +32,12 @@ services:
         value: "2000"
       - key: WHATSAPP
         value: "+5493444634444"
+      - key: CLOUDINARY_CLOUD_NAME
+        value: Raíz
+      - key: CLOUDINARY_API_KEY
+        value: "568617337347394"
+      - key: CLOUDINARY_API_SECRET
+        value: Dd5mLjzHF4YyC3NWd6Ge7QQ_NJg
     autoDeploy: true
     branch: main
     repo: https://github.com/Lautarocolombo/IARA.git
