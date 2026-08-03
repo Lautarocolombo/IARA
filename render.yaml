@@ -15,12 +15,11 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: ADMIN_USER
-        value: lara
+        value: Iara
+      - key: ADMIN_PASS_HASH
+        value: $2b$10$ZPX53uqrfUH6G.AfC.nFVeD5.TAi/VN3xH7pdak4a/54uzdOonlme
       - key: ADMIN_PASS
         value: pulseras2026
-      # ADMIN_PASS_HASH: hash bcrypt correcto de "pulseras2026" (prioridad sobre ADMIN_PASS)
-      # Generar: node -e "const bcrypt=require('bcrypt'); bcrypt.hash('pulseras2026',10).then(h=>console.log(h))"
-      # Configurar en Render Dashboard → Settings → Environment → Add Environment Variable
       - key: DATABASE_URL
         generateValue: true
       - key: SITE_URL

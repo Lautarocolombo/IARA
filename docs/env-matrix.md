@@ -19,7 +19,7 @@
 | `DATABASE_URL` | Connection string PostgreSQL | `postgresql://user:pass@host:5432/db?sslmode=require` | Sí |
 | `ALLOWED_ORIGINS` | Orígenes permitidos para CORS | `https://iara-peach.vercel.app,https://artesaniagualeguay.com` | Sí |
 | `SITE_URL` | URL base del sitio | `https://iara-peach.vercel.app` | Sí |
-| `ADMIN_USER` | Usuario administrador | `lara` | Sí |
+| `ADMIN_USER` | Usuario administrador | `Iara` | Sí |
 | `ADMIN_PASS_HASH` | Hash bcrypt de contraseña admin | `$2b$10$...` | Sí |
 | `RESEND_API_KEY` | API key para envío de emails | `re_...` | No |
 | `EMAIL_FROM` | Remitente de emails | `noreply@artesaniagualeguay.com` | No |
