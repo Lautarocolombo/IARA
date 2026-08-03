@@ -705,6 +705,7 @@ tr:last-child td {
 .toast {
   padding: 0.85rem 1rem;
   background: #fff;
+  color: #0f172a;
   border: 1px solid var(--border);
   border-left: 4px solid var(--accent);
   border-radius: 10px;
@@ -714,8 +715,8 @@ tr:last-child td {
   min-width: 280px;
 }
 
-.toast.success { border-left-color: #10b981; }
-.toast.error { border-left-color: #ef4444; }
+.toast.success { border-left-color: #10b981; color: #065f46; }
+.toast.error { border-left-color: #dc2626; color: #dc2626; }
 
 @keyframes slideInRight {
   from { opacity: 0; transform: translateX(20px); }
