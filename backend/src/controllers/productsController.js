@@ -7,6 +7,19 @@ const path = require('path');
 const readline = require('readline');
 const xlsx = require('xlsx');
 
+function slugify(text) {
+  if (!text) return '';
+  return String(text)
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/á/g, 'a').replace(/é/g, 'e').replace(/í/g, 'i').replace(/ó/g, 'o').replace(/ú/g, 'u').replace(/ñ/g, 'n')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 async function parseCSV(filePath) {
   const results = [];
   const fileStream = fs.createReadStream(filePath);
@@ -39,7 +52,7 @@ async function parseExcel(buffer) {
   const sheet = workbook.Sheets[sheetName];
   const rows = xlsx.utils.sheet_to_json(sheet, { header: 1 });
   if (rows.length < 2) return [];
-  
+
   const headers = rows[0].map(h => String(h || '').trim().toLowerCase());
   const results = [];
   for (let i = 1; i < rows.length; i++) {
@@ -58,10 +71,9 @@ const bulkImportProducts = async (req, res) => {
     return res.status(400).json({ error: 'No se recibió archivo' });
   }
 
-  const importId = Date.now();
   const ext = path.extname(req.file.originalname).toLowerCase();
   let rows = [];
-  
+
   try {
     if (ext === '.csv') {
       rows = await parseCSV(req.file.path);
@@ -74,15 +86,17 @@ const bulkImportProducts = async (req, res) => {
   } catch (err) {
     return res.status(400).json({ error: 'Error parseando archivo: ' + err.message });
   }
-  
+
   let success = 0;
   let errors = 0;
   const errorDetails = [];
 
   for (const row of rows) {
+    const rowNum = success + errors + 1;
     try {
       const data = {
         name: row.nombre || row.name || '',
+        slug: row.slug || '',
         category: row.categoria || row.category || 'pulseras',
         price: Number(row.precio || row.price || 0),
         description: row.descripcion || row.description || '',
@@ -91,39 +105,37 @@ const bulkImportProducts = async (req, res) => {
         badge: row.badge || '',
         stock: Number(row.stock || 0),
         featured: row.featured === 'true' || row.featured === '1',
-        active: row.active !== 'false' && row.active !== '0'
+        active: row.active !== 'false' && row.active !== '0',
+        sku: row.sku || ''
       };
+
+      if (!data.slug) data.slug = slugify(data.name);
 
       const validation = productSchema.safeParse(data);
       if (!validation.success) {
         errors++;
-        errorDetails.push({ row: success + errors, error: validation.error.errors[0]?.message || 'Datos inválidos' });
+        errorDetails.push({ row: rowNum, error: validation.error.errors[0]?.message || 'Datos inválidos' });
         continue;
       }
 
-      const existing = await query('SELECT id FROM products WHERE name = $1', [data.name]);
+      const existing = await query('SELECT id FROM products WHERE name = $1 OR slug = $2', [data.name, data.slug]);
       if (existing.rows.length > 0) {
         await query(
-          'UPDATE products SET category = $1, price = $2, description = $3, emoji = $4, image = $5, badge = $6, stock = $7, featured = $8, active = $9, updated_at = CURRENT_TIMESTAMP WHERE id = $10',
-          [data.category, Number(data.price), data.description, data.emoji, data.image, data.badge, Number(data.stock), data.featured, data.active, existing.rows[0].id]
+          'UPDATE products SET category = $1, price = $2, description = $3, emoji = $4, image = $5, badge = $6, stock = $7, featured = $8, active = $9, sku = $10, slug = $11, updated_at = CURRENT_TIMESTAMP WHERE id = $12',
+          [data.category, Number(data.price), data.description, data.emoji, data.image, data.badge, Number(data.stock), data.featured, data.active, data.sku || '', data.slug, existing.rows[0].id]
         );
       } else {
         await query(
-          'INSERT INTO products (name, category, price, description, emoji, image, badge, stock, featured, active) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
-          [data.name, data.category, Number(data.price), data.description, data.emoji, data.image, data.badge, Number(data.stock), data.featured, data.active]
+          'INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)',
+          [data.name, data.slug, data.category, Number(data.price), data.description, data.emoji, data.image, data.badge, Number(data.stock), data.featured, data.active, data.sku || '']
         );
       }
       success++;
     } catch (err) {
       errors++;
-      errorDetails.push({ row: success + errors, error: err.message });
+      errorDetails.push({ row: rowNum, error: err.message });
     }
   }
-
-  await query(
-    'INSERT INTO product_bulk_imports (filename, status, total_rows, success_rows, error_rows, errors) VALUES ($1, $2, $3, $4, $5, $6)',
-    [req.file.originalname, 'completed', rows.length, success, errors, JSON.stringify(errorDetails)]
-  );
 
   if (req.file.path && fs.existsSync(req.file.path)) {
     fs.unlinkSync(req.file.path);
@@ -133,7 +145,7 @@ const bulkImportProducts = async (req, res) => {
 
 const getPublicProducts = async (req, res) => {
   try {
-    const result = await query('SELECT * FROM products ORDER BY id ASC');
+    const result = await query('SELECT * FROM products WHERE active = TRUE AND deleted = FALSE ORDER BY id ASC');
     res.json(result.rows);
   } catch (err) {
     logger.error('Error obteniendo productos:', err);
@@ -146,7 +158,7 @@ const searchProducts = async (req, res) => {
     const q = (req.query.q || '').trim();
     if (!q) return res.json([]);
     const result = await query(
-      "SELECT * FROM products WHERE name ILIKE $1 OR description ILIKE $1 OR category ILIKE $1 ORDER BY id ASC",
+      "SELECT * FROM products WHERE active = TRUE AND deleted = FALSE AND (name ILIKE $1 OR description ILIKE $1 OR category ILIKE $1 OR sku ILIKE $1) ORDER BY id ASC",
       [`%${q}%`]
     );
     res.json(result.rows);
@@ -158,10 +170,73 @@ const searchProducts = async (req, res) => {
 
 const getAdminProducts = async (req, res) => {
   try {
-    const result = await query('SELECT * FROM products ORDER BY id ASC');
-    res.json(result.rows);
+    const { sku, q, category, active, page, limit, sort_by, sort_order } = req.query;
+
+    let where = 'WHERE deleted = FALSE';
+    const params = [];
+
+    if (sku) {
+      const idx = params.length + 1;
+      where += ` AND sku = $${idx}`;
+      params.push(sku);
+    }
+    if (q) {
+      const idx = params.length + 1;
+      where += ` AND (name ILIKE $${idx} OR description ILIKE $${idx} OR sku ILIKE $${idx})`;
+      params.push(`%${q}%`);
+    }
+    if (category) {
+      const idx = params.length + 1;
+      where += ` AND category = $${idx}`;
+      params.push(category);
+    }
+    if (active !== undefined && active !== '') {
+      const idx = params.length + 1;
+      where += ` AND active = $${idx}`;
+      params.push(active === 'true');
+    }
+
+    if (!page && !limit) {
+      const result = await query(`SELECT * FROM products ${where} ORDER BY id ASC`, params);
+      return res.json({ products: result.rows, total: result.rows.length, page: 1, pages: 1, hasMore: false });
+    }
+
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 30;
+    const offset = (pageNum - 1) * limitNum;
+    const sortField = ['name', 'price', 'created_at', 'updated_at', 'stock', 'id'].includes(sort_by) ? sort_by : 'id';
+    const sortDir = sort_order?.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
+
+    params.push(limitNum, offset);
+    const countResult = await query(`SELECT COUNT(*) as total FROM products ${where}`, params.slice(0, -2));
+
+    const total = Number(countResult.rows[0]?.total || 0);
+    const result = await query(
+      `SELECT * FROM products ${where} ORDER BY ${sortField} ${sortDir} LIMIT $${params.length - 1} OFFSET $${params.length}`,
+      params
+    );
+
+    res.json({
+      products: result.rows,
+      total,
+      page: pageNum,
+      pages: Math.ceil(total / limitNum),
+      hasMore: pageNum * limitNum < total
+    });
   } catch (err) {
     logger.error('Error obteniendo productos (admin):', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+const getProductById = async (req, res) => {
+  const id = Number(req.params.id);
+  try {
+    const result = await query('SELECT * FROM products WHERE id = $1 AND deleted = FALSE', [id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    logger.error('Error obteniendo producto:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
@@ -169,9 +244,16 @@ const getAdminProducts = async (req, res) => {
 const createProduct = async (req, res) => {
   try {
     const data = productSchema.parse(req.body);
+    const slug = data.slug || slugify(data.name);
+
+    const existingSlug = await query('SELECT id FROM products WHERE slug = $1 AND deleted = FALSE', [slug]);
+    if (existingSlug.rows.length > 0) {
+      return res.status(409).json({ error: `Ya existe un producto con el slug "${slug}"` });
+    }
+
     const result = await query(
-      'INSERT INTO products (name, category, price, description, emoji, image, badge, stock, featured, active) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
-      [data.name, data.category, Number(data.price), data.description || '', data.emoji || '📿', data.image || '', data.badge || '', Number(data.stock), data.featured || false, data.active !== false]
+      'INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, FALSE) RETURNING *',
+      [data.name, slug, data.category, Number(data.price), data.description || '', data.emoji || '📿', data.image || '', data.badge || '', Number(data.stock), data.featured || false, data.active !== false, data.sku || '']
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -187,12 +269,20 @@ const updateProduct = async (req, res) => {
   const id = Number(req.params.id);
   try {
     const data = productSchema.partial().parse(req.body);
+
+    if (data.slug && data.slug) {
+      const existingSlug = await query('SELECT id FROM products WHERE slug = $1 AND id != $2 AND deleted = FALSE', [data.slug, id]);
+      if (existingSlug.rows.length > 0) {
+        return res.status(409).json({ error: `Ya existe un producto con el slug "${data.slug}"` });
+      }
+    }
+
     const fields = Object.keys(data);
     if (!fields.length) return res.status(400).json({ error: 'Sin datos para actualizar' });
     const setClause = fields.map((_, i) => `${fields[i]} = $${i + 1}`).join(', ');
     const values = fields.map(f => (['price', 'stock'].includes(f) ? Number(data[f]) : data[f]));
     values.push(id);
-    const result = await query(`UPDATE products SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = $${values.length} RETURNING *`, values);
+    const result = await query(`UPDATE products SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = $${values.length} AND deleted = FALSE RETURNING *`, values);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
     res.json(result.rows[0]);
   } catch (err) {
@@ -204,44 +294,126 @@ const updateProduct = async (req, res) => {
   }
 };
 
+const toggleProductStatus = async (req, res) => {
+  const id = Number(req.params.id);
+  try {
+    const result = await query(
+      'UPDATE products SET active = NOT active, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted = FALSE RETURNING id, active',
+      [id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
+    res.json({ ok: true, active: result.rows[0].active });
+  } catch (err) {
+    logger.error('Error cambiando estado del producto:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
 const deleteProduct = async (req, res) => {
   const id = Number(req.params.id);
   try {
+    const orderCheck = await query('SELECT COUNT(*) as count FROM orders WHERE items LIKE $1', [`%${id}%`]);
+    const hasHistoricalOrders = Number(orderCheck.rows[0]?.count || 0) > 0;
+
     const imagesResult = await query('SELECT cloudinary_public_id FROM product_images WHERE product_id = $1', [id]);
     for (const img of imagesResult.rows) {
       if (img.cloudinary_public_id) {
         await deleteFromCloudinary(img.cloudinary_public_id);
       }
     }
-    const result = await query('DELETE FROM products WHERE id = $1 RETURNING id', [id]);
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
-    res.json({ ok: true });
+
+    if (hasHistoricalOrders) {
+      await query(
+        'UPDATE products SET deleted = TRUE, active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING id',
+        [id]
+      );
+    } else {
+      const result = await query('DELETE FROM products WHERE id = $1 RETURNING id', [id]);
+      if (result.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+
+    res.json({ ok: true, logical: hasHistoricalOrders });
   } catch (err) {
     logger.error('Error eliminando producto:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
+const duplicateProduct = async (req, res) => {
+  const id = Number(req.params.id);
+  try {
+    const original = await query('SELECT * FROM products WHERE id = $1 AND deleted = FALSE', [id]);
+    if (original.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
+
+    const p = original.rows[0];
+    const newName = p.name + ' (copia)';
+    const newSlug = p.slug ? p.slug + '-copia' : slugify(newName);
+
+    const existingSlug = await query('SELECT id FROM products WHERE slug = $1', [newSlug]);
+    let finalSlug = newSlug;
+    if (existingSlug.rows.length > 0) {
+      finalSlug = newSlug + '-' + Date.now();
+    }
+
+    const result = await query(
+      'INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, FALSE) RETURNING *',
+      [newName, finalSlug, p.category, Number(p.price), p.description, p.emoji, p.image, p.badge, Number(p.stock), false, false, p.sku]
+    );
+
+    const images = await query('SELECT url, filename, cloudinary_public_id, orden, es_principal, descripcion, categoria FROM product_images WHERE product_id = $1 ORDER BY orden ASC', [id]);
+    for (const img of images.rows) {
+      await query(
+        'INSERT INTO product_images (product_id, url, filename, cloudinary_public_id, orden, es_principal, descripcion, categoria) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+        [result.rows[0].id, img.url, img.filename, img.cloudinary_public_id, img.orden, img.es_principal, img.descripcion, img.categoria]
+      );
+    }
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    logger.error('Error duplicando producto:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
 const syncToNeon = async (req, res) => {
   try {
-    const products = Array.isArray(req.body) ? req.body : [];
-    const results = { created: 0, updated: 0, errors: 0 };
+    let products = Array.isArray(req.body) ? req.body : [];
+    if (!products.length) {
+      const result = await query('SELECT * FROM products WHERE deleted = FALSE ORDER BY id ASC');
+      products = result.rows;
+    }
+    const results = { created: 0, updated: 0, errors: 0, images: 0 };
 
     for (const p of products) {
       try {
         const exists = await query('SELECT id FROM products WHERE id = $1', [Number(p.id)]);
         if (exists.rows.length > 0) {
-      await query(
-             'UPDATE products SET name = $1, category = $2, price = $3, description = $4, emoji = $5, image = $6, badge = $7, stock = $8, featured = $9, active = $10, updated_at = CURRENT_TIMESTAMP WHERE id = $11',
-             [p.name, p.category, Number(p.price), p.description || '', p.emoji || '📿', p.image || '', p.badge || '', Number(p.stock), p.featured || false, p.active !== false, Number(p.id)]
-           );
-           results.updated += 1;
-         } else {
-           await query(
-             'INSERT INTO products (name, category, price, description, emoji, image, badge, stock, featured, active) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
-             [p.name, p.category, Number(p.price), p.description || '', p.emoji || '📿', p.image || '', p.badge || '', Number(p.stock), p.featured || false, p.active !== false]
-           );
+          await query(
+              'UPDATE products SET name = $1, slug = $2, category = $3, price = $4, description = $5, emoji = $6, image = $7, badge = $8, stock = $9, featured = $10, active = $11, sku = $12, updated_at = CURRENT_TIMESTAMP WHERE id = $13',
+              [p.name, p.slug || slugify(p.name), p.category, Number(p.price), p.description || '', p.emoji || '📿', p.image || '', p.badge || '', Number(p.stock), p.featured || false, p.active !== false, p.sku || '', Number(p.id)]
+            );
+            results.updated += 1;
+          } else {
+            await query(
+              'INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, FALSE)',
+              [p.name, p.slug || slugify(p.name), p.category, Number(p.price), p.description || '', p.emoji || '📿', p.image || '', p.badge || '', Number(p.stock), p.featured || false, p.active !== false, p.sku || '']
+            );
           results.created += 1;
+        }
+        if (p.images && Array.isArray(p.images)) {
+          for (const img of p.images) {
+            try {
+              const imgExists = await query('SELECT id FROM product_images WHERE product_id = $1 AND (url = $2 OR filename = $3)', [Number(p.id), img.url, img.filename || '']);
+              if (imgExists.rows.length > 0) {
+                await query('UPDATE product_images SET url = $1, filename = $2, orden = $3, es_principal = $4, descripcion = $5, categoria = $6 WHERE id = $7', [img.url, img.filename || '', Number(img.orden) || 0, img.es_principal || false, img.descripcion || '', img.categoria || '', imgExists.rows[0].id]);
+              } else {
+                await query('INSERT INTO product_images (product_id, url, filename, orden, es_principal, descripcion, categoria) VALUES ($1, $2, $3, $4, $5, $6, $7)', [Number(p.id), img.url, img.filename || '', Number(img.orden) || 0, img.es_principal || false, img.descripcion || '', img.categoria || '']);
+              }
+              results.images += 1;
+            } catch (imgErr) {
+              results.errors += 1;
+            }
+          }
         }
       } catch (err) {
         results.errors += 1;
@@ -255,4 +427,16 @@ const syncToNeon = async (req, res) => {
   }
 };
 
-module.exports = { getPublicProducts, getAdminProducts, createProduct, updateProduct, deleteProduct, searchProducts, syncToNeon, bulkImportProducts };
+module.exports = {
+  getPublicProducts,
+  getAdminProducts,
+  getProductById,
+  createProduct,
+  updateProduct,
+  toggleProductStatus,
+  deleteProduct,
+  duplicateProduct,
+  searchProducts,
+  syncToNeon,
+  bulkImportProducts
+};

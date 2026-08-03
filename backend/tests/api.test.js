@@ -9,9 +9,17 @@ process.env.DATABASE_URL = '';
 
 const { app, dbReady } = require('../src/server');
 
+let adminToken = '';
+
 beforeAll(async () => {
   if (dbReady && typeof dbReady.then === 'function') {
     await dbReady;
+  }
+  const loginRes = await request(app)
+    .post('/api/auth/login')
+    .send({ username: process.env.ADMIN_USER, password: process.env.ADMIN_PASS });
+  if (loginRes.body && loginRes.body.token) {
+    adminToken = loginRes.body.token;
   }
 });
 
@@ -106,3 +114,4 @@ describe('API Endpoints', () => {
     });
   });
 });
+

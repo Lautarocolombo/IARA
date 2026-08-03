@@ -1,13 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const {
-  getAdminPaymentConfig,
-  updatePaymentConfig,
-  getPublicPaymentConfig
-} = require('../controllers/paymentConfigController');
+const { adminAuth } = require('../middleware/auth');
+const { getAdminPaymentConfig, updateAdminPaymentConfig, getPublicPaymentConfig } = require('../controllers/siteSettingsController');
 
 router.get('/payment-config', getPublicPaymentConfig);
-router.get('/admin/payment-config', require('../middleware/auth').adminAuth, getAdminPaymentConfig);
-router.put('/admin/payment-config', require('../middleware/auth').adminAuth, updatePaymentConfig);
+router.get('/admin/payment-config', adminAuth, getAdminPaymentConfig);
+router.put('/admin/payment-config', adminAuth, updateAdminPaymentConfig);
 
 module.exports = router;

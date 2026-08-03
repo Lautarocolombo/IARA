@@ -1,7 +1,7 @@
 /* ==================== CONFIG.JS - CONFIGURACIÓN CENTRALIZADA ==================== */
 
 const CONFIG = {
-  // Reseñas Google (completar placeid/link cuando lo tengas)
+  // Reseñas Google (completá con tu Google Place ID o URL de reseña)
   REVIEWS: {
     GOOGLE_PLACE_ID: '',
     // URL alternativa si ya la tenés completa
@@ -42,6 +42,7 @@ const CONFIG = {
   },
 
   // Analytics
+  // Completá con tus IDs de Google Analytics y Meta Pixel
   ANALYTICS: {
     GOOGLE_ID: '',
     FACEBOOK_PIXEL_ID: ''
@@ -60,7 +61,7 @@ const CONFIG = {
     BASE: ''
   },
 
-  // URLs externas
+  // URLs externas (completá con los links reales a tus redes sociales)
   LINKS: {
     INSTAGRAM: '#',
     FACEBOOK: '#',

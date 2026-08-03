@@ -74,9 +74,16 @@ Configurar en **Vercel Dashboard > Settings > Environment Variables**:
 
 ### Analytics
 
-Reemplazar los placeholders en `frontend/js/config.js`:
-- `ANALYTICS.GOOGLE_ID` → tu ID de Google Analytics
-- `ANALYTICS.FACEBOOK_PIXEL_ID` → tu ID de Meta Pixel
+Para habilitar el seguimiento, completar los placeholders en `frontend/js/config.js`:
+
+| Placeholder | Descripción | Cómo obtenerlo |
+|-------------|-------------|----------------|
+| `ANALYTICS.GOOGLE_ID` | ID de Google Analytics (ej: `G-XXXXXXXXXX`) | Google Analytics > Admin > Data Streams > tu stream |
+| `ANALYTICS.FACEBOOK_PIXEL_ID` | ID del Meta Pixel (ej: `123456789`) | Meta Events Manager > Data Sources |
+| `REVIEWS.GOOGLE_PLACE_ID` | ID del lugar de Google Maps para reseñas | Google Maps > compartir > "Abrir en Maps" > copiar el Place ID |
+| `REVIEWS.GOOGLE_WRITE_REVIEW_URL` | URL directa para escribir reseña en Google | Generar con [Google's Review URL generator](https://developers.google.com/maps/documentation/urls/get-api-key) |
+
+Los enlaces a redes sociales en `LINKS` (Instagram, Facebook, Twitter) se configuran con las URLs reales de tus perfiles. Si no configurás estos valores, los enlaces aparecerán como `#` en el sitio.
 
 ### Cloudinary / Uploads
 
