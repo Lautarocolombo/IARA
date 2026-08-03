@@ -15,4 +15,18 @@ const getSiteSettings = async (req, res) => {
   }
 };
 
-module.exports = { getSiteSettings };
+const updateSiteSettings = async (req, res) => {
+  try {
+    const payload = req.body || {};
+    const keys = Object.keys(payload);
+    for (const key of keys) {
+      await query('INSERT INTO site_settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value', [key, String(payload[key])]);
+    }
+    res.json({ ok: true });
+  } catch (err) {
+    logger.error('Error actualizando settings:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+module.exports = { getSiteSettings, updateSiteSettings };

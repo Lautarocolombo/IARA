@@ -1,6 +1,11 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
+const { query } = require('../lib/db');
 const logger = require('../lib/logger');
+
+async function hashPassword(password) {
+  return bcrypt.hash(password, 10);
+}
 
 const login = async (req, res) => {
   try {
@@ -21,45 +26,50 @@ const login = async (req, res) => {
     const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH;
     const ADMIN_PASS = process.env.ADMIN_PASS;
 
-    if (!ADMIN_USER || (!ADMIN_PASS_HASH && !ADMIN_PASS)) {
-      return res.status(500).json({ error: 'Credenciales de administrador no configuradas en el servidor' });
-    }
-
     let role = null;
     let user = null;
+    let permissions = {};
 
     const cleanUsername = username.trim();
     const cleanPassword = password.trim();
 
-    logger.info({ username: cleanUsername, hasHash: !!ADMIN_PASS_HASH, hasPlainPass: !!ADMIN_PASS }, 'Intento de login');
+    const dbUser = await query('SELECT * FROM users WHERE username = $1 AND active = TRUE', [cleanUsername]);
+    if (dbUser.rows.length > 0) {
+      const u = dbUser.rows[0];
+      const match = await bcrypt.compare(cleanPassword, u.password_hash);
+      if (match) {
+        role = u.role || 'admin';
+        user = u.username;
+        permissions = typeof u.permissions === 'string' ? JSON.parse(u.permissions || '{}') : (u.permissions || {});
+      }
+    }
 
-    if (cleanUsername.toLowerCase() === ADMIN_USER.toLowerCase()) {
+    if (!role && cleanUsername.toLowerCase() === (ADMIN_USER || '').toLowerCase()) {
       if (ADMIN_PASS_HASH) {
         let hashMatch = false;
         try {
           hashMatch = await bcrypt.compare(cleanPassword, ADMIN_PASS_HASH);
-          logger.info({ username: cleanUsername, hashMatch }, 'bcrypt.compare result');
         } catch (err) {
           logger.warn({ username: cleanUsername, error: err.message }, 'ADMIN_PASS_HASH no es un hash bcrypt válido');
         }
         if (hashMatch) {
           role = 'admin';
           user = ADMIN_USER;
+          permissions = { all: true };
         } else if (ADMIN_PASS) {
-          logger.info({ username: cleanUsername, reason: 'hash_no_match' }, 'bcrypt.compare devolvió false, intentando ADMIN_PASS fallback');
           if (cleanPassword === ADMIN_PASS) {
             role = 'admin';
             user = ADMIN_USER;
+            permissions = { all: true };
           }
         }
       } else if (ADMIN_PASS) {
         if (cleanPassword === ADMIN_PASS) {
           role = 'admin';
           user = ADMIN_USER;
+          permissions = { all: true };
         }
       }
-    } else {
-      logger.debug({ username: cleanUsername, expectedUser: ADMIN_USER, usernameMatch: false }, 'Username no coincide');
     }
 
     if (!role) {
@@ -70,12 +80,39 @@ const login = async (req, res) => {
     if (!JWT_SECRET) {
       return res.status(500).json({ error: 'JWT_SECRET no configurado en el servidor' });
     }
-    const token = jwt.sign({ role, user }, JWT_SECRET, { expiresIn: '8h' });
-    res.json({ token, user, role });
+
+    const token = jwt.sign({ role, user, permissions }, JWT_SECRET, { expiresIn: '8h' });
+    res.json({ token, user, role, permissions });
   } catch (err) {
     logger.error('Login error:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
-module.exports = { login };
+const refresh = async (req, res) => {
+  const refreshToken = req.cookies?.refreshToken;
+  if (!refreshToken) {
+    return res.status(401).json({ error: 'Refresh token no proporcionado' });
+  }
+
+  try {
+    const JWT_SECRET = process.env.JWT_SECRET;
+    if (!JWT_SECRET) {
+      return res.status(500).json({ error: 'JWT_SECRET no configurado en el servidor' });
+    }
+
+    const decoded = jwt.verify(refreshToken, JWT_SECRET);
+    const accessToken = jwt.sign({ role: decoded.role, user: decoded.user, permissions: decoded.permissions || {} }, JWT_SECRET, { expiresIn: '8h' });
+    res.json({ token: accessToken });
+  } catch (err) {
+    return res.status(401).json({ error: 'Refresh token inválido o expirado' });
+  }
+};
+
+const logout = (req, res) => {
+  res.clearCookie('refreshToken', { path: '/api/auth/refresh' });
+  res.json({ ok: true });
+};
+
+module.exports = { login, refresh, logout, hashPassword };
+

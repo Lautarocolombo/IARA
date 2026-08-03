@@ -136,6 +136,36 @@ async function getClient() {
 }
 
 async function transaction(fn) {
+  if (isLocal) {
+    return new Promise((resolve, reject) => {
+      db.serialize(() => {
+        db.run('BEGIN', (err) => {
+          if (err) return reject(err);
+          const run = (sql, params) => {
+            return new Promise((res, rej) => {
+              const sqlite = toSqlite(sql);
+              db.all(sqlite, params, (e, rows) => {
+                if (e) return rej(e);
+                res({ rows, rowCount: rows ? rows.length : 0 });
+              });
+            });
+          };
+          const client = { query: run };
+          fn(client)
+            .then(result => {
+              db.run('COMMIT', err => {
+                if (err) return reject(err);
+                resolve(result);
+              });
+            })
+            .catch(err => {
+              db.run('ROLLBACK', () => reject(err));
+            });
+        });
+      });
+    });
+  }
+
   const client = await getClient();
   try {
     await client.query('BEGIN');
@@ -189,6 +219,15 @@ async function initDB() {
       total REAL NOT NULL,
       customer TEXT,
       status TEXT DEFAULT 'pending',
+      notes TEXT DEFAULT '',
+      shipping_name TEXT DEFAULT '',
+      shipping_address TEXT DEFAULT '',
+      shipping_phone TEXT DEFAULT '',
+      shipping_zip TEXT DEFAULT '',
+      shipping_city TEXT DEFAULT '',
+      shipping_email TEXT DEFAULT '',
+      subtotal REAL DEFAULT 0,
+      shipping_cost REAL DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
     await query(`CREATE TABLE IF NOT EXISTS subscribers (
@@ -226,6 +265,16 @@ async function initDB() {
       value TEXT DEFAULT '',
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
+    await query(`CREATE TABLE IF NOT EXISTS hero_cards (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nombre TEXT DEFAULT '',
+      precio TEXT DEFAULT '',
+      imagen TEXT DEFAULT '',
+      emoji TEXT DEFAULT '📿',
+      orden INTEGER DEFAULT 0,
+      activo BOOLEAN DEFAULT TRUE,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
     await query(`CREATE TABLE IF NOT EXISTS product_images (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       product_id INTEGER NOT NULL,
@@ -246,6 +295,69 @@ async function initDB() {
       payload TEXT NOT NULL,
       status TEXT DEFAULT 'pending',
       processed_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
+      slug TEXT UNIQUE NOT NULL,
+      description TEXT DEFAULT '',
+      active BOOLEAN DEFAULT TRUE,
+      orden INTEGER DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS activity_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user TEXT DEFAULT 'admin',
+      action TEXT NOT NULL,
+      entity_type TEXT DEFAULT '',
+      entity_id INTEGER DEFAULT 0,
+      details TEXT DEFAULT '',
+      ip TEXT DEFAULT '',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS customers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      phone TEXT DEFAULT '',
+      address TEXT DEFAULT '',
+      city TEXT DEFAULT '',
+      zip TEXT DEFAULT '',
+      active BOOLEAN DEFAULT TRUE,
+      blocked BOOLEAN DEFAULT FALSE,
+      notes TEXT DEFAULT '',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT UNIQUE NOT NULL,
+      password_hash TEXT DEFAULT '',
+      role TEXT DEFAULT 'admin',
+      permissions TEXT DEFAULT '{}',
+      active BOOLEAN DEFAULT TRUE,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS product_bulk_imports (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      filename TEXT DEFAULT '',
+      status TEXT DEFAULT 'pending',
+      total_rows INTEGER DEFAULT 0,
+      success_rows INTEGER DEFAULT 0,
+      error_rows INTEGER DEFAULT 0,
+      errors TEXT DEFAULT '',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS receipts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id INTEGER NOT NULL,
+      filename TEXT DEFAULT '',
+      url TEXT DEFAULT '',
+      sent_whatsapp BOOLEAN DEFAULT FALSE,
+      sent_email BOOLEAN DEFAULT FALSE,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
     logger.info('Tablas de base de datos inicializadas (SQLite)');
@@ -336,21 +448,43 @@ async function initDB() {
     } catch (err) {
       logger.debug({ err: err.message }, 'Columna featured ya existe o no se pudo agregar (SQLite)');
     }
+    try {
+      await query('ALTER TABLE products ADD COLUMN active BOOLEAN DEFAULT TRUE');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna active ya existe o no se pudo agregar (SQLite)');
+    }
+    try {
+      await query('ALTER TABLE orders ADD COLUMN notes TEXT DEFAULT \'\'');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna notes ya existe o no se pudo agregar (SQLite)');
+    }
+    try {
+      await query('ALTER TABLE categories ADD COLUMN orden INTEGER DEFAULT 0');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna orden ya existe o no se pudo agregar (SQLite)');
+    }
     return;
   }
 
   const statements = [
-    'CREATE TABLE IF NOT EXISTS products (id SERIAL PRIMARY KEY, name TEXT NOT NULL, category TEXT DEFAULT \'pulseras\', price REAL NOT NULL, description TEXT DEFAULT \'\', emoji TEXT DEFAULT \'📿\', image TEXT DEFAULT \'\', badge TEXT DEFAULT \'\', stock INTEGER DEFAULT 0, featured BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
+    'CREATE TABLE IF NOT EXISTS products (id SERIAL PRIMARY KEY, name TEXT NOT NULL, category TEXT DEFAULT \'pulseras\', price REAL NOT NULL, description TEXT DEFAULT \'\', emoji TEXT DEFAULT \'📿\', image TEXT DEFAULT \'\', badge TEXT DEFAULT \'\', stock INTEGER DEFAULT 0, featured BOOLEAN DEFAULT FALSE, active BOOLEAN DEFAULT TRUE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS site_texts (id SERIAL PRIMARY KEY, key TEXT UNIQUE NOT NULL, value TEXT DEFAULT \'\', updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS testimonials (id SERIAL PRIMARY KEY, name TEXT NOT NULL, comment TEXT NOT NULL, rating INTEGER DEFAULT 5 CHECK (rating >= 1 AND rating <= 5), image TEXT DEFAULT \'\', avatar TEXT DEFAULT \'\', role TEXT DEFAULT \'\', active BOOLEAN DEFAULT TRUE, featured BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
-    'CREATE TABLE IF NOT EXISTS orders (id SERIAL PRIMARY KEY, items JSONB NOT NULL, total REAL NOT NULL, customer JSONB, status TEXT DEFAULT \'pending\', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
+    'CREATE TABLE IF NOT EXISTS orders (id SERIAL PRIMARY KEY, items JSONB NOT NULL, total REAL NOT NULL, customer JSONB, status TEXT DEFAULT \'pending\', notes TEXT DEFAULT \'\', shipping_name TEXT DEFAULT \'\', shipping_address TEXT DEFAULT \'\', shipping_phone TEXT DEFAULT \'\', shipping_zip TEXT DEFAULT \'\', shipping_city TEXT DEFAULT \'\', shipping_email TEXT DEFAULT \'\', subtotal REAL DEFAULT 0, shipping_cost REAL DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS subscribers (id SERIAL PRIMARY KEY, email TEXT UNIQUE NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS reviews (id SERIAL PRIMARY KEY, product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE, rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5), comment TEXT DEFAULT \'\', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS contacts (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL, message TEXT NOT NULL, status TEXT DEFAULT \'new\', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS payment_config (id SERIAL PRIMARY KEY, mp_alias TEXT DEFAULT \'\', holder_name TEXT DEFAULT \'\', whatsapp TEXT DEFAULT \'\', message TEXT DEFAULT \'\', active BOOLEAN DEFAULT TRUE, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS site_settings (id SERIAL PRIMARY KEY, key TEXT UNIQUE NOT NULL, value TEXT DEFAULT \'\', updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
+    'CREATE TABLE IF NOT EXISTS hero_cards (id SERIAL PRIMARY KEY, nombre TEXT DEFAULT \'\', precio TEXT DEFAULT \'\', imagen TEXT DEFAULT \'\', emoji TEXT DEFAULT \'📿\', orden INTEGER DEFAULT 0, activo BOOLEAN DEFAULT TRUE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS product_images (id SERIAL PRIMARY KEY, product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE, url TEXT NOT NULL, alt TEXT DEFAULT \'\', filename TEXT DEFAULT \'\', cloudinary_public_id TEXT DEFAULT \'\', orden INTEGER DEFAULT 0, es_principal BOOLEAN DEFAULT FALSE, descripcion TEXT DEFAULT \'\', categoria TEXT DEFAULT \'\', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
-    'CREATE TABLE IF NOT EXISTS webhook_events (id SERIAL PRIMARY KEY, event_id TEXT UNIQUE NOT NULL, source TEXT DEFAULT \'transfer\', payload JSONB NOT NULL, status TEXT DEFAULT \'pending\', processed_at TIMESTAMP, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)'
+    'CREATE TABLE IF NOT EXISTS webhook_events (id SERIAL PRIMARY KEY, event_id TEXT UNIQUE NOT NULL, source TEXT DEFAULT \'transfer\', payload JSONB NOT NULL, status TEXT DEFAULT \'pending\', processed_at TIMESTAMP, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
+    'CREATE TABLE IF NOT EXISTS categories (id SERIAL PRIMARY KEY, name TEXT UNIQUE NOT NULL, slug TEXT UNIQUE NOT NULL, description TEXT DEFAULT \'\', active BOOLEAN DEFAULT TRUE, orden INTEGER DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
+    'CREATE TABLE IF NOT EXISTS activity_log (id SERIAL PRIMARY KEY, user TEXT DEFAULT \'admin\', action TEXT NOT NULL, entity_type TEXT DEFAULT \'\', entity_id INTEGER DEFAULT 0, details TEXT DEFAULT \'\', ip TEXT DEFAULT \'\', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
+    'CREATE TABLE IF NOT EXISTS customers (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT UNIQUE NOT NULL, phone TEXT DEFAULT \'\', address TEXT DEFAULT \'\', city TEXT DEFAULT \'\', zip TEXT DEFAULT \'\', active BOOLEAN DEFAULT TRUE, blocked BOOLEAN DEFAULT FALSE, notes TEXT DEFAULT \'\', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
+    'CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username TEXT UNIQUE NOT NULL, password_hash TEXT DEFAULT \'\', role TEXT DEFAULT \'admin\', permissions JSONB DEFAULT \'{}\', active BOOLEAN DEFAULT TRUE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
+    'CREATE TABLE IF NOT EXISTS product_bulk_imports (id SERIAL PRIMARY KEY, filename TEXT DEFAULT \'\', status TEXT DEFAULT \'pending\', total_rows INTEGER DEFAULT 0, success_rows INTEGER DEFAULT 0, error_rows INTEGER DEFAULT 0, errors TEXT DEFAULT \'\', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
+    'CREATE TABLE IF NOT EXISTS receipts (id SERIAL PRIMARY KEY, order_id INTEGER NOT NULL, filename TEXT DEFAULT \'\', url TEXT DEFAULT \'\', sent_whatsapp BOOLEAN DEFAULT FALSE, sent_email BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)'
   ];
 
   for (const sql of statements) {
@@ -382,10 +516,13 @@ async function initDB() {
     'ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_email TEXT DEFAULT \'\'',
     'ALTER TABLE orders ADD COLUMN IF NOT EXISTS subtotal REAL DEFAULT 0',
     'ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_cost REAL DEFAULT 0',
+    'ALTER TABLE orders ADD COLUMN IF NOT EXISTS notes TEXT DEFAULT \'\'',
     'ALTER TABLE product_images ADD COLUMN IF NOT EXISTS descripcion TEXT DEFAULT \'\'',
     'ALTER TABLE product_images ADD COLUMN IF NOT EXISTS categoria TEXT DEFAULT \'\'',
     'ALTER TABLE products ADD COLUMN IF NOT EXISTS featured BOOLEAN DEFAULT FALSE',
+    'ALTER TABLE products ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT TRUE',
     'ALTER TABLE product_images ADD COLUMN IF NOT EXISTS filename TEXT DEFAULT \'\'',
+    'ALTER TABLE categories ADD COLUMN IF NOT EXISTS orden INTEGER DEFAULT 0',
     'CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)',
     'CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at)',
     'CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)',
