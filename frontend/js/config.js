@@ -1,10 +1,14 @@
 /* ==================== CONFIG.JS - CONFIGURACIÓN CENTRALIZADA ==================== */
 
 const CONFIG = {
-  // Reseñas Google (completá con tu Google Place ID o URL de reseña)
+  // Reseñas Google
+  // Cómo obtener Google Place ID:
+  // 1. Buscá tu negocio en Google Maps
+  // 2. Hacé click en "Compartir" → "Insertar mapa"
+  // 3. En el código embed encontrás el Place ID, o usá la Google Places API
+  // URL alternativa directa (sobreescribe GOOGLE_PLACE_ID si está completa)
   REVIEWS: {
     GOOGLE_PLACE_ID: '',
-    // URL alternativa si ya la tenés completa
     GOOGLE_WRITE_REVIEW_URL: ''
   },
 
@@ -14,7 +18,8 @@ const CONFIG = {
     PHONE: '+54 (3444) 634-4444',
     EMAIL: 'chicafittargentina@gmail.com',
     ADDRESS: 'San Antonio Norte 473, Gualeguay, Entre Ríos, Argentina',
-    COORDINATES: { lat: -33.1400009, lng: -59.3136349 }
+    COORDINATES: { lat: -33.1400009, lng: -59.3136349 },
+    GOOGLE_MAPS_API_KEY: ''
   },
 
   // Configuración de carrito
@@ -42,7 +47,12 @@ const CONFIG = {
   },
 
   // Analytics
-  // Completá con tus IDs de Google Analytics y Meta Pixel
+  // Google Analytics:
+  //   1. Creá una propiedad en https://analytics.google.com
+  //   2. Elegí "Web" y copiá el ID de medición (formato G-XXXXXXXXXX)
+  // Meta Pixel (Facebook):
+  //   1. Creá un píxel en https://business.facebook.com/events_manager
+  //   2. Copiá el ID numérico del píxel
   ANALYTICS: {
     GOOGLE_ID: '',
     FACEBOOK_PIXEL_ID: ''
@@ -62,6 +72,8 @@ const CONFIG = {
   },
 
   // URLs externas (completá con los links reales a tus redes sociales)
+  // Estos valores se usan como fallback si no hay configuración en el backend.
+  // Podés gestionarlos también desde el panel admin → Configuración.
   LINKS: {
     INSTAGRAM: '#',
     FACEBOOK: '#',

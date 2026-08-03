@@ -430,8 +430,18 @@ async function loadSiteSettings() {
     const settings = await res.json();
 
     const instagramLink = document.getElementById('instagramLink');
-    if (instagramLink && settings.instagram_url) {
-      instagramLink.href = settings.instagram_url;
+    if (instagramLink && settings.instagram) {
+      instagramLink.href = settings.instagram;
+    }
+
+    const facebookLink = document.getElementById('facebookLink');
+    if (facebookLink && settings.facebook) {
+      facebookLink.href = settings.facebook;
+    }
+
+    const twitterLink = document.getElementById('twitterLink');
+    if (twitterLink && settings.twitter) {
+      twitterLink.href = settings.twitter;
     }
 
     updateContactFromSettings(settings);
@@ -505,6 +515,14 @@ window.loadSiteSettings = loadSiteSettings;
 window.loadSiteTexts = loadSiteTexts;
 window.loadHeroCards = loadHeroCards;
 window.loadTestimonials = loadTestimonials;
+
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+    if (typeof loadSiteSettings === 'function') {
+      loadSiteSettings();
+    }
+  });
+}
 
 async function loadHeroCards() {
   try {

@@ -185,13 +185,17 @@
     padding: 1.5rem;
   }
 
-  .map-container {
-    min-height: 300px;
-  }
+   .map-container {
+     min-height: 300px;
+   }
 
-  .map-loading {
-    height: 300px;
-  }
+   #storeMapContainer {
+     min-height: 300px;
+   }
+
+   .map-loading {
+     height: 300px;
+   }
 
   .location-info {
     flex-direction: column;
