@@ -52,12 +52,17 @@
         <span>Artesanía Admin</span>
       </div>
       <nav class="sidebar-nav">
+        <a href="#dashboard" data-section="dashboard">📊 Dashboard</a>
         <a href="#products" class="active" data-section="products">📦 Productos</a>
+        <a href="#categories" data-section="categories">🏷 Categorías</a>
         <a href="#orders" data-section="orders">🧾 Pedidos</a>
+        <a href="#customers" data-section="customers">👥 Clientes</a>
+        <a href="#reports" data-section="reports">📈 Reportes</a>
         <a href="#testimonials" data-section="testimonials">💬 Testimonios</a>
         <a href="#texts" data-section="texts">📝 Textos del Sitio</a>
         <a href="#heroImages" data-section="heroImages">🖼 Imágenes del Hero</a>
         <a href="#settings" data-section="settings">⚙️ Configuración</a>
+        <a href="#users" data-section="users">👤 Usuarios</a>
       </nav>
       <div class="sidebar-footer">
         <a href="../index.html" target="_blank" class="btn btn-secondary btn-full">← Ver sitio</a>
@@ -83,6 +88,104 @@
       </div>
     </div>
 
+
+    <div class="card" id="dashboardSection" style="display:none;">
+      <div class="card-header">
+        <h3 class="card-header-title">Panel General</h3>
+      </div>
+      <div class="card-body">
+        <div class="dashboard-grid" id="dashboardGrid"></div>
+        <div class="dashboard-alerts" id="dashboardAlerts" style="margin-top:1rem;"></div>
+      </div>
+    </div>
+
+    <div class="card" id="categoriesSection" style="display:none;">
+      <div class="card-header">
+        <h3 class="card-header-title">Categorías</h3>
+        <div class="card-controls">
+          <button class="btn btn-primary btn-sm" onclick="openCategoryModal()">+ Nueva Categoría</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Slug</th>
+              <th>Descripción</th>
+              <th>Estado</th>
+              <th>Orden</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="categoriesTableBody">
+            <tr><td colspan="6" class="empty-state">Cargando categorías...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" id="customersSection" style="display:none;">
+      <div class="card-header">
+        <h3 class="card-header-title">Clientes</h3>
+      </div>
+      <div class="card-body">
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Email</th>
+              <th>Teléfono</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="customersTableBody">
+            <tr><td colspan="5" class="empty-state">Cargando clientes...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card" id="reportsSection" style="display:none;">
+      <div class="card-header">
+        <h3 class="card-header-title">Reportes y Analíticas</h3>
+        <div class="card-controls">
+          <input type="date" id="reportStartDate" class="card-filter" />
+          <input type="date" id="reportEndDate" class="card-filter" />
+          <button class="btn btn-primary btn-sm" onclick="loadSalesReport()">Filtrar</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="reportContent"></div>
+      </div>
+    </div>
+    <div class="card" id="usersSection" style="display:none;">
+      <div class="card-header">
+        <h3 class="card-header-title">Usuarios del panel</h3>
+        <div class="card-controls">
+          <button class="btn btn-primary btn-sm" onclick="openUserModal()">+ Nuevo Usuario</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <table>
+          <thead>
+            <tr>
+              <th>Usuario</th>
+              <th>Rol</th>
+              <th>Permisos</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr><td colspan="5" class="empty-state">Cargando usuarios...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+
     <div class="card" id="productsSection">
       <div class="card-header">
         <h3 class="card-header-title">Catálogo de productos</h3>
@@ -99,6 +202,9 @@
           </select>
           <button class="btn btn-secondary btn-sm" onclick="exportCSV('products')">📥 Exportar CSV</button>
           <button class="btn btn-primary btn-sm" id="syncProductsBtn" onclick="syncProductsToNeon()">💾 Guardar en base de datos</button>
+          <input type="file" id="bulkImportFile" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleBulkImport(this)" />
+          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('bulkImportFile').click()">📂 Carga masiva CSV</button>
+          <span id="bulkImportStatus" style="font-size:0.8rem;margin-left:0.5rem;"></span>
           <span id="syncProductsStatus" style="font-size:0.8rem;margin-left:0.5rem;"></span>
         </div>
       </div>
@@ -110,11 +216,13 @@
               <th>Categoría</th>
               <th>Precio</th>
               <th>Stock</th>
+              <th>Estado</th>
               <th>Imagen</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody id="tableBody">
+            <tr><td colspan="7" class="empty-state">Cargando productos...</td></tr>
             <tr><td colspan="6" class="empty-state">Cargando productos...</td></tr>
           </tbody>
         </table>
@@ -299,6 +407,17 @@
           </div>
         </div>
         <div class="form-group">
+          <label>Producto activo</label>
+          <div class="toggle-row">
+            <label class="toggle">
+              <input type="checkbox" id="pActive" checked>
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="toggle-label" id="activeLabel">Sí</span>
+          </div>
+        </div>
+        </div>
+        <div class="form-group">
           <label>Descripción</label>
           <textarea id="pDesc" rows="3" placeholder="Descripción corta del producto"></textarea>
         </div>
@@ -416,6 +535,114 @@
          <button class="btn btn-primary" onclick="saveHeroCard()">Guardar</button>
        </div>
      </div>
+  <div class="modal-overlay" id="categoryModalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="categoryModalTitle">Nueva Categoría</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeCategoryModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="save-status" id="categorySaveStatus"></div>
+        <div class="form-group">
+          <label>Nombre</label>
+          <input type="text" id="catName" placeholder="Nombre de la categoría" />
+        </div>
+        <div class="form-group">
+          <label>Slug</label>
+          <input type="text" id="catSlug" placeholder="slug-unico" />
+        </div>
+        <div class="form-group">
+          <label>Descripción</label>
+          <textarea id="catDescription" rows="2" placeholder="Descripción opcional"></textarea>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Orden</label>
+            <input type="number" id="catOrden" value="0" />
+          </div>
+          <div class="form-group">
+            <label>Estado</label>
+            <select id="catActive">
+              <option value="true">Activo</option>
+              <option value="false">Inactivo</option>
+            </select>
+          </div>
+        </div>
+        <input type="hidden" id="catId" />
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeCategoryModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveCategory()">Guardar</button>
+      </div>
+    </div>
+  </div>
+  <div class="modal-overlay" id="userModalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="userModalTitle">Nuevo Usuario</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeUserModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="save-status" id="userSaveStatus"></div>
+        <div class="form-group">
+          <label>Usuario</label>
+          <input type="text" id="userUsername" placeholder="Nombre de usuario" />
+        </div>
+        <div class="form-group">
+          <label>Contraseña</label>
+          <input type="password" id="userPassword" placeholder="Contraseña" />
+        </div>
+        <div class="form-group">
+          <label>Rol</label>
+          <select id="userRole">
+            <option value="admin">Admin</option>
+            <option value="editor">Editor</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Permisos (JSON)</label>
+          <textarea id="userPermissions" rows="2" placeholder="{ products: true, orders: true }"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Estado</label>
+          <select id="userActive">
+            <option value="true">Activo</option>
+            <option value="false">Inactivo</option>
+          </select>
+        </div>
+        <input type="hidden" id="userId" />
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeUserModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveUser()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="orderDetailModalOverlay">
+    <div class="modal" style="max-width:640px">
+      <div class="modal-header">
+        <h3 id="orderDetailTitle">Detalle del Pedido</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeOrderDetailModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="save-status" id="orderDetailSaveStatus"></div>
+        <div id="orderDetailContent"></div>
+        <div style="display:flex;gap:0.5rem;margin-top:1rem;">
+          <button class="btn btn-secondary btn-sm" onclick="generateReceipt(state.currentOrderId)">📄 Comprobante</button>
+          <button class="btn btn-primary btn-sm" onclick="sendReceiptWhatsApp(state.currentOrderId)">💬 Enviar por WhatsApp</button>
+        </div>
+        <div class="form-group" style="margin-top:1rem">
+          <label>Nota interna</label>
+          <textarea id="orderNotes" rows="3" placeholder="Agregá una nota interna sobre este pedido..."></textarea>
+          <button class="btn btn-primary btn-sm" onclick="saveOrderNotes()" style="margin-top:0.5rem">💾 Guardar nota</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeOrderDetailModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
    </div>
 
   <div class="toast-container" id="toastContainer"></div>
@@ -446,6 +673,51 @@
       if (!API_BASE) return path;
       return `${API_BASE}${path}`;
     }
+
+    function navigateTo(section) {
+      currentSection = section;
+      document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+      document.querySelector(`.sidebar-nav a[data-section="${section}"]`)?.classList.add('active');
+      const sections = ['dashboard','products','categories','orders','customers','reports','testimonials','texts','heroImages','settings','users'];
+      sections.forEach(s => { const el = document.getElementById(s+'Section'); if(el) el.style.display = s===section?'block':'none'; });
+      const titles = {
+        dashboard: ['Panel General', 'Resumen de ventas, pedidos y alertas', ''],
+        products: ['Productos', 'Gestioná productos, fotos y precios', '+ Nuevo Producto'],
+        categories: ['Categorías', 'Gestioná categorías y subcategorías', '+ Nueva Categoría'],
+        orders: ['Pedidos', 'Gestioná pedidos y pagos', ''],
+        customers: ['Clientes', 'Gestioná clientes y su historial', ''],
+        reports: ['Reportes', 'Analíticas de ventas y productos', ''],
+        testimonials: ['Testimonios', 'Gestioná testimonios de clientes', ''],
+        texts: ['Textos del Sitio', 'Modificá los textos que aparecen en el sitio', ''],
+        heroImages: ['Imágenes del Hero', 'Editá las imágenes y textos de las cards del hero', ''],
+        settings: ['Configuración', 'Gestioná la configuración general y de pago', ''],
+        users: ['Usuarios', 'Gestioná usuarios y permisos', '+ Nuevo Usuario'],
+      };
+      const [title, subtitle, action] = titles[section] || titles.products;
+      document.getElementById('sectionTitle').textContent = title;
+      document.getElementById('sectionSubtitle').textContent = subtitle;
+      const actionBtn = document.getElementById('sectionAction');
+      if (action) { actionBtn.textContent = action; actionBtn.style.display = ''; } else { actionBtn.style.display = 'none'; }
+      if (section === 'dashboard') loadDashboard();
+      if (section === 'products') loadProducts();
+      if (section === 'categories') loadCategories();
+      if (section === 'orders') loadOrders();
+      if (section === 'customers') loadCustomers();
+      if (section === 'reports') loadSalesReport();
+      if (section === 'testimonials') loadTestimonials();
+      if (section === 'texts') loadSiteTexts();
+      if (section === 'heroImages') loadHeroCardsAdmin();
+      if (section === 'settings') loadSettings();
+      if (section === 'users') loadUsers();
+    }
+
+    window.addEventListener('hashchange', () => {
+      const hash = window.location.hash.slice(1);
+      const validSections = ['dashboard','products','categories','orders','customers','reports','testimonials','texts','heroImages','settings','users'];
+      if (validSections.includes(hash)) {
+        navigateTo(hash);
+      }
+    });
 
     async function checkServerHealth() {
       const btn = document.getElementById('loginBtn');
@@ -584,18 +856,27 @@
       if (!authToken) throw new Error('No autorizado');
       const headers = { Authorization: `Bearer ${authToken}`, ...(opts.headers || {}) };
       const fullUrl = url.startsWith('/api/') ? `${CONFIG.API.BASE}${url}` : url;
-      const res = await fetch(fullUrl, { ...opts, headers });
-      if (res.status === 401) {
-        authToken = '';
-        localStorage.removeItem('ag_admin_jwt');
-        document.getElementById('loginOverlay').classList.remove('hidden');
-        throw new Error('Sesión expirada');
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 20000);
+      try {
+        const res = await fetch(fullUrl, { ...opts, headers, signal: controller.signal });
+        clearTimeout(timeout);
+        if (res.status === 401) {
+          authToken = '';
+          localStorage.removeItem('ag_admin_jwt');
+          document.getElementById('loginOverlay').classList.remove('hidden');
+          throw new Error('Sesión expirada');
+        }
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(text || res.statusText);
+        }
+        return res;
+      } catch (err) {
+        clearTimeout(timeout);
+        console.error('[adminFetch] Error:', err.message, 'URL:', fullUrl);
+        throw err;
       }
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || res.statusText);
-      }
-      return res;
     }
 
     function showToast(message, type = 'default') {
@@ -639,873 +920,6 @@
       el.className = 'save-status';
       el.textContent = '';
     }
-
-function navigateTo(section) {
-       currentSection = section;
-       document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
-       document.querySelector(`.sidebar-nav a[data-section="${section}"]`)?.classList.add('active');
-       document.getElementById('productsSection').style.display = section === 'products' ? 'block' : 'none';
-       document.getElementById('ordersSection').style.display = section === 'orders' ? 'block' : 'none';
-       document.getElementById('testimonialsSection').style.display = section === 'testimonials' ? 'block' : 'none';
-       document.getElementById('textsSection').style.display = section === 'texts' ? 'block' : 'none';
-       document.getElementById('heroImagesSection').style.display = section === 'heroImages' ? 'block' : 'none';
-       document.getElementById('settingsSection').style.display = section === 'settings' ? 'block' : 'none';
-       const titles = {
-         products: ['Productos', 'Gestioná productos, fotos y precios', '+ Nuevo Producto'],
-         orders: ['Pedidos', 'Gestioná pedidos y pagos', ''],
-         testimonials: ['Testimonios', 'Gestioná testimonios de clientes', ''],
-         texts: ['Textos del Sitio', 'Modificá los textos que aparecen en el sitio', ''],
-         heroImages: ['Imágenes del Hero', 'Editá las imágenes y textos de las cards del hero', ''],
-         settings: ['Configuración', 'Gestioná la configuración general y de pago', '']
-       };
-       const [title, subtitle, action] = titles[section] || titles.products;
-       document.getElementById('sectionTitle').textContent = title;
-       document.getElementById('sectionSubtitle').textContent = subtitle;
-       const actionBtn = document.getElementById('sectionAction');
-       if (action) {
-         actionBtn.textContent = action;
-         actionBtn.style.display = '';
-       } else {
-         actionBtn.style.display = 'none';
-       }
-       if (section === 'products') loadProducts();
-       if (section === 'orders') loadOrders();
-       if (section === 'testimonials') loadTestimonials();
-       if (section === 'texts') loadSiteTexts();
-       if (section === 'heroImages') loadHeroCardsAdmin();
-       if (section === 'settings') loadSettings();
-     }
-
-function openSectionModal() {
-       if (currentSection === 'products') openModal();
-       if (currentSection === 'testimonials') openTestimonialModal();
-       if (currentSection === 'texts') openTextModal();
-       if (currentSection === 'heroImages') openHeroCardModal();
-     }
-
-    document.querySelectorAll('.sidebar-nav a[data-section]').forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        navigateTo(link.getAttribute('data-section'));
-      });
-    });
-
-    async function loadProducts() {
-      try {
-        const res = await adminFetch('/api/admin/products');
-        products = await res.json();
-        renderProductsTable();
-      } catch (err) {
-        document.getElementById('tableBody').innerHTML = `<tr><td colspan="5" class="empty-state">Error: ${err.message}</td></tr>`;
-      }
-    }
-
-    function renderProductsTable() {
-      const q = (document.getElementById('productSearchInput')?.value || '').toLowerCase();
-      const category = document.getElementById('categoryFilter')?.value || '';
-      const filtered = products.filter(p => {
-        const matchesSearch = (p.name + ' ' + p.description + ' ' + p.category).toLowerCase().includes(q);
-        const matchesCategory = !category || p.category === category;
-        return matchesSearch && matchesCategory;
-      });
-      const tbody = document.getElementById('tableBody');
-      if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="empty-state"><h3>Sin resultados</h3><p>No se encontraron productos.</p></td></tr>`;
-        return;
-      }
-      tbody.innerHTML = filtered.map(p => `
-        <tr>
-          <td>
-            <div class="product-cell">
-              <div class="thumb">${p.image ? `<img src="${p.image}" alt="${p.name}" />` : (p.emoji || '📿')}</div>
-              <div>
-                <div class="product-name">${p.name}</div>
-                <div class="product-desc">${p.description}</div>
-              </div>
-            </div>
-          </td>
-          <td><span class="badge badge-${p.category}">${p.category}</span></td>
-          <td><span class="price-cell">$${Number(p.price).toLocaleString('es-AR')}</span></td>
-          <td><span class="badge badge-stock ${p.stock > 0 ? 'badge-stock--ok' : 'badge-stock--out'}">${p.stock > 0 ? `✅ ${p.stock}` : '❌ Sin stock'}</span></td>
-              <td>${p.image ? `<div class="thumb"><img src="${p.image}" alt="${p.name}" /></div>` : '<div class="thumb">📷</div>'}</td>
-          <td>
-            <div class="actions">
-              <button class="btn btn-secondary btn-sm" onclick="editProduct(${p.id})">✏️ Editar</button>
-              <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">🗑</button>
-            </div>
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    async function loadOrders() {
-      try {
-        const res = await adminFetch('/api/admin/orders');
-        orders = await res.json();
-        renderOrdersTable();
-      } catch (err) {
-        document.getElementById('ordersTableBody').innerHTML = `<tr><td colspan="6" class="empty-state">Error: ${err.message}</td></tr>`;
-      }
-    }
-
-    function renderOrdersTable() {
-      const q = (document.getElementById('orderSearchInput')?.value || '').toLowerCase();
-      const filtered = orders.filter(o => {
-        const customer = o.customer || {};
-        const text = `${o.id} ${customer.name || ''} ${customer.email || ''} ${o.status}`.toLowerCase();
-        return text.includes(q);
-      });
-      const tbody = document.getElementById('ordersTableBody');
-      if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" class="empty-state"><h3>Sin pedidos</h3><p>No se encontraron pedidos.</p></td></tr>`;
-        return;
-      }
-      tbody.innerHTML = filtered.map(o => {
-        const customer = o.customer || {};
-        const statusOptions = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
-        return `
-          <tr>
-            <td><strong>#${o.id}</strong></td>
-            <td>${customer.name || 'Sin nombre'}<br/><small>${customer.email || ''}</small></td>
-            <td>$${Number(o.total).toLocaleString('es-AR')}</td>
-            <td>
-              <select onchange="updateOrderStatus(${o.id}, this.value)" style="padding:0.4rem;border-radius:6px;border:1px solid #f4c8d4;font-size:0.85rem;">
-                ${statusOptions.map(s => `<option value="${s}" ${o.status === s ? 'selected' : ''}>${s}</option>`).join('')}
-              </select>
-            </td>
-            <td>${o.created_at ? new Date(o.created_at).toLocaleDateString('es-AR') : '—'}</td>
-            <td>
-              <div class="actions">
-                <button class="btn btn-secondary btn-sm" onclick="viewOrder(${o.id})">👁 Ver</button>
-                <button class="btn btn-danger btn-sm" onclick="deleteOrder(${o.id})">🗑</button>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    async function updateOrderStatus(id, newStatus) {
-      try {
-        const res = await adminFetch(`/api/admin/orders/${id}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: newStatus })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Error al actualizar');
-        showToast(`Estado actualizado a ${newStatus}`, 'success');
-        await loadOrders();
-      } catch (err) {
-        showToast(err.message, 'error');
-        await loadOrders();
-      }
-    }
-
-    function viewOrder(id) {
-      const order = orders.find(o => o.id === id);
-      if (!order) return;
-      const customer = order.customer || {};
-      const items = Array.isArray(order.items) ? order.items : [];
-      const itemsText = items.map((it, i) => `${i + 1}. ${it.name || 'Producto'} x${it.quantity || 1} — $${Number(it.price || 0).toLocaleString('es-AR')}`).join('\n');
-      alert(`Pedido #${order.id}\n\nCliente: ${customer.name || '—'}\nEmail: ${customer.email || '—'}\nTeléfono: ${customer.phone || '—'}\nDirección: ${customer.address || '—'}\n\nItems:\n${itemsText}\n\nTotal: $${Number(order.total).toLocaleString('es-AR')}\nEstado: ${order.status || 'pending'}`);
-    }
-
-    async function deleteOrder(id) {
-      const order = orders.find(o => o.id === id);
-      if (!order) return;
-      const customer = order.customer || {};
-      if (!window.confirm(`¿Seguro que querés eliminar el pedido #${id} de ${customer.name || 'cliente'}? Esta acción no se puede deshacer.`)) return;
-      try {
-        const res = await adminFetch(`/api/admin/orders/${id}`, { method: 'DELETE' });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Error al eliminar');
-        orders = orders.filter(o => o.id !== id);
-        renderOrdersTable();
-        showToast('Pedido eliminado', 'success');
-      } catch (err) {
-        showToast(err.message, 'error');
-      }
-    }
-
-    async function loadTestimonials() {
-      try {
-        const res = await adminFetch('/api/admin/testimonials');
-        testimonials = await res.json();
-        renderTestimonialsTable();
-      } catch (err) {
-        document.getElementById('testimonialsTableBody').innerHTML = `<tr><td colspan="5" class="empty-state">Error: ${err.message}</td></tr>`;
-      }
-    }
-
-    function renderTestimonialsTable() {
-      const tbody = document.getElementById('testimonialsTableBody');
-      if (testimonials.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="empty-state"><h3>Sin testimonios</h3><p>Agregá el primero.</p></td></tr>`;
-        return;
-      }
-      tbody.innerHTML = testimonials.map(t => `
-        <tr>
-          <td><strong>${t.name}</strong></td>
-          <td>${t.comment}</td>
-          <td>${'⭐'.repeat(t.rating)}</td>
-          <td>${t.active ? '✅ Activo' : '❌ Inactivo'}</td>
-          <td>
-            <div class="actions">
-              <button class="btn btn-secondary btn-sm" onclick="editTestimonial(${t.id})">✏️ Editar</button>
-              <button class="btn btn-danger btn-sm" onclick="deleteTestimonial(${t.id})">🗑</button>
-            </div>
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    async function loadSiteTexts() {
-      try {
-        const res = await adminFetch('/api/admin/site-texts');
-        siteTexts = await res.json();
-        renderTextsTable();
-      } catch (err) {
-        document.getElementById('textsTableBody').innerHTML = `<tr><td colspan="3" class="empty-state">Error: ${err.message}</td></tr>`;
-      }
-    }
-
-function renderTextsTable() {
-       const tbody = document.getElementById('textsTableBody');
-       const keys = Object.keys(siteTexts);
-       if (keys.length === 0) {
-         tbody.innerHTML = `<tr><td colspan="3" class="empty-state"><h3>Sin textos</h3><p>Agregá el primero.</p></td></tr>`;
-         return;
-       }
-       tbody.innerHTML = keys.map(key => `
-         <tr>
-           <td><code>${key}</code></td>
-           <td>${siteTexts[key] || ''}</td>
-           <td>
-             <div class="actions">
-               <button class="btn btn-secondary btn-sm" onclick="editText('${key}')">✏️ Editar</button>
-             </div>
-           </td>
-         </tr>
-       `).join('');
-     }
-
-     async function loadHeroCardsAdmin() {
-       try {
-         const res = await adminFetch('/api/admin/site-texts');
-         siteTexts = await res.json();
-         renderHeroCards();
-       } catch (err) {
-         document.getElementById('heroCardsList').innerHTML = `<div class="empty-state"><h3>Error</h3><p>${err.message}</p></div>`;
-       }
-     }
-
-     function renderHeroCards() {
-       const container = document.getElementById('heroCardsList');
-       if (!container) return;
-       const cards = [1, 2];
-       container.innerHTML = cards.map(num => {
-         const name = siteTexts[`hero_card_${num}_name`] || '';
-         const price = siteTexts[`hero_card_${num}_price`] || '';
-         const image = siteTexts[`hero_card_${num}_image`] || '';
-         return `
-           <div class="hero-card-edit-item">
-             <div class="hero-card-thumb">
-               ${image ? `<img src="${image}" alt="Card ${num}" />` : (num === 1 ? '📿' : '💎')}
-             </div>
-             <div class="hero-card-info">
-               <div class="hero-card-label">Card ${num}</div>
-               <div class="hero-card-field">Nombre: ${name || '—'}</div>
-               <div class="hero-card-field">Precio: ${price || '—'}</div>
-             </div>
-             <div class="hero-card-actions">
-               <button class="btn btn-primary btn-sm" onclick="openHeroCardModal(${num})">✏️ Editar</button>
-             </div>
-           </div>
-         `;
-       }).join('');
-     }
-
-     function openHeroCardModal(cardNum = 1) {
-       editingId = cardNum;
-       document.getElementById('heroCardModalTitle').textContent = `Editar Card ${cardNum}`;
-       clearSaveStatus('heroCardSaveStatus');
-       document.getElementById('heroCardIndex').value = cardNum;
-       const name = siteTexts[`hero_card_${cardNum}_name`] || '';
-       const price = siteTexts[`hero_card_${cardNum}_price`] || '';
-       const image = siteTexts[`hero_card_${cardNum}_image`] || '';
-       document.getElementById('heroCardName').value = name;
-       document.getElementById('heroCardPrice').value = price.replace('$', '');
-       document.getElementById('heroCardImage').value = image;
-       document.getElementById('heroCardImageFile').value = '';
-       const preview = document.getElementById('heroCardImagePreview');
-       preview.style.display = 'none';
-       preview.innerHTML = '';
-       if (image) {
-         preview.innerHTML = `<img src="${image}" alt="Card ${cardNum}" style="max-height:160px;border-radius:8px;border:1px solid var(--border);" />`;
-         preview.style.display = 'block';
-       }
-       document.getElementById('heroCardModalOverlay').classList.add('active');
-     }
-
-     function closeHeroCardModal() {
-       document.getElementById('heroCardModalOverlay').classList.remove('active');
-       editingId = null;
-       clearSaveStatus('heroCardSaveStatus');
-     }
-
-      async function saveHeroCard() {
-        const cardNum = Number(document.getElementById('heroCardIndex').value);
-        const name = document.getElementById('heroCardName').value.trim();
-        const priceRaw = document.getElementById('heroCardPrice').value.trim();
-        const price = priceRaw ? '$' + Number(priceRaw).toLocaleString('es-AR') : '';
-        const existingImage = document.getElementById('heroCardImage').value.trim();
-
-        if (!name) {
-          showSaveStatus('heroCardSaveStatus', 'error', '❌ El nombre es obligatorio');
-          return;
-        }
-
-        let image = existingImage;
-        const fileInput = document.getElementById('heroCardImageFile');
-        const file = fileInput.files[0];
-
-        try {
-          showSaveStatus('heroCardSaveStatus', 'saving', 'Guardando...');
-          if (file) {
-            const formData = new FormData();
-            formData.append('image', file);
-            const uploadRes = await fetch('/api/admin/upload', {
-              method: 'POST',
-              headers: { Authorization: `Bearer ${authToken}` },
-              body: formData
-            });
-            const uploadData = await uploadRes.json();
-            if (!uploadRes.ok) throw new Error(uploadData.error || 'Error al subir la imagen');
-            image = uploadData.url;
-          }
-
-          const keys = [
-            { key: `hero_card_${cardNum}_name`, value: name },
-            { key: `hero_card_${cardNum}_price`, value: price },
-            { key: `hero_card_${cardNum}_image`, value: image }
-          ];
-
-          for (const item of keys) {
-            await adminFetch('/api/admin/site-texts', {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(item)
-            });
-          }
-
-          showSaveStatus('heroCardSaveStatus', 'success', '✅ Verificado');
-          await loadHeroCardsAdmin();
-          setTimeout(() => {
-            hideSaveStatus('heroCardSaveStatus');
-            closeHeroCardModal();
-          }, 3500);
-          showToast('Card del hero guardada', 'success');
-        } catch (err) {
-          showSaveStatus('heroCardSaveStatus', 'error', '❌ Reintente');
-          setTimeout(() => hideSaveStatus('heroCardSaveStatus'), 3500);
-          showToast(err.message, 'error');
-        }
-      }
-
-     async function syncHeroCards() {
-       const statusEl = document.getElementById('syncHeroStatus');
-       const btn = document.getElementById('syncHeroBtn');
-       try {
-         btn.disabled = true;
-         statusEl.textContent = 'Sincronizando...';
-         statusEl.style.color = '#334155';
-         const res = await adminFetch('/api/admin/sync-texts', {
-           method: 'POST',
-           headers: { 'Content-Type': 'application/json' },
-           body: JSON.stringify(siteTexts)
-         });
-         const data = await res.json();
-         if (!res.ok) throw new Error(data.error || 'Error al sincronizar');
-         statusEl.textContent = `Guardado ✓ (${data.results.saved} textos)`;
-         statusEl.style.color = '#10b981';
-         showToast('Imágenes del Hero sincronizadas', 'success');
-       } catch (err) {
-         statusEl.textContent = 'En mantenimiento';
-         statusEl.style.color = '#dc2626';
-         showToast('Error al sincronizar', 'error');
-       } finally {
-         btn.disabled = false;
-       }
-     }
-
-    function openModal(product = null) {
-      editingId = product ? product.id : null;
-      document.getElementById('modalTitle').textContent = product ? 'Editar Producto' : 'Nuevo Producto';
-      clearSaveStatus('productSaveStatus');
-      document.getElementById('pName').value = product ? product.name : '';
-      document.getElementById('pCategory').value = product ? product.category : 'pulseras';
-      document.getElementById('pPrice').value = product ? product.price : '';
-      document.getElementById('pDesc').value = product ? product.description : '';
-      document.getElementById('pImage').value = product ? (product.image || '') : '';
-      document.getElementById('productImageFiles').value = '';
-      document.getElementById('pStock').value = product ? (product.stock ?? 0) : 0;
-      document.getElementById('pFeatured').checked = product ? (product.featured || false) : false;
-      updateFeaturedLabel();
-      const preview = document.getElementById('imagePreview');
-      preview.style.display = 'none';
-      preview.innerHTML = '';
-      if (product && product.image) {
-        preview.innerHTML = `<img src="${product.image}" alt="${product.name}" style="max-height:160px;border-radius:8px;border:1px solid var(--border);" />`;
-        preview.style.display = 'block';
-      }
-      document.getElementById('pId').value = editingId || '';
-      document.getElementById('modalOverlay').classList.add('active');
-    }
-
-    function closeModal() {
-      document.getElementById('modalOverlay').classList.remove('active');
-      editingId = null;
-      clearSaveStatus('productSaveStatus');
-    }
-
-    function openTestimonialModal(testimonial = null) {
-      editingId = testimonial ? testimonial.id : null;
-      document.getElementById('testimonialModalTitle').textContent = testimonial ? 'Editar Testimonio' : 'Nuevo Testimonio';
-      clearSaveStatus('testimonialSaveStatus');
-      document.getElementById('tName').value = testimonial ? testimonial.name : '';
-      document.getElementById('tComment').value = testimonial ? testimonial.comment : '';
-      document.getElementById('tRating').value = testimonial ? testimonial.rating : 5;
-      document.getElementById('tId').value = editingId || '';
-      document.getElementById('testimonialModalOverlay').classList.add('active');
-    }
-
-    function closeTestimonialModal() {
-      document.getElementById('testimonialModalOverlay').classList.remove('active');
-      editingId = null;
-      clearSaveStatus('testimonialSaveStatus');
-    }
-
-    function openTextModal(key = null) {
-      editingId = key;
-      document.getElementById('textModalTitle').textContent = key ? 'Editar Texto' : 'Nuevo Texto';
-      clearSaveStatus('textSaveStatus');
-      document.getElementById('textKey').value = key || '';
-      document.getElementById('textKey').disabled = !!key;
-      document.getElementById('textValue').value = key ? (siteTexts[key] || '') : '';
-      document.getElementById('textModalOverlay').classList.add('active');
-    }
-
-    function closeTextModal() {
-      document.getElementById('textModalOverlay').classList.remove('active');
-      editingId = null;
-      clearSaveStatus('textSaveStatus');
-    }
-
-    function editProduct(id) {
-      const p = products.find(x => x.id === id);
-      if (p) openModal(p);
-      if (p && window.ProductImages) {
-        setTimeout(() => window.ProductImages.init(p.id), 100);
-      }
-    }
-
-    function editTestimonial(id) {
-      const t = testimonials.find(x => x.id === id);
-      if (t) openTestimonialModal(t);
-    }
-
-    function editText(key) {
-      openTextModal(key);
-    }
-
-    function getAuthToken() {
-      return authToken || localStorage.getItem('ag_admin_jwt') || '';
-    }
-
-    async function saveProduct() {
-      const name = document.getElementById('pName').value.trim();
-      const category = document.getElementById('pCategory').value;
-      const price = Number(document.getElementById('pPrice').value);
-      const description = document.getElementById('pDesc').value.trim();
-      const id = Number(document.getElementById('pId').value) || null;
-
-      if (!name || !price) {
-        showSaveStatus('productSaveStatus', 'error', '❌ Nombre y precio son obligatorios');
-        return;
-      }
-
-      let image = document.getElementById('pImage').value.trim();
-      const fileInput = document.getElementById('productImageFiles');
-      const file = fileInput ? fileInput.files[0] : null;
-
-      try {
-        showSaveStatus('productSaveStatus', 'saving', 'Guardando...');
-        if (file) {
-          const formData = new FormData();
-          formData.append('image', file);
-          const uploadRes = await fetch('/api/admin/upload', {
-            method: 'POST',
-            headers: { Authorization: `Bearer ${authToken}` },
-            body: formData
-          });
-          const uploadData = await uploadRes.json();
-          if (!uploadRes.ok) throw new Error(uploadData.error || 'Error al subir la imagen');
-          image = uploadData.url;
-        }
-
-        const stock = Number(document.getElementById('pStock').value) || 0;
-      const featured = document.getElementById('pFeatured').checked;
-      const payload = { name, category, price, description, image, emoji: '📿', badge: '', stock, featured };
-
-        if (id) {
-          await adminFetch(`/api/admin/products/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-        } else {
-          await adminFetch('/api/admin/products', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-        }
-        showSaveStatus('productSaveStatus', 'success', '✅ Verificado');
-        await loadProducts();
-        setTimeout(() => {
-          hideSaveStatus('productSaveStatus');
-          closeModal();
-        }, 3500);
-      } catch (err) {
-        showSaveStatus('productSaveStatus', 'error', '❌ Reintente');
-        setTimeout(() => hideSaveStatus('productSaveStatus'), 3500);
-        showToast(err.message, 'error');
-      }
-    }
-
-    async function deleteProduct(id) {
-      if (!confirm('¿Eliminar producto?')) return;
-      try {
-        await adminFetch(`/api/admin/products/${id}`, { method: 'DELETE' });
-        products = products.filter(p => p.id !== id);
-        renderProductsTable();
-        showToast('Producto eliminado', 'success');
-      } catch (err) {
-        showToast(err.message, 'error');
-      }
-    }
-
-    async function saveTestimonial() {
-      const name = document.getElementById('tName').value.trim();
-      const comment = document.getElementById('tComment').value.trim();
-      const rating = Number(document.getElementById('tRating').value);
-      const id = Number(document.getElementById('tId').value) || null;
-
-      if (!name || !comment) {
-        showSaveStatus('testimonialSaveStatus', 'error', '❌ Nombre y comentario son obligatorios');
-        return;
-      }
-
-      const payload = { name, comment, rating, active: true };
-
-      try {
-        showSaveStatus('testimonialSaveStatus', 'saving', 'Guardando...');
-        if (id) {
-          await adminFetch(`/api/admin/testimonials/${id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-        } else {
-          await adminFetch('/api/admin/testimonials', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-        }
-        showSaveStatus('testimonialSaveStatus', 'success', '✅ Verificado');
-        await loadTestimonials();
-        markTestimonialsChanged();
-        setTimeout(() => {
-          hideSaveStatus('testimonialSaveStatus');
-          closeTestimonialModal();
-        }, 3500);
-      } catch (err) {
-        showSaveStatus('testimonialSaveStatus', 'error', '❌ Reintente');
-        setTimeout(() => hideSaveStatus('testimonialSaveStatus'), 3500);
-        showToast(err.message, 'error');
-      }
-    }
-
-    async function deleteTestimonial(id) {
-      if (!confirm('¿Eliminar testimonio?')) return;
-      try {
-        await adminFetch(`/api/admin/testimonials/${id}`, { method: 'DELETE' });
-        testimonials = testimonials.filter(t => t.id !== id);
-        renderTestimonialsTable();
-        showToast('Testimonio eliminado', 'success');
-        markTestimonialsChanged();
-      } catch (err) {
-        showToast(err.message, 'error');
-      }
-    }
-
-    function markTestimonialsChanged() {
-      testimonialsPendingChanges = true;
-      const btn = document.getElementById('saveTestimonialsBtn');
-      if (btn) btn.disabled = false;
-    }
-
-    async function saveTestimonialsChanges() {
-      const btn = document.getElementById('saveTestimonialsBtn');
-      try {
-        btn.disabled = true;
-        btn.textContent = 'Guardando...';
-        await loadTestimonials();
-        testimonialsPendingChanges = false;
-        btn.textContent = '💾 Guardar cambios';
-        btn.disabled = true;
-        showToast('Los cambios se guardan automáticamente al editar cada testimonio', 'success');
-      } catch (err) {
-        showToast(err.message, 'error');
-        btn.disabled = false;
-        btn.textContent = '💾 Guardar cambios';
-      }
-    }
-
-    async function saveText() {
-      const key = document.getElementById('textKey').value.trim();
-      const value = document.getElementById('textValue').value;
-
-      if (!key) {
-        showSaveStatus('textSaveStatus', 'error', '❌ La clave es obligatoria');
-        return;
-      }
-
-      try {
-        showSaveStatus('textSaveStatus', 'saving', 'Guardando...');
-        await adminFetch('/api/admin/site-texts', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ key, value })
-        });
-        showSaveStatus('textSaveStatus', 'success', '✅ Verificado');
-        await loadSiteTexts();
-        setTimeout(() => {
-          hideSaveStatus('textSaveStatus');
-          closeTextModal();
-        }, 3500);
-      } catch (err) {
-        showSaveStatus('textSaveStatus', 'error', '❌ Reintente');
-        setTimeout(() => hideSaveStatus('textSaveStatus'), 3500);
-        showToast(err.message, 'error');
-      }
-    }
-
-    async function syncProductsToNeon() {
-      const statusEl = document.getElementById('syncProductsStatus');
-      const btn = document.getElementById('syncProductsBtn');
-      if (!products.length) {
-        statusEl.textContent = 'Sin productos para sincronizar';
-        statusEl.style.color = '#d97706';
-        return;
-      }
-      try {
-        btn.disabled = true;
-        statusEl.textContent = 'Sincronizando...';
-        statusEl.style.color = '#334155';
-        const res = await adminFetch('/api/admin/sync-to-neon', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(products)
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Error al sincronizar');
-        statusEl.textContent = `Guardado ✓ (${data.results.created} creados, ${data.results.updated} actualizados)`;
-        statusEl.style.color = '#10b981';
-        showToast('Productos sincronizados correctamente', 'success');
-      } catch (err) {
-        statusEl.textContent = 'En mantenimiento';
-        statusEl.style.color = '#dc2626';
-        showToast('Error al sincronizar productos', 'error');
-      } finally {
-        btn.disabled = false;
-      }
-    }
-
-    async function syncTextsToNeon() {
-      const statusEl = document.getElementById('syncTextsStatus');
-      const btn = document.getElementById('syncTextsBtn');
-      try {
-        btn.disabled = true;
-        statusEl.textContent = 'Sincronizando...';
-        statusEl.style.color = '#334155';
-        const res = await adminFetch('/api/admin/sync-texts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(siteTexts)
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Error al sincronizar');
-        statusEl.textContent = `Guardado ✓ (${data.results.saved} textos)`;
-        statusEl.style.color = '#10b981';
-        showToast('Textos sincronizados correctamente', 'success');
-      } catch (err) {
-        statusEl.textContent = 'En mantenimiento';
-        statusEl.style.color = '#dc2626';
-        showToast('Error al sincronizar textos', 'error');
-      } finally {
-        btn.disabled = false;
-      }
-    }
-
-    document.getElementById('modalOverlay').addEventListener('click', (e) => {
-       if (e.target === document.getElementById('modalOverlay')) closeModal();
-     });
-     document.getElementById('testimonialModalOverlay').addEventListener('click', (e) => {
-       if (e.target === document.getElementById('testimonialModalOverlay')) closeTestimonialModal();
-     });
-     document.getElementById('textModalOverlay').addEventListener('click', (e) => {
-       if (e.target === document.getElementById('textModalOverlay')) closeTextModal();
-     });
-     document.getElementById('heroCardModalOverlay').addEventListener('click', (e) => {
-       if (e.target === document.getElementById('heroCardModalOverlay')) closeHeroCardModal();
-     });
-
-    document.addEventListener('DOMContentLoaded', () => {
-      if (authToken) {
-        document.getElementById('loginOverlay').classList.add('hidden');
-      }
-      clearSaveStatus('settingsSaveStatus');
-      navigateTo('products');
-    });
-
-    async function safeSave(fn, options) {
-      try {
-        const res = await adminFetch('/api/site-config');
-        const data = await res.json();
-        document.getElementById('settingInstagram').value = data.instagram_url || '';
-        document.getElementById('settingMpAlias').value = data.payment?.mpAlias || '';
-        document.getElementById('settingHolderName').value = data.payment?.holderName || '';
-        document.getElementById('settingWhatsapp').value = data.payment?.whatsapp || '';
-        document.getElementById('settingPaymentMessage').value = data.payment?.message || 'Transferí el total exacto y enviá el comprobante por WhatsApp para confirmar tu pedido.';
-        const activeCheckbox = document.getElementById('settingPaymentActive');
-        if (activeCheckbox) {
-          activeCheckbox.checked = data.payment?.active !== false;
-          updatePaymentActiveLabel();
-        }
-      } catch (err) {
-        console.error('Error cargando configuración:', err);
-      }
-    }
-
-    function updatePaymentActiveLabel() {
-      const checkbox = document.getElementById('settingPaymentActive');
-      const label = document.getElementById('paymentActiveLabel');
-      if (checkbox && label) {
-        label.textContent = checkbox.checked ? 'Activo' : 'Inactivo';
-      }
-    }
-
-    function updateFeaturedLabel() {
-      const checkbox = document.getElementById('pFeatured');
-      const label = document.getElementById('featuredLabel');
-      if (checkbox && label) {
-        label.textContent = checkbox.checked ? 'Sí' : 'No';
-      }
-    }
-
-    document.getElementById('settingPaymentActive')?.addEventListener('change', updatePaymentActiveLabel);
-    document.getElementById('pFeatured')?.addEventListener('change', updateFeaturedLabel);
-
-    async function saveSettings() {
-      const instagram = document.getElementById('settingInstagram').value.trim();
-      const mpAlias = document.getElementById('settingMpAlias').value.trim();
-      const holderName = document.getElementById('settingHolderName').value.trim();
-      const whatsapp = document.getElementById('settingWhatsapp').value.trim();
-      const message = document.getElementById('settingPaymentMessage').value.trim();
-      const active = document.getElementById('settingPaymentActive').checked;
-      const statusEl = document.getElementById('settingsSaveStatus');
-      const btn = document.getElementById('sectionAction');
-      try {
-        btn.disabled = true;
-        showSaveStatus('settingsSaveStatus', 'saving', 'Guardando...');
-        if (instagram) {
-          await adminFetch('/api/admin/site-texts', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key: 'instagram_url', value: instagram })
-          });
-        }
-        if (mpAlias !== undefined || holderName !== undefined || whatsapp !== undefined || message !== undefined) {
-          await adminFetch('/api/admin/payment-config', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mpAlias, holderName, whatsapp, message, active })
-          });
-        }
-        showSaveStatus('settingsSaveStatus', 'success', '✅ Verificado');
-        setTimeout(() => hideSaveStatus('settingsSaveStatus'), 3500);
-        showToast('Configuración guardada', 'success');
-      } catch (err) {
-        showSaveStatus('settingsSaveStatus', 'error', '❌ Reintente');
-        setTimeout(() => hideSaveStatus('settingsSaveStatus'), 3500);
-        showToast('Error al guardar configuración', 'error');
-      } finally {
-        btn.disabled = false;
-      }
-    }
-
-    function exportCSV(type) {
-      let data = [];
-      let filename = 'export.csv';
-      let headers = [];
-
-      if (type === 'products') {
-        data = products;
-        filename = 'productos.csv';
-        headers = ['ID', 'Nombre', 'Categoría', 'Precio', 'Descripción', 'Badge'];
-      } else if (type === 'testimonials') {
-        data = testimonials;
-        filename = 'testimonios.csv';
-        headers = ['ID', 'Nombre', 'Comentario', 'Valoración', 'Activo'];
-      } else if (type === 'orders') {
-        data = orders;
-        filename = 'pedidos.csv';
-        headers = ['ID', 'Cliente', 'Email', 'Total', 'Estado', 'Fecha'];
-      }
-
-      if (!data.length) {
-        showToast('No hay datos para exportar', 'error');
-        return;
-      }
-
-      const csvContent = [
-        headers.join(','),
-        ...data.map(row => {
-          if (type === 'products') {
-            return [row.id, `"${(row.name || '').replace(/"/g, '""')}"`, row.category, row.price, `"${(row.description || '').replace(/"/g, '""')}"`, row.badge || ''].join(',');
-          } else if (type === 'testimonials') {
-            return [row.id, `"${(row.name || '').replace(/"/g, '""')}"`, `"${(row.comment || '').replace(/"/g, '""')}"`, row.rating, row.active].join(',');
-          } else if (type === 'orders') {
-            const customer = row.customer || {};
-            return [row.id, `"${(customer.name || '').replace(/"/g, '""')}"`, `"${(customer.email || '').replace(/"/g, '""')}"`, row.total, row.status, row.created_at || ''].join(',');
-          }
-        })
-      ].join('\n');
-
-      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      link.click();
-      URL.revokeObjectURL(link.href);
-      showToast('CSV exportado correctamente', 'success');
-    }
-  </script>
-  <script src="../js/productImages.js"></script>
-  <script>
     function updateConnectionIndicator(status) {
       const el = document.getElementById('connectionIndicator');
       if (!el) return;
@@ -1569,5 +983,883 @@ function renderTextsTable() {
       setTimeout(checkServerHealth, 800);
     });
   </script>
+  <script>
+    const state = { currentCategoryId: null, currentOrderId: null, currentCustomerId: null, dashboardLoaded: false };
+
+    function openSectionModal() {
+      if (currentSection === 'products') openModal();
+      if (currentSection === 'categories') openCategoryModal();
+      if (currentSection === 'testimonials') openTestimonialModal();
+      if (currentSection === 'texts') openTextModal();
+      if (currentSection === 'heroImages') openHeroCardModal();
+      if (currentSection === 'users') openUserModal();
+    }
+
+    async function loadDashboard() {
+      try {
+        const res = await adminFetch('/api/admin/dashboard');
+        const data = await res.json();
+        renderDashboard(data);
+      } catch (err) {
+        console.error('[loadDashboard] Error:', err);
+        document.getElementById('dashboardGrid').innerHTML = `<div class='empty-state'>Error al cargar los datos. Verificá la consola para más detalles.</div>`;
+      }
+    }
+
+    function renderDashboard(data) {
+      const grid = document.getElementById('dashboardGrid');
+      if (!grid) return;
+      const fmt = n => '$' + Number(n).toLocaleString('es-AR');
+      grid.innerHTML = `<div class='dashboard-cards'>
+        <div class='dash-card'><div class='dash-value'>${fmt(data.sales.today.total)}</div><div class='dash-label'>Ventas hoy</div><div class='dash-sub'>${data.sales.today.count} pedidos</div></div>
+        <div class='dash-card'><div class='dash-value'>${fmt(data.sales.week.total)}</div><div class='dash-label'>Ventas semana</div><div class='dash-sub'>${data.sales.week.count} pedidos</div></div>
+        <div class='dash-card'><div class='dash-value'>${fmt(data.sales.month.total)}</div><div class='dash-label'>Ventas mes</div><div class='dash-sub'>${data.sales.month.count} pedidos</div></div>
+        <div class='dash-card dash-warn'><div class='dash-value'>${data.pendingOrders}</div><div class='dash-label'>Pedidos pendientes</div></div>
+        <div class='dash-card dash-danger'><div class='dash-value'>${data.lowStock}</div><div class='dash-label'>Stock bajo</div></div>
+        <div class='dash-card dash-info'><div class='dash-value'>${data.unreadContacts}</div><div class='dash-label'>Contactos sin leer</div></div>
+      </div>`;
+      const alerts = document.getElementById('dashboardAlerts');
+      if (alerts) {
+        let html = '<h4>Alertas</h4>';
+        if (data.topProduct) html += `<p>Producto más vendido: <strong>${data.topProduct.name}</strong> (${data.topProduct.total_qty} uds)</p>`;
+        if (data.topCategory) html += `<p>Categoría top: <strong>${data.topCategory.category}</strong> (${fmt(data.topCategory.total)})</p>`;
+        if (!data.topProduct && !data.topCategory) html += '<p>Sin datos suficientes</p>';
+        alerts.innerHTML = html;
+      }
+    }
+
+    async function loadCategories() {
+      try {
+        const res = await adminFetch('/api/admin/categories');
+        const cats = await res.json();
+        const tbody = document.getElementById('categoriesTableBody');
+        if (!tbody) return;
+        if (!cats.length) { tbody.innerHTML = `<tr><td colspan='6' class='empty-state'>Sin categorías</td></tr>`; return; }
+        tbody.innerHTML = cats.map(c => `<tr>
+          <td><strong>${c.name}</strong></td>
+          <td><code>${c.slug}</code></td>
+          <td>${c.description || ''}</td>
+          <td>${c.active ? '✅ Activo' : '❌ Inactivo'}</td>
+          <td>${c.orden}</td>
+          <td><div class='actions'><button class='btn btn-secondary btn-sm' onclick='editCategory(${c.id})'>✏️</button><button class='btn btn-danger btn-sm' onclick='deleteCategory(${c.id})'>🗑</button></div></td>
+        </tr>`).join('');
+      } catch (err) {
+        console.error('[loadCategories] Error:', err);
+        document.getElementById('categoriesTableBody').innerHTML = `<tr><td colspan='6' class='empty-state'>Error al cargar los datos. Verificá la consola para más detalles.</td></tr>`;
+      }
+    }
+
+    function openCategoryModal(cat = null) {
+      state.currentCategoryId = cat ? cat.id : null;
+      document.getElementById('categoryModalTitle').textContent = cat ? 'Editar Categoría' : 'Nueva Categoría';
+      clearSaveStatus('categorySaveStatus');
+      document.getElementById('catName').value = cat ? cat.name : '';
+      document.getElementById('catSlug').value = cat ? cat.slug : '';
+      document.getElementById('catDescription').value = cat ? (cat.description || '') : '';
+      document.getElementById('catOrden').value = cat ? cat.orden : 0;
+      document.getElementById('catActive').value = cat ? String(cat.active) : 'true';
+      document.getElementById('categoryModalOverlay').classList.add('active');
+    }
+
+    function closeCategoryModal() {
+      document.getElementById('categoryModalOverlay').classList.remove('active');
+      state.currentCategoryId = null;
+      clearSaveStatus('categorySaveStatus');
+    }
+
+    async function saveCategory() {
+      const name = document.getElementById('catName').value.trim();
+      const slug = document.getElementById('catSlug').value.trim();
+      const description = document.getElementById('catDescription').value.trim();
+      const orden = Number(document.getElementById('catOrden').value) || 0;
+      const active = document.getElementById('catActive').value === 'true';
+      if (!name || !slug) { showSaveStatus('categorySaveStatus', 'error', '❌ Nombre y slug son obligatorios'); return; }
+      const payload = { name, slug, description, active, orden };
+      try {
+        showSaveStatus('categorySaveStatus', 'saving', 'Guardando...');
+        const url = state.currentCategoryId ? `/api/admin/categories/${state.currentCategoryId}` : '/api/admin/categories';
+        const method = state.currentCategoryId ? 'PUT' : 'POST';
+        await adminFetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        showSaveStatus('categorySaveStatus', 'success', '✅ Guardado');
+        await loadCategories();
+        setTimeout(() => { hideSaveStatus('categorySaveStatus'); closeCategoryModal(); }, 1500);
+      } catch (err) {
+        showSaveStatus('categorySaveStatus', 'error', '❌ ' + err.message);
+        setTimeout(() => hideSaveStatus('categorySaveStatus'), 3000);
+      }
+    }
+
+    function editCategory(id) {
+      const cat = (window._allCategories || []).find(c => c.id === id);
+      if (cat) openCategoryModal(cat);
+    }
+
+    async function deleteCategory(id) {
+      if (!confirm('¿Eliminar categoría?')) return;
+      try {
+        await adminFetch(`/api/admin/categories/${id}`, { method: 'DELETE' });
+        showToast('Categoría eliminada', 'success');
+        await loadCategories();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function loadCustomers() {
+      try {
+        const res = await adminFetch('/api/admin/customers');
+        const list = await res.json();
+        const tbody = document.getElementById('customersTableBody');
+        if (!tbody) return;
+        if (!list.length) { tbody.innerHTML = `<tr><td colspan='5' class='empty-state'>Sin clientes</td></tr>`; return; }
+        tbody.innerHTML = list.map(c => `<tr>
+          <td><strong>${c.name}</strong></td>
+          <td>${c.email}</td>
+          <td>${c.phone || ''}</td>
+          <td>${c.blocked ? '🚫 Bloqueado' : (c.active ? '✅ Activo' : '❌ Inactivo')}</td>
+          <td><div class='actions'><button class='btn btn-secondary btn-sm' onclick='viewCustomer(${c.id})'>👁 Ver</button><button class='btn btn-danger btn-sm' onclick='deleteCustomer(${c.id})'>🗑</button></div></td>
+        </tr>`).join('');
+      } catch (err) {
+        console.error('[loadCustomers] Error:', err);
+        document.getElementById('customersTableBody').innerHTML = `<tr><td colspan='5' class='empty-state'>Error al cargar los datos. Verificá la consola para más detalles.</td></tr>`;
+      }
+    }
+
+    async function loadProducts() {
+      try {
+        const res = await adminFetch('/api/admin/products');
+        products = await res.json();
+        renderProductsTable();
+      } catch (err) {
+        console.error('[loadProducts] Error:', err);
+        document.getElementById('tableBody').innerHTML = `<tr><td colspan='7' class='empty-state'>Error al cargar los datos. Verificá la consola para más detalles.</td></tr>`;
+      }
+    }
+
+    function renderProductsTable() {
+      const q = (document.getElementById('productSearchInput')?.value || '').toLowerCase();
+      const category = document.getElementById('categoryFilter')?.value || '';
+      const filtered = products.filter(p => {
+        const matchesSearch = (p.name + ' ' + (p.description || '') + ' ' + p.category).toLowerCase().includes(q);
+        const matchesCategory = !category || p.category === category;
+        return matchesSearch && matchesCategory;
+      });
+      const tbody = document.getElementById('tableBody');
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan='7' class='empty-state'><h3>Sin resultados</h3><p>No se encontraron productos.</p></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = filtered.map(p => `<tr>
+        <td><div class='product-cell'><div class='thumb'>${p.image ? `<img src='${p.image}' alt='${p.name}' />` : (p.emoji || '📿')}</div><div><div class='product-name'>${p.name}</div><div class='product-desc'>${p.description || ''}</div></div></div></td>
+        <td><span class='badge badge-${p.category}'>${p.category}</span></td>
+        <td><span class='price-cell'>$${Number(p.price).toLocaleString('es-AR')}</span></td>
+        <td><span class='badge badge-stock ${p.stock > 0 ? 'badge-stock--ok' : 'badge-stock--out'}'>${p.stock > 0 ? `✅ ${p.stock}` : '❌ Sin stock'}</span></td>
+        <td>${p.image ? `<div class='thumb'><img src='${p.image}' alt='${p.name}' /></div>` : '<div class="thumb">📷</div>'}</td>
+        <td><span class='badge ${p.active !== false ? 'badge-stock--ok' : 'badge-stock--out'}'>${p.active !== false ? '✅ Activo' : '❌ Inactivo'}</span></td>
+        <td><div class='actions'><button class='btn btn-secondary btn-sm' onclick='editProduct(${p.id})'>✏️ Editar</button><button class='btn btn-danger btn-sm' onclick='deleteProduct(${p.id})'>🗑</button></div></td>
+      </tr>`).join('');
+    }
+
+    function editProduct(id) {
+      const p = products.find(x => x.id === id);
+      if (p) openModal(p);
+      if (p && window.ProductImages) {
+        setTimeout(() => window.ProductImages.init(p.id), 100);
+      }
+    }
+
+    async function deleteProduct(id) {
+      if (!confirm('¿Eliminar producto?')) return;
+      try {
+        await adminFetch(`/api/admin/products/${id}`, { method: 'DELETE' });
+        products = products.filter(p => p.id !== id);
+        renderProductsTable();
+        showToast('Producto eliminado', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function saveProduct() {
+      const name = document.getElementById('pName').value.trim();
+      const category = document.getElementById('pCategory').value;
+      const price = Number(document.getElementById('pPrice').value);
+      const stock = Number(document.getElementById('pStock').value) || 0;
+      const description = document.getElementById('pDesc').value.trim();
+      const featured = document.getElementById('pFeatured').checked;
+      const active = document.getElementById('pActive').checked;
+      const image = document.getElementById('pImage').value;
+      if (!name || !price) { showSaveStatus('productSaveStatus', 'error', '❌ Nombre y precio son requeridos'); return; }
+      const payload = { name, category, price, stock, description, featured, active, image };
+      try {
+        showSaveStatus('productSaveStatus', 'saving', 'Guardando...');
+        const url = editingId ? `/api/admin/products/${editingId}` : '/api/admin/products';
+        const method = editingId ? 'PUT' : 'POST';
+        await adminFetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        showSaveStatus('productSaveStatus', 'success', '✅ Guardado');
+        await loadProducts();
+        setTimeout(() => { hideSaveStatus('productSaveStatus'); closeModal(); }, 1500);
+      } catch (err) {
+        showSaveStatus('productSaveStatus', 'error', '❌ ' + err.message);
+        setTimeout(() => hideSaveStatus('productSaveStatus'), 3000);
+      }
+    }
+
+    function openModal(product = null) {
+      editingId = product ? product.id : null;
+      document.getElementById('modalTitle').textContent = product ? 'Editar Producto' : 'Nuevo Producto';
+      clearSaveStatus('productSaveStatus');
+      document.getElementById('pName').value = product ? product.name : '';
+      document.getElementById('pCategory').value = product ? product.category : 'pulseras';
+      document.getElementById('pPrice').value = product ? product.price : '';
+      document.getElementById('pStock').value = product ? product.stock : '';
+      document.getElementById('pDesc').value = product ? (product.description || '') : '';
+      document.getElementById('pFeatured').checked = product ? product.featured : false;
+      document.getElementById('pActive').checked = product ? product.active !== false : true;
+      document.getElementById('pImage').value = product ? (product.image || '') : '';
+      document.getElementById('pId').value = product ? product.id : '';
+      document.getElementById('modalOverlay').classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('modalOverlay').classList.remove('active');
+      editingId = null;
+      clearSaveStatus('productSaveStatus');
+    }
+
+    function getAuthToken() {
+      return authToken;
+    }
+
+    async function viewCustomer(id) {
+      try {
+        const res = await adminFetch(`/api/admin/customers/${id}`);
+        const c = await res.json();
+        const orders = c.orders || [];
+        alert(`Cliente: ${c.name}\nEmail: ${c.email}\nTeléfono: ${c.phone || ''}\nDirección: ${c.address || ''}\n\nPedidos:\n${orders.map(o => `#${o.id} - ${new Date(o.created_at).toLocaleDateString('es-AR')} - $${Number(o.total).toLocaleString('es-AR')} - ${o.status}`).join('\n') || 'Sin pedidos'}`);
+      } catch (err) { showToast(err.message, 'error'); }
+    }
+
+    async function deleteCustomer(id) {
+      if (!confirm('¿Eliminar cliente?')) return;
+      try {
+        await adminFetch(`/api/admin/customers/${id}`, { method: 'DELETE' });
+        showToast('Cliente eliminado', 'success');
+        await loadCustomers();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function loadSalesReport() {
+      const start = document.getElementById('reportStartDate').value;
+      const end = document.getElementById('reportEndDate').value;
+      const params = new URLSearchParams();
+      if (start) params.set('start_date', start);
+      if (end) params.set('end_date', end);
+      try {
+        const res = await adminFetch(`/api/admin/reports/sales?${params.toString()}`);
+        const data = await res.json();
+        const container = document.getElementById('reportContent');
+        if (!container) return;
+        const fmt = n => '$' + Number(n).toLocaleString('es-AR');
+        container.innerHTML = `<div class='report-section'>
+          <h4>Resumen</h4>
+          <p>Total: <strong>${fmt(data.sales.total)}</strong> | Pedidos: ${data.sales.count}</p>
+          <h4>Por producto</h4>
+          <table><thead><tr><th>Producto</th><th>Cantidad</th><th>Total</th></tr></thead><tbody>
+            ${(data.byProduct || []).map(p => `<tr><td>${p.name}</td><td>${p.qty}</td><td>${fmt(p.total)}</td></tr>`).join('')}
+          </tbody></table>
+          <h4>Por categoría</h4>
+          <table><thead><tr><th>Categoría</th><th>Total</th><th>Pedidos</th></tr></thead><tbody>
+            ${(data.byCategory || []).map(c => `<tr><td>${c.category}</td><td>${fmt(c.total)}</td><td>${c.orders}</td></tr>`).join('')}
+          </tbody></table>
+          <h4>Por estado</h4>
+          <table><thead><tr><th>Estado</th><th>Cantidad</th><th>Total</th></tr></thead><tbody>
+            ${(data.byStatus || []).map(s => `<tr><td>${s.status}</td><td>${s.count}</td><td>${fmt(s.total)}</td></tr>`).join('')}
+          </tbody></table>
+        </div>`;
+      } catch (err) {
+        console.error('[loadSalesReport] Error:', err);
+        document.getElementById('reportContent').innerHTML = `<div class='empty-state'>Error al cargar los datos. Verificá la consola para más detalles.</div>`;
+      }
+    }
+
+    async function loadUsers() {
+      try {
+        const res = await adminFetch('/api/admin/users');
+        const list = await res.json();
+        const tbody = document.getElementById('usersTableBody');
+        if (!tbody) return;
+        if (!list.length) { tbody.innerHTML = `<tr><td colspan='5' class='empty-state'>Sin usuarios</td></tr>`; return; }
+        tbody.innerHTML = list.map(u => `<tr>
+          <td><strong>${u.username}</strong></td>
+          <td><span class='badge'>${u.role}</span></td>
+          <td><code>${JSON.stringify(u.permissions || {})}</code></td>
+          <td>${u.active ? '✅ Activo' : '❌ Inactivo'}</td>
+          <td><div class='actions'><button class='btn btn-secondary btn-sm' onclick='editUser(${u.id})'>✏️</button><button class='btn btn-danger btn-sm' onclick='deleteUser(${u.id})'>🗑</button></div></td>
+        </tr>`).join('');
+      } catch (err) {
+        console.error('[loadUsers] Error:', err);
+        document.getElementById('usersTableBody').innerHTML = `<tr><td colspan='5' class='empty-state'>Error al cargar los datos. Verificá la consola para más detalles.</td></tr>`;
+      }
+    }
+
+    function openUserModal(user = null) {
+      state.currentUserId = user ? user.id : null;
+      document.getElementById('userModalTitle').textContent = user ? 'Editar Usuario' : 'Nuevo Usuario';
+      clearSaveStatus('userSaveStatus');
+      document.getElementById('userUsername').value = user ? user.username : '';
+      document.getElementById('userPassword').value = '';
+      document.getElementById('userRole').value = user ? (user.role || 'admin') : 'admin';
+      document.getElementById('userPermissions').value = user ? JSON.stringify(user.permissions || {}, null, 2) : '{}';
+      document.getElementById('userActive').value = user ? String(user.active) : 'true';
+      document.getElementById('userModalOverlay').classList.add('active');
+    }
+
+    function closeUserModal() {
+      document.getElementById('userModalOverlay').classList.remove('active');
+      state.currentUserId = null;
+      clearSaveStatus('userSaveStatus');
+    }
+
+    async function saveUser() {
+      const username = document.getElementById('userUsername').value.trim();
+      const password = document.getElementById('userPassword').value;
+      const role = document.getElementById('userRole').value;
+      const permissionsRaw = document.getElementById('userPermissions').value.trim();
+      const active = document.getElementById('userActive').value === 'true';
+      
+      if (!username) { showSaveStatus('userSaveStatus', 'error', '❌ Usuario es requerido'); return; }
+      
+      let permissions = {};
+      try {
+        permissions = permissionsRaw ? JSON.parse(permissionsRaw) : {};
+      } catch (e) {
+        showSaveStatus('userSaveStatus', 'error', '❌ Permisos JSON inválido'); return;
+      }
+      
+      const payload = { username, role, permissions, active };
+      if (password) payload.password = password;
+      
+      try {
+        showSaveStatus('userSaveStatus', 'saving', 'Guardando...');
+        const url = state.currentUserId ? `/api/admin/users/${state.currentUserId}` : '/api/admin/users';
+        const method = state.currentUserId ? 'PUT' : 'POST';
+        await adminFetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        showSaveStatus('userSaveStatus', 'success', '✅ Guardado');
+        await loadUsers();
+        setTimeout(() => { hideSaveStatus('userSaveStatus'); closeUserModal(); }, 1500);
+      } catch (err) {
+        showSaveStatus('userSaveStatus', 'error', '❌ ' + err.message);
+        setTimeout(() => hideSaveStatus('userSaveStatus'), 3000);
+      }
+    }
+
+    function editUser(id) {
+      const user = (window._allUsers || []).find(u => u.id === id);
+      if (user) openUserModal(user);
+    }
+
+    async function deleteUser(id) {
+      if (!confirm('¿Eliminar usuario?')) return;
+      try {
+        await adminFetch(`/api/admin/users/${id}`, { method: 'DELETE' });
+        showToast('Usuario eliminado', 'success');
+        await loadUsers();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function handleBulkImport(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const formData = new FormData();
+      formData.append('file', file);
+      const statusEl = document.getElementById('bulkImportStatus');
+      try {
+        statusEl.textContent = 'Importando...';
+        statusEl.style.color = '#334155';
+        const res = await fetch('/api/admin/products/bulk-import', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${getAuthToken()}` },
+          body: formData
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error al importar');
+        statusEl.textContent = `Importado: ${data.success} ok, ${data.errors} errores`;
+        statusEl.style.color = data.errors > 0 ? '#f59e0b' : '#10b981';
+        showToast(`Carga masiva: ${data.success} productos importados`, 'success');
+        await loadProducts();
+      } catch (err) {
+        statusEl.textContent = 'Error';
+        statusEl.style.color = '#dc2626';
+        showToast(err.message, 'error');
+      } finally {
+        input.value = '';
+      }
+    }
+
+    async function generateReceipt(id) {
+      try {
+        const res = await fetch(`/api/admin/orders/${id}/receipt`, {
+          headers: { Authorization: `Bearer ${getAuthToken()}` }
+        });
+        if (!res.ok) throw new Error('Error al generar comprobante');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `comprobante-pedido-${id}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Comprobante descargado', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function sendReceiptWhatsApp(id) {
+      try {
+        const res = await fetch(`/api/admin/orders/${id}/receipt/whatsapp`, {
+          headers: { Authorization: `Bearer ${getAuthToken()}` }
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error al enviar');
+        if (data.whatsappUrl) {
+          window.open(data.whatsappUrl, '_blank');
+        }
+        showToast('Abriendo WhatsApp...', 'success');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function loadOrders() {
+      try {
+        const res = await adminFetch('/api/admin/orders');
+        orders = await res.json();
+        renderOrdersTable();
+      } catch (err) {
+        console.error('[loadOrders] Error:', err);
+        document.getElementById('ordersTableBody').innerHTML = `<tr><td colspan='6' class='empty-state'>Error al cargar los datos. Verificá la consola para más detalles.</td></tr>`;
+      }
+    }
+
+    function renderOrdersTable() {
+      const q = (document.getElementById('orderSearchInput')?.value || '').toLowerCase();
+      const filtered = orders.filter(o => {
+        const customerName = (typeof o.customer === 'string' ? o.customer : (o.customer?.name || '')).toLowerCase();
+        return customerName.includes(q) || String(o.id).includes(q);
+      });
+      const tbody = document.getElementById('ordersTableBody');
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan='6' class='empty-state'><h3>Sin resultados</h3><p>No se encontraron pedidos.</p></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = filtered.map(o => {
+        const customer = typeof o.customer === 'string' ? JSON.parse(o.customer) : o.customer;
+        return `<tr>
+          <td><strong>#${o.id}</strong></td>
+          <td>${customer?.name || '—'}</td>
+          <td><span class='price-cell'>$${Number(o.total).toLocaleString('es-AR')}</span></td>
+          <td><span class='badge badge-${o.status === 'completed' ? 'stock--ok' : (o.status === 'cancelled' ? 'stock--out' : '')}'>${o.status || 'pending'}</span></td>
+          <td>${new Date(o.created_at).toLocaleDateString('es-AR')}</td>
+          <td><div class='actions'><button class='btn btn-secondary btn-sm' onclick='viewOrder(${o.id})'>👁 Ver</button></div></td>
+        </tr>`;
+      }).join('');
+    }
+
+    async function loadTestimonials() {
+      try {
+        const res = await adminFetch('/api/admin/testimonials');
+        testimonials = await res.json();
+        renderTestimonialsTable();
+      } catch (err) {
+        console.error('[loadTestimonials] Error:', err);
+        document.getElementById('testimonialsTableBody').innerHTML = `<tr><td colspan='5' class='empty-state'>Error al cargar los datos. Verificá la consola para más detalles.</td></tr>`;
+      }
+    }
+
+    function renderTestimonialsTable() {
+      const tbody = document.getElementById('testimonialsTableBody');
+      if (!testimonials.length) {
+        tbody.innerHTML = `<tr><td colspan='5' class='empty-state'>Sin testimonios</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = testimonials.map(t => `<tr>
+        <td><strong>${t.name}</strong></td>
+        <td>${t.comment || ''}</td>
+        <td>${'⭐'.repeat(t.rating || 5)}</td>
+        <td><span class='badge ${t.active ? 'badge-stock--ok' : 'badge-stock--out'}'>${t.active ? '✅ Activo' : '❌ Inactivo'}</span></td>
+        <td><div class='actions'><button class='btn btn-secondary btn-sm' onclick='editTestimonial(${t.id})'>✏️</button><button class='btn btn-danger btn-sm' onclick='deleteTestimonial(${t.id})'>🗑</button></div></td>
+      </tr>`).join('');
+    }
+
+    function openTestimonialModal(testimonial = null) {
+      state.currentTestimonialId = testimonial ? testimonial.id : null;
+      document.getElementById('testimonialModalTitle').textContent = testimonial ? 'Editar Testimonio' : 'Nuevo Testimonio';
+      clearSaveStatus('testimonialSaveStatus');
+      document.getElementById('tName').value = testimonial ? testimonial.name : '';
+      document.getElementById('tComment').value = testimonial ? testimonial.comment : '';
+      document.getElementById('tRating').value = testimonial ? testimonial.rating : 5;
+      document.getElementById('tId').value = testimonial ? testimonial.id : '';
+      document.getElementById('testimonialModalOverlay').classList.add('active');
+    }
+
+    function closeTestimonialModal() {
+      document.getElementById('testimonialModalOverlay').classList.remove('active');
+      state.currentTestimonialId = null;
+      clearSaveStatus('testimonialSaveStatus');
+    }
+
+    async function saveTestimonial() {
+      const name = document.getElementById('tName').value.trim();
+      const comment = document.getElementById('tComment').value.trim();
+      const rating = Number(document.getElementById('tRating').value) || 5;
+      if (!name) { showSaveStatus('testimonialSaveStatus', 'error', '❌ Nombre es requerido'); return; }
+      const payload = { name, comment, rating, active: true };
+      try {
+        showSaveStatus('testimonialSaveStatus', 'saving', 'Guardando...');
+        const url = state.currentTestimonialId ? `/api/admin/testimonials/${state.currentTestimonialId}` : '/api/admin/testimonials';
+        const method = state.currentTestimonialId ? 'PUT' : 'POST';
+        await adminFetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        showSaveStatus('testimonialSaveStatus', 'success', '✅ Guardado');
+        await loadTestimonials();
+        setTimeout(() => { hideSaveStatus('testimonialSaveStatus'); closeTestimonialModal(); }, 1500);
+      } catch (err) {
+        showSaveStatus('testimonialSaveStatus', 'error', '❌ ' + err.message);
+        setTimeout(() => hideSaveStatus('testimonialSaveStatus'), 3000);
+      }
+    }
+
+    function editTestimonial(id) {
+      const t = testimonials.find(x => x.id === id);
+      if (t) openTestimonialModal(t);
+    }
+
+    async function deleteTestimonial(id) {
+      if (!confirm('¿Eliminar testimonio?')) return;
+      try {
+        await adminFetch(`/api/admin/testimonials/${id}`, { method: 'DELETE' });
+        showToast('Testimonio eliminado', 'success');
+        await loadTestimonials();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function loadSiteTexts() {
+      try {
+        const res = await adminFetch('/api/admin/site-texts');
+        siteTexts = await res.json();
+        renderSiteTextsTable();
+      } catch (err) {
+        console.error('[loadSiteTexts] Error:', err);
+        document.getElementById('textsTableBody').innerHTML = `<tr><td colspan='3' class='empty-state'>Error al cargar los datos. Verificá la consola para más detalles.</td></tr>`;
+      }
+    }
+
+    function renderSiteTextsTable() {
+      const tbody = document.getElementById('textsTableBody');
+      const entries = Object.entries(siteTexts);
+      if (!entries.length) {
+        tbody.innerHTML = `<tr><td colspan='3' class='empty-state'>Sin textos</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = entries.map(([key, value]) => `<tr>
+        <td><code>${key}</code></td>
+        <td>${value}</td>
+        <td><button class='btn btn-secondary btn-sm' onclick='editText("${key}")'>✏️</button></td>
+      </tr>`).join('');
+    }
+
+    function openTextModal(text = null) {
+      state.currentTextKey = text ? text.key : null;
+      document.getElementById('textModalTitle').textContent = text ? 'Editar Texto' : 'Nuevo Texto';
+      clearSaveStatus('textSaveStatus');
+      document.getElementById('textKey').value = text ? text.key : '';
+      document.getElementById('textValue').value = text ? text.value : '';
+      document.getElementById('textModalOverlay').classList.add('active');
+    }
+
+    function closeTextModal() {
+      document.getElementById('textModalOverlay').classList.remove('active');
+      state.currentTextKey = null;
+      clearSaveStatus('textSaveStatus');
+    }
+
+    function editText(key) {
+      const value = siteTexts[key] || '';
+      openTextModal({ key, value });
+    }
+
+    async function saveText() {
+      const key = document.getElementById('textKey').value.trim();
+      const value = document.getElementById('textValue').value.trim();
+      if (!key) { showSaveStatus('textSaveStatus', 'error', '❌ Clave es requerida'); return; }
+      const payload = { key, value };
+      try {
+        showSaveStatus('textSaveStatus', 'saving', 'Guardando...');
+        const url = state.currentTextKey ? `/api/admin/site-texts/${encodeURIComponent(state.currentTextKey)}` : '/api/admin/site-texts';
+        const method = state.currentTextKey ? 'PUT' : 'POST';
+        await adminFetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        showSaveStatus('textSaveStatus', 'success', '✅ Guardado');
+        await loadSiteTexts();
+        setTimeout(() => { hideSaveStatus('textSaveStatus'); closeTextModal(); }, 1500);
+      } catch (err) {
+        showSaveStatus('textSaveStatus', 'error', '❌ ' + err.message);
+        setTimeout(() => hideSaveStatus('textSaveStatus'), 3000);
+      }
+    }
+
+    async function loadHeroCardsAdmin() {
+      try {
+        const res = await adminFetch('/api/admin/hero-cards');
+        heroCards = await res.json();
+        renderHeroCardsAdmin();
+      } catch (err) {
+        console.error('[loadHeroCardsAdmin] Error:', err);
+        document.getElementById('heroCardsList').innerHTML = `<div class='empty-state'>Error al cargar los datos. Verificá la consola para más detalles.</div>`;
+      }
+    }
+
+    function renderHeroCardsAdmin() {
+      const container = document.getElementById('heroCardsList');
+      if (!container) return;
+      container.innerHTML = heroCards.map((card, i) => `<div class='hero-card-admin'>
+        <div><strong>Card ${i + 1}</strong></div>
+        <div>${card.name || '—'} — ${card.price || ''}</div>
+        <div><button class='btn btn-secondary btn-sm' onclick='editHeroCard(${i})'>✏️ Editar</button></div>
+      </div>`).join('');
+    }
+
+    function openHeroCardModal(index = null) {
+      state.currentHeroIndex = index;
+      document.getElementById('heroCardModalTitle').textContent = index !== null ? 'Editar Card' : 'Nueva Card';
+      clearSaveStatus('heroCardSaveStatus');
+      if (index !== null) {
+        const card = heroCards[index] || {};
+        document.getElementById('heroCardName').value = card.name || '';
+        document.getElementById('heroCardPrice').value = card.price || '';
+        document.getElementById('heroCardImage').value = card.image || '';
+      } else {
+        document.getElementById('heroCardName').value = '';
+        document.getElementById('heroCardPrice').value = '';
+        document.getElementById('heroCardImage').value = '';
+      }
+      document.getElementById('heroCardModalOverlay').classList.add('active');
+    }
+
+    function closeHeroCardModal() {
+      document.getElementById('heroCardModalOverlay').classList.remove('active');
+      state.currentHeroIndex = null;
+      clearSaveStatus('heroCardSaveStatus');
+    }
+
+    function editHeroCard(index) {
+      openHeroCardModal(index);
+    }
+
+    async function saveHeroCard() {
+      const name = document.getElementById('heroCardName').value.trim();
+      const price = document.getElementById('heroCardPrice').value.trim();
+      const image = document.getElementById('heroCardImage').value;
+      if (!name) { showSaveStatus('heroCardSaveStatus', 'error', '❌ Nombre es requerido'); return; }
+      const payload = { name, price, image };
+      try {
+        showSaveStatus('heroCardSaveStatus', 'saving', 'Guardando...');
+        if (state.currentHeroIndex !== null) {
+          await adminFetch(`/api/admin/hero-cards/${state.currentHeroIndex}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        } else {
+          await adminFetch('/api/admin/hero-cards', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        }
+        showSaveStatus('heroCardSaveStatus', 'success', '✅ Guardado');
+        await loadHeroCardsAdmin();
+        setTimeout(() => { hideSaveStatus('heroCardSaveStatus'); closeHeroCardModal(); }, 1500);
+      } catch (err) {
+        showSaveStatus('heroCardSaveStatus', 'error', '❌ ' + err.message);
+        setTimeout(() => hideSaveStatus('heroCardSaveStatus'), 3000);
+      }
+    }
+
+    async function syncHeroCards() {
+      try {
+        await adminFetch('/api/admin/hero-cards/sync', { method: 'POST' });
+        showToast('Cards sincronizadas', 'success');
+        await loadHeroCardsAdmin();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function loadSettings() {
+      try {
+        const res = await adminFetch('/api/admin/settings');
+        const data = await res.json();
+        if (data.instagram) document.getElementById('settingInstagram').value = data.instagram;
+        if (data.mp_alias) document.getElementById('settingMpAlias').value = data.mp_alias;
+        if (data.holder_name) document.getElementById('settingHolderName').value = data.holder_name;
+        if (data.whatsapp) document.getElementById('settingWhatsapp').value = data.whatsapp;
+        if (data.payment_message) document.getElementById('settingPaymentMessage').value = data.payment_message;
+        if (data.payment_active !== undefined) document.getElementById('settingPaymentActive').checked = data.payment_active;
+      } catch (err) {
+        console.error('[loadSettings] Error:', err);
+        showToast('Error al cargar la configuración', 'error');
+      }
+    }
+
+    async function saveSettings() {
+      const payload = {
+        instagram: document.getElementById('settingInstagram').value.trim(),
+        mp_alias: document.getElementById('settingMpAlias').value.trim(),
+        holder_name: document.getElementById('settingHolderName').value.trim(),
+        whatsapp: document.getElementById('settingWhatsapp').value.trim(),
+        payment_message: document.getElementById('settingPaymentMessage').value.trim(),
+        payment_active: document.getElementById('settingPaymentActive').checked
+      };
+      try {
+        showSaveStatus('settingsSaveStatus', 'saving', 'Guardando...');
+        await adminFetch('/api/admin/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        showSaveStatus('settingsSaveStatus', 'success', '✅ Configuración guardada');
+        setTimeout(() => hideSaveStatus('settingsSaveStatus'), 2000);
+      } catch (err) {
+        showSaveStatus('settingsSaveStatus', 'error', '❌ ' + err.message);
+        setTimeout(() => hideSaveStatus('settingsSaveStatus'), 3000);
+      }
+    }
+
+    async function syncProductsToNeon() {
+      try {
+        const btn = document.getElementById('syncProductsBtn');
+        const statusEl = document.getElementById('syncProductsStatus');
+        btn.disabled = true;
+        statusEl.textContent = 'Sincronizando...';
+        await adminFetch('/api/admin/sync-to-neon', { method: 'POST' });
+        statusEl.textContent = '✅ Sincronizado';
+        showToast('Productos sincronizados con Neon', 'success');
+        setTimeout(() => { statusEl.textContent = ''; btn.disabled = false; }, 3000);
+      } catch (err) {
+        showToast(err.message, 'error');
+        document.getElementById('syncProductsBtn').disabled = false;
+      }
+    }
+
+    async function syncTextsToNeon() {
+      try {
+        const btn = document.getElementById('syncTextsBtn');
+        const statusEl = document.getElementById('syncTextsStatus');
+        btn.disabled = true;
+        statusEl.textContent = 'Sincronizando...';
+        await adminFetch('/api/admin/site-texts/sync', { method: 'POST' });
+        statusEl.textContent = '✅ Sincronizado';
+        showToast('Textos sincronizados con Neon', 'success');
+        setTimeout(() => { statusEl.textContent = ''; btn.disabled = false; }, 3000);
+      } catch (err) {
+        showToast(err.message, 'error');
+        document.getElementById('syncTextsBtn').disabled = false;
+      }
+    }
+
+    function exportCSV(type) {
+      let csv = '';
+      let filename = '';
+      if (type === 'products') {
+        filename = 'productos.csv';
+        csv = 'ID,Nombre,Categoría,Precio,Stock,Descripción\n';
+        products.forEach(p => {
+          csv += `${p.id},"${p.name}",${p.category},${p.price},${p.stock},"${(p.description || '').replace(/"/g, '""')}"\n`;
+        });
+      } else if (type === 'orders') {
+        filename = 'pedidos.csv';
+        csv = 'ID,Cliente,Total,Estado,Fecha\n';
+        orders.forEach(o => {
+          const customer = typeof o.customer === 'string' ? JSON.parse(o.customer) : o.customer;
+          csv += `${o.id},"${customer?.name || ''}",${o.total},${o.status},${o.created_at}\n`;
+        });
+      } else if (type === 'testimonials') {
+        filename = 'testimonios.csv';
+        csv = 'Nombre,Comentario,Valoración,Estado\n';
+        testimonials.forEach(t => {
+          csv += `"${t.name}","${(t.comment || '').replace(/"/g, '""')}",${t.rating},${t.active}\n`;
+        });
+      }
+      if (!csv) { showToast('Tipo de exportación no válido', 'error'); return; }
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('CSV exportado', 'success');
+    }
+
+    async function viewOrder(id) {
+      state.currentOrderId = id;
+      try {
+        const res = await adminFetch(`/api/admin/orders/${id}`);
+        const order = await res.json();
+        const customer = order.customer || {};
+        const items = Array.isArray(order.items) ? order.items : [];
+        const itemsText = items.map((it, i) => `${i+1}. ${it.name || 'Producto'} x${it.quantity || 1} — $${Number(it.price || 0).toLocaleString('es-AR')}`).join('<br/>');
+        document.getElementById('orderDetailTitle').textContent = `Pedido #${order.id}`;
+        document.getElementById('orderDetailContent').innerHTML = `<div class='order-detail-grid'>
+          <div><strong>Cliente:</strong> ${customer.name || '—'}</div>
+          <div><strong>Email:</strong> ${customer.email || '—'}</div>
+          <div><strong>Teléfono:</strong> ${customer.phone || '—'}</div>
+          <div><strong>Dirección:</strong> ${customer.address || '—'}</div>
+          <div><strong>Total:</strong> $${Number(order.total).toLocaleString('es-AR')}</div>
+          <div><strong>Estado:</strong> ${order.status || 'pending'}</div>
+          <div style='grid-column:1/-1'><strong>Items:</strong><br/>${itemsText || 'Sin items'}</div>
+        </div>`;
+        document.getElementById('orderNotes').value = order.notes || '';
+        document.getElementById('orderDetailModalOverlay').classList.add('active');
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    function closeOrderDetailModal() {
+      document.getElementById('orderDetailModalOverlay').classList.remove('active');
+      state.currentOrderId = null;
+    }
+
+    async function saveOrderNotes() {
+      if (!state.currentOrderId) return;
+      const notes = document.getElementById('orderNotes').value;
+      try {
+        await adminFetch(`/api/admin/orders/${state.currentOrderId}/notes`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ notes })
+        });
+        showSaveStatus('orderDetailSaveStatus', 'success', '✅ Nota guardada');
+        setTimeout(() => hideSaveStatus('orderDetailSaveStatus'), 2000);
+      } catch (err) {
+        showSaveStatus('orderDetailSaveStatus', 'error', '❌ ' + err.message);
+        setTimeout(() => hideSaveStatus('orderDetailSaveStatus'), 3000);
+      }
+    }
+
+    document.getElementById('modalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('modalOverlay')) closeModal(); });
+    document.getElementById('testimonialModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('testimonialModalOverlay')) closeTestimonialModal(); });
+    document.getElementById('textModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('textModalOverlay')) closeTextModal(); });
+    document.getElementById('heroCardModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('heroCardModalOverlay')) closeHeroCardModal(); });
+    document.getElementById('categoryModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('categoryModalOverlay')) closeCategoryModal(); });
+    document.getElementById('userModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('userModalOverlay')) closeUserModal(); });
+    document.getElementById('orderDetailModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('orderDetailModalOverlay')) closeOrderDetailModal(); });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (authToken) {
+        document.getElementById('loginOverlay').classList.add('hidden');
+        const hash = window.location.hash.slice(1);
+        const validSections = ['dashboard','products','categories','orders','customers','reports','testimonials','texts','heroImages','settings','users'];
+        navigateTo(validSections.includes(hash) ? hash : 'dashboard');
+      }
+      clearSaveStatus('settingsSaveStatus');
+    });
+   </script>
 </body>
 </html>

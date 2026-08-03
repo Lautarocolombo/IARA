@@ -26,11 +26,12 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-  if (allowed.includes(file.mimetype)) {
+  const allowedImages = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  const allowedDocs = ['text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+  if (allowedImages.includes(file.mimetype) || allowedDocs.includes(file.mimetype) || file.originalname.endsWith('.csv')) {
     cb(null, true);
   } else {
-    cb(new Error('Tipo de archivo no permitido. Usá JPG, PNG, WEBP o GIF.'), false);
+    cb(new Error('Tipo de archivo no permitido. Usá JPG, PNG, WEBP, GIF o CSV.'), false);
   }
 };
 

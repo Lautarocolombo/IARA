@@ -9,7 +9,8 @@ const productSchema = z.object({
   image: z.string().url('URL de imagen inválida').optional().or(z.literal('')).default(''),
   badge: z.string().max(50).optional().default(''),
   stock: z.number().int().nonnegative().optional().default(0),
-  featured: z.boolean().optional().default(false)
+  featured: z.boolean().optional().default(false),
+  active: z.boolean().optional().default(true)
 });
 
 const testimonialSchema = z.object({
@@ -30,8 +31,10 @@ const orderSchema = z.object({
     id: z.number(),
     name: z.string(),
     price: z.number(),
-    quantity: z.number().int().positive()
-  })).min(1, 'Items son requeridos'),
+    quantity: z.number().int().positive().optional(),
+    qty: z.number().int().positive().optional()
+  })).min(1, 'Items son requeridos')
+    .transform(items => items.map(item => ({ ...item, quantity: item.quantity || item.qty }))),
   total: z.number().positive('Total debe ser mayor a 0'),
   customer: z.object({
     name: z.string().optional(),

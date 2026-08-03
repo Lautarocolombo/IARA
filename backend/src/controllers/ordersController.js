@@ -2,6 +2,17 @@ const { query, transaction } = require('../lib/db');
 const logger = require('../lib/logger');
 const { orderSchema } = require('../lib/validators');
 
+async function logActivity(user, action, entityType = '', entityId = 0, details = '', ip = '') {
+  try {
+    await query(
+      'INSERT INTO activity_log (user, action, entity_type, entity_id, details, ip) VALUES ($1, $2, $3, $4, $5, $6)',
+      [user, action, entityType, entityId, details, ip]
+    );
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Error guardando activity_log');
+  }
+}
+
 const getOrders = async (req, res) => {
   try {
     const result = await query('SELECT * FROM orders ORDER BY created_at DESC');
@@ -23,18 +34,23 @@ const getUserOrders = async (req, res) => {
 };
 
 const createOrder = async (req, res) => {
-  const { items, total, customer, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, subtotal, shipping_cost } = req.body || {};
+  logger.info('createOrder: inicio');
+  const { items, total, customer, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, subtotal, shipping_cost, notes } = req.body || {};
+  logger.info('createOrder: body parseado');
 
   const validation = orderSchema.safeParse({ items, total, customer });
   if (!validation.success) {
+    logger.info('createOrder: validacion fallida');
     return res.status(400).json({ error: validation.error.errors[0]?.message || 'Datos inválidos' });
   }
 
   if (!items || !total) {
+    logger.info('createOrder: items/total faltantes');
     return res.status(400).json({ error: 'Items y total son requeridos' });
   }
 
   try {
+    logger.info('createOrder: intentando transaccion');
     const customerData = customer && typeof customer === 'object' ? customer : {};
     if (shipping_name) customerData.name = shipping_name;
     if (shipping_address) customerData.address = shipping_address;
@@ -44,7 +60,9 @@ const createOrder = async (req, res) => {
     if (shipping_city) customerData.city = shipping_city;
 
     const result = await transaction(async (client) => {
+      logger.info('createOrder: dentro de transaccion');
       for (const item of items) {
+        logger.info('createOrder: consultando stock para producto', { itemId: item.id });
         const stockResult = await query('SELECT stock FROM products WHERE id = $1', [Number(item.id)], client);
         if (stockResult.rows.length === 0) {
           throw new Error(`Producto ${item.id} no encontrado`);
@@ -61,7 +79,7 @@ const createOrder = async (req, res) => {
       }
 
       const orderResult = await query(
-        'INSERT INTO orders (items, total, customer, status, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, subtotal, shipping_cost) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *',
+        'INSERT INTO orders (items, total, customer, status, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, subtotal, shipping_cost, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *',
         [
           JSON.stringify(items),
           Number(total),
@@ -74,7 +92,8 @@ const createOrder = async (req, res) => {
           shipping_city || '',
           shipping_email || '',
           Number(subtotal) || 0,
-          Number(shipping_cost) || 0
+          Number(shipping_cost) || 0,
+          notes || ''
         ],
         client
       );
@@ -90,7 +109,7 @@ const createOrder = async (req, res) => {
   }
 };
 
-const VALID_STATUSES = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
+const VALID_STATUSES = ['pending', 'confirmed', 'preparing', 'shipped', 'delivered', 'cancelled'];
 
 const updateOrderStatus = async (req, res) => {
   const id = Number(req.params.id);
@@ -104,6 +123,8 @@ const updateOrderStatus = async (req, res) => {
       [status, id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
+    const user = req.user?.user || 'admin';
+    await logActivity(user, 'update_status', 'order', id, `Estado cambiado a ${status}`, req.ip || '');
     res.json(result.rows[0]);
   } catch (err) {
     logger.error({ err: err.message }, 'Error actualizando pedido');
@@ -126,6 +147,8 @@ const deleteOrder = async (req, res) => {
         );
       }
     }
+    const user = req.user?.user || 'admin';
+    await logActivity(user, 'delete', 'order', id, `Pedido #${id} eliminado`, req.ip || '');
     await query('DELETE FROM orders WHERE id = $1', [id]);
     res.json({ ok: true });
   } catch (err) {
@@ -134,4 +157,34 @@ const deleteOrder = async (req, res) => {
   }
 };
 
-module.exports = { getOrders, getUserOrders, createOrder, updateOrderStatus, deleteOrder };
+const updateOrderNotes = async (req, res) => {
+  const id = Number(req.params.id);
+  const { notes } = req.body || {};
+  try {
+    const result = await query(
+      'UPDATE orders SET notes = $1 WHERE id = $2 RETURNING *',
+      [notes || '', id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
+    const user = req.user?.user || 'admin';
+    await logActivity(user, 'update_notes', 'order', id, 'Nota interna actualizada', req.ip || '');
+    res.json(result.rows[0]);
+  } catch (err) {
+    logger.error({ err: err.message }, 'Error actualizando nota del pedido');
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+const getOrderDetail = async (req, res) => {
+  const id = Number(req.params.id);
+  try {
+    const result = await query('SELECT * FROM orders WHERE id = $1', [id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    logger.error({ err: err.message }, 'Error obteniendo detalle del pedido');
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+module.exports = { getOrders, getUserOrders, createOrder, updateOrderStatus, deleteOrder, updateOrderNotes, getOrderDetail };

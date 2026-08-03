@@ -38,6 +38,19 @@ function adminOnly(req, res, next) {
   next();
 }
 
+function requirePermission(permission) {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'No autorizado' });
+    }
+    const perms = req.user.permissions || {};
+    if (perms.all === true || perms[permission] === true) {
+      return next();
+    }
+    return res.status(403).json({ error: `Permiso requerido: ${permission}` });
+  };
+}
+
 async function login(req, res, next) {
   try {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
@@ -153,4 +166,4 @@ function logout(req, res, next) {
   res.json({ ok: true });
 }
 
-module.exports = { adminAuth, adminOnly, login, refresh, logout };
+module.exports = { adminAuth, adminOnly, requirePermission, login, refresh, logout };

@@ -224,6 +224,13 @@ app.use('/api', require('./routes/sitemap'));
 app.use('/api', require('./routes/reviews'));
 app.use('/api', require('./routes/productImages'));
 app.use('/api', require('./routes/health'));
+app.use('/api', require('./routes/categories'));
+app.use('/api', require('./routes/activityLog'));
+app.use('/api', require('./routes/customers'));
+app.use('/api', require('./routes/reports'));
+app.use('/api', require('./routes/users'));
+app.use('/api', require('./routes/receipts'));
+app.use('/api', require('./routes/heroCards'));
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', uptime: process.uptime() });

@@ -525,7 +525,7 @@ async function loadHeroCards() {
       if (nameEl && name) nameEl.textContent = name;
       if (priceEl && price) priceEl.textContent = price;
       if (imgEl && image) {
-        imgEl.innerHTML = `<img src="${image}" alt="${name || 'Card imagen'}" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" />`;
+        imgEl.innerHTML = `<img src="${image}" alt="${name || 'Card imagen'}" style="width:100%;height:100%;object-fit:cover;" />`;
       } else if (imgEl && !image) {
         imgEl.textContent = cardNum === 1 ? '📿' : '💎';
       }
