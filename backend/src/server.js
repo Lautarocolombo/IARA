@@ -150,13 +150,13 @@ const corsOptions = allowedOrigins.length
         callback(null, allowed);
       },
       credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With', 'X-Request-ID'],
-    }
+       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+       allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With', 'X-Request-ID'],
+   }
   : {
-      origin: true,
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+       origin: true,
+       credentials: true,
+       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With', 'X-Request-ID'],
     };
 
@@ -197,12 +197,18 @@ app.use((req, res, next) => {
 });
 
 const TIMEOUT_MS = 30000;
+const UPLOAD_TIMEOUT_MS = 120000;
 app.use((req, res, next) => {
+  const isUploadRoute = /^\/api\/products\/\d+\/images/.test(req.path) ||
+    req.path === '/api/admin/upload' ||
+    (/^\/api\/admin\/products/.test(req.path) && req.method === 'POST') ||
+    (req.path === '/api/admin/products/bulk-import');
+  const timeoutMs = isUploadRoute ? UPLOAD_TIMEOUT_MS : TIMEOUT_MS;
   const timeout = setTimeout(() => {
     if (!res.headersSent) {
       res.status(408).json({ error: 'Request timeout', message: 'El servidor tardó demasiado en responder. Intentá de nuevo.' });
     }
-  }, TIMEOUT_MS);
+  }, timeoutMs);
   res.on('finish', () => clearTimeout(timeout));
   res.on('close', () => clearTimeout(timeout));
   next();

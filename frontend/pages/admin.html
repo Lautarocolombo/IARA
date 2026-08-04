@@ -880,38 +880,56 @@
       showToast('Sesión cerrada', 'default');
     }
 
-     async function adminFetch(url, opts = {}) {
-       if (!authToken) throw new Error('No autorizado');
-       const headers = { Authorization: `Bearer ${authToken}`, ...(opts.headers || {}) };
-       const fullUrl = url.startsWith('/api/') ? `${CONFIG.API.BASE}${url}` : url;
-       const controller = new AbortController();
-       const timeout = setTimeout(() => controller.abort(), 20000);
-       try {
-         const isFormData = opts.body instanceof FormData;
-         let finalHeaders = headers;
-         if (isFormData) {
-           const { 'Content-Type': _ct, ...rest } = headers;
-           finalHeaders = rest;
+      async function adminFetch(url, opts = {}) {
+        if (!authToken) throw new Error('No autorizado');
+        const headers = { Authorization: `Bearer ${authToken}`, ...(opts.headers || {}) };
+        const fullUrl = url.startsWith('/api/') ? `${CONFIG.API.BASE}${url}` : url;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 20000);
+        try {
+          const isFormData = opts.body instanceof FormData;
+          let finalHeaders = headers;
+          if (isFormData) {
+            const { 'Content-Type': _ct, ...rest } = headers;
+            finalHeaders = rest;
+          }
+          const res = await fetch(fullUrl, { ...opts, headers: finalHeaders, signal: controller.signal });
+         clearTimeout(timeout);
+         if (res.status === 401) {
+           authToken = '';
+           localStorage.removeItem('ag_admin_jwt');
+           document.getElementById('loginOverlay').classList.remove('hidden');
+           throw new Error('Sesión expirada. Iniciá sesión nuevamente.');
          }
-         const res = await fetch(fullUrl, { ...opts, headers: finalHeaders, signal: controller.signal });
-        clearTimeout(timeout);
-        if (res.status === 401) {
-          authToken = '';
-          localStorage.removeItem('ag_admin_jwt');
-          document.getElementById('loginOverlay').classList.remove('hidden');
-          throw new Error('Sesión expirada');
-        }
-        if (!res.ok) {
-          const text = await res.text();
-          throw new Error(text || res.statusText);
-        }
-        return res;
-      } catch (err) {
-        clearTimeout(timeout);
-        console.error('[adminFetch] Error:', err.message, 'URL:', fullUrl);
-        throw err;
-      }
-    }
+         if (res.status === 403) {
+           throw new Error('Acceso denegado. No tenés permisos para esta acción.');
+         }
+         if (!res.ok) {
+           let errorMsg = res.statusText;
+           const contentType = res.headers.get('content-type') || '';
+           if (contentType.includes('application/json')) {
+             const data = await res.json().catch(() => null);
+             errorMsg = (data && data.error) || data?.message || errorMsg;
+           } else {
+             errorMsg = await res.text().catch(() => res.statusText);
+           }
+           throw new Error(errorMsg || `Error ${res.status}`);
+         }
+         return res;
+       } catch (err) {
+         clearTimeout(timeout);
+         if (err.name === 'AbortError') {
+           console.error('[adminFetch] Timeout:', fullUrl);
+           throw new Error('El servidor no respondió en el tiempo esperado. Verificá tu conexión e intentá nuevamente.');
+         }
+         if (err.message === 'Failed to fetch' || err.message?.includes('fetch')) {
+           console.error('[adminFetch] Network error:', fullUrl);
+           throw new Error('No se pudo conectar al servidor. Verificá tu conexión e intentá recargar la página.');
+         }
+         console.error('[adminFetch] Error:', err.message, 'URL:', fullUrl);
+         throw err;
+       }
+     }
 
     function showToast(message, type = 'default') {
       const container = document.getElementById('toastContainer');
@@ -1032,8 +1050,9 @@ async function loadCategories() {
         try {
           const res = await adminFetch('/api/admin/categories');
           categories = await res.json();
-          const productsRes = await adminFetch('/api/admin/products');
-          const allProducts = await productsRes.json();
+        const productsRes = await adminFetch('/api/admin/products');
+          const productData = await productsRes.json();
+          const allProducts = productData.products || productData || [];
           const tbody = document.getElementById('categoriesTableBody');
           if (!tbody) return;
           if (!categories.length) { tbody.innerHTML = `<tr><td colspan='7' class='empty-state'>Sin categorías</td></tr>`; return; }
@@ -1051,7 +1070,10 @@ async function loadCategories() {
           }).join('');
         } catch (err) {
           console.error('[loadCategories] Error:', err);
-          document.getElementById('categoriesTableBody').innerHTML = `<tr><td colspan='7' class='empty-state'>Error al cargar los datos. Verificá la consola para más detalles.</td></tr>`;
+          const msg = err.message.includes('conectar') || err.message.includes('Timeout') || err.message.includes('tiempo')
+            ? '❌ No se pudo conectar al servidor. Verificá tu conexión o recargá.'
+            : '❌ Error al cargar las categorías. ' + err.message;
+          document.getElementById('categoriesTableBody').innerHTML = `<tr><td colspan='7' class='empty-state'>${msg}</td></tr>`;
         }
       }
 
@@ -1139,14 +1161,18 @@ async function deleteCategory(id, productCount = 0) {
        }
      }
 
-    async function loadProducts() {
+async function loadProducts() {
       try {
         const res = await adminFetch('/api/admin/products');
-        products = await res.json();
+        const data = await res.json();
+        products = data.products || data || [];
         renderProductsTable();
       } catch (err) {
         console.error('[loadProducts] Error:', err);
-        document.getElementById('tableBody').innerHTML = `<tr><td colspan='7' class='empty-state'>Error al cargar los datos. Verificá la consola para más detalles.</td></tr>`;
+        const msg = err.message.includes('conectar') || err.message.includes('Timeout') || err.message.includes('tiempo')
+          ? '❌ No se pudo conectar al servidor. Verificá tu conexión o recargá.'
+          : '❌ Error al cargar los productos. ' + err.message;
+        document.getElementById('tableBody').innerHTML = `<tr><td colspan='9' class='empty-state'>${msg}</td></tr>`;
       }
     }
 
@@ -1244,11 +1270,18 @@ function renderProductsTable() {
          showSaveStatus('productSaveStatus', 'saving', 'Guardando...');
          const url = editingId ? `/api/admin/products/${editingId}` : '/api/admin/products';
          const method = editingId ? 'PUT' : 'POST';
-          const res = await adminFetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+const res = await adminFetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
           const savedProduct = await res.json();
           if (!editingId && savedProduct.id) {
             editingId = savedProduct.id;
             document.getElementById('pId').value = savedProduct.id;
+          }
+          // Subir imágenes pendientes (producto nuevo) después de crear el producto
+          if (window.ProductImages && window.ProductImages.hasPendingFiles && window.ProductImages.hasPendingFiles()) {
+            const uploaded = await window.ProductImages.uploadPending(savedProduct.id);
+            if (uploaded > 0) {
+              showToast(`${uploaded} imagen(es) subida(s)`, 'success');
+            }
           }
           showSaveStatus('productSaveStatus', 'success', '✅ Guardado');
           await loadProducts();
@@ -1280,8 +1313,8 @@ function openModal(product = null) {
         document.getElementById('pId').value = product ? product.id : '';
         document.getElementById('modalOverlay').classList.add('active');
         setTimeout(() => {
-          if (window.ProductImages && product && product.id) {
-            window.ProductImages.init(product.id);
+          if (window.ProductImages) {
+            window.ProductImages.init(product ? product.id : null);
           }
         }, 100);
      }

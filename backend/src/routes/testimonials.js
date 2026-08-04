@@ -10,6 +10,4 @@ router.post('/admin/testimonials', adminAuth, uploadSingle, handleUploadError, c
 router.put('/admin/testimonials/:id', adminAuth, uploadSingle, handleUploadError, updateTestimonial);
 router.patch('/admin/testimonials/:id/active', adminAuth, toggleTestimonialActive);
 router.patch('/admin/testimonials/:id/order', adminAuth, updateTestimonialOrder);
-router.delete('/admin/testimonials/:id', adminAuth, deleteTestimonial);
-
-module.exports = router;
+router.delete('/admin/testimonials/:id', adminAuth, deleteTestimonial);module.exports = router;

@@ -158,7 +158,7 @@ const searchProducts = async (req, res) => {
     const q = (req.query.q || '').trim();
     if (!q) return res.json([]);
     const result = await query(
-      "SELECT * FROM products WHERE active = TRUE AND deleted = FALSE AND (name ILIKE $1 OR description ILIKE $1 OR category ILIKE $1 OR sku ILIKE $1) ORDER BY id ASC",
+      "SELECT * FROM products WHERE active = TRUE AND deleted = FALSE AND (name LIKE $1 OR description LIKE $1 OR category LIKE $1 OR sku LIKE $1) ORDER BY id ASC",
       [`%${q}%`]
     );
     res.json(result.rows);
@@ -182,7 +182,7 @@ const getAdminProducts = async (req, res) => {
     }
     if (q) {
       const idx = params.length + 1;
-      where += ` AND (name ILIKE $${idx} OR description ILIKE $${idx} OR sku ILIKE $${idx})`;
+      where += ` AND (name LIKE $${idx} OR description LIKE $${idx} OR sku LIKE $${idx})`;
       params.push(`%${q}%`);
     }
     if (category) {

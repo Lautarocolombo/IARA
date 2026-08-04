@@ -39,8 +39,7 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024,
-    filesLimit: 10
+    fileSize: 5 * 1024 * 1024
   }
 });
 
@@ -82,10 +81,32 @@ async function optimizeWithSharp(filePath) {
   }
 }
 
+function isCloudinaryConfigured() {
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  const apiKey = process.env.CLOUDINARY_API_KEY;
+  const apiSecret = process.env.CLOUDINARY_API_SECRET;
+  return !!(cloudName && apiKey && apiSecret);
+}
+
+async function ensureCloudinaryConfigured() {
+  const cloudinary = require('cloudinary').v2;
+  if (!isCloudinaryConfigured()) {
+    return false;
+  }
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+  return true;
+}
+
 async function uploadToCloudinary(filePath, _originalName) {
   try {
     const cloudinary = require('cloudinary').v2;
-    if (!cloudinary.config().cloud_name) {
+    const configured = await ensureCloudinaryConfigured();
+    if (!configured) {
+      logger.warn('Cloudinary no configurado completamente (faltan CLOUDINARY_CLOUD_NAME, API_KEY o API_SECRET)');
       return null;
     }
     const result = await new Promise((resolve, reject) => {
@@ -118,14 +139,19 @@ async function deleteFromCloudinary(publicId) {
 }
 
 async function processFile(file) {
-  const useCloudinary = process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY;
-  
+  const isProduction = process.env.NODE_ENV === 'production';
+  const useCloudinary = isCloudinaryConfigured();
+
   if (useCloudinary) {
     const cloudinaryResult = await uploadToCloudinary(file.path, file.originalname);
     if (cloudinaryResult) {
-      fs.unlinkSync(file.path);
+      try { fs.unlinkSync(file.path); } catch (e) { /* noop */ }
       return { url: cloudinaryResult.url, filename: path.basename(file.path), cloudinary_public_id: cloudinaryResult.public_id, isCloudinary: true };
     }
+  }
+
+  if (!useCloudinary && isProduction) {
+    logger.warn('Cloudinary no está configurado en producción. Las imágenes se guardan localmente y se perderán en el próximo redeploy/reinicio. Configurá CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY y CLOUDINARY_API_SECRET en Render para persistencia.');
   }
 
   const optimizedFilename = await optimizeWithSharp(file.path);
