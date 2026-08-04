@@ -1,7 +1,7 @@
-(function () {
+﻿(function () {
   'use strict';
 
-const ITEM_CLASS = 'product-image-item';
+  const ITEM_CLASS = 'product-image-item';
 
   let pendingFiles = [];
   let pendingMeta = { descripcion: '', categoria: '' };
@@ -16,8 +16,7 @@ const ITEM_CLASS = 'product-image-item';
       pendingMeta = { descripcion: '', categoria: '' };
       setupPendingDropzone(dropzone);
       setupUrlPaste(dropzone);
-      gallery.innerHTML = '';
-      renderPendingFileList();
+      renderPendingPreview();
       return;
     }
     setupDropzone(dropzone, productId);
@@ -81,7 +80,7 @@ const ITEM_CLASS = 'product-image-item';
     const ext = fileName.split('.').pop().toLowerCase();
     const allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
     if (!allowedExts.includes(ext)) {
-      showToast('Formato no permitido. Usá JPG, PNG, WEBP o GIF', 'error');
+      showToast('Formato no permitido. UsÃ¡ JPG, PNG, WEBP o GIF', 'error');
       return;
     }
     pendingFiles.push({
@@ -91,7 +90,7 @@ const ITEM_CLASS = 'product-image-item';
       url: url,
       isUrl: true
     });
-    renderPendingFileList();
+    renderPendingPreview();
     showToast('URL de imagen agregada', 'success');
   }
 
@@ -115,49 +114,73 @@ const ITEM_CLASS = 'product-image-item';
       url: URL.createObjectURL(f),
       isUrl: false
     })));
-    renderPendingFileList();
+    renderPendingPreview();
   }
 
   function removePendingFile(index) {
     pendingFiles.splice(index, 1);
-    renderPendingFileList();
+    renderPendingPreview();
   }
 
+  function reorderPendingFiles(fromIndex, toIndex) {
+    if (fromIndex === toIndex) return;
+    const [moved] = pendingFiles.splice(fromIndex, 1);
+    pendingFiles.splice(toIndex, 0, moved);
+    renderPendingPreview();
+  }
+
+  // Kept for backward compatibility; the text list was removed from the layout.
   function renderPendingFileList() {
     const list = document.getElementById('productImageFilesList');
-    if (!list) return;
-    if (!pendingFiles.length) {
-      list.innerHTML = '';
-      return;
-    }
-    list.innerHTML = pendingFiles.map((f, i) => {
-      const sizeText = f.size > 0 ? `${(f.size / 1024).toFixed(1)} KB` : 'URL externa';
-      return `<div class="image-file-item">
-        <span class="image-file-name">${escapeHtml(f.name)}</span>
-        <span class="image-file-size">${sizeText}</span>
-        <button type="button" class="btn btn-danger btn-sm" onclick="window.ProductImages.removePendingFile(${i})" title="Quitar">✕</button>
-      </div>`;
-    }).join('');
+    if (list) list.innerHTML = '';
   }
 
   function renderPendingPreview() {
     const gallery = document.getElementById('productImageGallery');
     if (!gallery) return;
     if (!pendingFiles.length) {
-      gallery.innerHTML = '<p class="empty-state">Sin imágenes</p>';
+      gallery.innerHTML = '<div class="product-image-gallery-empty"><span class="empty-icon">ðŸ–¼ï¸</span><span class="empty-text">Sin imÃ¡genes todavÃ­a</span></div>';
       return;
     }
     gallery.innerHTML = pendingFiles.map((f, i) => {
       const src = f.isUrl ? f.url : (f.url || '');
-      return `<div class="${ITEM_CLASS}">
-        <div class="${ITEM_CLASS}-preview">
-          <img src="${escapeHtml(src)}" alt="Imagen ${i + 1}" style="max-height:120px;width:100%;object-fit:cover;" />
-        </div>
-        <div class="${ITEM_CLASS}-actions">
-          <button class="btn btn-sm btn-danger" onclick="window.ProductImages.removePendingFile(${i})" title="Quitar">🗑</button>
-        </div>
+      const isPortada = i === 0;
+      return `<div class="product-image-thumb${isPortada ? ' is-portada' : ''}" draggable="true" data-pending-index="${i}">
+        <img src="${escapeHtml(src)}" alt="Imagen ${i + 1}" onerror="this.closest('.product-image-thumb').classList.add('is-url-error');this.style.display='none';" />
+        <button type="button" class="product-image-thumb-remove" onclick="window.ProductImages.removePendingFile(${i})" title="Quitar">âœ•</button>
       </div>`;
     }).join('');
+
+    arrayFrom(gallery.querySelectorAll('.product-image-thumb')).forEach(thumb => {
+      thumb.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', String(thumb.dataset.pendingIndex));
+        thumb.classList.add('dragging');
+      });
+      thumb.addEventListener('dragend', () => thumb.classList.remove('dragging'));
+      thumb.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const dragging = gallery.querySelector('.product-image-thumb.dragging');
+        if (!dragging || dragging === thumb) return;
+        const rect = thumb.getBoundingClientRect();
+        const mid = rect.left + rect.width / 2;
+        if (e.clientX < mid) {
+          gallery.insertBefore(dragging, thumb);
+        } else {
+          gallery.insertBefore(dragging, thumb.nextSibling);
+        }
+      });
+      thumb.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const fromIndex = Number(e.dataTransfer.getData('text/plain'));
+        const ordered = arrayFrom(gallery.querySelectorAll('.product-image-thumb')).map(el => Number(el.dataset.pendingIndex));
+        const toIndex = ordered.indexOf(Number(thumb.dataset.pendingIndex));
+        reorderPendingFiles(fromIndex, toIndex);
+      });
+    });
+  }
+
+  function arrayFrom(list) {
+    return Array.prototype.slice.call(list);
   }
 
   async function uploadPending(productId) {
@@ -166,9 +189,7 @@ const ITEM_CLASS = 'product-image-item';
     pendingFiles = [];
     pendingMeta = { descripcion: '', categoria: '' };
     const gallery = document.getElementById('productImageGallery');
-    const filesList = document.getElementById('productImageFilesList');
     if (gallery) gallery.innerHTML = '';
-    if (filesList) filesList.innerHTML = '';
     const formData = new FormData();
     let hasFiles = false;
     const urlImages = [];
@@ -196,7 +217,7 @@ const ITEM_CLASS = 'product-image-item';
         xhr.send(formData);
       });
       if (result.status < 200 || result.status >= 300) {
-        throw new Error(result.data.error || 'Error al subir imágenes');
+        throw new Error(result.data.error || 'Error al subir imÃ¡genes');
       }
       return files.length;
     } catch (err) {
@@ -214,14 +235,18 @@ const ITEM_CLASS = 'product-image-item';
       const images = await res.json();
       renderGallery(gallery, images, productId);
     } catch (err) {
-      gallery.innerHTML = '<p class="empty-state">No se pudieron cargar las imágenes</p>';
+      gallery.innerHTML = '<p class="empty-state">No se pudieron cargar las imÃ¡genes</p>';
     }
+  }
+
+  function renderEmptyGallery(container) {
+    container.innerHTML = '<div class="product-image-gallery-empty"><span class="empty-icon">ðŸ–¼ï¸</span><span class="empty-text">Sin imÃ¡genes todavÃ­a</span></div>';
   }
 
   function renderGallery(container, images, productId) {
     container.innerHTML = '';
     if (!images.length) {
-      container.innerHTML = '<p class="empty-state">Sin imágenes</p>';
+      renderEmptyGallery(container);
       return;
     }
     images.forEach((img) => {
@@ -230,30 +255,30 @@ const ITEM_CLASS = 'product-image-item';
       item.draggable = true;
       item.dataset.id = img.id;
       item.dataset.orden = img.orden;
-       item.innerHTML = `
+      item.innerHTML = `
         <div class="${ITEM_CLASS}-preview">
           <img src="${escapeHtml(img.url)}" alt="${escapeHtml(img.descripcion || 'Producto')}" loading="lazy" />
           ${img.descripcion ? `<div class="${ITEM_CLASS}-label" title="${escapeHtml(img.descripcion)}">${escapeHtml(img.descripcion)}</div>` : ''}
           ${img.categoria ? `<span class="${ITEM_CLASS}-category cat-${img.categoria}" title="${escapeHtml(img.categoria)}">${escapeHtml(img.categoria)}</span>` : ''}
         </div>
         <div class="${ITEM_CLASS}-actions">
-          <button class="btn btn-sm btn-secondary" data-action="principal" title="Marcar como principal">${img.es_principal ? '⭐ Principal' : '⭐'}</button>
-          <button class="btn btn-sm btn-secondary" data-action="edit-meta" title="Editar descripción/categoría">✏️</button>
-          <button class="btn btn-sm btn-secondary" data-action="replace" title="Reemplazar imagen">🔄</button>
-          <button class="btn btn-sm btn-danger" data-action="delete" title="Eliminar">🗑</button>
+          <button class="btn btn-sm btn-secondary" data-action="principal" title="Marcar como principal">${img.es_principal ? 'â­ Principal' : 'â­'}</button>
+          <button class="btn btn-sm btn-secondary" data-action="edit-meta" title="Editar descripciÃ³n/categorÃ­a">âœï¸</button>
+          <button class="btn btn-sm btn-secondary" data-action="replace" title="Reemplazar imagen">ðŸ”„</button>
+          <button class="btn btn-sm btn-danger" data-action="delete" title="Eliminar">ðŸ—‘</button>
         </div>
         <input type="file" class="${ITEM_CLASS}-replace-input" accept="image/jpeg,image/png,image/webp" data-image-id="${img.id}" style="display:none" />
         <div class="${ITEM_CLASS}-meta-form" style="display:none;padding:8px;border-top:1px dashed #f4c0d0;">
-          <input type="text" class="${ITEM_CLASS}-desc-input" placeholder="Descripción" value="${escapeHtml(img.descripcion || '')}" style="width:100%;padding:4px 8px;margin-bottom:4px;font-size:0.8rem;" />
+          <input type="text" class="${ITEM_CLASS}-desc-input" placeholder="DescripciÃ³n" value="${escapeHtml(img.descripcion || '')}" style="width:100%;padding:4px 8px;margin-bottom:4px;font-size:0.8rem;" />
           <select class="${ITEM_CLASS}-cat-input" style="width:100%;padding:4px 8px;font-size:0.8rem;border:1.5px solid #f4c8d4;border-radius:6px;background:#fff;">
-            <option value="">Sin categoría</option>
+            <option value="">Sin categorÃ­a</option>
             <option value="pulseras" ${img.categoria === 'pulseras' ? 'selected' : ''}>Pulseras</option>
             <option value="accesorios" ${img.categoria === 'accesorios' ? 'selected' : ''}>Accesorios</option>
             <option value="souvenirs" ${img.categoria === 'souvenirs' ? 'selected' : ''}>Souvenirs</option>
           </select>
           <div style="display:flex;gap:4px;margin-top:4px;">
-            <button class="btn btn-sm btn-secondary" data-action="save-meta">💾</button>
-            <button class="btn btn-sm btn-secondary" data-action="cancel-meta">✕</button>
+            <button class="btn btn-sm btn-secondary" data-action="save-meta">ðŸ’¾</button>
+            <button class="btn btn-sm btn-secondary" data-action="cancel-meta">âœ•</button>
           </div>
         </div>
       `;
@@ -312,7 +337,7 @@ const ITEM_CLASS = 'product-image-item';
         e.target.value = '';
       });
       item.querySelector('[data-action="delete"]')?.addEventListener('click', async () => {
-        if (!confirm('¿Eliminar imagen?')) return;
+        if (!confirm('Â¿Eliminar imagen?')) return;
         await deleteImage(productId, img.id);
         await loadImages(productId);
       });
@@ -376,7 +401,7 @@ const ITEM_CLASS = 'product-image-item';
       progressContainer.innerHTML = '<div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div><div class="progress-text">0%</div>';
     }
     try {
-       const formData = new FormData();
+      const formData = new FormData();
       files.forEach(file => formData.append('images', file));
       const descInput = document.getElementById('pImageDescripcion');
       const catInput = document.getElementById('pImageCategoria');
@@ -395,7 +420,7 @@ const ITEM_CLASS = 'product-image-item';
             if (text) text.textContent = pct + '%';
           }
         });
-xhr.addEventListener('load', () => {
+        xhr.addEventListener('load', () => {
           let data = {};
           try {
             data = JSON.parse(xhr.responseText || '{}');
@@ -411,8 +436,8 @@ xhr.addEventListener('load', () => {
       });
       if (result.status < 200 || result.status >= 300) {
         const msg = result.status === 403
-          ? 'No autorizado para subir imágenes. Verificá tu sesión de administrador.'
-          : (result.data.error || `Error ${result.status} al subir imágenes`);
+          ? 'No autorizado para subir imÃ¡genes. VerificÃ¡ tu sesiÃ³n de administrador.'
+          : (result.data.error || `Error ${result.status} al subir imÃ¡genes`);
         throw new Error(msg);
       }
       if (status) {
@@ -449,7 +474,7 @@ xhr.addEventListener('load', () => {
     }
     if (file.size > maxSize) {
       if (status) { status.textContent = 'La imagen supera los 5MB'; status.style.color = '#dc2626'; }
-      showToast('Imagen muy grande (máx 5MB)', 'error');
+      showToast('Imagen muy grande (mÃ¡x 5MB)', 'error');
       setTimeout(() => { if (status) status.textContent = ''; }, 3000);
       return;
     }
@@ -568,16 +593,16 @@ xhr.addEventListener('load', () => {
     e.stopPropagation();
   }
 
-  function getAuthToken() {
+function getAuthToken() {
     return localStorage.getItem('ag_admin_jwt') || '';
   }
 
-  function escapeHtml(str) {
+function escapeHtml(str) {
     return String(str)
       .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+      .replace(/</g, '<')
+      .replace(/>/g, '>')
+      .replace(/"/g, '"');
   }
 
   window.ProductImages = {

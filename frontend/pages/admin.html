@@ -494,8 +494,9 @@
            </div>
          </div>
 
-         <div class="admin-section">
+<div class="admin-section">
            <div class="admin-section-title">Imágenes del producto</div>
+           <div class="product-image-gallery" id="productImageGallery"></div>
            <div class="image-upload-zone" id="productImageDropzone">
              <input type="file" id="productImageFiles" accept="image/jpeg,image/png,image/webp,image/gif" multiple style="display:none" />
              <div class="image-upload-primary">
@@ -505,16 +506,14 @@
                </button>
                <span class="image-upload-or">o</span>
                <div class="image-url-row">
-                 <input type="text" id="productImageUrl" placeholder="o pegá una URL de imagen externa" class="card-filter" style="flex:1;" />
+                 <input type="text" id="productImageUrl" placeholder="pegá una URL de imagen externa" class="card-filter" style="flex:1;" />
                  <button type="button" class="btn btn-secondary btn-sm" id="productImageUrlBtn" onclick="window.ProductImages.addPendingUrl()">Agregar URL</button>
                </div>
              </div>
-             <div class="image-upload-files" id="productImageFilesList"></div>
              <div class="image-upload-hint">JPG, PNG, WEBP o GIF — máx 5MB c/u. También podés arrastrar archivos sobre esta zona.</div>
            </div>
            <div class="save-status" id="productImageUploadStatus"></div>
            <div class="product-image-upload-progress" id="productImageUploadProgress"></div>
-           <div class="product-image-gallery" id="productImageGallery"></div>
            <input type="hidden" id="pImage" />
          </div>
 
