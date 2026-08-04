@@ -39,10 +39,10 @@
       if (!res) {
         document.getElementById('mpAliasValue').textContent = 'No configurado';
         document.getElementById('transferAlias').textContent = 'No configurado';
-        return { alias: '', whatsapp: (CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, ''), message: '', active: false };
+        return { alias: 'iara-salgueiro', whatsapp: (CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, ''), message: '', active: false };
       }
       const data = await res.json();
-      const alias = data.transferAlias || '';
+      const alias = data.transferAlias || 'iara-salgueiro';
       const cbuCvu = data.cbuCvu || '';
       const holderName = data.holderName || '';
       const whatsapp = (data.whatsapp || CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, '');
@@ -62,7 +62,7 @@
     } catch (err) {
       document.getElementById('mpAliasValue').textContent = 'Error al cargar';
       document.getElementById('transferAlias').textContent = 'Error al cargar';
-      return { alias: '', whatsapp: (CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, ''), message: '', active: false };
+      return { alias: 'iara-salgueiro', whatsapp: (CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, ''), message: '', active: false };
     }
   }
 

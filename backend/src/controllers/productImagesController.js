@@ -125,6 +125,15 @@ async function updateProductImage(req, res) {
 
     const updated = result.rows[0];
     updated.url = getPublicUrl(updated.url);
+
+    if (es_principal === true) {
+      try {
+        await query('UPDATE products SET image = $1 WHERE id = $2', [updated.url, productId]);
+      } catch (err) {
+        logger.warn({ err: err.message }, 'Error sincronizando imagen principal al producto');
+      }
+    }
+
     res.json(updated);
   } catch (err) {
     logger.error('Error actualizando imagen:', err);
@@ -156,6 +165,22 @@ async function deleteProductImage(req, res) {
     }
 
     await query('DELETE FROM product_images WHERE id = $1', [imageId]);
+
+    if (image.es_principal) {
+      const remaining = await query(
+        'SELECT * FROM product_images WHERE product_id = $1 ORDER BY orden ASC, id ASC',
+        [productId]
+      );
+      const imgs = (remaining.rows || []).map(i => ({ ...i, url: getPublicUrl(i.url) }));
+      const newPrincipal = imgs.find(i => i.es_principal) || imgs[0];
+      const newImageUrl = newPrincipal ? newPrincipal.url : '';
+      try {
+        await query('UPDATE products SET image = $1 WHERE id = $2', [newImageUrl, productId]);
+      } catch (err) {
+        logger.warn({ err: err.message }, 'Error re-sincronizando imagen principal tras borrado');
+      }
+    }
+
     res.json({ ok: true });
   } catch (err) {
     logger.error('Error eliminando imagen:', err);

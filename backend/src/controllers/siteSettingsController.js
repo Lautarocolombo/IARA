@@ -13,7 +13,7 @@ const getSiteSettings = async (req, res) => {
     if (!Object.keys(paymentConfig).length) {
       await query(
         `INSERT INTO payment_config (mp_alias, transfer_alias, holder_name, cbu_cvu, whatsapp, message, active, mp_enabled, cash_enabled, shipping_cost, free_shipping_from)
-         VALUES ('', '', '', '', '', '', true, false, false, 0, 0)`
+         VALUES ('iara-salgueiro', 'iara-salgueiro', '', '', '', '', true, false, false, 0, 0)`
       );
       const retry = await query('SELECT * FROM payment_config LIMIT 1');
       paymentConfig = retry.rows[0];
@@ -147,7 +147,7 @@ const getAdminPaymentConfig = async (req, res) => {
     let row = await getPaymentConfigRow();
     if (!row) {
       await query(
-        `INSERT INTO payment_config (mp_alias, transfer_alias, holder_name, cbu_cvu, whatsapp, message, active, mp_enabled, cash_enabled, shipping_cost, free_shipping_from) VALUES ('', '', '', '', '', '', true, false, false, 0, 0)`
+        `INSERT INTO payment_config (mp_alias, transfer_alias, holder_name, cbu_cvu, whatsapp, message, active, mp_enabled, cash_enabled, shipping_cost, free_shipping_from) VALUES ('iara-salgueiro', 'iara-salgueiro', '', '', '', '', true, false, false, 0, 0)`
       );
       row = await getPaymentConfigRow();
     }

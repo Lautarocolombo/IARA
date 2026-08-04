@@ -97,13 +97,13 @@ const ITEM_CLASS = 'product-image-item';
 
   function addPendingFiles(files) {
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    const maxSize = 5 * 1024 * 1024;
+    const maxSize = 200 * 1024 * 1024;
     const invalid = files.filter(f => !allowedTypes.includes(f.type));
     const oversized = files.filter(f => f.size > maxSize);
     if (invalid.length || oversized.length) {
       const msgs = [];
       if (invalid.length) msgs.push(`${invalid.length} con formato no permitido (JPG, PNG, WEBP)`);
-      if (oversized.length) msgs.push(`${oversized.length} superan los 5MB`);
+      if (oversized.length) msgs.push(`${oversized.length} superan los 200MB`);
       showToast(msgs.join('. '), 'error');
       return;
     }
@@ -355,13 +355,13 @@ const ITEM_CLASS = 'product-image-item';
     const status = document.getElementById('productImageUploadStatus');
     const progressContainer = document.getElementById('productImageUploadProgress');
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    const maxSize = 5 * 1024 * 1024;
+    const maxSize = 200 * 1024 * 1024;
     const invalid = files.filter(f => !allowedTypes.includes(f.type));
     const oversized = files.filter(f => f.size > maxSize);
     if (invalid.length || oversized.length) {
       const msgs = [];
       if (invalid.length) msgs.push(`${invalid.length} archivo(s) con formato no permitido (solo JPG, PNG, WEBP)`);
-      if (oversized.length) msgs.push(`${oversized.length} archivo(s) superan los 5MB`);
+      if (oversized.length) msgs.push(`${oversized.length} archivo(s) superan los 200MB`);
       if (status) { status.textContent = msgs.join('. '); status.style.color = '#dc2626'; }
       showToast(msgs.join('. '), 'error');
       setTimeout(() => { if (status) status.textContent = ''; }, 4000);
@@ -440,7 +440,7 @@ xhr.addEventListener('load', () => {
   async function replaceImage(productId, imageId, file) {
     const status = document.getElementById('productImageUploadStatus');
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    const maxSize = 5 * 1024 * 1024;
+    const maxSize = 200 * 1024 * 1024;
     if (!allowedTypes.includes(file.type)) {
       if (status) { status.textContent = 'Formato no permitido (solo JPG, PNG, WEBP)'; status.style.color = '#dc2626'; }
       showToast('Formato no permitido', 'error');
@@ -448,8 +448,8 @@ xhr.addEventListener('load', () => {
       return;
     }
     if (file.size > maxSize) {
-      if (status) { status.textContent = 'La imagen supera los 5MB'; status.style.color = '#dc2626'; }
-      showToast('Imagen muy grande (máx 5MB)', 'error');
+      if (status) { status.textContent = 'La imagen supera los 200MB'; status.style.color = '#dc2626'; }
+      showToast('Imagen muy grande (máx 200MB)', 'error');
       setTimeout(() => { if (status) status.textContent = ''; }, 3000);
       return;
     }
