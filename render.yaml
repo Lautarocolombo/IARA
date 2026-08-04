@@ -32,12 +32,12 @@ services:
         value: "2000"
       - key: WHATSAPP
         value: "+5493444634444"
-      - key: CLOUDINARY_CLOUD_NAME
-        generateValue: true
-      - key: CLOUDINARY_API_KEY
-        generateValue: true
-      - key: CLOUDINARY_API_SECRET
-        generateValue: true
+      # Cloudinary: configurar en Render Dashboard (Settings > Environment) con valores reales.
+      # No uses generateValue: true para estas variables, requiere credenciales válidas de Cloudinary.
+      # - CLOUDINARY_CLOUD_NAME: tu cloud name
+      # - CLOUDINARY_API_KEY: tu api key
+      # - CLOUDINARY_API_SECRET: tu api secret
+      # Si no están configuradas, las imágenes se guardan localmente (efímero en Render).
     autoDeploy: true
     branch: main
     repo: https://github.com/Lautarocolombo/IARA.git

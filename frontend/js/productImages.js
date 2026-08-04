@@ -1,16 +1,131 @@
 (function () {
   'use strict';
 
-  const ITEM_CLASS = 'product-image-item';
+const ITEM_CLASS = 'product-image-item';
+
+  // Imágenes seleccionadas para productos aún no creados (nuevo producto)
+  let pendingFiles = [];
+  let pendingMeta = { descripcion: '', categoria: '' };
 
   function init(productId) {
-    if (!productId) return;
     const dropzone = document.getElementById('productImageDropzone');
     const gallery = document.getElementById('productImageGallery');
     if (!dropzone || !gallery) return;
 
+    if (!productId) {
+      // Modo "nuevo producto": acumulamos imágenes y las subimos al guardar
+      pendingFiles = [];
+      pendingMeta = { descripcion: '', categoria: '' };
+      setupPendingDropzone(dropzone);
+      gallery.innerHTML = '';
+      return;
+    }
     setupDropzone(dropzone, productId);
     loadImages(productId);
+  }
+
+  function setupPendingDropzone(dropzone) {
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
+      dropzone.addEventListener(evt, preventDefaults);
+    });
+    dropzone.addEventListener('dragenter', () => dropzone.classList.add('drag-over'));
+    dropzone.addEventListener('dragover', () => dropzone.classList.add('drag-over'));
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+    dropzone.addEventListener('drop', (e) => {
+      dropzone.classList.remove('drag-over');
+      const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+      if (!files.length) return;
+      addPendingFiles(files);
+    });
+    const input = dropzone.querySelector('input[type="file"]');
+    if (input) {
+      input.addEventListener('change', () => {
+        const files = Array.from(input.files);
+        if (!files.length) return;
+        addPendingFiles(files);
+        input.value = '';
+      });
+    }
+  }
+
+  function addPendingFiles(files) {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+    const maxSize = 5 * 1024 * 1024;
+    const invalid = files.filter(f => !allowedTypes.includes(f.type));
+    const oversized = files.filter(f => f.size > maxSize);
+    if (invalid.length || oversized.length) {
+      const msgs = [];
+      if (invalid.length) msgs.push(`${invalid.length} con formato no permitido (JPG, PNG, WEBP)`);
+      if (oversized.length) msgs.push(`${oversized.length} superan los 5MB`);
+      showToast(msgs.join('. '), 'error');
+      return;
+    }
+    pendingFiles = pendingFiles.concat(files);
+    const descInput = document.getElementById('pImageDescripcion');
+    const catInput = document.getElementById('pImageCategoria');
+    pendingMeta.descripcion = descInput && descInput.value ? descInput.value : '';
+    pendingMeta.categoria = catInput && catInput.value ? catInput.value : '';
+    renderPendingPreview();
+  }
+
+  function renderPendingPreview() {
+    const gallery = document.getElementById('productImageGallery');
+    if (!gallery) return;
+    if (!pendingFiles.length) {
+      gallery.innerHTML = '<p class="empty-state">Sin imágenes</p>';
+      return;
+    }
+    gallery.innerHTML = pendingFiles.map((f, i) => {
+      const url = URL.createObjectURL(f);
+      return `<div class="${ITEM_CLASS}">
+        <div class="${ITEM_CLASS}-preview">
+          <img src="${url}" alt="Imagen ${i + 1}" style="max-height:120px;width:100%;object-fit:cover;" />
+        </div>
+        <div class="${ITEM_CLASS}-actions">
+          <button class="btn btn-sm btn-danger" data-action="remove-pending" title="Quitar">🗑</button>
+        </div>
+      </div>`;
+    }).join('');
+    gallery.querySelectorAll('[data-action="remove-pending"]').forEach((btn, i) => {
+      btn.addEventListener('click', () => {
+        pendingFiles.splice(i, 1);
+        renderPendingPreview();
+      });
+    });
+  }
+
+  async function uploadPending(productId) {
+    if (!productId || !pendingFiles.length) return 0;
+    const files = pendingFiles.slice();
+    const desc = pendingMeta.descripcion;
+    const cat = pendingMeta.categoria;
+    pendingFiles = [];
+    pendingMeta = { descripcion: '', categoria: '' };
+    const gallery = document.getElementById('productImageGallery');
+    if (gallery) gallery.innerHTML = '';
+    const formData = new FormData();
+    files.forEach(file => formData.append('images', file));
+    if (desc) formData.append('descripcion', desc);
+    if (cat) formData.append('categoria', cat);
+    const xhr = new XMLHttpRequest();
+    const url = `${CONFIG.API.BASE}/api/products/${productId}/images`;
+    const token = getAuthToken();
+    try {
+      const result = await new Promise((resolve, reject) => {
+        xhr.addEventListener('load', () => resolve({ status: xhr.status, data: JSON.parse(xhr.responseText || '{}') }));
+        xhr.addEventListener('error', () => reject(new Error('Error de red')));
+        xhr.open('POST', url);
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        xhr.send(formData);
+      });
+      if (result.status < 200 || result.status >= 300) {
+        throw new Error(result.data.error || 'Error al subir imágenes');
+      }
+      return files.length;
+    } catch (err) {
+      showToast(err.message, 'error');
+      return 0;
+    }
   }
 
   async function loadImages(productId) {
@@ -203,14 +318,25 @@
             if (text) text.textContent = pct + '%';
           }
         });
-        xhr.addEventListener('load', () => resolve({ status: xhr.status, data: JSON.parse(xhr.responseText || '{}') }));
+xhr.addEventListener('load', () => {
+          let data = {};
+          try {
+            data = JSON.parse(xhr.responseText || '{}');
+          } catch (e) {
+            data = { error: xhr.responseText || `Error ${xhr.status}` };
+          }
+          resolve({ status: xhr.status, data });
+        });
         xhr.addEventListener('error', () => reject(new Error('Error de red')));
         xhr.open('POST', url);
         xhr.setRequestHeader('Authorization', `Bearer ${token}`);
         xhr.send(formData);
       });
       if (result.status < 200 || result.status >= 300) {
-        throw new Error(result.data.error || 'Error al subir');
+        const msg = result.status === 403
+          ? 'No autorizado para subir imágenes. Verificá tu sesión de administrador.'
+          : (result.data.error || `Error ${result.status} al subir imágenes`);
+        throw new Error(msg);
       }
       if (status) {
         status.textContent = `Subidas: ${result.data.images?.length || files.length}`;
@@ -377,7 +503,7 @@
       .replace(/"/g, '&quot;');
   }
 
-  window.ProductImages = {
+window.ProductImages = {
     init,
     loadImages,
     uploadFiles,
@@ -385,6 +511,8 @@
     markPrincipal,
     updateImageMeta,
     deleteImage,
-    syncOrder
+    syncOrder,
+    uploadPending,
+    hasPendingFiles: () => pendingFiles.length > 0
   };
 })();

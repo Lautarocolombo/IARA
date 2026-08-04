@@ -57,7 +57,10 @@ async function uploadProductImages(req, res) {
     res.status(201).json({ ok: true, images: uploaded });
   } catch (err) {
     logger.error({ err: err.message }, 'Error subiendo imágenes');
-    res.status(500).json({ error: 'Error interno del servidor' });
+    const isConfigError = err.message && err.message.includes('CLOUDINARY');
+    res.status(isConfigError ? 500 : 500).json({
+      error: isConfigError ? err.message : 'Error interno del servidor'
+    });
   }
 }
 
@@ -158,6 +161,11 @@ async function replaceProductImage(req, res) {
     const oldImage = imageCheck.rows[0];
     if (oldImage.cloudinary_public_id) {
       await deleteFromCloudinary(oldImage.cloudinary_public_id);
+    } else if (oldImage.filename) {
+      const oldFilePath = path.join(__dirname, '..', '..', 'uploads', 'products', oldImage.filename);
+      if (fs.existsSync(oldFilePath)) {
+        fs.unlinkSync(oldFilePath);
+      }
     }
 
     const processed = await processFile(req.file);
@@ -171,7 +179,10 @@ async function replaceProductImage(req, res) {
     res.json(updated);
   } catch (err) {
     logger.error('Error reemplazando imagen:', err);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    const isConfigError = err.message && err.message.includes('CLOUDINARY');
+    res.status(500).json({
+      error: isConfigError ? err.message : 'Error interno del servidor'
+    });
   }
 }
 

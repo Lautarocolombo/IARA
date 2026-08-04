@@ -43,6 +43,10 @@ function requirePermission(permission) {
     if (!req.user) {
       return res.status(401).json({ error: 'No autorizado' });
     }
+    // El rol admin siempre tiene acceso completo, sin depender de la matriz de permisos
+    if (req.user.role === 'admin') {
+      return next();
+    }
     const perms = req.user.permissions || {};
     if (perms.all === true || perms[permission] === true) {
       return next();
