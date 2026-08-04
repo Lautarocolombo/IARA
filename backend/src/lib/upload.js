@@ -172,11 +172,11 @@ async function saveFile(req, res) {
   });
 }
 
-function getPublicUrl(relativePath) {
-  const apiBase = process.env.SITE_URL || '';
+function getPublicUrl(relativePath, baseUrl) {
   if (!relativePath) return '';
   if (relativePath.startsWith('http')) return relativePath;
-  return `${apiBase}${relativePath}`;
+  const prefix = baseUrl || process.env.BACKEND_URL || process.env.SITE_URL || '';
+  return prefix ? `${prefix}${relativePath}` : relativePath;
 }
 
 module.exports = {

@@ -7,13 +7,14 @@ const { getPublicUrl, deleteFromCloudinary, processFile } = require('../lib/uplo
 async function getProductImages(req, res) {
   try {
     const productId = Number(req.params.id);
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
     const result = await query(
       'SELECT * FROM product_images WHERE product_id = $1 ORDER BY orden ASC, id ASC',
       [productId]
     );
     const images = result.rows.map(img => ({
       ...img,
-      url: getPublicUrl(img.url)
+      url: getPublicUrl(img.url, baseUrl)
     }));
     res.json(images);
   } catch (err) {
@@ -92,6 +93,7 @@ async function updateProductImage(req, res) {
     const productId = Number(req.params.id);
     const imageId = Number(req.params.imageId);
     const { es_principal, orden, descripcion, categoria } = req.body;
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
 
     const imageCheck = await query(
       'SELECT id FROM product_images WHERE id = $1 AND product_id = $2',
@@ -125,7 +127,7 @@ async function updateProductImage(req, res) {
     );
 
     const updated = result.rows[0];
-    updated.url = getPublicUrl(updated.url);
+    updated.url = getPublicUrl(updated.url, baseUrl);
 
     if (es_principal === true) {
       try {
@@ -146,6 +148,7 @@ async function deleteProductImage(req, res) {
   try {
     const productId = Number(req.params.id);
     const imageId = Number(req.params.imageId);
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
 
     const result = await query(
       'SELECT * FROM product_images WHERE id = $1 AND product_id = $2',
@@ -172,7 +175,7 @@ async function deleteProductImage(req, res) {
         'SELECT * FROM product_images WHERE product_id = $1 ORDER BY orden ASC, id ASC',
         [productId]
       );
-      const imgs = (remaining.rows || []).map(i => ({ ...i, url: getPublicUrl(i.url) }));
+      const imgs = (remaining.rows || []).map(i => ({ ...i, url: getPublicUrl(i.url, baseUrl) }));
       const newPrincipal = imgs.find(i => i.es_principal) || imgs[0];
       const newImageUrl = newPrincipal ? newPrincipal.url : '';
       try {
@@ -193,6 +196,7 @@ async function replaceProductImage(req, res) {
   try {
     const productId = Number(req.params.id);
     const imageId = Number(req.params.imageId);
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
 
     const imageCheck = await query(
       'SELECT * FROM product_images WHERE id = $1 AND product_id = $2',
@@ -223,7 +227,7 @@ async function replaceProductImage(req, res) {
     );
 
     const updated = result.rows[0];
-    updated.url = getPublicUrl(processed.url);
+    updated.url = getPublicUrl(processed.url, baseUrl);
     res.json(updated);
   } catch (err) {
     logger.error('Error reemplazando imagen:', err);

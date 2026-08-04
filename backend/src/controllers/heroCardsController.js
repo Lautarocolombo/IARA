@@ -2,13 +2,13 @@ const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const { getPublicUrl, deleteFromCloudinary } = require('../lib/upload');
 
-function mapRow(r) {
+function mapRow(r, baseUrl) {
   return {
     id: r.id,
     slot: r.slot,
     nombre: r.nombre,
     precio: r.precio,
-    imagen: getPublicUrl(r.imagen),
+    imagen: getPublicUrl(r.imagen, baseUrl),
     emoji: r.emoji,
     orden: r.orden,
     activo: r.activo,
@@ -22,8 +22,9 @@ function mapRow(r) {
 
 const getHeroCards = async (req, res) => {
   try {
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
     const result = await query('SELECT * FROM hero_cards ORDER BY slot ASC, id ASC');
-    res.json(result.rows.map(mapRow));
+    res.json(result.rows.map(r => mapRow(r, baseUrl)));
   } catch (err) {
     logger.error('Error obteniendo hero cards:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -32,8 +33,9 @@ const getHeroCards = async (req, res) => {
 
 const getPublicHeroCards = async (req, res) => {
   try {
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
     const result = await query('SELECT * FROM hero_cards WHERE activo = TRUE ORDER BY slot ASC, id ASC');
-    res.json(result.rows.map(mapRow));
+    res.json(result.rows.map(r => mapRow(r, baseUrl)));
   } catch (err) {
     logger.error('Error obteniendo hero cards públicos:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -43,9 +45,10 @@ const getPublicHeroCards = async (req, res) => {
 const getHeroCardBySlot = async (req, res) => {
   const slot = Number(req.params.slot);
   try {
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
     const result = await query('SELECT * FROM hero_cards WHERE slot = $1 LIMIT 1', [slot]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Card no encontrada' });
-    res.json(mapRow(result.rows[0]));
+    res.json(mapRow(result.rows[0], baseUrl));
   } catch (err) {
     logger.error('Error obteniendo hero card por slot:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -56,9 +59,10 @@ const upsertHeroCard = async (req, res) => {
   try {
     const { nombre, precio, imagen, emoji, orden, activo, titulo, subtitulo, cta_texto, cta_url, slot } = req.body || {};
     const id = req.params.id ? Number(req.params.id) : null;
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
     let imagenUrl = imagen || '';
     if (req.file) {
-      imagenUrl = getPublicUrl(`/uploads/products/${req.file.filename}`);
+      imagenUrl = getPublicUrl(`/uploads/products/${req.file.filename}`, baseUrl);
     }
 
     if (id) {
@@ -81,7 +85,7 @@ const upsertHeroCard = async (req, res) => {
       }
     }
     const result = await query('SELECT * FROM hero_cards ORDER BY slot ASC, id ASC');
-    res.json(result.rows.map(mapRow));
+    res.json(result.rows.map(r => mapRow(r, baseUrl)));
   } catch (err) {
     logger.error('Error guardando hero card:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -104,9 +108,10 @@ const updateHeroSlot = async (req, res) => {
   const slot = Number(req.params.slot);
   try {
     const { titulo, subtitulo, cta_texto, cta_url, imagen, activo } = req.body || {};
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
     let imagenUrl = imagen || '';
     if (req.file) {
-      imagenUrl = getPublicUrl(`/uploads/products/${req.file.filename}`);
+      imagenUrl = getPublicUrl(`/uploads/products/${req.file.filename}`, baseUrl);
     }
     const existing = await query('SELECT id FROM hero_cards WHERE slot = $1', [slot]);
     if (existing.rows.length === 0) {
@@ -130,7 +135,7 @@ const updateHeroSlot = async (req, res) => {
       }
     }
     const result = await query('SELECT * FROM hero_cards WHERE slot = $1', [slot]);
-    res.json(mapRow(result.rows[0]));
+    res.json(mapRow(result.rows[0], baseUrl));
   } catch (err) {
     logger.error('Error actualizando hero slot:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -157,6 +162,7 @@ const deleteHeroSlotImage = async (req, res) => {
 
 const syncHeroCards = async (req, res) => {
   try {
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
     await query('DELETE FROM hero_cards');
     const cards = req.body?.cards || [];
     for (const c of cards) {
@@ -166,7 +172,7 @@ const syncHeroCards = async (req, res) => {
       );
     }
     const result = await query('SELECT * FROM hero_cards ORDER BY slot ASC, id ASC');
-    res.json(result.rows.map(mapRow));
+    res.json(result.rows.map(r => mapRow(r, baseUrl)));
   } catch (err) {
     logger.error('Error sincronizando hero cards:', err);
     res.status(500).json({ error: 'Error interno del servidor' });

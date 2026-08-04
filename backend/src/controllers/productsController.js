@@ -20,7 +20,7 @@ function slugify(text) {
     .replace(/^-+|-+$/g, '');
 }
 
-async function attachImagesToProducts(products) {
+async function attachImagesToProducts(products, baseUrl) {
   if (!products || !products.length) {
     return products || [];
   }
@@ -43,9 +43,10 @@ async function attachImagesToProducts(products) {
     return products;
   }
 
+  const resolvedBaseUrl = baseUrl || process.env.BACKEND_URL || process.env.SITE_URL || '';
   const byProduct = {};
   imageRows.forEach(img => {
-    const resolved = { ...img, url: getPublicUrl(img.url) };
+    const resolved = { ...img, url: getPublicUrl(img.url, resolvedBaseUrl) };
     if (!byProduct[img.product_id]) byProduct[img.product_id] = [];
     byProduct[img.product_id].push(resolved);
   });
@@ -186,8 +187,9 @@ const bulkImportProducts = async (req, res) => {
 
 const getPublicProducts = async (req, res) => {
   try {
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
     const result = await query('SELECT * FROM products WHERE active = TRUE AND deleted = FALSE ORDER BY id ASC');
-    const enriched = await attachImagesToProducts(result.rows);
+    const enriched = await attachImagesToProducts(result.rows, baseUrl);
     res.json(enriched);
   } catch (err) {
     logger.error('Error obteniendo productos:', err);
@@ -199,11 +201,12 @@ const searchProducts = async (req, res) => {
   try {
     const q = (req.query.q || '').trim();
     if (!q) return res.json([]);
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
     const result = await query(
       "SELECT * FROM products WHERE active = TRUE AND deleted = FALSE AND (name LIKE $1 OR description LIKE $1 OR category LIKE $1 OR sku LIKE $1) ORDER BY id ASC",
       [`%${q}%`]
     );
-    const enriched = await attachImagesToProducts(result.rows);
+    const enriched = await attachImagesToProducts(result.rows, baseUrl);
     res.json(enriched);
   } catch (err) {
     logger.error('Error buscando productos:', err);
@@ -213,6 +216,7 @@ const searchProducts = async (req, res) => {
 
 const getAdminProducts = async (req, res) => {
   try {
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
     const { sku, q, category, active, page, limit, sort_by, sort_order } = req.query;
 
     let where = 'WHERE deleted = FALSE';
@@ -241,8 +245,8 @@ const getAdminProducts = async (req, res) => {
 
     if (!page && !limit) {
       const result = await query(`SELECT * FROM products ${where} ORDER BY id ASC`, params);
-      const enriched = await attachImagesToProducts(result.rows);
-      return res.json({ products: enriched, total: enriched.length, page: 1, pages: 1, hasMore: false });
+    const enriched = await attachImagesToProducts(result.rows, baseUrl);
+    return res.json({ products: enriched, total: enriched.length, page: 1, pages: 1, hasMore: false });
     }
 
     const pageNum = Number(page) || 1;
@@ -260,7 +264,7 @@ const getAdminProducts = async (req, res) => {
       params
     );
 
-    const enriched = await attachImagesToProducts(result.rows);
+    const enriched = await attachImagesToProducts(result.rows, baseUrl);
 
     res.json({
       products: enriched,
@@ -278,9 +282,10 @@ const getAdminProducts = async (req, res) => {
 const getProductById = async (req, res) => {
   const id = Number(req.params.id);
   try {
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
     const result = await query('SELECT * FROM products WHERE id = $1 AND deleted = FALSE', [id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
-    const enriched = await attachImagesToProducts(result.rows);
+    const enriched = await attachImagesToProducts(result.rows, baseUrl);
     res.json(enriched[0]);
   } catch (err) {
     logger.error('Error obteniendo producto:', err);

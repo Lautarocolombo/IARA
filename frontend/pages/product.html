@@ -117,10 +117,10 @@
           : (product.image ? [{ url: product.image, es_principal: true }] : []);
         const principalImage = images.find(i => i.es_principal) || images[0];
         const thumbsHtml = images.map((img, i) =>
-          `<img src="${img.url}" alt="${product.name} - imagen ${i + 1}" loading="lazy" decoding="async" />`
+          `<img src="${img.url}" alt="${product.name} - imagen ${i + 1}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='data:image/svg+xml,${encodeURIComponent('<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><text y=\'.9em\' font-size=\'90\'>' + '${product.emoji || '📿'}' + '</text></svg>')}';" />`
         ).join('');
         const imageHtml = images.length
-          ? `<div class="product-image-gallery"><div class="product-image-main"><img src="${principalImage ? principalImage.url : ''}" alt="${product.name}" id="productMainImage" /></div><div class="product-image-thumbs" id="productThumbs">${thumbsHtml}</div></div>`
+          ? `<div class="product-image-gallery"><div class="product-image-main"><img src="${principalImage ? principalImage.url : ''}" alt="${product.name}" id="productMainImage" onerror="this.onerror=null;this.src='data:image/svg+xml,${encodeURIComponent('<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'><text y=\'.9em\' font-size=\'90\'>' + '${product.emoji || '📿'}' + '</text></svg>')}';" /></div><div class="product-image-thumbs" id="productThumbs">${thumbsHtml}</div></div>`
           : (product.emoji || '📿');
         container.innerHTML = `
           <div class="product-detail-grid">
