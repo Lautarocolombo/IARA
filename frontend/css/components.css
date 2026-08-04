@@ -503,6 +503,66 @@
   padding: 5rem 40px;
 }
 
+/* ==================== CÓMO FUNCIONA ==================== */
+.how-it-works {
+  padding: 5rem 40px;
+  background: #fdf2f4;
+}
+
+[data-theme="dark"] .how-it-works {
+  background: var(--cream);
+}
+
+.how-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1.25rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.how-card {
+  background: #fff;
+  border: 1px solid #f4d0da;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 1.5rem;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  transition: var(--transition);
+}
+
+.how-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--rose-mid);
+}
+
+.how-card h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  line-height: 1.3;
+}
+
+.how-card p {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  color: var(--text-mid);
+  line-height: 1.5;
+}
+
+[data-theme="dark"] .how-card {
+  background: var(--blush);
+  border-color: #3a2028;
+}
+
+[data-theme="dark"] .how-card h3 { color: var(--text-dark); }
+[data-theme="dark"] .how-card p { color: var(--text-mid); }
+
 /* ==================== FILTER BAR ==================== */
 .filter-bar {
   display: flex;
@@ -1059,7 +1119,8 @@
   .logo-text { display: none; }
   .hero-content h1 { font-size: 1.8rem; }
   .filter-bar { gap: 0.5rem; }
-   .products-grid, .catalog-grid { grid-template-columns: 1fr; }
+  .products-grid, .catalog-grid { grid-template-columns: 1fr; }
+  .how-grid { grid-template-columns: 1fr; }
 }
 
 .search-bar {
