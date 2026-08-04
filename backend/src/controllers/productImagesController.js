@@ -62,9 +62,10 @@ async function uploadProductImages(req, res) {
     }
 
     if (req.files && req.files.length > 0) {
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
       for (let i = 0; i < req.files.length; i++) {
         const file = req.files[i];
-        const processed = await processFile(file);
+        const processed = await processFile(file, baseUrl);
         const result = await query(
           'INSERT INTO product_images (product_id, url, filename, cloudinary_public_id, orden, es_principal, descripcion, categoria) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
           [productId, processed.url, processed.filename, processed.cloudinary_public_id || '', startOrden + imageUrls.length + i, false, req.body.descripcion || '', req.body.categoria || '']
@@ -215,7 +216,7 @@ async function replaceProductImage(req, res) {
       }
     }
 
-    const processed = await processFile(req.file);
+    const processed = await processFile(req.file, `${req.protocol}://${req.get('host')}`);
     const result = await query(
       'UPDATE product_images SET url = $1, filename = $2, cloudinary_public_id = $3 WHERE id = $4 RETURNING *',
       [processed.url, processed.filename, processed.cloudinary_public_id || '', imageId]

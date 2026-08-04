@@ -244,7 +244,7 @@ app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUplo
     if (!req.file) {
       return res.status(400).json({ error: 'No se recibió imagen' });
     }
-    const processed = await processFile(req.file);
+    const processed = await processFile(req.file, `${req.protocol}://${req.get('host')}`);
     res.json({
       url: processed.url,
       filename: processed.filename,

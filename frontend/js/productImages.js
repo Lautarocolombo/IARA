@@ -15,7 +15,6 @@ const ITEM_CLASS = 'product-image-item';
       pendingFiles = [];
       pendingMeta = { descripcion: '', categoria: '' };
       setupPendingDropzone(dropzone);
-      setupUrlPaste(dropzone);
       gallery.innerHTML = '';
       renderPendingFileList();
       return;
@@ -48,51 +47,9 @@ const ITEM_CLASS = 'product-image-item';
     }
   }
 
-  function setupUrlPaste(dropzone) {
-    const urlInput = document.getElementById('productImageUrl');
-    const urlBtn = document.getElementById('productImageUrlBtn');
-    if (!urlInput || !urlBtn) return;
-    urlBtn.addEventListener('click', () => {
-      const url = urlInput.value.trim();
-      if (!url) return;
-      addPendingUrl(url);
-      urlInput.value = '';
-    });
-    urlInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        const url = urlInput.value.trim();
-        if (!url) return;
-        addPendingUrl(url);
-        urlInput.value = '';
-      }
-    });
-  }
-
-  function addPendingUrl() {
-    const urlInput = document.getElementById('productImageUrl');
-    const url = urlInput ? urlInput.value.trim() : '';
-    if (!url) return;
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      showToast('URL debe comenzar con http:// o https://', 'error');
-      return;
-    }
-    const fileName = url.split('/').pop().split('?')[0] || 'imagen-externa.jpg';
-    const ext = fileName.split('.').pop().toLowerCase();
-    const allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
-    if (!allowedExts.includes(ext)) {
-      showToast('Formato no permitido. Usá JPG, PNG, WEBP o GIF', 'error');
-      return;
-    }
-    pendingFiles.push({
-      name: fileName,
-      size: 0,
-      type: 'image/' + (ext === 'jpg' ? 'jpeg' : ext),
-      url: url,
-      isUrl: true
-    });
-    renderPendingFileList();
-    showToast('URL de imagen agregada', 'success');
+  function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
   }
 
   function addPendingFiles(files) {
@@ -131,7 +88,7 @@ const ITEM_CLASS = 'product-image-item';
       return;
     }
     list.innerHTML = pendingFiles.map((f, i) => {
-      const sizeText = f.size > 0 ? `${(f.size / 1024).toFixed(1)} KB` : 'URL externa';
+      const sizeText = `${(f.size / 1024).toFixed(1)} KB`;
       return `<div class="image-file-item">
         <span class="image-file-name">${escapeHtml(f.name)}</span>
         <span class="image-file-size">${sizeText}</span>
@@ -148,7 +105,7 @@ const ITEM_CLASS = 'product-image-item';
       return;
     }
     gallery.innerHTML = pendingFiles.map((f, i) => {
-      const src = f.isUrl ? f.url : (f.url || '');
+      const src = f.url || '';
       return `<div class="${ITEM_CLASS}">
         <div class="${ITEM_CLASS}-preview">
           <img src="${escapeHtml(src)}" alt="Imagen ${i + 1}" style="max-height:120px;width:100%;object-fit:cover;" />
@@ -171,19 +128,13 @@ const ITEM_CLASS = 'product-image-item';
     if (filesList) filesList.innerHTML = '';
     const formData = new FormData();
     let hasFiles = false;
-    const urlImages = [];
     files.forEach(f => {
-      if (f.isUrl) {
-        urlImages.push(f.url);
-      } else if (f.file) {
+      if (f.file) {
         formData.append('images', f.file);
         hasFiles = true;
       }
     });
-    if (urlImages.length) {
-      formData.append('imageUrls', JSON.stringify(urlImages));
-    }
-    if (!hasFiles && urlImages.length === 0) return 0;
+    if (!hasFiles) return 0;
     const xhr = new XMLHttpRequest();
     const url = `${CONFIG.API.BASE}/api/products/${productId}/images`;
     const token = getAuthToken();
@@ -563,11 +514,6 @@ xhr.addEventListener('load', () => {
     }
   }
 
-  function preventDefaults(e) {
-    e.preventDefault();
-    e.stopPropagation();
-  }
-
   function getAuthToken() {
     return localStorage.getItem('ag_admin_jwt') || '';
   }
@@ -593,7 +539,6 @@ xhr.addEventListener('load', () => {
     hasPendingFiles: () => pendingFiles.length > 0,
     removePendingFile,
     renderPendingPreview,
-    renderPendingFileList,
-    addPendingUrl
+    renderPendingFileList
   };
 })();
