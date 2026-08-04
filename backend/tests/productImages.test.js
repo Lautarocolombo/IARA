@@ -8,6 +8,7 @@ process.env.ADMIN_PASS = process.env.ADMIN_PASS || 'testpassword123';
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret';
 process.env.ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS || 'http://localhost:3000';
 process.env.DATABASE_URL = '';
+process.env.BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3000';
 
 const { app, dbReady } = require('../src/server');
 

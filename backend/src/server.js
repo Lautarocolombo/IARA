@@ -257,7 +257,10 @@ app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUplo
   }
 });
 
-app.use('/uploads', express.static(path.join(__dirname, '..', '..', 'uploads')));
+app.use('/uploads', (req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  next();
+}, express.static(path.join(__dirname, '..', '..', 'uploads')));
 const staticDir = path.join(__dirname, '..', '..', 'frontend');
 
 app.get('/', (req, res) => {

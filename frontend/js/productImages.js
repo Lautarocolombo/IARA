@@ -183,7 +183,7 @@ const ITEM_CLASS = 'product-image-item';
       item.dataset.orden = img.orden;
        item.innerHTML = `
         <div class="${ITEM_CLASS}-preview">
-          <img src="${escapeHtml(img.url)}" alt="${escapeHtml(img.descripcion || 'Producto')}" loading="lazy" />
+          <img src="${escapeHtml(img.url)}" alt="${escapeHtml(img.descripcion || 'Producto')}" loading="lazy" onerror="this.onerror=null;this.style.opacity='0.3';" />
           ${img.descripcion ? `<div class="${ITEM_CLASS}-label" title="${escapeHtml(img.descripcion)}">${escapeHtml(img.descripcion)}</div>` : ''}
           ${img.categoria ? `<span class="${ITEM_CLASS}-category cat-${img.categoria}" title="${escapeHtml(img.categoria)}">${escapeHtml(img.categoria)}</span>` : ''}
         </div>

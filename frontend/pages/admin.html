@@ -505,7 +505,7 @@
                 </button>
               </div>
              <div class="image-upload-files" id="productImageFilesList"></div>
-             <div class="image-upload-hint">JPG, PNG, WEBP o GIF — máx 5MB c/u. También podés arrastrar archivos sobre esta zona.</div>
+              <div class="image-upload-hint">JPG, PNG, WEBP o GIF — máx 200MB c/u. También podés arrastrar archivos sobre esta zona.</div>
            </div>
            <div class="save-status" id="productImageUploadStatus"></div>
            <div class="product-image-upload-progress" id="productImageUploadProgress"></div>
@@ -2030,7 +2030,7 @@ async function loadHeroCardsAdmin() {
               <span class="hero-card-badge">${isPrimary ? 'Imagen principal' : 'Imagen secundaria'}</span>
             </div>
             <div class="hero-card-preview ${card.imagen ? '' : 'placeholder'}">
-              ${card.imagen ? `<img src="${card.imagen}" alt="Slot ${slotIndex + 1}" />` : '<span>📷</span>'}
+              ${card.imagen ? `<img src="${card.imagen}" alt="Slot ${slotIndex + 1}" onerror="this.onerror=null;this.style.opacity='0.3';" />` : '<span>📷</span>'}
             </div>
             <div class="hero-card-body">
               <div class="form-grid-2">
@@ -2064,7 +2064,7 @@ async function loadHeroCardsAdmin() {
                 ${card.imagen ? `<button class="btn btn-danger btn-sm" onclick="deleteHeroSlotImage(${slotIndex})">🗑 Quitar</button>` : ''}
               </div>
               <div class="image-preview" id="heroSlotImagePreview_${slotIndex}" style="display:${card.imagen ? 'block' : 'none'};">
-                ${card.imagen ? `<img src="${card.imagen}" alt="Slot ${slotIndex + 1}" />` : ''}
+                ${card.imagen ? `<img src="${card.imagen}" alt="Slot ${slotIndex + 1}" onerror="this.onerror=null;this.style.opacity='0.3';" />` : ''}
               </div>
               <input type="hidden" id="heroSlotImage_${slotIndex}" value="${card.imagen || ''}" />
               <div class="hero-card-footer">
@@ -2101,7 +2101,7 @@ async function loadHeroCardsAdmin() {
         const preview = document.getElementById('heroSlotImagePreview');
         preview.style.display = card.imagen ? 'block' : 'none';
         if (card.imagen) {
-          preview.innerHTML = `<img src='${card.imagen}' alt='Slot ${slotIndex + 1}' style='max-height:200px;' />`;
+          preview.innerHTML = `<img src='${card.imagen}' alt='Slot ${slotIndex + 1}' style='max-height:200px;' onerror='this.onerror=null;this.style.opacity=\"0.3\";' />`;
         }
         const deleteBtn = document.getElementById('heroSlotDeleteBtn');
         if (deleteBtn) deleteBtn.style.display = card.imagen ? 'inline-flex' : 'none';

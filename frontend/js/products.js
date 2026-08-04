@@ -169,8 +169,9 @@ function renderProducts(productsToRender) {
   }
 
   grid.innerHTML = productsToRender.map(product => {
+    const fallbackSrc = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">${product.emoji || '📿'}</text></svg>`)}`;
     const imageHtml = product.image
-      ? `<img src="${product.image}" alt="${product.name}" loading="lazy" decoding="async" />`
+      ? `<img src="${product.image}" alt="${product.name}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='${fallbackSrc}';" />`
       : product.emoji || '📿';
     const catClass = product.category ? `cat-${product.category}` : '';
     const badgeHtml = product.badge ? `<span class="product-badge">${product.badge}</span>` : '';
