@@ -315,12 +315,19 @@ const deleteProduct = async (req, res) => {
     const orderCheck = await query('SELECT COUNT(*) as count FROM orders WHERE items LIKE $1', [`%${id}%`]);
     const hasHistoricalOrders = Number(orderCheck.rows[0]?.count || 0) > 0;
 
-    const imagesResult = await query('SELECT cloudinary_public_id FROM product_images WHERE product_id = $1', [id]);
+    const imagesResult = await query('SELECT cloudinary_public_id, filename FROM product_images WHERE product_id = $1', [id]);
     for (const img of imagesResult.rows) {
       if (img.cloudinary_public_id) {
         await deleteFromCloudinary(img.cloudinary_public_id);
       }
+      if (img.filename) {
+        const filePath = path.join(__dirname, '..', '..', 'uploads', 'products', img.filename);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
     }
+    await query('DELETE FROM product_images WHERE product_id = $1', [id]);
 
     if (hasHistoricalOrders) {
       await query(
@@ -389,15 +396,15 @@ const syncToNeon = async (req, res) => {
         const exists = await query('SELECT id FROM products WHERE id = $1', [Number(p.id)]);
         if (exists.rows.length > 0) {
           await query(
-              'UPDATE products SET name = $1, slug = $2, category = $3, price = $4, description = $5, emoji = $6, image = $7, badge = $8, stock = $9, featured = $10, active = $11, sku = $12, updated_at = CURRENT_TIMESTAMP WHERE id = $13',
-              [p.name, p.slug || slugify(p.name), p.category, Number(p.price), p.description || '', p.emoji || '📿', p.image || '', p.badge || '', Number(p.stock), p.featured || false, p.active !== false, p.sku || '', Number(p.id)]
-            );
-            results.updated += 1;
-          } else {
-            await query(
-              'INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, FALSE)',
-              [p.name, p.slug || slugify(p.name), p.category, Number(p.price), p.description || '', p.emoji || '📿', p.image || '', p.badge || '', Number(p.stock), p.featured || false, p.active !== false, p.sku || '']
-            );
+            'UPDATE products SET name = $1, slug = $2, category = $3, price = $4, description = $5, emoji = $6, image = $7, badge = $8, stock = $9, featured = $10, active = $11, sku = $12, updated_at = CURRENT_TIMESTAMP WHERE id = $13',
+            [p.name, p.slug || slugify(p.name), p.category, Number(p.price), p.description || '', p.emoji || '📿', p.image || '', p.badge || '', Number(p.stock), p.featured || false, p.active !== false, p.sku || '', Number(p.id)]
+          );
+          results.updated += 1;
+        } else {
+          await query(
+            'INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, FALSE)',
+            [p.name, p.slug || slugify(p.name), p.category, Number(p.price), p.description || '', p.emoji || '📿', p.image || '', p.badge || '', Number(p.stock), p.featured || false, p.active !== false, p.sku || '']
+          );
           results.created += 1;
         }
         if (p.images && Array.isArray(p.images)) {

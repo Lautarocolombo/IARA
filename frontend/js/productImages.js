@@ -3,7 +3,6 @@
 
 const ITEM_CLASS = 'product-image-item';
 
-  // Imágenes seleccionadas para productos aún no creados (nuevo producto)
   let pendingFiles = [];
   let pendingMeta = { descripcion: '', categoria: '' };
 
@@ -13,11 +12,12 @@ const ITEM_CLASS = 'product-image-item';
     if (!dropzone || !gallery) return;
 
     if (!productId) {
-      // Modo "nuevo producto": acumulamos imágenes y las subimos al guardar
       pendingFiles = [];
       pendingMeta = { descripcion: '', categoria: '' };
       setupPendingDropzone(dropzone);
+      setupUrlPaste(dropzone);
       gallery.innerHTML = '';
+      renderPendingFileList();
       return;
     }
     setupDropzone(dropzone, productId);
@@ -37,7 +37,7 @@ const ITEM_CLASS = 'product-image-item';
       if (!files.length) return;
       addPendingFiles(files);
     });
-    const input = dropzone.querySelector('input[type="file"]');
+    const input = document.getElementById('productImageFiles');
     if (input) {
       input.addEventListener('change', () => {
         const files = Array.from(input.files);
@@ -46,6 +46,53 @@ const ITEM_CLASS = 'product-image-item';
         input.value = '';
       });
     }
+  }
+
+  function setupUrlPaste(dropzone) {
+    const urlInput = document.getElementById('productImageUrl');
+    const urlBtn = document.getElementById('productImageUrlBtn');
+    if (!urlInput || !urlBtn) return;
+    urlBtn.addEventListener('click', () => {
+      const url = urlInput.value.trim();
+      if (!url) return;
+      addPendingUrl(url);
+      urlInput.value = '';
+    });
+    urlInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        const url = urlInput.value.trim();
+        if (!url) return;
+        addPendingUrl(url);
+        urlInput.value = '';
+      }
+    });
+  }
+
+  function addPendingUrl() {
+    const urlInput = document.getElementById('productImageUrl');
+    const url = urlInput ? urlInput.value.trim() : '';
+    if (!url) return;
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      showToast('URL debe comenzar con http:// o https://', 'error');
+      return;
+    }
+    const fileName = url.split('/').pop().split('?')[0] || 'imagen-externa.jpg';
+    const ext = fileName.split('.').pop().toLowerCase();
+    const allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
+    if (!allowedExts.includes(ext)) {
+      showToast('Formato no permitido. Usá JPG, PNG, WEBP o GIF', 'error');
+      return;
+    }
+    pendingFiles.push({
+      name: fileName,
+      size: 0,
+      type: 'image/' + (ext === 'jpg' ? 'jpeg' : ext),
+      url: url,
+      isUrl: true
+    });
+    renderPendingFileList();
+    showToast('URL de imagen agregada', 'success');
   }
 
   function addPendingFiles(files) {
@@ -60,12 +107,37 @@ const ITEM_CLASS = 'product-image-item';
       showToast(msgs.join('. '), 'error');
       return;
     }
-    pendingFiles = pendingFiles.concat(files);
-    const descInput = document.getElementById('pImageDescripcion');
-    const catInput = document.getElementById('pImageCategoria');
-    pendingMeta.descripcion = descInput && descInput.value ? descInput.value : '';
-    pendingMeta.categoria = catInput && catInput.value ? catInput.value : '';
-    renderPendingPreview();
+    pendingFiles = pendingFiles.concat(Array.from(files).map(f => ({
+      name: f.name,
+      size: f.size,
+      type: f.type,
+      file: f,
+      url: URL.createObjectURL(f),
+      isUrl: false
+    })));
+    renderPendingFileList();
+  }
+
+  function removePendingFile(index) {
+    pendingFiles.splice(index, 1);
+    renderPendingFileList();
+  }
+
+  function renderPendingFileList() {
+    const list = document.getElementById('productImageFilesList');
+    if (!list) return;
+    if (!pendingFiles.length) {
+      list.innerHTML = '';
+      return;
+    }
+    list.innerHTML = pendingFiles.map((f, i) => {
+      const sizeText = f.size > 0 ? `${(f.size / 1024).toFixed(1)} KB` : 'URL externa';
+      return `<div class="image-file-item">
+        <span class="image-file-name">${escapeHtml(f.name)}</span>
+        <span class="image-file-size">${sizeText}</span>
+        <button type="button" class="btn btn-danger btn-sm" onclick="window.ProductImages.removePendingFile(${i})" title="Quitar">✕</button>
+      </div>`;
+    }).join('');
   }
 
   function renderPendingPreview() {
@@ -76,37 +148,42 @@ const ITEM_CLASS = 'product-image-item';
       return;
     }
     gallery.innerHTML = pendingFiles.map((f, i) => {
-      const url = URL.createObjectURL(f);
+      const src = f.isUrl ? f.url : (f.url || '');
       return `<div class="${ITEM_CLASS}">
         <div class="${ITEM_CLASS}-preview">
-          <img src="${url}" alt="Imagen ${i + 1}" style="max-height:120px;width:100%;object-fit:cover;" />
+          <img src="${escapeHtml(src)}" alt="Imagen ${i + 1}" style="max-height:120px;width:100%;object-fit:cover;" />
         </div>
         <div class="${ITEM_CLASS}-actions">
-          <button class="btn btn-sm btn-danger" data-action="remove-pending" title="Quitar">🗑</button>
+          <button class="btn btn-sm btn-danger" onclick="window.ProductImages.removePendingFile(${i})" title="Quitar">🗑</button>
         </div>
       </div>`;
     }).join('');
-    gallery.querySelectorAll('[data-action="remove-pending"]').forEach((btn, i) => {
-      btn.addEventListener('click', () => {
-        pendingFiles.splice(i, 1);
-        renderPendingPreview();
-      });
-    });
   }
 
   async function uploadPending(productId) {
     if (!productId || !pendingFiles.length) return 0;
     const files = pendingFiles.slice();
-    const desc = pendingMeta.descripcion;
-    const cat = pendingMeta.categoria;
     pendingFiles = [];
     pendingMeta = { descripcion: '', categoria: '' };
     const gallery = document.getElementById('productImageGallery');
+    const filesList = document.getElementById('productImageFilesList');
     if (gallery) gallery.innerHTML = '';
+    if (filesList) filesList.innerHTML = '';
     const formData = new FormData();
-    files.forEach(file => formData.append('images', file));
-    if (desc) formData.append('descripcion', desc);
-    if (cat) formData.append('categoria', cat);
+    let hasFiles = false;
+    const urlImages = [];
+    files.forEach(f => {
+      if (f.isUrl) {
+        urlImages.push(f.url);
+      } else if (f.file) {
+        formData.append('images', f.file);
+        hasFiles = true;
+      }
+    });
+    if (urlImages.length) {
+      formData.append('imageUrls', JSON.stringify(urlImages));
+    }
+    if (!hasFiles && urlImages.length === 0) return 0;
     const xhr = new XMLHttpRequest();
     const url = `${CONFIG.API.BASE}/api/products/${productId}/images`;
     const token = getAuthToken();
@@ -257,7 +334,7 @@ const ITEM_CLASS = 'product-image-item';
       showMetaInputs();
       uploadFiles(productId, files);
     });
-    const input = dropzone.querySelector('input[type="file"]');
+    const input = document.getElementById('productImageFiles');
     if (input) {
       input.addEventListener('change', async () => {
         const files = Array.from(input.files);
@@ -267,12 +344,12 @@ const ITEM_CLASS = 'product-image-item';
         input.value = '';
       });
     }
-   }
+  }
 
-   function showMetaInputs() {
-     const metaDiv = document.querySelector('.image-meta-inputs');
-     if (metaDiv) metaDiv.style.display = 'block';
-   }
+  function showMetaInputs() {
+    const metaDiv = document.querySelector('.image-meta-inputs');
+    if (metaDiv) metaDiv.style.display = 'block';
+  }
 
   async function uploadFiles(productId, files) {
     const status = document.getElementById('productImageUploadStatus');
@@ -503,7 +580,7 @@ xhr.addEventListener('load', () => {
       .replace(/"/g, '&quot;');
   }
 
-window.ProductImages = {
+  window.ProductImages = {
     init,
     loadImages,
     uploadFiles,
@@ -513,6 +590,10 @@ window.ProductImages = {
     deleteImage,
     syncOrder,
     uploadPending,
-    hasPendingFiles: () => pendingFiles.length > 0
+    hasPendingFiles: () => pendingFiles.length > 0,
+    removePendingFile,
+    renderPendingPreview,
+    renderPendingFileList,
+    addPendingUrl
   };
 })();
