@@ -138,7 +138,7 @@ async function deleteFromCloudinary(publicId) {
   }
 }
 
-async function processFile(file) {
+async function processFile(file, baseUrl) {
   const isProduction = process.env.NODE_ENV === 'production';
   const useCloudinary = isCloudinaryConfigured();
 
@@ -156,7 +156,8 @@ async function processFile(file) {
 
   const optimizedFilename = await optimizeWithSharp(file.path);
   const relativePath = `/uploads/products/${optimizedFilename}`;
-  return { url: relativePath, filename: optimizedFilename, cloudinary_public_id: '', isCloudinary: false };
+  const publicUrl = baseUrl ? `${baseUrl}${relativePath}` : relativePath;
+  return { url: publicUrl, filename: optimizedFilename, cloudinary_public_id: '', isCloudinary: false };
 }
 
 async function saveFile(req, res) {
