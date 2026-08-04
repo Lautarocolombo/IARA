@@ -128,8 +128,8 @@ app.use(helmet({
   }
 }));
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '150mb' }));
+app.use(express.urlencoded({ extended: true, limit: '150mb' }));
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || '').split(',').filter(Boolean);
 
@@ -197,7 +197,7 @@ app.use((req, res, next) => {
 });
 
 const TIMEOUT_MS = 30000;
-const UPLOAD_TIMEOUT_MS = 120000;
+const UPLOAD_TIMEOUT_MS = 600000;
 app.use((req, res, next) => {
   const isUploadRoute = /^\/api\/products\/\d+\/images/.test(req.path) ||
     req.path === '/api/admin/upload' ||

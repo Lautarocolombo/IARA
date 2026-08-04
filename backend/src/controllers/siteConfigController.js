@@ -14,7 +14,7 @@ const getSiteConfig = async (req, res) => {
     let paymentConfig = paymentRow.rows[0] || null;
     if (!paymentConfig) {
       await query(
-        `INSERT INTO payment_config (mp_alias, holder_name, whatsapp, message, active) VALUES ('', '', '', '', true)`
+        `INSERT INTO payment_config (mp_alias, holder_name, whatsapp, message, active) VALUES ('iara-salgueiro', '', '', '', true)`
       );
       const retry = await query('SELECT * FROM payment_config LIMIT 1');
       paymentConfig = retry.rows[0] || {};

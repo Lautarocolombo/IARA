@@ -35,6 +35,12 @@
     .back-link{display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-mid);font-size:0.9rem;font-weight:500;margin-bottom:2rem;}
     .loading-skeleton{background:linear-gradient(90deg,#f4d0da 25%,#fdf6f8 50%,#f4d0da 75%);background-size:200% 100%;animation:ag-shimmer 1.5s infinite;border-radius:var(--radius-sm);}
     @keyframes ag-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+    .product-image-gallery{display:flex;gap:0.75rem;align-items:flex-start;}
+    .product-image-main{width:100%;aspect-ratio:1;border-radius:var(--radius-md);background:linear-gradient(135deg,var(--blush),var(--mint));border:1px solid #f4c8d4;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;}
+    .product-image-main img{width:100%;height:100%;object-fit:contain;}
+    .product-image-thumbs{display:flex;flex-direction:column;gap:0.5rem;overflow-y:auto;max-height:280px;flex-shrink:0;}
+    .product-image-thumbs img{width:64px;height:64px;object-fit:cover;border-radius:var(--radius-sm);border:1.5px solid transparent;cursor:pointer;transition:border-color .2s,box-shadow .2s;}
+    .product-image-thumbs img:hover,.product-image-thumbs img.active{border-color:var(--rose-dark);box-shadow:0 0 0 2px var(--blush);}
     @media(max-width:768px){.product-detail-grid{grid-template-columns:1fr;}}
   </style>
 </head>
@@ -106,8 +112,15 @@
           container.innerHTML = '<p>Producto no encontrado.</p>';
           return;
         }
-        const imageHtml = product.image
-          ? `<img src="${product.image}" alt="${product.name}" />`
+        const images = Array.isArray(product.images) && product.images.length
+          ? product.images
+          : (product.image ? [{ url: product.image, es_principal: true }] : []);
+        const principalImage = images.find(i => i.es_principal) || images[0];
+        const thumbsHtml = images.map((img, i) =>
+          `<img src="${img.url}" alt="${product.name} - imagen ${i + 1}" loading="lazy" decoding="async" />`
+        ).join('');
+        const imageHtml = images.length
+          ? `<div class="product-image-gallery"><div class="product-image-main"><img src="${principalImage ? principalImage.url : ''}" alt="${product.name}" id="productMainImage" /></div><div class="product-image-thumbs" id="productThumbs">${thumbsHtml}</div></div>`
           : (product.emoji || '📿');
         container.innerHTML = `
           <div class="product-detail-grid">
@@ -145,8 +158,21 @@
               <button class="btn-primary" style="margin-top:0.5rem;" onclick="submitReview(${productId})">Enviar reseña</button>
             </div>
           </div>
-        `;
-        let selectedRating = 0;
+         `;
+         let selectedRating = 0;
+         const thumbs = document.querySelectorAll('#productThumbs img');
+         if (thumbs.length) {
+           thumbs.forEach((t, i) => {
+             if (i === 0) t.classList.add('active');
+             t.addEventListener('click', () => {
+               const main = document.getElementById('productMainImage');
+               if (!main) return;
+               main.src = t.src;
+               thumbs.forEach(tb => tb.classList.remove('active'));
+               t.classList.add('active');
+             });
+           });
+         }
         document.querySelectorAll('#ratingInput button').forEach(btn => {
           btn.addEventListener('click', () => {
             selectedRating = Number(btn.dataset.rating);

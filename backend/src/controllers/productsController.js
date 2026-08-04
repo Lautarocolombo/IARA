@@ -1,7 +1,7 @@
 const { query } = require('../lib/db');
 const { productSchema } = require('../lib/validators');
 const logger = require('../lib/logger');
-const { deleteFromCloudinary } = require('../lib/upload');
+const { deleteFromCloudinary, getPublicUrl } = require('../lib/upload');
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
@@ -18,6 +18,47 @@ function slugify(text) {
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-+|-+$/g, '');
+}
+
+async function attachImagesToProducts(products) {
+  if (!products || !products.length) {
+    return products || [];
+  }
+
+  const ids = products.map(p => p.id);
+  if (!ids.length) {
+    return products;
+  }
+
+  const placeholders = ids.map((_, i) => `$${i + 1}`).join(',');
+  let imageRows = [];
+  try {
+    const result = await query(
+      `SELECT * FROM product_images WHERE product_id IN (${placeholders}) ORDER BY orden ASC, id ASC`,
+      ids
+    );
+    imageRows = result.rows || [];
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Error obteniendo imágenes de productos');
+    return products;
+  }
+
+  const byProduct = {};
+  imageRows.forEach(img => {
+    const resolved = { ...img, url: getPublicUrl(img.url) };
+    if (!byProduct[img.product_id]) byProduct[img.product_id] = [];
+    byProduct[img.product_id].push(resolved);
+  });
+
+  return products.map(p => {
+    const imgs = byProduct[p.id] || [];
+    const principal = imgs.find(i => i.es_principal) || imgs[0];
+    return {
+      ...p,
+      images: imgs,
+      image: p.image || (principal ? principal.url : '')
+    };
+  });
 }
 
 async function parseCSV(filePath) {
@@ -146,7 +187,8 @@ const bulkImportProducts = async (req, res) => {
 const getPublicProducts = async (req, res) => {
   try {
     const result = await query('SELECT * FROM products WHERE active = TRUE AND deleted = FALSE ORDER BY id ASC');
-    res.json(result.rows);
+    const enriched = await attachImagesToProducts(result.rows);
+    res.json(enriched);
   } catch (err) {
     logger.error('Error obteniendo productos:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -161,7 +203,8 @@ const searchProducts = async (req, res) => {
       "SELECT * FROM products WHERE active = TRUE AND deleted = FALSE AND (name LIKE $1 OR description LIKE $1 OR category LIKE $1 OR sku LIKE $1) ORDER BY id ASC",
       [`%${q}%`]
     );
-    res.json(result.rows);
+    const enriched = await attachImagesToProducts(result.rows);
+    res.json(enriched);
   } catch (err) {
     logger.error('Error buscando productos:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -198,7 +241,8 @@ const getAdminProducts = async (req, res) => {
 
     if (!page && !limit) {
       const result = await query(`SELECT * FROM products ${where} ORDER BY id ASC`, params);
-      return res.json({ products: result.rows, total: result.rows.length, page: 1, pages: 1, hasMore: false });
+      const enriched = await attachImagesToProducts(result.rows);
+      return res.json({ products: enriched, total: enriched.length, page: 1, pages: 1, hasMore: false });
     }
 
     const pageNum = Number(page) || 1;
@@ -216,8 +260,10 @@ const getAdminProducts = async (req, res) => {
       params
     );
 
+    const enriched = await attachImagesToProducts(result.rows);
+
     res.json({
-      products: result.rows,
+      products: enriched,
       total,
       page: pageNum,
       pages: Math.ceil(total / limitNum),
@@ -234,7 +280,8 @@ const getProductById = async (req, res) => {
   try {
     const result = await query('SELECT * FROM products WHERE id = $1 AND deleted = FALSE', [id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
-    res.json(result.rows[0]);
+    const enriched = await attachImagesToProducts(result.rows);
+    res.json(enriched[0]);
   } catch (err) {
     logger.error('Error obteniendo producto:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -445,5 +492,6 @@ module.exports = {
   duplicateProduct,
   searchProducts,
   syncToNeon,
-  bulkImportProducts
+  bulkImportProducts,
+  attachImagesToProducts
 };
