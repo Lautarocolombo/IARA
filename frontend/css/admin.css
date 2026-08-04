@@ -543,6 +543,14 @@ tr:last-child td {
   align-items: center;
 }
 
+.modal-header--sticky {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+}
+
 .modal-header h3 {
   font-family: 'Playfair Display', serif;
   font-size: 1.25rem;
@@ -563,6 +571,15 @@ tr:last-child td {
   justify-content: flex-end;
 }
 
+.modal-footer--sticky {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  background: #fff;
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -4px 12px rgba(0,0,0,0.06);
+}
+
 .form-group {
   display: flex;
   flex-direction: column;
@@ -572,6 +589,65 @@ tr:last-child td {
 .form-group label {
   font-weight: 600;
   font-size: 0.85rem;
+  color: #334155;
+}
+
+.required {
+  color: #dc2626;
+  margin-left: 2px;
+}
+
+.admin-section {
+  padding: 1.25rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-section:last-child {
+  border-bottom: none;
+}
+
+.admin-section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-section-title::before {
+  content: '';
+  display: block;
+  width: 4px;
+  height: 16px;
+  background: var(--accent, #a85a6b);
+  border-radius: 2px;
+}
+
+.switches-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.switch-card {
+  flex: 1;
+  min-width: 180px;
+  background: #fafafa;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.switch-card-label {
+  font-size: 0.85rem;
+  font-weight: 500;
   color: #334155;
 }
 
@@ -1137,6 +1213,86 @@ tr:last-child td {
   font-weight: 600;
 }
 
+.image-upload-zone {
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  background: #fafafa;
+  transition: all .2s;
+}
+
+.image-upload-zone:hover,
+.image-upload-zone.drag-over {
+  border-color: var(--accent);
+  background: #fff;
+}
+
+.image-upload-primary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.image-upload-primary .btn {
+  font-size: 0.9rem;
+  padding: 0.6rem 1.2rem;
+}
+
+.image-upload-or {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.image-url-row {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 400px;
+}
+
+.image-url-row input {
+  flex: 1;
+  font-size: 0.85rem;
+}
+
+.image-upload-hint {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  margin-top: 0.75rem;
+  text-align: center;
+}
+
+.image-file-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.6rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.image-file-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #334155;
+  font-weight: 500;
+}
+
+.image-file-size {
+  color: #94a3b8;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
 .product-image-item.es-principal {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px rgba(212, 112, 144, 0.15);
@@ -1292,60 +1448,112 @@ tr:last-child td {
   }
 }
 
-/* ==================== HERO SLOT ==================== */
-.hero-slot-card {
+/* ==================== HERO SLOTS GRID ==================== */
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.hero-card {
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 1.25rem;
   background: #fff;
-  margin-bottom: 1.5rem;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
-.hero-slot-header {
+
+.hero-card-header {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: #fafafa;
+}
+
+.hero-card-title {
   font-family: 'Playfair Display', serif;
-  font-size: 1.1rem;
+  font-size: 1rem;
+  font-weight: 600;
   color: #0f172a;
 }
-.hero-slot-thumb {
-  width: 120px;
-  height: 120px;
-  border-radius: 10px;
-  overflow: hidden;
+
+.hero-card-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  background: var(--accent, #a85a6b);
+  color: #fff;
+}
+
+.hero-card-preview {
+  width: 100%;
+  aspect-ratio: 16 / 5;
   background: linear-gradient(135deg, #fce8ee, #d4ede3);
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--border);
-  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+  position: relative;
 }
-.hero-slot-thumb img {
+
+.hero-card-preview img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-.hero-slot-thumb.placeholder {
+
+.hero-card-preview.placeholder {
   color: #94a3b8;
-  font-size: 2rem;
+  font-size: 2.5rem;
 }
-.hero-slot-preview {
-  width: 80px;
-  height: 80px;
-  border-radius: 8px;
-  overflow: hidden;
-  background: linear-gradient(135deg, #fce8ee, #d4ede3);
+
+.hero-card-body {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.hero-card-image-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  border: 1px solid var(--border);
-  margin-top: 0.5rem;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
-.hero-slot-preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+
+.hero-card-file-label {
+  cursor: pointer;
+}
+
+.hero-card-file-label input {
+  display: none;
+}
+
+.hero-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+  margin-top: auto;
+}
+
+.hero-card-slot-id {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.hero-card .image-preview {
+  max-height: 180px;
+  margin-top: 0.5rem;
 }
 
 /* ==================== TESTIMONIAL TOGGLE ==================== */
@@ -1474,22 +1682,25 @@ tr:last-child td {
   color: var(--text-dark);
   min-width: 100px;
 }
+
 .status-select:focus {
   outline: none;
   border-color: var(--accent);
 }
 
-/* ==================== HERO SLOT ==================== */
-.hero-slot-card {
-  border: 1.5px solid var(--border);
-  border-radius: 12px;
-  padding: 1rem;
-  background: #fff;
-}
-.hero-slot-thumb.placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #94a3b8;
-  font-size: 1.5rem;
+@media (max-width: 768px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+  }
+  .switches-row {
+    flex-direction: column;
+  }
+  .switch-card {
+    min-width: 100%;
+  }
+  .modal {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+  }
 }

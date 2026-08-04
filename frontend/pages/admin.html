@@ -149,12 +149,10 @@
             <option value="accesorios">Accesorios</option>
             <option value="souvenirs">Souvenirs</option>
           </select>
-          <button class="btn btn-secondary btn-sm" onclick="exportCSV('products')">📥 Exportar CSV</button>
-          <button class="btn btn-primary btn-sm" id="syncProductsBtn" onclick="syncProductsToNeon()">💾 Guardar en base de datos</button>
-          <input type="file" id="bulkImportFile" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleBulkImport(this)" />
-          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('bulkImportFile').click()">📂 Carga masiva CSV</button>
-          <span id="bulkImportStatus" style="font-size:0.8rem;margin-left:0.5rem;"></span>
-          <span id="syncProductsStatus" style="font-size:0.8rem;margin-left:0.5rem;"></span>
+                          <button class="btn btn-secondary btn-sm" onclick="exportCSV('products')">📥 Exportar CSV</button>
+                          <input type="file" id="bulkImportFile" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleBulkImport(this)" />
+                          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('bulkImportFile').click()">📂 Carga masiva CSV</button>
+                          <span id="bulkImportStatus" style="font-size:0.8rem;margin-left:0.5rem;"></span>
         </div>
       </div>
       <div class="card-body">
@@ -286,7 +284,7 @@
           </div>
         </div>
         <div class="card-body">
-          <div id="heroSlotsList" style="display:flex;flex-direction:column;gap:1.5rem;"></div>
+           <div id="heroSlotsList" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;"></div>
         </div>
       </div>
 
@@ -415,100 +413,119 @@
          </div>
    </main>
 
-  <div class="modal-overlay" id="modalOverlay">
-    <div class="modal">
-      <div class="modal-header">
-        <h3 id="modalTitle">Nuevo Producto</h3>
-        <button class="btn btn-secondary btn-sm" onclick="closeModal()">✕</button>
-      </div>
-      <div class="modal-body">
-        <div class="save-status" id="productSaveStatus"></div>
-        <div class="autosave-indicator" id="autosaveIndicator" style="display:none;font-size:0.8rem;color:#64748b;margin-bottom:0.5rem;"></div>
-        <div class="form-group">
-          <label>Nombre del producto</label>
-          <input type="text" id="pName" placeholder="Nombre del producto" />
-        </div>
-<div class="form-grid-2">
+   <div class="modal-overlay" id="modalOverlay">
+     <div class="modal">
+       <div class="modal-header modal-header--sticky">
+         <h3 id="modalTitle">Nuevo Producto</h3>
+         <button class="btn btn-secondary btn-sm" onclick="closeModal()">✕</button>
+       </div>
+       <div class="modal-body">
+         <div class="save-status" id="productSaveStatus"></div>
+         <div class="autosave-indicator" id="autosaveIndicator" style="display:none;font-size:0.8rem;color:#64748b;margin-bottom:0.5rem;"></div>
+
+         <div class="admin-section">
+           <div class="admin-section-title">Información básica</div>
            <div class="form-group">
-             <label>Categoría</label>
-             <select id="pCategory">
-               <option value="pulseras">Pulseras</option>
-               <option value="accesorios">Accesorios</option>
-               <option value="souvenirs">Souvenirs</option>
-             </select>
+             <label>Nombre del producto <span class="required">*</span></label>
+             <input type="text" id="pName" placeholder="Nombre del producto" required />
            </div>
-           <div class="form-group">
-             <label>SKU</label>
-             <input type="text" id="pSku" placeholder="SKU opcional" />
-           </div>
-         </div>
-         <div class="form-grid-2">
-           <div class="form-group">
-             <label>Precio ($)</label>
-             <input type="number" id="pPrice" placeholder="0" min="0" step="1" />
-           </div>
-           <div class="form-group">
-             <label>Stock</label>
-             <input type="number" id="pStock" placeholder="0" min="0" step="1" />
-             <p class="form-hint">Dejar en 0 para indicar sin stock / producto no disponible.</p>
+           <div class="form-grid-2">
+             <div class="form-group">
+               <label>Categoría</label>
+               <select id="pCategory">
+                 <option value="pulseras">Pulseras</option>
+                 <option value="accesorios">Accesorios</option>
+                 <option value="souvenirs">Souvenirs</option>
+               </select>
+             </div>
+             <div class="form-group">
+               <label>SKU</label>
+               <input type="text" id="pSku" placeholder="SKU opcional" />
+             </div>
            </div>
          </div>
-        <div class="form-group">
-          <label>Producto destacado</label>
-          <div class="toggle-row">
-            <label class="toggle">
-              <input type="checkbox" id="pFeatured">
-              <span class="toggle-slider"></span>
-            </label>
-            <span class="toggle-label" id="featuredLabel">No</span>
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Producto activo</label>
-          <div class="toggle-row">
-            <label class="toggle">
-              <input type="checkbox" id="pActive" checked>
-              <span class="toggle-slider"></span>
-            </label>
-            <span class="toggle-label" id="activeLabel">Sí</span>
-          </div>
-        </div>
-        </div>
-        <div class="form-group">
-          <label>Descripción</label>
-          <textarea id="pDesc" rows="3" placeholder="Descripción corta del producto"></textarea>
-        </div>
-        <div class="form-group">
-          <label>Imágenes del producto</label>
-          <div class="product-image-dropzone" id="productImageDropzone">
-            <input type="file" id="productImageFiles" accept="image/jpeg,image/png,image/webp,image/gif" multiple />
-            <div class="dropzone-text">Arrastrá imágenes acá o tocá para seleccionar</div>
-            <div class="dropzone-hint">JPG, PNG, WEBP o GIF — máx 5MB c/u</div>
-            <div class="image-meta-inputs" style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px dashed #f4c0d0;display:none;">
-              <div class="form-group" style="margin-bottom:0.5rem;">
-                <input type="text" id="pImageDescripcion" placeholder="Descripción de la imagen (opcional)" style="width:100%;padding:6px 10px;font-size:0.85rem;" />
-              </div>
-              <select id="pImageCategoria" style="width:100%;padding:6px 10px;font-size:0.85rem;border:1.5px solid #f4c8d4;border-radius:8px;background:#fff;color:var(--text-dark);">
-                <option value="">Seleccionar categoría</option>
-                <option value="pulseras">Pulseras</option>
-                <option value="accesorios">Accesorios</option>
-                <option value="souvenirs">Souvenirs</option>
-              </select>
-            </div>
-          </div>
-          <div class="save-status" id="productImageUploadStatus"></div>
-          <div class="product-image-upload-progress" id="productImageUploadProgress"></div>
-          <div class="product-image-gallery" id="productImageGallery"></div>
-          <input type="hidden" id="pImage" />
-        </div>
-        <input type="hidden" id="pId" />
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
-        <button class="btn btn-primary" onclick="saveProduct()">Guardar</button>
-      </div>
-    </div>
-  </div>
+
+         <div class="admin-section">
+           <div class="admin-section-title">Precio y stock</div>
+           <div class="form-grid-2">
+             <div class="form-group">
+               <label>Precio ($) <span class="required">*</span></label>
+               <input type="number" id="pPrice" placeholder="0" min="0" step="1" required />
+             </div>
+             <div class="form-group">
+               <label>Stock</label>
+               <input type="number" id="pStock" placeholder="0" min="0" step="1" />
+               <p class="form-hint">Dejar en 0 para indicar sin stock / producto no disponible.</p>
+             </div>
+           </div>
+         </div>
+
+         <div class="admin-section">
+           <div class="admin-section-title">Estado</div>
+           <div class="switches-row">
+             <div class="switch-card">
+               <div class="switch-card-label">Producto destacado</div>
+               <div class="toggle-row">
+                 <label class="toggle">
+                   <input type="checkbox" id="pFeatured">
+                   <span class="toggle-slider"></span>
+                 </label>
+                 <span class="toggle-label" id="featuredLabel">No</span>
+               </div>
+             </div>
+             <div class="switch-card">
+               <div class="switch-card-label">Producto activo</div>
+               <div class="toggle-row">
+                 <label class="toggle">
+                   <input type="checkbox" id="pActive" checked>
+                   <span class="toggle-slider"></span>
+                 </label>
+                 <span class="toggle-label" id="activeLabel">Sí</span>
+               </div>
+             </div>
+           </div>
+         </div>
+
+         <div class="admin-section">
+           <div class="admin-section-title">Descripción</div>
+           <div class="form-group">
+             <label>Descripción</label>
+             <textarea id="pDesc" rows="3" placeholder="Descripción corta del producto"></textarea>
+           </div>
+         </div>
+
+         <div class="admin-section">
+           <div class="admin-section-title">Imágenes del producto</div>
+           <div class="image-upload-zone" id="productImageDropzone">
+             <input type="file" id="productImageFiles" accept="image/jpeg,image/png,image/webp,image/gif" multiple style="display:none" />
+             <div class="image-upload-primary">
+               <button type="button" class="btn btn-primary" id="productImageSelectBtn" onclick="document.getElementById('productImageFiles').click()">
+                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                 Seleccionar imagen(es)
+               </button>
+               <span class="image-upload-or">o</span>
+               <div class="image-url-row">
+                 <input type="text" id="productImageUrl" placeholder="o pegá una URL de imagen externa" class="card-filter" style="flex:1;" />
+                 <button type="button" class="btn btn-secondary btn-sm" id="productImageUrlBtn" onclick="window.ProductImages.addPendingUrl()">Agregar URL</button>
+               </div>
+             </div>
+             <div class="image-upload-files" id="productImageFilesList"></div>
+             <div class="image-upload-hint">JPG, PNG, WEBP o GIF — máx 5MB c/u. También podés arrastrar archivos sobre esta zona.</div>
+           </div>
+           <div class="save-status" id="productImageUploadStatus"></div>
+           <div class="product-image-upload-progress" id="productImageUploadProgress"></div>
+           <div class="product-image-gallery" id="productImageGallery"></div>
+           <input type="hidden" id="pImage" />
+         </div>
+
+         <input type="hidden" id="pId" />
+       </div>
+       <div class="modal-footer modal-footer--sticky">
+         <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+         <button class="btn btn-primary" onclick="saveProduct()">Guardar</button>
+       </div>
+     </div>
+   </div>
 
   <div class="modal-overlay" id="testimonialModalOverlay">
     <div class="modal">
@@ -570,45 +587,61 @@
      </div>
    </div>
 
-<div class="modal-overlay" id="heroSlotModalOverlay">
-      <div class="modal">
-        <div class="modal-header">
-          <h3 id="heroSlotModalTitle">Editar Slot del Hero</h3>
-          <button class="btn btn-secondary btn-sm" onclick="closeHeroSlotModal()">✕</button>
-        </div>
-        <div class="modal-body">
-          <div class="save-status" id="heroSlotSaveStatus"></div>
-          <input type="hidden" id="heroSlotIndex" />
-          <div class="form-group">
-            <label>Imagen del slot</label>
-            <input type="file" id="heroSlotImageFile" accept="image/jpeg,image/png,image/webp,image/gif" />
-            <div class="image-preview" id="heroSlotImagePreview" style="display:none;"></div>
-            <input type="hidden" id="heroSlotImage" />
-            <p class="form-hint">Recomendación: 1920×600px, máx 2MB. Dejar vacío para mantener la actual.</p>
-          </div>
-          <div class="form-group">
-            <label>Título</label>
-            <input type="text" id="heroSlotTitle" placeholder="Título del hero" />
-          </div>
-          <div class="form-group">
-            <label>Subtítulo</label>
-            <textarea id="heroSlotSubtitle" rows="2" placeholder="Texto descriptivo del hero"></textarea>
-          </div>
-          <div class="form-group">
-            <label>Texto del botón CTA</label>
-            <input type="text" id="heroSlotCtaText" placeholder="Ej: Ver productos" />
-          </div>
-          <div class="form-group">
-            <label>URL del CTA</label>
-            <input type="text" id="heroSlotCtaUrl" placeholder="Ej: /products" />
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button class="btn btn-secondary" onclick="closeHeroSlotModal()">Cancelar</button>
-          <button class="btn btn-primary" onclick="saveHeroSlot()">Guardar</button>
-        </div>
-      </div>
-    </div>
+ <div class="modal-overlay" id="heroSlotModalOverlay">
+       <div class="modal">
+         <div class="modal-header modal-header--sticky">
+           <h3 id="heroSlotModalTitle">Editar Slot del Hero</h3>
+           <button class="btn btn-secondary btn-sm" onclick="closeHeroSlotModal()">✕</button>
+         </div>
+         <div class="modal-body">
+           <div class="save-status" id="heroSlotSaveStatus"></div>
+           <input type="hidden" id="heroSlotIndex" />
+           <div class="admin-section">
+             <div class="admin-section-title">Imagen</div>
+             <div class="hero-card-image-row">
+               <label class="hero-card-file-label">
+                 <span class="btn btn-primary btn-sm">
+                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                   Cambiar imagen
+                 </span>
+                 <input type="file" id="heroSlotImageFile" accept="image/jpeg,image/png,image/webp,image/gif" />
+               </label>
+               <button class="btn btn-danger btn-sm" id="heroSlotDeleteBtn" style="display:none;" onclick="deleteHeroSlotImage(state.currentHeroSlotIndex)">🗑 Quitar</button>
+             </div>
+             <div class="image-preview" id="heroSlotImagePreview" style="display:none;"></div>
+             <input type="hidden" id="heroSlotImage" />
+             <p class="form-hint">Recomendación: 1920×600px, máx 2MB. Dejar vacío para mantener la actual.</p>
+           </div>
+           <div class="admin-section">
+             <div class="admin-section-title">Texto</div>
+             <div class="form-grid-2">
+               <div class="form-group">
+                 <label>Título</label>
+                 <input type="text" id="heroSlotTitle" placeholder="Título del hero" />
+               </div>
+               <div class="form-group">
+                 <label>Subtítulo</label>
+                 <textarea id="heroSlotSubtitle" rows="2" placeholder="Texto descriptivo del hero"></textarea>
+               </div>
+             </div>
+             <div class="form-grid-2">
+               <div class="form-group">
+                 <label>Texto del botón CTA</label>
+                 <input type="text" id="heroSlotCtaText" placeholder="Ej: Ver productos" />
+               </div>
+               <div class="form-group">
+                 <label>URL del CTA</label>
+                 <input type="text" id="heroSlotCtaUrl" placeholder="Ej: /products" />
+               </div>
+             </div>
+           </div>
+         </div>
+         <div class="modal-footer modal-footer--sticky">
+           <button class="btn btn-secondary" onclick="closeHeroSlotModal()">Cancelar</button>
+           <button class="btn btn-primary" onclick="saveHeroSlot()">Guardar</button>
+         </div>
+       </div>
+     </div>
   <div class="modal-overlay" id="categoryModalOverlay">
     <div class="modal">
       <div class="modal-header">
@@ -1211,14 +1244,13 @@ function renderProductsTable() {
       if (p) openModal(p);
     }
 
-    async function deleteProduct(id) {
-      if (!confirm('¿Eliminar producto?')) return;
-      try {
-        await adminFetch(`/api/admin/products/${id}`, { method: 'DELETE' });
-        products = products.filter(p => p.id !== id);
-        renderProductsTable();
-        showToast('Producto eliminado', 'success');
-      } catch (err) {
+     async function deleteProduct(id) {
+       if (!confirm('¿Eliminar producto?')) return;
+       try {
+         await adminFetch(`/api/admin/products/${id}`, { method: 'DELETE' });
+         showToast('Producto eliminado', 'success');
+         await loadProducts();
+       } catch (err) {
          showToast(err.message, 'error');
        }
      }
@@ -1252,50 +1284,51 @@ function renderProductsTable() {
         }
       }
 
-    async function saveProduct() {
+     async function saveProduct() {
         const name = document.getElementById('pName').value.trim();
-       const category = document.getElementById('pCategory').value;
-       const price = Number(document.getElementById('pPrice').value);
-       const stock = Number(document.getElementById('pStock').value) || 0;
-       const sku = document.getElementById('pSku').value.trim();
-       const description = document.getElementById('pDesc').value.trim();
-       const featured = document.getElementById('pFeatured').checked;
-       const active = document.getElementById('pActive').checked;
-       const image = document.getElementById('pImage').value;
-       if (!name || !price) { showSaveStatus('productSaveStatus', 'error', '❌ Nombre y precio son requeridos'); return; }
-       if (price <= 0) { showSaveStatus('productSaveStatus', 'error', '❌ El precio debe ser mayor a 0'); return; }
-       if (stock < 0) { showSaveStatus('productSaveStatus', 'error', '❌ El stock no puede ser negativo'); return; }
-        const payload = { name, category, price, stock, sku, description, featured, active, image };
-       try {
-         showSaveStatus('productSaveStatus', 'saving', 'Guardando...');
-         const url = editingId ? `/api/admin/products/${editingId}` : '/api/admin/products';
-         const method = editingId ? 'PUT' : 'POST';
-const res = await adminFetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        const category = document.getElementById('pCategory').value;
+        const price = Number(document.getElementById('pPrice').value);
+        const stock = Number(document.getElementById('pStock').value) || 0;
+        const sku = document.getElementById('pSku').value.trim();
+        const description = document.getElementById('pDesc').value.trim();
+        const featured = document.getElementById('pFeatured').checked;
+        const active = document.getElementById('pActive').checked;
+        if (!name || !price) { showSaveStatus('productSaveStatus', 'error', '❌ Nombre y precio son requeridos'); return; }
+        if (price <= 0) { showSaveStatus('productSaveStatus', 'error', '❌ El precio debe ser mayor a 0'); return; }
+        if (stock < 0) { showSaveStatus('productSaveStatus', 'error', '❌ El stock no puede ser negativo'); return; }
+        const payload = { name, category, price, stock, sku, description, featured, active };
+        try {
+          showSaveStatus('productSaveStatus', 'saving', 'Guardando producto...');
+          const url = editingId ? `/api/admin/products/${editingId}` : '/api/admin/products';
+          const method = editingId ? 'PUT' : 'POST';
+          const res = await adminFetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
           const savedProduct = await res.json();
           if (!editingId && savedProduct.id) {
             editingId = savedProduct.id;
             document.getElementById('pId').value = savedProduct.id;
           }
-          // Subir imágenes pendientes (producto nuevo) después de crear el producto
+          // Subir imágenes pendientes (producto nuevo o editado) después de guardar el producto
           if (window.ProductImages && window.ProductImages.hasPendingFiles && window.ProductImages.hasPendingFiles()) {
-            const uploaded = await window.ProductImages.uploadPending(savedProduct.id);
+            showSaveStatus('productSaveStatus', 'saving', 'Guardando producto y subiendo imágenes...');
+            const uploaded = await window.ProductImages.uploadPending(savedProduct.id || editingId);
             if (uploaded > 0) {
               showToast(`${uploaded} imagen(es) subida(s)`, 'success');
             }
           }
-          showSaveStatus('productSaveStatus', 'success', '✅ Guardado');
+          showSaveStatus('productSaveStatus', 'success', '✅ Guardado correctamente');
           await loadProducts();
           setTimeout(() => {
             if (window.ProductImages && editingId) {
               window.ProductImages.init(editingId);
             }
-            hideSaveStatus('productSaveStatus'); closeModal();
+            hideSaveStatus('productSaveStatus');
+            closeModal();
           }, 1500);
-       } catch (err) {
-         showSaveStatus('productSaveStatus', 'error', '❌ ' + err.message);
-         setTimeout(() => hideSaveStatus('productSaveStatus'), 3000);
-       }
-     }
+        } catch (err) {
+          showSaveStatus('productSaveStatus', 'error', '❌ Error al guardar: ' + err.message);
+          setTimeout(() => hideSaveStatus('productSaveStatus'), 5000);
+        }
+      }
 
 function openModal(product = null) {
        editingId = product ? product.id : null;
@@ -1989,53 +2022,64 @@ async function loadHeroCardsAdmin() {
        }
      }
 
-     function renderHeroSlots() {
-       const container = document.getElementById('heroSlotsList');
-       if (!container) return;
-       const slots = [0, 1];
-       container.innerHTML = slots.map(slotIndex => {
-         const card = heroCards.find(c => c.slot === slotIndex) || {};
-         return `<div class='hero-slot-card'>
-           <div class='hero-slot-header'>
-             <span>Slot ${slotIndex + 1}</span>
-             <span style='font-size:0.8rem;color:#64748b;'>${card.tipo || 'hero'}</span>
-           </div>
-           <div style='display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap;'>
-             <div class='hero-slot-thumb ${card.imagen ? '' : 'placeholder'}'>
-               ${card.imagen ? `<img src='${card.imagen}' alt='Slot ${slotIndex + 1}' />` : '📷'}
-             </div>
-             <div style='flex:1;min-width:200px;display:flex;flex-direction:column;gap:0.5rem;'>
-               <div class='form-group'>
-                 <label>Título</label>
-                 <input type='text' id='heroSlotTitle_${slotIndex}' value='${card.titulo || ''}' placeholder='Título del hero' />
-               </div>
-               <div class='form-group'>
-                 <label>Subtítulo</label>
-                 <textarea id='heroSlotSubtitle_${slotIndex}' rows='2' placeholder='Texto descriptivo'>${card.subtitulo || ''}</textarea>
-               </div>
-               <div class='form-group'>
-                 <label>Texto del botón CTA</label>
-                 <input type='text' id='heroSlotCtaText_${slotIndex}' value='${card.cta_texto || ''}' placeholder='Ej: Ver productos' />
-               </div>
-               <div class='form-group'>
-                 <label>URL del CTA</label>
-                 <input type='text' id='heroSlotCtaUrl_${slotIndex}' value='${card.cta_url || ''}' placeholder='Ej: /products' />
-               </div>
-               <div class='form-group'>
-                 <label>Imagen</label>
-                 <input type='file' id='heroSlotImageFile_${slotIndex}' accept='image/jpeg,image/png,image/webp,image/gif' onchange='previewHeroSlotImage(${slotIndex})' />
-                 <div class='image-preview' id='heroSlotImagePreview_${slotIndex}' style='display:${card.imagen ? 'block' : 'none'};'>
-                   ${card.imagen ? `<img src='${card.imagen}' alt='Slot ${slotIndex + 1}' style='max-height:120px;' />` : ''}
-                 </div>
-                 <input type='hidden' id='heroSlotImage_${slotIndex}' value='${card.imagen || ''}' />
-               </div>
-                <button class='btn btn-primary btn-sm' onclick='saveHeroSlot(${slotIndex})'>💾 Guardar slot</button>
-                ${card.imagen ? `<button class='btn btn-danger btn-sm' onclick='deleteHeroSlotImage(${slotIndex})'>🗑 Imagen</button>` : ''}
-             </div>
-           </div>
-         </div>`;
-       }).join('');
-     }
+      function renderHeroSlots() {
+        const container = document.getElementById('heroSlotsList');
+        if (!container) return;
+        const slots = [0, 1];
+        container.innerHTML = `<div class="hero-grid">${slots.map(slotIndex => {
+          const card = heroCards.find(c => c.slot === slotIndex) || {};
+          const isPrimary = slotIndex === 0;
+          return `<div class="hero-card">
+            <div class="hero-card-header">
+              <span class="hero-card-title">Slot ${slotIndex + 1} · Hero</span>
+              <span class="hero-card-badge">${isPrimary ? 'Imagen principal' : 'Imagen secundaria'}</span>
+            </div>
+            <div class="hero-card-preview ${card.imagen ? '' : 'placeholder'}">
+              ${card.imagen ? `<img src="${card.imagen}" alt="Slot ${slotIndex + 1}" />` : '<span>📷</span>'}
+            </div>
+            <div class="hero-card-body">
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label>Título</label>
+                  <input type="text" id="heroSlotTitle_${slotIndex}" value="${card.titulo || ''}" placeholder="Título del hero" />
+                </div>
+                <div class="form-group">
+                  <label>Subtítulo</label>
+                  <textarea id="heroSlotSubtitle_${slotIndex}" rows="2" placeholder="Texto descriptivo">${card.subtitulo || ''}</textarea>
+                </div>
+              </div>
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label>Texto del CTA</label>
+                  <input type="text" id="heroSlotCtaText_${slotIndex}" value="${card.cta_texto || ''}" placeholder="Ej: Ver productos" />
+                </div>
+                <div class="form-group">
+                  <label>URL del CTA</label>
+                  <input type="text" id="heroSlotCtaUrl_${slotIndex}" value="${card.cta_url || ''}" placeholder="Ej: /products" />
+                </div>
+              </div>
+              <div class="hero-card-image-row">
+                <label class="hero-card-file-label">
+                  <span class="btn btn-secondary btn-sm">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                    Cambiar imagen
+                  </span>
+                  <input type="file" id="heroSlotImageFile_${slotIndex}" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewHeroSlotImage(${slotIndex})" />
+                </label>
+                ${card.imagen ? `<button class="btn btn-danger btn-sm" onclick="deleteHeroSlotImage(${slotIndex})">🗑 Quitar</button>` : ''}
+              </div>
+              <div class="image-preview" id="heroSlotImagePreview_${slotIndex}" style="display:${card.imagen ? 'block' : 'none'};">
+                ${card.imagen ? `<img src="${card.imagen}" alt="Slot ${slotIndex + 1}" />` : ''}
+              </div>
+              <input type="hidden" id="heroSlotImage_${slotIndex}" value="${card.imagen || ''}" />
+              <div class="hero-card-footer">
+                <button class="btn btn-primary btn-sm" onclick="saveHeroSlot(${slotIndex})">💾 Guardar slot</button>
+                <span class="hero-card-slot-id">Slot ${slotIndex + 1}</span>
+              </div>
+            </div>
+          </div>`;
+        }).join('')}</div>`;
+      }
 
      function previewHeroSlotImage(slotIndex) {
        const fileInput = document.getElementById(`heroSlotImageFile_${slotIndex}`);
@@ -2049,22 +2093,25 @@ async function loadHeroCardsAdmin() {
        reader.readAsDataURL(fileInput.files[0]);
      }
 
-     function openHeroSlotModal(slotIndex) {
-       state.currentHeroSlotIndex = slotIndex;
-       document.getElementById('heroSlotModalTitle').textContent = `Editar Slot ${slotIndex + 1}`;
-       clearSaveStatus('heroSlotSaveStatus');
-       const card = heroCards.find(c => c.slot === slotIndex) || {};
-       document.getElementById('heroSlotTitle').value = card.titulo || '';
-       document.getElementById('heroSlotSubtitle').value = card.subtitulo || '';
-       document.getElementById('heroSlotCtaText').value = card.cta_texto || '';
-       document.getElementById('heroSlotCtaUrl').value = card.cta_url || '';
-       document.getElementById('heroSlotImage').value = card.imagen || '';
-       document.getElementById('heroSlotImagePreview').style.display = card.imagen ? 'block' : 'none';
-       if (card.imagen) {
-         document.getElementById('heroSlotImagePreview').innerHTML = `<img src='${card.imagen}' alt='Slot ${slotIndex + 1}' style='max-height:200px;' />`;
-       }
-       document.getElementById('heroSlotModalOverlay').classList.add('active');
-     }
+      function openHeroSlotModal(slotIndex) {
+        state.currentHeroSlotIndex = slotIndex;
+        document.getElementById('heroSlotModalTitle').textContent = `Editar Slot ${slotIndex + 1}`;
+        clearSaveStatus('heroSlotSaveStatus');
+        const card = heroCards.find(c => c.slot === slotIndex) || {};
+        document.getElementById('heroSlotTitle').value = card.titulo || '';
+        document.getElementById('heroSlotSubtitle').value = card.subtitulo || '';
+        document.getElementById('heroSlotCtaText').value = card.cta_texto || '';
+        document.getElementById('heroSlotCtaUrl').value = card.cta_url || '';
+        document.getElementById('heroSlotImage').value = card.imagen || '';
+        const preview = document.getElementById('heroSlotImagePreview');
+        preview.style.display = card.imagen ? 'block' : 'none';
+        if (card.imagen) {
+          preview.innerHTML = `<img src='${card.imagen}' alt='Slot ${slotIndex + 1}' style='max-height:200px;' />`;
+        }
+        const deleteBtn = document.getElementById('heroSlotDeleteBtn');
+        if (deleteBtn) deleteBtn.style.display = card.imagen ? 'inline-flex' : 'none';
+        document.getElementById('heroSlotModalOverlay').classList.add('active');
+      }
 
      function closeHeroSlotModal() {
        document.getElementById('heroSlotModalOverlay').classList.remove('active');
@@ -2210,39 +2257,7 @@ async function saveSettings() {
         window.shippingZones[index][field] = field === 'gratis' ? value === true : (field === 'costo' ? Number(value) || 0 : value);
       }
 
-      async function syncProductsToNeon() {
-        try {
-          const btn = document.getElementById('syncProductsBtn');
-          const statusEl = document.getElementById('syncProductsStatus');
-        btn.disabled = true;
-        statusEl.textContent = 'Sincronizando...';
-        await adminFetch('/api/admin/sync-to-neon', { method: 'POST' });
-        statusEl.textContent = '✅ Sincronizado';
-        showToast('Productos sincronizados con Neon', 'success');
-        setTimeout(() => { statusEl.textContent = ''; btn.disabled = false; }, 3000);
-      } catch (err) {
-        showToast(err.message, 'error');
-        document.getElementById('syncProductsBtn').disabled = false;
-      }
-    }
-
-    async function syncTextsToNeon() {
-      try {
-        const btn = document.getElementById('syncTextsBtn');
-        const statusEl = document.getElementById('syncTextsStatus');
-        btn.disabled = true;
-        statusEl.textContent = 'Sincronizando...';
-        await adminFetch('/api/admin/site-texts/sync', { method: 'POST' });
-        statusEl.textContent = '✅ Sincronizado';
-        showToast('Textos sincronizados con Neon', 'success');
-        setTimeout(() => { statusEl.textContent = ''; btn.disabled = false; }, 3000);
-      } catch (err) {
-        showToast(err.message, 'error');
-        document.getElementById('syncTextsBtn').disabled = false;
-      }
-    }
-
-     function exportCSV(type) {
+       async function exportCSV(type) {
        let csv = '';
        let filename = '';
        if (type === 'products') {

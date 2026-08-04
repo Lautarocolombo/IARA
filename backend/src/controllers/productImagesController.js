@@ -30,10 +30,6 @@ async function uploadProductImages(req, res) {
       return res.status(404).json({ error: 'Producto no encontrado' });
     }
 
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ error: 'No se recibieron imágenes' });
-    }
-
     const existingImages = await query(
       'SELECT MAX(orden) as max_orden FROM product_images WHERE product_id = $1',
       [productId]
@@ -41,17 +37,43 @@ async function uploadProductImages(req, res) {
     const startOrden = (existingImages.rows[0]?.max_orden ?? -1) + 1;
 
     const uploaded = [];
-    for (let i = 0; i < req.files.length; i++) {
-      const file = req.files[i];
-      const processed = await processFile(file);
+    const imageUrls = [];
+    if (req.body.imageUrls) {
+      try {
+        const parsed = JSON.parse(req.body.imageUrls);
+        if (Array.isArray(parsed)) {
+          imageUrls.push(...parsed);
+        }
+      } catch (e) {
+        // ignore parse error
+      }
+    }
+
+    for (let i = 0; i < imageUrls.length; i++) {
+      const url = imageUrls[i];
       const result = await query(
         'INSERT INTO product_images (product_id, url, filename, cloudinary_public_id, orden, es_principal, descripcion, categoria) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-        [productId, processed.url, processed.filename, processed.cloudinary_public_id || '', startOrden + i, false, req.body.descripcion || '', req.body.categoria || '']
+        [productId, url, '', '', startOrden + i, false, req.body.descripcion || '', req.body.categoria || '']
       );
       uploaded.push({
         ...result.rows[0],
-        url: getPublicUrl(processed.url)
+        url: getPublicUrl(result.rows[0].url)
       });
+    }
+
+    if (req.files && req.files.length > 0) {
+      for (let i = 0; i < req.files.length; i++) {
+        const file = req.files[i];
+        const processed = await processFile(file);
+        const result = await query(
+          'INSERT INTO product_images (product_id, url, filename, cloudinary_public_id, orden, es_principal, descripcion, categoria) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+          [productId, processed.url, processed.filename, processed.cloudinary_public_id || '', startOrden + imageUrls.length + i, false, req.body.descripcion || '', req.body.categoria || '']
+        );
+        uploaded.push({
+          ...result.rows[0],
+          url: getPublicUrl(processed.url)
+        });
+      }
     }
 
     res.status(201).json({ ok: true, images: uploaded });
