@@ -2,6 +2,8 @@ const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const { getPublicUrl } = require('../lib/upload');
 
+const ALLOWED_TESTIMONIAL_COLUMNS = ['name', 'comment', 'rating', 'image', 'avatar', 'active', 'orden'];
+
 const getPublicTestimonials = async (req, res) => {
   try {
     const result = await query('SELECT * FROM testimonials WHERE active = TRUE ORDER BY created_at DESC');
@@ -78,7 +80,7 @@ const updateTestimonial = async (req, res) => {
   if (req.file) {
     updates.image = getPublicUrl(`/uploads/products/${req.file.filename}`);
   }
-  const fields = Object.keys(updates).filter(k => k !== 'id');
+  const fields = Object.keys(updates).filter(k => k !== 'id' && ALLOWED_TESTIMONIAL_COLUMNS.includes(k));
   if (!fields.length) return res.status(400).json({ error: 'Sin datos para actualizar' });
   const values = [];
   const setParts = [];

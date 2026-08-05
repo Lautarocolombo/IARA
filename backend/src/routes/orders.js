@@ -5,7 +5,7 @@ const { getOrders, createOrder, updateOrderStatus, getUserOrders, deleteOrder, u
 
 router.get('/admin/orders', adminAuth, getOrders);
 router.get('/admin/orders/export', adminAuth, exportOrders);
-router.get('/orders', adminAuth, getUserOrders);
+router.get('/orders', getUserOrders);
 router.post('/orders', createOrder);
 router.patch('/admin/orders/:id/status', adminAuth, updateOrderStatus);
 router.put('/admin/orders/:id/notes', adminAuth, updateOrderNotes);

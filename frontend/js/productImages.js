@@ -189,11 +189,12 @@ const ITEM_CLASS = 'product-image-item';
     const token = getAuthToken();
     try {
       const result = await new Promise((resolve, reject) => {
-        xhr.addEventListener('load', () => resolve({ status: xhr.status, data: JSON.parse(xhr.responseText || '{}') }));
-        xhr.addEventListener('error', () => reject(new Error('Error de red')));
-        xhr.open('POST', url);
-        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-        xhr.send(formData);
+         xhr.addEventListener('load', () => resolve({ status: xhr.status, data: JSON.parse(xhr.responseText || '{}') }));
+         xhr.addEventListener('error', () => reject(new Error('Error de red')));
+         xhr.open('POST', url);
+         xhr.withCredentials = true;
+         xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+         xhr.send(formData);
       });
       if (result.status < 200 || result.status >= 300) {
         throw new Error(result.data.error || 'Error al subir imágenes');
@@ -404,13 +405,14 @@ xhr.addEventListener('load', () => {
           }
           resolve({ status: xhr.status, data });
         });
-        xhr.addEventListener('error', () => reject(new Error('Error de red')));
-        xhr.open('POST', url);
-        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-        xhr.send(formData);
-      });
-      if (result.status < 200 || result.status >= 300) {
-        const msg = result.status === 403
+         xhr.addEventListener('error', () => reject(new Error('Error de red')));
+         xhr.open('POST', url);
+         xhr.withCredentials = true;
+         xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+         xhr.send(formData);
+       });
+       if (result.status < 200 || result.status >= 300) {
+         const msg = result.status === 403
           ? 'No autorizado para subir imágenes. Verificá tu sesión de administrador.'
           : (result.data.error || `Error ${result.status} al subir imágenes`);
         throw new Error(msg);
@@ -463,6 +465,7 @@ xhr.addEventListener('load', () => {
       const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}/images/${imageId}/replace`, {
         method: 'PUT',
         headers: { Authorization: `Bearer ${getAuthToken()}` },
+        credentials: 'include',
         body: formData
       }, 2, 1000);
       if (!res) throw new Error('Error de red');
@@ -492,6 +495,7 @@ xhr.addEventListener('load', () => {
           Authorization: `Bearer ${getAuthToken()}`,
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({ es_principal: true })
       }, 2, 1000);
       if (!res) throw new Error('Error de red');
@@ -513,6 +517,7 @@ xhr.addEventListener('load', () => {
           Authorization: `Bearer ${getAuthToken()}`,
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify(meta)
       }, 2, 1000);
       if (!res) throw new Error('Error de red');
@@ -530,7 +535,8 @@ xhr.addEventListener('load', () => {
     try {
       const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}/images/${imageId}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${getAuthToken()}` }
+        headers: { Authorization: `Bearer ${getAuthToken()}` },
+        credentials: 'include'
       }, 2, 1000);
       if (!res) throw new Error('Error de red');
       if (!res.ok) {
@@ -551,6 +557,7 @@ xhr.addEventListener('load', () => {
           Authorization: `Bearer ${getAuthToken()}`,
           'Content-Type': 'application/json'
         },
+        credentials: 'include',
         body: JSON.stringify({ orden: orderedIds })
       }, 2, 1000);
       if (!res) throw new Error('Error de red');
@@ -569,7 +576,10 @@ xhr.addEventListener('load', () => {
   }
 
   function getAuthToken() {
-    return localStorage.getItem('ag_admin_jwt') || '';
+    if (typeof window !== 'undefined' && window.__getAdminToken) {
+      return window.__getAdminToken();
+    }
+    return '';
   }
 
   function escapeHtml(str) {

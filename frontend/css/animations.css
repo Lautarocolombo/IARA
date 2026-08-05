@@ -80,10 +80,6 @@
   to   { transform: rotate(360deg); }
 }
 
-.ag-hero-tag-dot, .ag-logo-dot {
-  animation: ag-pulse 2s ease-in-out infinite;
-}
-
 .reveal {
   opacity: 0;
   transform: translateY(20px);

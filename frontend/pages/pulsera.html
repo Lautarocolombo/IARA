@@ -67,7 +67,7 @@
         <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
           <button
             class="btn-primary"
-            onclick='addToCart({id:101,name:"Pulsera La Llave del Amor",price:2800,emoji:"📿",unit:"par",qty:1}); event.stopPropagation();'
+            onclick='addToCart({id:101,name:"Pulsera La Llave del Amor",price:2800,emoji:"📿",stock:10,unit:"par",qty:1}); event.stopPropagation();'
             style="display:inline-flex;align-items:center;gap:0.4rem;"
           >Agregar al carrito</button>
 
@@ -83,8 +83,8 @@
 
   <script src="../js/config.js"></script>
   <script src="../js/theme.js"></script>
-  <script src="../js/cart.js"></script>
   <script src="../js/ui.js"></script>
+  <script src="../js/cart.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       const el = document.getElementById('productPrice');

@@ -4,6 +4,6 @@ const { adminAuth } = require('../middleware/auth');
 const { getProductReviews, createReview } = require('../controllers/reviewsController');
 
 router.get('/products/:productId/reviews', getProductReviews);
-router.post('/products/:productId/reviews', adminAuth, createReview);
+router.post('/products/:productId/reviews', createReview);
 
 module.exports = router;

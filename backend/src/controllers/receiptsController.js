@@ -58,7 +58,7 @@ const generateReceiptPDF = async (req, res) => {
 
     stream.on('finish', () => {
       const url = `/uploads/receipts/${filename}`;
-      query('INSERT INTO receipts (order_id, filename, url) VALUES ($1, $2, $3) ON CONFLICT (order_id) DO UPDATE SET filename = $2, url = $3', [orderId, filename, url])
+      query('INSERT INTO receipts (order_id, filename, url) VALUES ($1, $2, $3) ON CONFLICT (order_id) DO UPDATE SET filename = $4, url = $5', [orderId, filename, url, filename, url])
         .then(() => {
           res.download(filepath, filename);
         })

@@ -24,7 +24,6 @@ const login = async (req, res) => {
 
     const ADMIN_USER = process.env.ADMIN_USER;
     const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH;
-    const ADMIN_PASS = process.env.ADMIN_PASS;
 
     let role = null;
     let user = null;
@@ -56,18 +55,6 @@ const login = async (req, res) => {
           role = 'admin';
           user = ADMIN_USER;
           permissions = { all: true };
-        } else if (ADMIN_PASS) {
-          if (cleanPassword === ADMIN_PASS) {
-            role = 'admin';
-            user = ADMIN_USER;
-            permissions = { all: true };
-          }
-        }
-      } else if (ADMIN_PASS) {
-        if (cleanPassword === ADMIN_PASS) {
-          role = 'admin';
-          user = ADMIN_USER;
-          permissions = { all: true };
         }
       }
     }
@@ -81,7 +68,15 @@ const login = async (req, res) => {
       return res.status(500).json({ error: 'JWT_SECRET no configurado en el servidor' });
     }
 
-    const token = jwt.sign({ role, user, permissions }, JWT_SECRET, { expiresIn: '8h' });
+    const token = jwt.sign({ role, user, permissions }, JWT_SECRET, { expiresIn: '15m' });
+    const refreshToken = jwt.sign({ role, user, permissions }, JWT_SECRET, { expiresIn: '7d' });
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: '/'
+    });
     res.json({ token, user, role, permissions });
   } catch (err) {
     logger.error('Login error:', err);
@@ -102,7 +97,7 @@ const refresh = async (req, res) => {
     }
 
     const decoded = jwt.verify(refreshToken, JWT_SECRET);
-    const accessToken = jwt.sign({ role: decoded.role, user: decoded.user, permissions: decoded.permissions || {} }, JWT_SECRET, { expiresIn: '8h' });
+    const accessToken = jwt.sign({ role: decoded.role, user: decoded.user, permissions: decoded.permissions || {} }, JWT_SECRET, { expiresIn: '15m' });
     res.json({ token: accessToken });
   } catch (err) {
     return res.status(401).json({ error: 'Refresh token inválido o expirado' });
@@ -110,7 +105,12 @@ const refresh = async (req, res) => {
 };
 
 const logout = (req, res) => {
-  res.clearCookie('refreshToken', { path: '/api/auth/refresh' });
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    path: '/'
+  });
   res.json({ ok: true });
 };
 
@@ -121,20 +121,16 @@ const changePassword = async (req, res) => {
 
   const ADMIN_USER = process.env.ADMIN_USER;
   const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH;
-  const ADMIN_PASS = process.env.ADMIN_PASS;
 
   let hashMatch = false;
   if (ADMIN_PASS_HASH) {
     try { hashMatch = await bcrypt.compare(currentPassword, ADMIN_PASS_HASH); } catch(e) {}
-    if (!hashMatch && ADMIN_PASS) hashMatch = currentPassword === ADMIN_PASS;
-  } else if (ADMIN_PASS) {
-    hashMatch = currentPassword === ADMIN_PASS;
   }
 
   if (!hashMatch) return res.status(401).json({ error: 'Contraseña actual incorrecta' });
 
   const newHash = await bcrypt.hash(newPassword, 10);
-  res.json({ ok: true, message: 'Contraseña actualizada. Recordá actualizar ADMIN_PASS_HASH en las variables de entorno del servidor.', newHash });
+  res.json({ ok: true, message: 'Contraseña actualizada. Recordá actualizar ADMIN_PASS_HASH en las variables de entorno del servidor.' });
 };
 
 module.exports = { login, refresh, logout, hashPassword, changePassword };

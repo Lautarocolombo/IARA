@@ -5,6 +5,6 @@ const { login, refresh, logout, changePassword } = require('../controllers/authC
 router.post('/login', login);
 router.post('/refresh', refresh);
 router.post('/logout', logout);
-router.put('/admin/change-password', require('../middleware/auth').adminAuth, changePassword);
+router.put('/change-password', require('../middleware/auth').adminAuth, changePassword);
 
 module.exports = router;

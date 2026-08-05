@@ -17,9 +17,9 @@ services:
       - key: ADMIN_USER
         value: Iara
       - key: ADMIN_PASS_HASH
-        generateValue: true
-      - key: ADMIN_PASS
-        generateValue: true
+        value: "$2b$10$w5YhXTWi/AKpu8cifWV7iOSOcz8w1sqxCUJFBWBlCSinL2PIUnfKa"
+        # Password por defecto: "pulseras2026" (hash bcrypt). Cámbialo tras primer login
+        # con el endpoint /api/admin/change-password y actualizá esta variable en el Dashboard de Render.
       - key: DATABASE_URL
         generateValue: true
       - key: SITE_URL

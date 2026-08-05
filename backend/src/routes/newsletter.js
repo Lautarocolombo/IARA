@@ -1,13 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const { query } = require('../lib/db');
+const { newsletterSchema } = require('../lib/validators');
 const logger = require('../lib/logger');
 
 router.post('/subscribe', async (req, res) => {
-  const { email } = req.body || {};
-  if (!email || !email.includes('@')) {
-    return res.status(400).json({ error: 'Email válido requerido' });
+  const parsed = newsletterSchema.safeParse(req.body || {});
+  if (!parsed.success) {
+    return res.status(400).json({ error: parsed.error.issues[0]?.message || 'Datos inválidos' });
   }
+  const { email } = parsed.data;
   try {
     await query('INSERT INTO subscribers (email) VALUES ($1) ON CONFLICT (email) DO NOTHING', [email]);
     res.status(201).json({ ok: true });

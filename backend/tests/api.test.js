@@ -1,8 +1,9 @@
 const request = require('supertest');
 
+const bcrypt = require('bcrypt');
 process.env.NODE_ENV = process.env.NODE_ENV || 'test';
 process.env.ADMIN_USER = process.env.ADMIN_USER || 'testadmin';
-process.env.ADMIN_PASS = process.env.ADMIN_PASS || 'testpassword123';
+process.env.ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH || bcrypt.hashSync('testpassword123', 10);
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret';
 process.env.ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS || 'http://localhost:3000';
 process.env.DATABASE_URL = '';
@@ -17,7 +18,7 @@ beforeAll(async () => {
   }
   const loginRes = await request(app)
     .post('/api/auth/login')
-    .send({ username: process.env.ADMIN_USER, password: process.env.ADMIN_PASS });
+    .send({ username: process.env.ADMIN_USER, password: 'testpassword123' });
   if (loginRes.body && loginRes.body.token) {
     adminToken = loginRes.body.token;
   }

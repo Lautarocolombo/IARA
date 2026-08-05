@@ -73,4 +73,4 @@ const updatePaymentConfig = async (req, res) => {
   }
 };
 
-module.exports = { getSiteConfig, updatePaymentConfig };
+module.exports = { getSiteConfig };

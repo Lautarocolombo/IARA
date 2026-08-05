@@ -56,7 +56,11 @@ const getOrders = async (req, res) => {
 
 const getUserOrders = async (req, res) => {
   try {
-    const result = await query('SELECT * FROM orders ORDER BY created_at DESC');
+    const { email } = req.query;
+    if (!email) {
+      return res.status(400).json({ error: 'Email es requerido para buscar pedidos' });
+    }
+    const result = await query('SELECT * FROM orders WHERE shipping_email = $1 ORDER BY created_at DESC', [email]);
     res.json(result.rows);
   } catch (err) {
     logger.error({ err: err.message }, 'Error obteniendo tus pedidos');
@@ -72,7 +76,7 @@ const createOrder = async (req, res) => {
   const validation = orderSchema.safeParse({ items, total, customer });
   if (!validation.success) {
     logger.info('createOrder: validacion fallida');
-    return res.status(400).json({ error: validation.error.errors[0]?.message || 'Datos inválidos' });
+    return res.status(400).json({ error: validation.error.issues[0]?.message || 'Datos inválidos' });
   }
 
   if (!items || !total) {
@@ -252,7 +256,7 @@ const getOrderDetail = async (req, res) => {
 const exportOrders = async (req, res) => {
   const { format = 'csv' } = req.query;
   try {
-    const { status, start_date, end_date } = req.query;
+    const { status, start_date, end_date, q } = req.query;
     let where = 'WHERE TRUE';
     const params = [];
 
