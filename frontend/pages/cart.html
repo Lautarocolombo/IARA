@@ -179,7 +179,7 @@
       const itemsContainer = document.getElementById('cartItems');
       itemsContainer.innerHTML = cartItems.map((item, index) => `
         <div class="cart-item reveal" style="animation-delay: ${index * 0.05}s">
-          <div class="item-image">${item.image ? `<img src="${item.image}" alt="${item.name}" />` : (item.emoji || '🛍️')}</div>
+          <div class="item-image">${item.image ? `${window.renderProductImage(item.image, item.name, { placeholder: '🛍️' })}` : (item.emoji || '🛍️')}</div>
           <div class="item-details">
             <h4>${item.name}</h4>
             ${item.description ? `<p class="item-description">${item.description}</p>` : ''}

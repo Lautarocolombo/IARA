@@ -170,8 +170,8 @@ function renderProducts(productsToRender) {
 
   grid.innerHTML = productsToRender.map(product => {
     const imageHtml = product.image
-      ? `<img src="${product.image}" alt="${product.name}" loading="lazy" decoding="async" onerror="window.imgError(this)" />`
-      : `<img src="assets/placeholder-product.svg" alt="${product.name}" loading="lazy" decoding="async" onerror="window.imgError(this)" />`;
+      ? window.renderProductImage(product.image, product.name, { className: 'product-card-img', placeholder: product.emoji || '📿' })
+      : window.renderProductImage('', product.name, { className: 'product-card-img', placeholder: product.emoji || '📿' });
     const catClass = product.category ? `cat-${product.category}` : '';
     const badgeHtml = product.badge ? `<span class="product-badge">${product.badge}</span>` : '';
     const waMessage = encodeURIComponent(`Hola! Me interesa el producto: ${product.name} - ${formatARS(product.price)}`);
