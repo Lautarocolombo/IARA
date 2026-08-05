@@ -552,9 +552,9 @@ async function loadHeroCards() {
       if (nameEl && card.nombre) nameEl.textContent = card.nombre;
       if (priceEl && card.precio) priceEl.textContent = card.precio;
       if (imgEl && card.imagen) {
-        imgEl.innerHTML = `<img src="${card.imagen}" alt="${card.nombre || 'Card imagen'}" style="width:100%;height:100%;object-fit:cover;" />`;
-      } else if (imgEl && !card.imagen) {
-        imgEl.textContent = card.emoji || (cardNum === 1 ? '📿' : '💎');
+        imgEl.innerHTML = window.renderProductImage(card.imagen, card.nombre || 'Card imagen', { style: 'width:100%;height:100%;object-fit:cover;' });
+      } else if (imgEl) {
+        imgEl.innerHTML = window.renderProductImage('', card.nombre || 'Card imagen', { placeholder: '📿', style: 'width:100%;height:100%;object-fit:cover;' });
       }
     });
   } catch (err) {

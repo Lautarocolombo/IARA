@@ -6,7 +6,7 @@
     "price": 450,
     "description": "Diseño minimalista con cuentas de cerámica en tonos rosa pastel",
     "emoji": "📿",
-    "image": "",
+    "image": "assets/placeholder-product.svg",
     "badge": "Nuevo"
   },
   {
@@ -16,7 +16,7 @@
     "price": 520,
     "description": "Pulsera tejida con materiales ecológicos en tonos verdes",
     "emoji": "📿",
-    "image": ""
+    "image": "assets/placeholder-product.svg"
   },
   {
     "id": 3,
@@ -25,7 +25,7 @@
     "price": 250,
     "description": "Llavero tejido a mano con detalle floral",
     "emoji": "💎",
-    "image": ""
+    "image": "assets/placeholder-product.svg"
   },
   {
     "id": 4,
@@ -34,7 +34,7 @@
     "price": 380,
     "description": "Imán decorativo con representación local",
     "emoji": "🎁",
-    "image": ""
+    "image": "assets/placeholder-product.svg"
   },
   {
     "id": 5,
@@ -43,7 +43,7 @@
     "price": 590,
     "description": "Pulsera con múltiples hilos y cuentas en tonos variados",
     "emoji": "📿",
-    "image": ""
+    "image": "assets/placeholder-product.svg"
   },
   {
     "id": 6,
@@ -52,7 +52,7 @@
     "price": 650,
     "description": "Collar corto con colgante hecho a mano",
     "emoji": "💎",
-    "image": ""
+    "image": "assets/placeholder-product.svg"
   },
   {
     "id": 7,
@@ -61,7 +61,7 @@
     "price": 1200,
     "description": "Set de 3 pulseras con diferentes diseños",
     "emoji": "📿",
-    "image": ""
+    "image": "assets/placeholder-product.svg"
   },
   {
     "id": 8,
@@ -70,7 +70,7 @@
     "price": 890,
     "description": "Brazalete ancho tejido con técnica tradicional",
     "emoji": "📿",
-    "image": ""
+    "image": "assets/placeholder-product.svg"
   },
   {
     "id": 9,
@@ -79,7 +79,7 @@
     "price": 320,
     "description": "Taza de cerámica con diseño exclusivo de Gualeguay",
     "emoji": "🎁",
-    "image": ""
+    "image": "assets/placeholder-product.svg"
   },
   {
     "id": 10,
@@ -88,7 +88,7 @@
     "price": 280,
     "description": "Anillo ajustable hecho de cerámica cocida artesanalmente",
     "emoji": "💎",
-    "image": ""
+    "image": "assets/placeholder-product.svg"
   },
   {
     "id": 11,
@@ -97,7 +97,7 @@
     "price": 480,
     "description": "Pulsera de amistad para compartir en tonos complementarios",
     "emoji": "📿",
-    "image": ""
+    "image": "assets/placeholder-product.svg"
   },
   {
     "id": 12,
@@ -106,6 +106,6 @@
     "price": 150,
     "description": "Marcapáginas hecho a mano con técnica mixta",
     "emoji": "🎁",
-    "image": ""
+    "image": "assets/placeholder-product.svg"
   }
 ]

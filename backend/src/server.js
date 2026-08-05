@@ -7,7 +7,7 @@ const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
 const pino = require('pino');
 const { initDB } = require('./lib/db');
-const { handleUploadError, processFile, uploadSingle } = require('./lib/upload');
+const { handleUploadError, processFile, uploadSingle, getPublicUrl } = require('./lib/upload');
 const { errorHandler } = require('./middleware/errorHandler');
 const { notFound } = require('./middleware/errorHandler');
 
@@ -245,7 +245,7 @@ app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUplo
     }
     const processed = await processFile(req.file);
     res.json({
-      url: processed.url,
+      url: getPublicUrl(processed.url),
       filename: processed.filename,
       size: req.file.size,
       isCloudinary: processed.isCloudinary

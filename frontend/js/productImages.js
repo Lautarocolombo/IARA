@@ -151,7 +151,7 @@ const ITEM_CLASS = 'product-image-item';
       const src = f.isUrl ? f.url : (f.url || '');
       return `<div class="${ITEM_CLASS}">
         <div class="${ITEM_CLASS}-preview">
-          <img src="${escapeHtml(src)}" alt="Imagen ${i + 1}" style="max-height:120px;width:100%;object-fit:cover;" />
+          <img src="${escapeHtml(src)}" alt="Imagen ${i + 1}" style="max-height:120px;width:100%;object-fit:cover;" onerror="window.imgError(this, '📿')" />
         </div>
         <div class="${ITEM_CLASS}-actions">
           <button class="btn btn-sm btn-danger" onclick="window.ProductImages.removePendingFile(${i})" title="Quitar">🗑</button>
@@ -233,7 +233,7 @@ const ITEM_CLASS = 'product-image-item';
       item.dataset.orden = img.orden;
        item.innerHTML = `
         <div class="${ITEM_CLASS}-preview">
-          <img src="${escapeHtml(img.url)}" alt="${escapeHtml(img.descripcion || 'Producto')}" loading="lazy" />
+          <img src="${escapeHtml(img.url)}" alt="${escapeHtml(img.descripcion || 'Producto')}" loading="lazy" onerror="window.imgError(this, '📿')" />
           ${img.descripcion ? `<div class="${ITEM_CLASS}-label" title="${escapeHtml(img.descripcion)}">${escapeHtml(img.descripcion)}</div>` : ''}
           ${img.categoria ? `<span class="${ITEM_CLASS}-category cat-${img.categoria}" title="${escapeHtml(img.categoria)}">${escapeHtml(img.categoria)}</span>` : ''}
         </div>

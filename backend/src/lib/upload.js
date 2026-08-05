@@ -171,11 +171,25 @@ async function saveFile(req, res) {
   });
 }
 
+const fileExistsCache = new Set();
+const fileMissingCache = new Set();
+
 function getPublicUrl(relativePath) {
-  const apiBase = process.env.SITE_URL || '';
   if (!relativePath) return '';
   if (relativePath.startsWith('http')) return relativePath;
-  return `${apiBase}${relativePath}`;
+  if (relativePath.startsWith('/uploads/')) {
+    if (fileMissingCache.has(relativePath)) return '';
+    if (fileExistsCache.has(relativePath)) return relativePath;
+    const filePath = path.join(__dirname, '..', '..', relativePath);
+    if (fs.existsSync(filePath)) {
+      fileExistsCache.add(relativePath);
+      return relativePath;
+    }
+    fileMissingCache.add(relativePath);
+    logger.warn(`Imagen no encontrada en filesystem: ${relativePath}`);
+    return '';
+  }
+  return relativePath;
 }
 
 module.exports = {

@@ -1,6 +1,8 @@
 /* eslint-env jest */
 const request = require('supertest');
 const { query } = require('../src/lib/db');
+const fs = require('fs');
+const path = require('path');
 
 const bcrypt = require('bcrypt');
 process.env.NODE_ENV = process.env.NODE_ENV || 'test';
@@ -13,6 +15,8 @@ process.env.DATABASE_URL = '';
 const { app, dbReady } = require('../src/server');
 
 const TEST_PRODUCT_NAME = 'Producto Test Imagenes __test__';
+const UPLOADS_PRODUCTS_DIR = path.join(__dirname, '..', 'uploads', 'products');
+const TEST_IMAGE_FILES = ['test-principal.webp', 'test-secundaria.webp'];
 
 async function cleanup(name) {
   await query('DELETE FROM product_images WHERE product_id IN (SELECT id FROM products WHERE name = $1)', [name]);
@@ -24,10 +28,27 @@ beforeAll(async () => {
     await dbReady;
   }
   await cleanup(TEST_PRODUCT_NAME);
+  // Crear archivos de imagen de test para que getPublicUrl los encuentre en filesystem
+  if (!fs.existsSync(UPLOADS_PRODUCTS_DIR)) {
+    fs.mkdirSync(UPLOADS_PRODUCTS_DIR, { recursive: true });
+  }
+  TEST_IMAGE_FILES.forEach(f => {
+    const filePath = path.join(UPLOADS_PRODUCTS_DIR, f);
+    if (!fs.existsSync(filePath)) {
+      fs.writeFileSync(filePath, 'fake-image-data');
+    }
+  });
 });
 
 afterAll(async () => {
   await cleanup(TEST_PRODUCT_NAME);
+  // Limpiar archivos de test
+  TEST_IMAGE_FILES.forEach(f => {
+    const filePath = path.join(UPLOADS_PRODUCTS_DIR, f);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+  });
 });
 
 async function loginToken() {
@@ -127,6 +148,30 @@ describe('Product images on public API', () => {
     found = res.body.find(p => p.id === productId);
     expect(found.image).toBe('https://res.cloudinary.com/demo/image2.webp');
     expect(found.images.length).toBe(1);
+
+    await cleanup(productName);
+  });
+
+  test('getPublicUrl retorna vacío para imágenes locales perdidas (filesystem efímero)', async () => {
+    const productName = 'Producto Test Perdido __test__';
+    await cleanup(productName);
+
+    const insert = await query(
+      'INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,FALSE) RETURNING id',
+      [productName, 'test-perdido', 'pulseras', 100, '', '📿', '', '', 10, false, true, 'TEST-PERDIDO']
+    );
+    const productId = insert.rows[0].id;
+
+    await query(
+      'INSERT INTO product_images (product_id, url, filename, orden, es_principal, descripcion, categoria) VALUES ($1,$2,$3,$4,$5,$6,$7)',
+      [productId, '/uploads/products/non-existent-file.webp', 'non-existent-file.webp', 0, true, 'Perdida', 'pulseras']
+    );
+
+    const res = await request(app).get('/api/products');
+    const found = res.body.find(p => p.id === productId);
+    expect(found).toBeTruthy();
+    expect(found.image).toBe('');
+    expect(found.images[0].url).toBe('');
 
     await cleanup(productName);
   });
