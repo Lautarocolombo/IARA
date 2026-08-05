@@ -91,7 +91,7 @@
 
       grid.innerHTML = items.map(product => `
         <div class="product-card reveal" data-product-id="${product.id}">
-          <div class="product-image" aria-hidden="true">${product.image ? `<img src="${product.image}" alt="${product.name}" loading="lazy" />` : (product.emoji || '📿')}</div>
+          <div class="product-image" aria-hidden="true">${product.image ? `${window.renderProductImage(product.image, product.name, { placeholder: '📿' })}` : (product.emoji || '📿')}</div>
           <div class="product-info">
             <span class="product-category">${product.category || ''}</span>
             <h3 class="product-name">${product.name}</h3>

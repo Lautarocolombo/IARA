@@ -11,7 +11,7 @@
 
     container.innerHTML = items.map(it => `
       <div class="item-row">
-        <div class="item-thumb">${it.image ? `<img src="${it.image}" alt="" />` : (it.emoji || '📿')}</div>
+        <div class="item-thumb">${it.image ? `${window.renderProductImage(it.image, it.name, { placeholder: '📿' })}` : (it.emoji || '📿')}</div>
         <div class="item-meta">
           <h4>${it.name}</h4>
           <p>Cantidad: ${it.qty}</p>
