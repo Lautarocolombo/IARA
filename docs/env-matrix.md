@@ -17,8 +17,8 @@
 | `JWT_SECRET` | Secreto para firmar JWT | `crypto.randomBytes(64).toString('hex')` | Sí |
 | `CSRF_SECRET` | Secreto para tokens CSRF | `crypto.randomBytes(32).toString('hex')` | Sí |
 | `DATABASE_URL` | Connection string PostgreSQL | `postgresql://user:pass@host:5432/db?sslmode=require` | Sí |
-| `ALLOWED_ORIGINS` | Orígenes permitidos para CORS | `https://iara-peach.vercel.app,https://artesaniagualeguay.com` | Sí |
-| `SITE_URL` | URL base del sitio | `https://iara-peach.vercel.app` | Sí |
+| `ALLOWED_ORIGINS` | Orígenes permitidos para CORS | `https://iara-lovat.vercel.app,https://*.vercel.app` | Sí |
+| `SITE_URL` | URL base del sitio (usado en sitemap) | `https://iara-lovat.vercel.app` | Sí |
 | `ADMIN_USER` | Usuario administrador | `Iara` | Sí |
 | `ADMIN_PASS_HASH` | Hash bcrypt de contraseña admin | `$2b$10$...` | Sí |
 | `RESEND_API_KEY` | API key para envío de emails | `re_...` | No |

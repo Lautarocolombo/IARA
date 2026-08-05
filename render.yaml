@@ -32,12 +32,18 @@ services:
         value: "2000"
       - key: WHATSAPP
         value: "+5493444634444"
-      # Cloudinary: configurar en Render Dashboard (Settings > Environment) con valores reales.
-      # No uses generateValue: true para estas variables, requiere credenciales válidas de Cloudinary.
-      # - CLOUDINARY_CLOUD_NAME: tu cloud name
-      # - CLOUDINARY_API_KEY: tu api key
-      # - CLOUDINARY_API_SECRET: tu api secret
-      # Si no están configuradas, las imágenes se guardan localmente (efímero en Render).
+      - key: LOG_LEVEL
+        value: info
+      # Cloudinary: PARA PRODUCCIÓN es requerido para persistencia de imágenes.
+      # Sin estas variables, las imágenes se guardan localmente en el filesystem efímero de Render
+      # y se pierden en cada reinicio/redeploy.
+      # Configurar en Render Dashboard → Settings → Environment → Environment Variables:
+      #   CLOUDINARY_CLOUD_NAME = tu-cloud-name
+      #   CLOUDINARY_API_KEY = tu-api-key
+      #   CLOUDINARY_API_SECRET = tu-api-secret
+      #   RESEND_API_KEY = re_... (para envío de emails)
+      #   EMAIL_FROM = noreply@artesaniagualeguay.com
+      #   ADMIN_NOTIFICATION_EMAIL = admin@artesaniagualeguay.com
     autoDeploy: true
     branch: main
     repo: https://github.com/Lautarocolombo/IARA.git

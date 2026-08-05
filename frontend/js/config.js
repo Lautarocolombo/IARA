@@ -65,11 +65,16 @@ const CONFIG = {
     TRANSITION_SPEED: 0.4
   },
 
-   // API — usar URLs relativas para aprovechar el rewrite de Vercel
-  // (/api/* → Render backend), evitando problemas de CORS y cold starts
-  API: {
-    BASE: ''
-  },
+  // API — usar URLs relativas para aprovechar el rewrite de Vercel
+   // (/api/* → Render backend), evitando problemas de CORS y cold starts
+   API: {
+     BASE: ''
+   },
+
+   // Imagen placeholder para productos sin imagen
+   PLACEHOLDER: {
+     IMAGE: 'assets/placeholder-product.svg'
+   },
 
   // URLs externas (completá con los links reales a tus redes sociales)
   // Estos valores se usan como fallback si no hay configuración en el backend.

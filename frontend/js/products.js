@@ -8,7 +8,7 @@ const defaultProducts = [
     price: 450,
     description: 'Diseño minimalista con cuentas de cerámica en tonos rosa pastel',
     emoji: '📿',
-    image: ''
+    image: 'assets/placeholder-product.svg'
   },
   {
     id: 2,
@@ -17,7 +17,7 @@ const defaultProducts = [
     price: 520,
     description: 'Pulsera tejida con materiales ecológicos en tonos verdes',
     emoji: '📿',
-    image: ''
+    image: 'assets/placeholder-product.svg'
   },
   {
     id: 3,
@@ -26,7 +26,7 @@ const defaultProducts = [
     price: 250,
     description: 'Llavero tejido a mano con detalle floral',
     emoji: '💎',
-    image: ''
+    image: 'assets/placeholder-product.svg'
   },
   {
     id: 4,
@@ -35,7 +35,7 @@ const defaultProducts = [
     price: 380,
     description: 'Imán decorativo con representación local',
     emoji: '🎁',
-    image: ''
+    image: 'assets/placeholder-product.svg'
   },
   {
     id: 5,
@@ -44,7 +44,7 @@ const defaultProducts = [
     price: 590,
     description: 'Pulsera con múltiples hilos y cuentas en tonos variados',
     emoji: '📿',
-    image: ''
+    image: 'assets/placeholder-product.svg'
   },
   {
     id: 6,
@@ -53,7 +53,7 @@ const defaultProducts = [
     price: 650,
     description: 'Collar corto con colgante hecho a mano',
     emoji: '💎',
-    image: ''
+    image: 'assets/placeholder-product.svg'
   },
   {
     id: 7,
@@ -62,7 +62,7 @@ const defaultProducts = [
     price: 1200,
     description: 'Set de 3 pulseras con diferentes diseños',
     emoji: '📿',
-    image: ''
+    image: 'assets/placeholder-product.svg'
   },
   {
     id: 8,
@@ -71,7 +71,7 @@ const defaultProducts = [
     price: 890,
     description: 'Brazalete ancho tejido con técnica tradicional',
     emoji: '📿',
-    image: ''
+    image: 'assets/placeholder-product.svg'
   },
   {
     id: 9,
@@ -80,7 +80,7 @@ const defaultProducts = [
     price: 320,
     description: 'Taza de cerámica con diseño exclusivo de Gualeguay',
     emoji: '🎁',
-    image: ''
+    image: 'assets/placeholder-product.svg'
   },
   {
     id: 10,
@@ -89,7 +89,7 @@ const defaultProducts = [
     price: 280,
     description: 'Anillo ajustable hecho de cerámica cocida artesanalmente',
     emoji: '💎',
-    image: ''
+    image: 'assets/placeholder-product.svg'
   },
   {
     id: 11,
@@ -98,7 +98,7 @@ const defaultProducts = [
     price: 480,
     description: 'Pulsera de amistad para compartir en tonos complementarios',
     emoji: '📿',
-    image: ''
+    image: 'assets/placeholder-product.svg'
   },
   {
     id: 12,
@@ -107,7 +107,7 @@ const defaultProducts = [
     price: 150,
     description: 'Marcapáginas hecho a mano con técnica mixta',
     emoji: '🎁',
-    image: ''
+    image: 'assets/placeholder-product.svg'
   }
 ];
 
@@ -170,8 +170,8 @@ function renderProducts(productsToRender) {
 
   grid.innerHTML = productsToRender.map(product => {
     const imageHtml = product.image
-      ? `<img src="${product.image}" alt="${product.name}" loading="lazy" decoding="async" />`
-      : product.emoji || '📿';
+      ? `<img src="${product.image}" alt="${product.name}" loading="lazy" decoding="async" onerror="window.imgError(this)" />`
+      : `<img src="assets/placeholder-product.svg" alt="${product.name}" loading="lazy" decoding="async" onerror="window.imgError(this)" />`;
     const catClass = product.category ? `cat-${product.category}` : '';
     const badgeHtml = product.badge ? `<span class="product-badge">${product.badge}</span>` : '';
     const waMessage = encodeURIComponent(`Hola! Me interesa el producto: ${product.name} - ${formatARS(product.price)}`);
