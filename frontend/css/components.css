@@ -1331,3 +1331,8 @@
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.4; transform: scale(1.4); }
 }
+
+/* ==================== SAFE IMAGE PLACEHOLDER ==================== */
+.img-placeholder {
+  opacity: 0.85 !important;
+}
