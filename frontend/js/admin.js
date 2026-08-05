@@ -421,7 +421,7 @@ async function loadCategories() {
       const imgPreview = document.getElementById('catImagePreview');
       if (cat && cat.image) {
         imgPreview.style.display = 'block';
-         imgPreview.innerHTML = `<img src='${escapeHtml(cat.image || '')}' alt='Preview' style='max-height:80px;' />`;
+         imgPreview.innerHTML = window.renderProductImage(cat.image || '', 'Preview', { style: 'max-height:80px;' });
       } else {
         imgPreview.style.display = 'none';
         imgPreview.innerHTML = '';
@@ -521,12 +521,12 @@ function renderProductsTable() {
        }
         tbody.innerHTML = filtered.map(p => `<tr>
           <td><code>${escapeHtml(p.slug || '—')}</code></td>
-          <td><div class='product-cell'><div class='thumb'>${p.image ? `<img src='${escapeHtml(p.image)}' alt='${escapeHtml(p.name)}' />` : (p.emoji || '📿')}</div><div><div class='product-name'>${escapeHtml(p.name)}</div><div class='product-desc'>${escapeHtml(p.description || '')}</div></div></div></td>
+          <td><div class='product-cell'><div class='thumb'>${p.image ? window.renderProductImage(p.image, p.name, { placeholder: p.emoji || '📿' }) : (p.emoji || '📿')}</div><div><div class='product-name'>${escapeHtml(p.name)}</div><div class='product-desc'>${escapeHtml(p.description || '')}</div></div></div></td>
           <td><span class='badge badge-${escapeHtml(p.category)}'>${escapeHtml(p.category)}</span></td>
           <td><code>${escapeHtml(p.sku || '—')}</code></td>
           <td><span class='price-cell'>$${Number(p.price).toLocaleString('es-AR')}</span></td>
           <td><span class='badge badge-stock ${p.stock > 0 ? 'badge-stock--ok' : 'badge-stock--out'}'>${p.stock > 0 ? `✅ ${p.stock}` : '❌ Sin stock'}</span></td>
-          <td>${p.image ? `<div class='thumb'><img src='${escapeHtml(p.image)}' alt='${escapeHtml(p.name)}' /></div>` : '<div class=\"thumb\">📷</div>'}</td>
+          <td>${p.image ? `<div class='thumb'>${window.renderProductImage(p.image, p.name, { placeholder: p.emoji || '📿' })}</div>` : '<div class="thumb">📷</div>'}</td>
           <td><button class='btn btn-${p.active !== false ? 'secondary' : 'secondary'} btn-sm' onclick='toggleProductStatus(${p.id})'>${p.active !== false ? '✅ Activo' : '❌ Inactivo'}</button></td>
           <td><div class='actions'>
             <button class='btn btn-secondary btn-sm' onclick='editProduct(${p.id})'>✏️ Editar</button>
@@ -1165,7 +1165,7 @@ function renderOrdersTable() {
       const preview = document.getElementById('testimonialImagePreview');
       if (testimonial && (testimonial.image || testimonial.avatar)) {
         preview.style.display = 'block';
-         preview.innerHTML = `<img src='${escapeHtml(testimonial.image || testimonial.avatar || '')}' alt='Preview' style='max-height:80px;' />`;
+         preview.innerHTML = window.renderProductImage(testimonial.image || testimonial.avatar || '', 'Preview', { style: 'max-height:80px;' });
       } else {
         preview.style.display = 'none';
         preview.innerHTML = '';
@@ -1331,7 +1331,7 @@ async function loadHeroCardsAdmin() {
               <span class="hero-card-badge">${isPrimary ? 'Imagen principal' : 'Imagen secundaria'}</span>
             </div>
             <div class="hero-card-preview ${card.imagen ? '' : 'placeholder'}">
-               ${card.imagen ? `<img src="${escapeHtml(card.imagen)}" alt="Slot ${slotIndex + 1}" />` : '<span>📷</span>'}
+               ${card.imagen ? window.renderProductImage(card.imagen, 'Slot ' + (slotIndex + 1), { style: 'max-height:100%;width:100%;object-fit:cover;' }) : '<span>📷</span>'}
             </div>
             <div class="hero-card-body">
               <div class="form-grid-2">
@@ -1365,7 +1365,7 @@ async function loadHeroCardsAdmin() {
                 ${card.imagen ? `<button class="btn btn-danger btn-sm" onclick="deleteHeroSlotImage(${slotIndex})">🗑 Quitar</button>` : ''}
               </div>
               <div class="image-preview" id="heroSlotImagePreview_${slotIndex}" style="display:${card.imagen ? 'block' : 'none'};">
-                ${card.imagen ? `<img src="${card.imagen}" alt="Slot ${slotIndex + 1}" />` : ''}
+                ${card.imagen ? window.renderProductImage(card.imagen, 'Slot ' + (slotIndex + 1), { style: 'max-height:120px;width:100%;object-fit:cover;' }) : ''}
               </div>
               <input type="hidden" id="heroSlotImage_${slotIndex}" value="${card.imagen || ''}" />
               <div class="hero-card-footer">
@@ -1384,7 +1384,7 @@ async function loadHeroCardsAdmin() {
        const reader = new FileReader();
        reader.onload = (e) => {
          preview.style.display = 'block';
-         preview.innerHTML = `<img src='${escapeHtml(e.target.result)}' alt='Preview' style='max-height:120px;' />`;
+          preview.innerHTML = window.renderProductImage(e.target.result, 'Preview', { style: 'max-height:120px;', lazy: false });
        };
        reader.readAsDataURL(fileInput.files[0]);
      }
@@ -1402,7 +1402,7 @@ async function loadHeroCardsAdmin() {
         const preview = document.getElementById('heroSlotImagePreview');
         preview.style.display = card.imagen ? 'block' : 'none';
         if (card.imagen) {
-           preview.innerHTML = `<img src='${escapeHtml(card.imagen || '')}' alt='Slot ${slotIndex + 1}' style='max-height:200px;' />`;
+           preview.innerHTML = window.renderProductImage(card.imagen || '', 'Slot ' + (slotIndex + 1), { style: 'max-height:200px;width:100%;object-fit:cover;', lazy: false });
         }
         const deleteBtn = document.getElementById('heroSlotDeleteBtn');
         if (deleteBtn) deleteBtn.style.display = card.imagen ? 'inline-flex' : 'none';
