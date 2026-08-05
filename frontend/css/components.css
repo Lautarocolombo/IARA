@@ -201,6 +201,13 @@
   animation: ag-pulse 2s infinite;
 }
 
+.hero-greeting {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 0.5rem;
+}
+
 .hero-content h1 {
   font-size: 38px;
   font-weight: 700;

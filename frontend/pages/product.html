@@ -86,6 +86,7 @@
     </div>
   </main>
   <script src="../js/config.js"></script>
+  <script src="../js/safeImage.js"></script>
   <script src="../js/theme.js"></script>
   <script src="../js/ui.js"></script>
   <script src="../js/cart.js"></script>
@@ -112,16 +113,16 @@
           container.innerHTML = '<p>Producto no encontrado.</p>';
           return;
         }
-        const images = Array.isArray(product.images) && product.images.length
-          ? product.images
-          : (product.image ? [{ url: product.image, es_principal: true }] : []);
-        const principalImage = images.find(i => i.es_principal) || images[0];
-        const thumbsHtml = images.map((img, i) =>
-          `<img src="${img.url}" alt="${product.name} - imagen ${i + 1}" loading="lazy" decoding="async" />`
-        ).join('');
-        const imageHtml = images.length
-          ? `<div class="product-image-gallery"><div class="product-image-main"><img src="${principalImage ? principalImage.url : ''}" alt="${product.name}" id="productMainImage" /></div><div class="product-image-thumbs" id="productThumbs">${thumbsHtml}</div></div>`
-          : (product.emoji || '📿');
+const images = Array.isArray(product.images) && product.images.length
+	             ? product.images
+	             : (product.image ? [{ url: product.image, es_principal: true }] : [{ url: '../assets/placeholder-product.svg', es_principal: true }]);
+          const principalImage = images.find(i => i.es_principal) || images[0];
+          const thumbsHtml = images.map((img, i) =>
+            `<img src="${img.url}" alt="${product.name} - imagen ${i + 1}" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='../assets/placeholder-product.svg'" />`
+          ).join('');
+          const imageHtml = images.length
+            ? `<div class="product-image-gallery"><div class="product-image-main"><img src="${principalImage ? principalImage.url : '../assets/placeholder-product.svg'}" alt="${product.name}" id="productMainImage" onerror="window.imgError(this)" /></div><div class="product-image-thumbs" id="productThumbs">${thumbsHtml}</div></div>`
+            : `<img src="../assets/placeholder-product.svg" alt="${product.name}" style="width:100%;height:100%;object-fit:cover;" onerror="window.imgError(this)" />`;
         container.innerHTML = `
           <div class="product-detail-grid">
             <div class="product-image-large" aria-hidden="true">${imageHtml}</div>
