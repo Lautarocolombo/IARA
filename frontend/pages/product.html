@@ -87,8 +87,8 @@
   </main>
   <script src="../js/config.js"></script>
   <script src="../js/theme.js"></script>
-  <script src="../js/cart.js"></script>
   <script src="../js/ui.js"></script>
+  <script src="../js/cart.js"></script>
   <script>
     async function loadProduct() {
       const container = document.getElementById('productContent');
@@ -131,7 +131,7 @@
               <p class="product-detail-desc">${product.description || ''}</p>
               <p class="product-detail-price">${formatARS(product.price)}</p>
               <div class="product-detail-actions">
-                <button class="btn-primary" onclick="addToCart({id:${product.id},name:'${product.name.replace(/'/g, "\\'")}',price:${product.price},emoji:'${product.emoji || '📿'}',image:'${product.image || ''}',unit:'u',qty:1}); event.stopPropagation();">Agregar al carrito</button>
+                <button class="btn-primary" onclick="addToCart(${JSON.stringify({id: product.id, name: product.name, price: product.price, emoji: product.emoji||'📿', image: product.image||'', stock: product.stock||0, unit: 'u', qty: 1})}); event.stopPropagation();">Agregar al carrito</button>
                 <a href="https://wa.me/${CONFIG.CONTACT.WHATSAPP.replace(/[^\\d]/g,'')}?text=Hola! Me interesa el producto: ${product.name}" target="_blank" class="btn-outline" rel="noopener">Consultar por WhatsApp</a>
               </div>
             </div>

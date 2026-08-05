@@ -6,7 +6,7 @@ const logger = require('../lib/logger');
 router.get('/sitemap', async (req, res) => {
   try {
     const products = await query('SELECT id, category, name FROM products');
-    const baseUrl = process.env.SITE_URL || 'https://iara-eight.vercel.app';
+    const baseUrl = process.env.SITE_URL || 'https://artesaniagualeguay.com';
     const pages = [
       { loc: '/', changefreq: 'daily', priority: 1.0 },
       { loc: '/pages/cart.html', changefreq: 'weekly', priority: 0.8 },

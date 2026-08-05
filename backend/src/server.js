@@ -57,8 +57,8 @@ if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && proce
 
 const requiredEnvVars = ['JWT_SECRET', 'ADMIN_USER'];
 const missingEnvVars = requiredEnvVars.filter(key => !process.env[key]);
-const hasAdminPass = !!(process.env.ADMIN_PASS_HASH || process.env.ADMIN_PASS);
-if (!hasAdminPass && process.env.NODE_ENV !== 'test') {
+const hasAdminPassHash = !!process.env.ADMIN_PASS_HASH;
+if (!hasAdminPassHash && process.env.NODE_ENV !== 'test') {
   missingEnvVars.push('ADMIN_PASS_HASH');
 }
 const isProduction = process.env.NODE_ENV === 'production';
@@ -78,7 +78,7 @@ if (missingEnvVars.length > 0 || missingProductionVars.length > 0) {
     console.error('\nVariables de inicio (validadas al arrancar):');
     missingEnvVars.forEach(key => {
       if (key === 'ADMIN_PASS_HASH') {
-          console.error(`  ${key} → hash bcrypt de la contraseña de admin (o ADMIN_PASS en texto plano como fallback)`);
+          console.error(`  ${key} → hash bcrypt de la contraseña de admin (generar con: npx bcrypt-cli hash)`);
         } else if (key === 'JWT_SECRET') {
         console.error(`  ${key} → generar con: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"`);
       } else if (key === 'ADMIN_USER') {
@@ -128,8 +128,8 @@ app.use(helmet({
   }
 }));
 
-app.use(express.json({ limit: '150mb' }));
-app.use(express.urlencoded({ extended: true, limit: '150mb' }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || '').split(',').filter(Boolean);
 
@@ -161,6 +161,7 @@ const corsOptions = allowedOrigins.length
     };
 
 app.use(cors(corsOptions));
+app.use(require('cookie-parser')());
 app.options('*', cors(corsOptions));
 
 const limiter = rateLimit({
@@ -191,7 +192,6 @@ app.use(limiter);
 
 app.use((req, res, next) => {
   res.setHeader('X-Request-ID', req.headers['x-request-id'] || crypto.randomUUID());
-  res.locals.csrfToken = crypto.randomBytes(32).toString('hex');
   logger.debug({ reqId: res.getHeader('X-Request-ID'), method: req.method, url: req.url }, 'Request recibida');
   next();
 });
@@ -224,7 +224,6 @@ app.use('/api', require('./routes/testimonials'));
 app.use('/api', require('./routes/newsletter'));
 app.use('/api', require('./routes/contact'));
 app.use('/api', require('./routes/siteConfig'));
-app.use('/api', require('./routes/paymentConfig'));
 app.use('/api', require('./routes/siteSettings'));
 app.use('/api', require('./routes/sitemap'));
 app.use('/api', require('./routes/reviews'));

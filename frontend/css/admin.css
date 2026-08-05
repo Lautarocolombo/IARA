@@ -338,23 +338,8 @@ body {
   font-size: 1.1rem;
 }
 
-.card-header-subtitle {
-  font-size: 0.85rem;
-  color: #64748b;
-  font-weight: 400;
-  margin-top: 0.15rem;
-}
-
 .card-body {
   padding: 0;
-}
-
-.card-search {
-  padding: 0.4rem 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font-size: 0.85rem;
-  width: 220px;
 }
 
 .card-controls {
@@ -410,12 +395,6 @@ select.card-filter {
   background-repeat: no-repeat;
   background-position: right 0.75rem center;
   padding-right: 2rem;
-}
-
-.sync-status {
-  font-size: 0.8rem;
-  font-weight: 600;
-  white-space: nowrap;
 }
 
 table {
@@ -500,10 +479,6 @@ tr:last-child td {
   color: #475569;
   border: 1px solid var(--border);
 }
-
-.badge-pulseras { background: #fce8ee; color: #a21caf; border-color: #f5d5de; }
-.badge-accesorios { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
-.badge-souvenirs { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
 
 .badge-stock { font-size: 0.7rem; padding: 0.15rem 0.5rem; }
 .badge-stock--ok { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
@@ -960,25 +935,6 @@ tr:last-child td {
   min-width: 60px;
 }
 
-.info-note {
-  display: flex;
-  gap: 0.75rem;
-  padding: 1rem 1.25rem;
-  background: linear-gradient(135deg, #eff6ff, #dbeafe);
-  border: 1px solid #bfdbfe;
-  border-radius: 10px;
-  margin-bottom: 1rem;
-}
-
-.info-note-icon {
-  flex-shrink: 0;
-  font-size: 1.25rem;
-}
-
-.info-note-content {
-  flex: 1;
-}
-
 .info-note-content strong {
   color: #1e40af;
   font-weight: 600;
@@ -991,95 +947,19 @@ tr:last-child td {
   opacity: 0.8;
 }
 
-.form-group + .info-note {
-  margin-top: 1rem;
-}
-
-.hero-card-edit-item {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: #fafafa;
-}
-
-.hero-card-edit-item .hero-card-thumb {
-  width: 80px;
-  height: 80px;
-  border-radius: 10px;
-  overflow: hidden;
-  background: linear-gradient(135deg, #fce8ee, #d4ede3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2rem;
-  flex-shrink: 0;
-}
-
-.hero-card-edit-item .hero-card-thumb img {
+.form-group + .hero-card-edit-item .hero-card-edit-item .hero-card-thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.hero-card-edit-item .hero-card-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.hero-card-edit-item .hero-card-info .hero-card-label {
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: #0f172a;
-}
-
-.hero-card-edit-item .hero-card-info .hero-card-field {
-  font-size: 0.85rem;
-  color: #64748b;
-  margin-top: 0.25rem;
-}
-
-.hero-card-edit-item .hero-card-actions {
-  display: flex;
-  gap: 0.4rem;
-}
-
-/* ==================== PRODUCT IMAGES MODULE ==================== */
-.product-image-dropzone {
-  border: 2px dashed var(--border);
-  border-radius: 12px;
-  padding: 2rem;
-  text-align: center;
-  cursor: pointer;
-  transition: all .2s;
-  background: #fafafa;
-  position: relative;
-}
-
+.hero-card-edit-item .hero-card-edit-item .hero-card-info .hero-card-edit-item .hero-card-info .hero-card-edit-item /* ==================== PRODUCT IMAGES MODULE ==================== */
 .product-image-dropzone:hover,
-.product-image-dropzone.drag-over {
-  border-color: var(--accent);
-  background: #fff;
-}
-
 .product-image-dropzone input[type="file"] {
   position: absolute;
   inset: 0;
   opacity: 0;
   cursor: pointer;
-}
-
-.dropzone-text {
-  font-weight: 600;
-  color: #334155;
-  margin-bottom: 0.25rem;
-}
-
-.dropzone-hint {
-  font-size: 0.8rem;
-  color: #64748b;
 }
 
 .product-image-gallery {
@@ -1108,81 +988,17 @@ tr:last-child td {
   box-shadow: 0 4px 12px rgba(0,0,0,0.06);
 }
 
-.product-image-item-preview {
-  width: 100%;
-  height: 140px;
-  overflow: hidden;
-  background: linear-gradient(135deg, #fce8ee, #d4ede3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
 .product-image-item-preview img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.product-image-item-label {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(0,0,0,0.65);
-  color: #fff;
-  font-size: 0.7rem;
-  padding: 3px 6px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  opacity: 0;
-  transition: opacity .2s;
-  z-index: 2;
-}
-
-.product-image-item-preview:hover .product-image-item-label {
-  opacity: 1;
-}
-
-.product-image-item-category {
-  position: absolute;
-  top: 0.4rem;
-  left: 0.4rem;
-  background: var(--accent);
-  color: #fff;
-  font-size: 0.65rem;
-  font-weight: 700;
-  padding: 2px 8px;
-  border-radius: 40px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  z-index: 2;
-}
-
-.product-image-item-meta-form {
-  padding: 8px;
-  border-top: 1px dashed var(--border);
-  background: var(--blush, #fff0f4);
-}
-
-.product-image-item-actions {
-  display: flex;
-  gap: 0.35rem;
-  padding: 0.5rem;
-  border-top: 1px solid var(--border);
-}
-
-.product-image-item-actions .btn {
+.product-image-item-preview:hover .product-image-item-actions .btn {
   flex: 1;
   justify-content: center;
   font-size: 0.75rem;
   padding: 0.35rem;
-}
-
-.product-image-item-replace-input {
-  display: none;
 }
 
 .product-image-upload-progress {
@@ -1358,10 +1174,7 @@ tr:last-child td {
     gap: 0.75rem;
   }
 
-  .product-image-item-preview {
-    height: 100px;
   }
-}
 
 /* ==================== PAGINATION ==================== */
 .pagination {
@@ -1372,11 +1185,6 @@ tr:last-child td {
   padding: 1rem 1.25rem;
   border-top: 1px solid var(--border);
 }
-.pagination-info {
-  font-size: 0.85rem;
-  color: #64748b;
-}
-
 /* ==================== CHARTS ==================== */
 .chart-container {
   position: relative;
@@ -1387,17 +1195,6 @@ tr:last-child td {
   border-radius: 10px;
   padding: 1rem;
 }
-.chart-placeholder {
-  height: 250px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #94a3b8;
-  font-size: 0.85rem;
-  border: 1px dashed var(--border);
-  border-radius: 10px;
-}
-
 /* ==================== METRICS CARDS ==================== */
 .metrics-grid {
   display: grid;
@@ -1601,13 +1398,6 @@ tr:last-child td {
 }
 
 /* ==================== TEXT PREVIEW ==================== */
-.text-preview {
-  max-width: 200px;
-  max-height: 60px;
-  overflow: hidden;
-  font-size: 0.85rem;
-}
-
 /* ==================== QUICK DATE BTNS ==================== */
 .quick-date-btn {
   padding: 0.35rem 0.75rem;
@@ -1629,14 +1419,6 @@ tr:last-child td {
 }
 
 /* ==================== STATUS FILTER TAGS ==================== */
-.status-tag {
-  display: inline-block;
-  padding: 0.15rem 0.6rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
 /* ==================== PAGINATION ==================== */
 .pagination-bar {
   display: flex;

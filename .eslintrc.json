@@ -27,8 +27,7 @@
     "addToWishlist": "readonly",
     "removeFromWishlist": "readonly",
     "isInWishlist": "readonly",
-    "getWishlist": "readonly",
-    "MercadoPago": "readonly"
+    "getWishlist": "readonly"
   },
   "overrides": [
     {

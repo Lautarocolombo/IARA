@@ -56,11 +56,23 @@ const reviewSchema = z.object({
   comment: z.string().min(1, 'Comentario es requerido').max(1000)
 });
 
+const newsletterSchema = z.object({
+  email: z.string().email('Email inválido').max(255)
+});
+
+const contactSchema = z.object({
+  name: z.string().min(1, 'Nombre es requerido').max(100),
+  email: z.string().email('Email inválido').max(255),
+  message: z.string().min(1, 'Mensaje es requerido').max(2000)
+});
+
 module.exports = {
   productSchema,
   testimonialSchema,
   siteTextSchema,
   orderSchema,
   loginSchema,
-  reviewSchema
+  reviewSchema,
+  newsletterSchema,
+  contactSchema
 };

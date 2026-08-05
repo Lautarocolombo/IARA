@@ -1,13 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const { query } = require('../lib/db');
+const { contactSchema } = require('../lib/validators');
 const logger = require('../lib/logger');
 
 router.post('/contact', async (req, res) => {
-  const { name, email, message } = req.body || {};
-  if (!name || !email || !message) {
-    return res.status(400).json({ error: 'Todos los campos son requeridos' });
+  const parsed = contactSchema.safeParse(req.body || {});
+  if (!parsed.success) {
+    return res.status(400).json({ error: parsed.error.issues[0]?.message || 'Datos inválidos' });
   }
+  const { name, email, message } = parsed.data;
   try {
     await query(
       'INSERT INTO contacts (name, email, message, status) VALUES ($1, $2, $3, $4)',

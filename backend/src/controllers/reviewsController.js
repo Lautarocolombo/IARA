@@ -29,7 +29,7 @@ const createReview = async (req, res) => {
     res.status(201).json(result.rows[0]);
   } catch (err) {
     if (err.name === 'ZodError') {
-      return res.status(400).json({ error: err.errors[0]?.message || 'Datos inválidos' });
+      return res.status(400).json({ error: err.issues[0]?.message || 'Datos inválidos' });
     }
     logger.error('Error creando reseña:', err);
     res.status(500).json({ error: 'Error interno del servidor' });

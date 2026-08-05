@@ -2,6 +2,8 @@ const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const { getPublicUrl } = require('../lib/upload');
 
+const ALLOWED_CATEGORY_COLUMNS = ['name', 'slug', 'description', 'active', 'orden', 'emoji', 'image'];
+
 const getCategories = async (req, res) => {
   try {
     const result = await query(
@@ -63,7 +65,7 @@ const updateCategory = async (req, res) => {
   if (req.file) {
     updates.image = getPublicUrl(`/uploads/products/${req.file.filename}`);
   }
-  const fields = Object.keys(updates).filter(k => k !== 'id');
+  const fields = Object.keys(updates).filter(k => k !== 'id' && ALLOWED_CATEGORY_COLUMNS.includes(k));
   if (!fields.length) return res.status(400).json({ error: 'Sin datos para actualizar' });
   const values = [];
   const setParts = [];

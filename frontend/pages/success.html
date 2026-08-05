@@ -55,15 +55,15 @@
   </nav>
     <div class="wrap">
     <div class="card reveal visible">
-      <div class="ok" aria-hidden="true">âœ…</div>
-      <h1 style="margin-top:1rem;">Â¡Pago aprobado!</h1>
-      <p>Gracias por tu compra en ArtesanÃ­a Gualeguay. Te contactaremos si necesitamos coordinar algÃºn detalle.</p>
+      <div class="ok" aria-hidden="true">✅</div>
+      <h1 style="margin-top:1rem;">¡Pago aprobado!</h1>
+      <p>Gracias por tu compra en Artesanía Gualeguay. Te contactaremos si necesitamos coordinar algún detalle.</p>
       <div id="transferAliasSection" class="transfer-alias-section" style="display:none; margin-top:1.5rem; padding:1.5rem; background:var(--bg-secondary, #f8fafc); border-radius:var(--radius-md); border:1px solid var(--border, #e2e8f0);">
-        <h2 style="margin-top:0; font-size:1.1rem; color:var(--text);">âŒ¥ Transferencia bancaria</h2>
-        <p style="margin-bottom:0.5rem; color:var(--text-muted);">TransferÃ­ el total exacto al siguiente alias:</p>
+        <h2 style="margin-top:0; font-size:1.1rem; color:var(--text);">💳 Transferencia bancaria</h2>
+        <p style="margin-bottom:0.5rem; color:var(--text-muted);">Transferí el total exacto al siguiente alias:</p>
         <div class="transfer-alias-row" style="display:flex; align-items:center; gap:0.75rem; flex-wrap:wrap;">
           <code id="successTransferAlias" style="background:var(--bg, #fff); padding:0.5rem 1rem; border-radius:var(--radius-sm); font-size:1.1rem; font-weight:600; border:1px solid var(--border, #e2e8f0);">iara-salgueiro</code>
-          <button id="copySuccessAliasBtn" class="btn btn-secondary btn-sm" style="flex-shrink:0;">âŸ¨ Copiar</button>
+          <button id="copySuccessAliasBtn" class="btn btn-secondary btn-sm" style="flex-shrink:0;">📋 Copiar</button>
         </div>
         <p id="successTransferNote" style="margin-top:0.75rem; font-size:0.85rem; color:var(--text-muted);"></p>
       </div>
@@ -78,8 +78,8 @@
 
   <script src="../js/config.js"></script>
   <script src="../js/theme.js"></script>
-  <script src="../js/cart.js"></script>
   <script src="../js/ui.js"></script>
+  <script src="../js/cart.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded',()=>{
       document.querySelectorAll('.reveal').forEach(el=>el.classList.add('visible'));
@@ -109,12 +109,11 @@
         const alias = document.getElementById('successTransferAlias')?.textContent;
         if(!alias) return;
         navigator.clipboard.writeText(alias).then(()=>{
-          e.target.textContent = 'âœ\ Copyado';
-          setTimeout(()=>{ e.target.textContent = 'âŸ¨ Copiar'; }, 2000);
+          e.target.textContent = '✅ Copyado';
+          setTimeout(()=>{ e.target.textContent = '📋 Copiar'; }, 2000);
         }).catch(()=>{});
       }
     });
   </script>
 </body>
 </html>
-

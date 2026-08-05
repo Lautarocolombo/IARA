@@ -155,7 +155,7 @@ const bulkImportProducts = async (req, res) => {
       const validation = productSchema.safeParse(data);
       if (!validation.success) {
         errors++;
-        errorDetails.push({ row: rowNum, error: validation.error.errors[0]?.message || 'Datos inválidos' });
+        errorDetails.push({ row: rowNum, error: validation.error.issues[0]?.message || 'Datos inválidos' });
         continue;
       }
 
@@ -305,7 +305,7 @@ const createProduct = async (req, res) => {
     res.status(201).json(result.rows[0]);
   } catch (err) {
     if (err.name === 'ZodError') {
-      return res.status(400).json({ error: err.errors[0]?.message || 'Datos inválidos' });
+      return res.status(400).json({ error: err.issues[0]?.message || 'Datos inválidos' });
     }
     logger.error('Error creando producto:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -334,7 +334,7 @@ const updateProduct = async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     if (err.name === 'ZodError') {
-      return res.status(400).json({ error: err.errors[0]?.message || 'Datos inválidos' });
+      return res.status(400).json({ error: err.issues[0]?.message || 'Datos inválidos' });
     }
     logger.error('Error actualizando producto:', err);
     res.status(500).json({ error: 'Error interno del servidor' });

@@ -336,7 +336,19 @@ async function fetchWithRetry(url, opts = {}, retries = 2, backoffMs = 1000) {
 
 window.safeFetch = safeFetch;
 window.fetchWithRetry = fetchWithRetry;
+window.showToast = showToast;
 window.getFetchErrorMessage = getFetchErrorMessage;
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+window.escapeHtml = escapeHtml;
 
 async function loadSiteTexts() {
   try {
@@ -526,26 +538,23 @@ if (typeof document !== 'undefined') {
 
 async function loadHeroCards() {
   try {
-    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-texts`, {}, 2, 1000);
+    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/hero-cards`, {}, 2, 1000);
     if (!res) return;
-    const data = await res.json();
+    const cards = await res.json();
+    if (!Array.isArray(cards)) return;
 
-    const heroCards = [1, 2];
-    heroCards.forEach(cardNum => {
-      const name = data[`hero_card_${cardNum}_name`];
-      const price = data[`hero_card_${cardNum}_price`];
-      const image = data[`hero_card_${cardNum}_image`];
-
+    cards.forEach(card => {
+      const cardNum = card.slot || card.id;
       const nameEl = document.getElementById(`heroCard${cardNum}Name`);
       const priceEl = document.getElementById(`heroCard${cardNum}Price`);
       const imgEl = document.getElementById(`heroCard${cardNum}Img`);
 
-      if (nameEl && name) nameEl.textContent = name;
-      if (priceEl && price) priceEl.textContent = price;
-      if (imgEl && image) {
-        imgEl.innerHTML = `<img src="${image}" alt="${name || 'Card imagen'}" style="width:100%;height:100%;object-fit:cover;" />`;
-      } else if (imgEl && !image) {
-        imgEl.textContent = cardNum === 1 ? '📿' : '💎';
+      if (nameEl && card.nombre) nameEl.textContent = card.nombre;
+      if (priceEl && card.precio) priceEl.textContent = card.precio;
+      if (imgEl && card.imagen) {
+        imgEl.innerHTML = `<img src="${card.imagen}" alt="${card.nombre || 'Card imagen'}" style="width:100%;height:100%;object-fit:cover;" />`;
+      } else if (imgEl && !card.imagen) {
+        imgEl.textContent = card.emoji || (cardNum === 1 ? '📿' : '💎');
       }
     });
   } catch (err) {
