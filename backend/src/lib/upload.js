@@ -138,7 +138,7 @@ async function deleteFromCloudinary(publicId) {
   }
 }
 
-async function processFile(file) {
+async function processFile(file, baseUrl) {
   const isProduction = process.env.NODE_ENV === 'production';
   const useCloudinary = isCloudinaryConfigured();
 
@@ -156,7 +156,8 @@ async function processFile(file) {
 
   const optimizedFilename = await optimizeWithSharp(file.path);
   const relativePath = `/uploads/products/${optimizedFilename}`;
-  return { url: relativePath, filename: optimizedFilename, cloudinary_public_id: '', isCloudinary: false };
+  const publicUrl = baseUrl ? `${baseUrl}${relativePath}` : relativePath;
+  return { url: publicUrl, filename: optimizedFilename, cloudinary_public_id: '', isCloudinary: false };
 }
 
 async function saveFile(req, res) {
@@ -174,22 +175,24 @@ async function saveFile(req, res) {
 const fileExistsCache = new Set();
 const fileMissingCache = new Set();
 
-function getPublicUrl(relativePath) {
+function getPublicUrl(relativePath, baseUrl) {
   if (!relativePath) return '';
   if (relativePath.startsWith('http')) return relativePath;
+  const prefix = baseUrl || process.env.BACKEND_URL || process.env.SITE_URL || '';
+  const withPrefix = prefix ? `${prefix}${relativePath}` : relativePath;
   if (relativePath.startsWith('/uploads/')) {
     if (fileMissingCache.has(relativePath)) return '';
-    if (fileExistsCache.has(relativePath)) return relativePath;
+    if (fileExistsCache.has(relativePath)) return withPrefix;
     const filePath = path.join(__dirname, '..', '..', relativePath);
     if (fs.existsSync(filePath)) {
       fileExistsCache.add(relativePath);
-      return relativePath;
+      return withPrefix;
     }
     fileMissingCache.add(relativePath);
     logger.warn(`Imagen no encontrada en filesystem: ${relativePath}`);
     return '';
   }
-  return relativePath;
+  return withPrefix;
 }
 
 module.exports = {

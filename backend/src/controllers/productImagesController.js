@@ -7,13 +7,14 @@ const { getPublicUrl, deleteFromCloudinary, processFile } = require('../lib/uplo
 async function getProductImages(req, res) {
   try {
     const productId = Number(req.params.id);
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
     const result = await query(
       'SELECT * FROM product_images WHERE product_id = $1 ORDER BY orden ASC, id ASC',
       [productId]
     );
     const images = result.rows.map(img => ({
       ...img,
-      url: getPublicUrl(img.url)
+      url: getPublicUrl(img.url, baseUrl)
     }));
     res.json(images);
   } catch (err) {
@@ -62,9 +63,10 @@ async function uploadProductImages(req, res) {
     }
 
     if (req.files && req.files.length > 0) {
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
       for (let i = 0; i < req.files.length; i++) {
         const file = req.files[i];
-        const processed = await processFile(file);
+        const processed = await processFile(file, baseUrl);
         const result = await query(
           'INSERT INTO product_images (product_id, url, filename, cloudinary_public_id, orden, es_principal, descripcion, categoria) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
           [productId, processed.url, processed.filename, processed.cloudinary_public_id || '', startOrden + imageUrls.length + i, false, req.body.descripcion || '', req.body.categoria || '']
@@ -91,6 +93,7 @@ async function updateProductImage(req, res) {
     const productId = Number(req.params.id);
     const imageId = Number(req.params.imageId);
     const { es_principal, orden, descripcion, categoria } = req.body;
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
 
     const imageCheck = await query(
       'SELECT id FROM product_images WHERE id = $1 AND product_id = $2',
@@ -124,7 +127,7 @@ async function updateProductImage(req, res) {
     );
 
     const updated = result.rows[0];
-    updated.url = getPublicUrl(updated.url);
+    updated.url = getPublicUrl(updated.url, baseUrl);
 
     if (es_principal === true) {
       try {
@@ -145,6 +148,7 @@ async function deleteProductImage(req, res) {
   try {
     const productId = Number(req.params.id);
     const imageId = Number(req.params.imageId);
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
 
     const result = await query(
       'SELECT * FROM product_images WHERE id = $1 AND product_id = $2',
@@ -171,7 +175,7 @@ async function deleteProductImage(req, res) {
         'SELECT * FROM product_images WHERE product_id = $1 ORDER BY orden ASC, id ASC',
         [productId]
       );
-      const imgs = (remaining.rows || []).map(i => ({ ...i, url: getPublicUrl(i.url) }));
+      const imgs = (remaining.rows || []).map(i => ({ ...i, url: getPublicUrl(i.url, baseUrl) }));
       const newPrincipal = imgs.find(i => i.es_principal) || imgs[0];
       const newImageUrl = newPrincipal ? newPrincipal.url : '';
       try {
@@ -192,6 +196,7 @@ async function replaceProductImage(req, res) {
   try {
     const productId = Number(req.params.id);
     const imageId = Number(req.params.imageId);
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
 
     const imageCheck = await query(
       'SELECT * FROM product_images WHERE id = $1 AND product_id = $2',
@@ -215,14 +220,14 @@ async function replaceProductImage(req, res) {
       }
     }
 
-    const processed = await processFile(req.file);
+    const processed = await processFile(req.file, `${req.protocol}://${req.get('host')}`);
     const result = await query(
       'UPDATE product_images SET url = $1, filename = $2, cloudinary_public_id = $3 WHERE id = $4 RETURNING *',
       [processed.url, processed.filename, processed.cloudinary_public_id || '', imageId]
     );
 
     const updated = result.rows[0];
-    updated.url = getPublicUrl(processed.url);
+    updated.url = getPublicUrl(processed.url, baseUrl);
     res.json(updated);
   } catch (err) {
     logger.error('Error reemplazando imagen:', err);
