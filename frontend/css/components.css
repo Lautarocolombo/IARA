@@ -182,7 +182,7 @@
   align-items: center;
   gap: 0.5rem;
   background: #fff;
-  border: 1px solid #f4c8d4;
+  border: 1px solid var(--rose-light);
   border-radius: 40px;
   padding: 5px 14px;
   font-size: 11px;
@@ -399,7 +399,7 @@
   align-items: center;
   gap: 12px;
   padding: 18px 20px;
-  border-right: 1px solid #f4c8d4;
+  border-right: 1px solid var(--rose-light);
   transition: var(--transition);
 }
 
@@ -411,7 +411,7 @@
   height: 36px;
   border-radius: 50%;
   background: #fff;
-  border: 1px solid #f4c8d4;
+  border: 1px solid var(--rose-light);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -530,7 +530,7 @@
 
 .how-card {
   background: #fff;
-  border: 1px solid #f4d0da;
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   padding: 1.5rem;
@@ -608,7 +608,7 @@
 .product-card {
   background: #fff;
   border-radius: 16px;
-  border: 1px solid #f4d0da;
+  border: 1px solid var(--border);
   overflow: visible;
   box-shadow: var(--shadow-sm);
   transition: var(--transition);
@@ -638,7 +638,7 @@
 }
 
 .product-image.cat-pulseras { background: linear-gradient(135deg, #fde8ef, #f8d5e4); }
-.product-image.cat-accesorios { background: linear-gradient(135deg, #e8f4f0, #d0ede5); }
+.product-image.cat-accesorios { background: linear-gradient(135deg, var(--blush), var(--mint)); }
 .product-image.cat-souvenirs { background: linear-gradient(135deg, #f0eeff, #e4dcff); }
 
 .product-image img {
@@ -786,7 +786,7 @@
   padding: 2.5rem;
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
-  border: 1px solid #f4d0da;
+  border: 1px solid var(--border);
 }
 
 .form-group { margin-bottom: 1.25rem; }
@@ -831,7 +831,7 @@
   justify-content: center;
   font-size: 1.1rem;
   flex-shrink: 0;
-  border: 1px solid #f4c8d4;
+  border: 1px solid var(--rose-light);
 }
 
 .info-item h4 {
@@ -854,7 +854,7 @@
   border-radius: var(--radius-md);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
-  border: 1px solid #f4d0da;
+  border: 1px solid var(--border);
   background: #fff;
 }
 
@@ -901,7 +901,7 @@
   border-radius: var(--radius-md);
   padding: 1.5rem;
   text-align: center;
-  border: 1px solid #f4c8d4;
+  border: 1px solid var(--rose-light);
   margin-top: 1rem;
 }
 
@@ -1043,7 +1043,7 @@
   height: 36px;
   border-radius: 50%;
   background: var(--blush);
-  border: 1px solid #f4c8d4;
+  border: 1px solid var(--rose-light);
   display: flex;
   align-items: center;
   justify-content: center;
