@@ -67,6 +67,7 @@ const API_BASE = CONFIG.API.BASE;
       let controller = new AbortController();
       const timeoutMs = 8000;
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      console.log('[admin] checkServerHealth: inicio, API_BASE=', API_BASE, 'url=', getApiUrl('/api/health'));
       try {
         btn.textContent = 'Verificando...';
         btn.disabled = true;
@@ -79,12 +80,14 @@ const API_BASE = CONFIG.API.BASE;
         );
         const res = await Promise.race([fetchPromise, timeoutPromise]);
         clearTimeout(timeoutId);
+        console.log('[admin] checkServerHealth: status=', res.status, 'ok=', res.ok);
         if (!res.ok) throw new Error(`Servidor respondió con estado ${res.status}`);
         hint.textContent = '✅ Servidor conectado';
         hint.style.color = '#10b981';
         if (retryBtn) retryBtn.style.display = 'none';
       } catch (err) {
         clearTimeout(timeoutId);
+        console.error('[admin] checkServerHealth: error', err.name, err.message, err);
         const isAborted = err.name === 'AbortError';
         const isTimeout = err.message === 'timeout';
         let message = '⚠️ El servidor no responde. Podés intentar igualmente iniciar sesión.';
@@ -95,7 +98,6 @@ const API_BASE = CONFIG.API.BASE;
         }
         hint.textContent = message;
         hint.style.color = '#f59e0b';
-        console.error('Error verificando conexión con el servidor:', err);
         if (retryBtn) {
           retryBtn.style.display = 'inline-block';
           retryBtn.onclick = () => { checkServerHealth(); };
@@ -158,7 +160,9 @@ const API_BASE = CONFIG.API.BASE;
         );
         const res = await Promise.race([fetchPromise, timeoutPromise]);
         clearTimeout(timeoutId);
+        console.log('[admin] doLogin: status=', res.status, 'ok=', res.ok);
         const data = await res.json().catch(() => ({}));
+        console.log('[admin] doLogin: data=', data);
         if (!res.ok) {
           let errorMsg = data.error || `Error ${res.status}`;
           if (res.status === 401) {
@@ -177,7 +181,7 @@ const API_BASE = CONFIG.API.BASE;
         showToast(`Bienvenida, ${data.user}`, 'success');
         navigateTo('products');
       } catch (err) {
-        console.error('Login error:', err);
+        console.error('[admin] doLogin: error', err.name, err.message, err);
         let userMessage = 'Error inesperado. Por favor, recargá la página.';
         if (err.message === 'timeout') {
           userMessage = 'El servidor tardó demasiado en responder. Recargá la página e intentá nuevamente.';

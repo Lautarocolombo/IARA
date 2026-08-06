@@ -52,6 +52,7 @@
       );
       const res = await Promise.race([fetchPromise, timeoutPromise]);
       clearTimeout(timeoutId);
+      console.log('[connection] checkBackend: status=', res.status, 'ok=', res.ok);
 
       const data = await res.json().catch(() => ({}));
       const isOk = res.ok && (data.status === 'ok' || data.status === 'degraded' || data.status === 'sqlite-fallback');
@@ -64,6 +65,7 @@
       });
     } catch (err) {
       clearTimeout(timeoutId);
+      console.error('[connection] checkBackend: error', err.name, err.message, err);
       const isOffline = !navigator.onLine || err.name === 'AbortError';
       const nextRetry = Math.min(status.retryCount + 1, MAX_RETRIES);
 
