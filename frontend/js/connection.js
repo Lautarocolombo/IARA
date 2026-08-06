@@ -38,14 +38,19 @@
     setStatus({ checking: true, backend: 'checking' });
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
+    const timeoutMs = 10000;
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      const res = await fetch(`${CONFIG.API.BASE}/api/health`, {
+      const fetchPromise = fetch(`${CONFIG.API.BASE}/api/health`, {
         method: 'GET',
         headers: { 'Accept': 'application/json' },
         signal: controller.signal
       });
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('timeout')), timeoutMs)
+      );
+      const res = await Promise.race([fetchPromise, timeoutPromise]);
       clearTimeout(timeoutId);
 
       const data = await res.json().catch(() => ({}));
@@ -103,11 +108,14 @@
 
   async function keepAlive() {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
       await fetch(`${CONFIG.API.BASE}/api/health`, {
         method: 'GET',
         headers: { 'Accept': 'application/json' },
-        signal: AbortSignal.timeout(5000)
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
     } catch (e) {
       // silencioso: solo mantenemos el intento
     }
