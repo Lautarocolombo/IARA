@@ -65,11 +65,19 @@ const API_BASE = CONFIG.API.BASE;
       const hint = document.getElementById('loginHint');
       const retryBtn = document.getElementById('retryHealthBtn');
       let controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const timeoutMs = 8000;
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
       try {
         btn.textContent = 'Verificando...';
         btn.disabled = true;
-        const res = await fetch(getApiUrl('/api/health'), { method: 'GET', signal: controller.signal });
+        const fetchPromise = fetch(getApiUrl('/api/health'), {
+          method: 'GET',
+          signal: controller.signal
+        });
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('timeout')), timeoutMs)
+        );
+        const res = await Promise.race([fetchPromise, timeoutPromise]);
         clearTimeout(timeoutId);
         if (!res.ok) throw new Error(`Servidor respondió con estado ${res.status}`);
         hint.textContent = '✅ Servidor conectado';
@@ -77,8 +85,17 @@ const API_BASE = CONFIG.API.BASE;
         if (retryBtn) retryBtn.style.display = 'none';
       } catch (err) {
         clearTimeout(timeoutId);
-        hint.textContent = '⚠️ El servidor no responde. Podés intentar igualmente iniciar sesión.';
+        const isAborted = err.name === 'AbortError';
+        const isTimeout = err.message === 'timeout';
+        let message = '⚠️ El servidor no responde. Podés intentar igualmente iniciar sesión.';
+        if (isTimeout) {
+          message = '⚠️ La verificación tardó demasiado. Podés intentar igualmente iniciar sesión.';
+        } else if (isAborted) {
+          message = '⚠️ La conexión se canceló. Podés intentar igualmente iniciar sesión.';
+        }
+        hint.textContent = message;
         hint.style.color = '#f59e0b';
+        console.error('Error verificando conexión con el servidor:', err);
         if (retryBtn) {
           retryBtn.style.display = 'inline-block';
           retryBtn.onclick = () => { checkServerHealth(); };
@@ -127,16 +144,21 @@ const API_BASE = CONFIG.API.BASE;
         btn.textContent = 'Ingresando...';
         btn.disabled = true;
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 20000);
-        const res = await fetch(getApiUrl('/api/auth/login'), {
+        const timeoutMs = 15000;
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+        const fetchPromise = fetch(getApiUrl('/api/auth/login'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
           body: JSON.stringify({ username, password }),
           signal: controller.signal
         });
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('timeout')), timeoutMs)
+        );
+        const res = await Promise.race([fetchPromise, timeoutPromise]);
         clearTimeout(timeoutId);
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           let errorMsg = data.error || `Error ${res.status}`;
           if (res.status === 401) {
@@ -157,8 +179,10 @@ const API_BASE = CONFIG.API.BASE;
       } catch (err) {
         console.error('Login error:', err);
         let userMessage = 'Error inesperado. Por favor, recargá la página.';
-        if (err.name === 'AbortError') {
-          userMessage = 'El servidor tardó demasiado. Recargá la página e intentá nuevamente.';
+        if (err.message === 'timeout') {
+          userMessage = 'El servidor tardó demasiado en responder. Recargá la página e intentá nuevamente.';
+        } else if (err.name === 'AbortError') {
+          userMessage = 'La conexión se canceló. Recargá la página e intentá nuevamente.';
         } else if (err.name === 'TypeError' && err.message.includes('fetch')) {
           userMessage = 'No se pudo conectar al servidor. Verificá tu conexión o recargá la página.';
         } else {
@@ -364,8 +388,7 @@ const API_BASE = CONFIG.API.BASE;
       }
       setTimeout(checkServerHealth, 800);
     });
-  </script>
-  <script>
+
     const state = { currentCategoryId: null, currentOrderId: null, currentCustomerId: null, dashboardLoaded: false };
 
 function openSectionModal() {
@@ -1672,4 +1695,47 @@ async function changeOrderStatus(id, newStatus) {
        }
       clearSaveStatus('settingsSaveStatus');
     });
-   </script>
+
+    window.doLogin = doLogin;
+    window.doLogout = doLogout;
+    window.checkServerHealth = checkServerHealth;
+    window.openSectionModal = openSectionModal;
+    window.openCategoryModal = openCategoryModal;
+    window.closeCategoryModal = closeCategoryModal;
+    window.saveCategory = saveCategory;
+    window.editCategory = editCategory;
+    window.deleteCategory = deleteCategory;
+    window.openModal = openModal;
+    window.closeModal = closeModal;
+    window.saveProduct = saveProduct;
+    window.saveTestimonial = saveTestimonial;
+    window.closeTestimonialModal = closeTestimonialModal;
+    window.saveText = saveText;
+    window.closeTextModal = closeTextModal;
+    window.saveHeroSlot = saveHeroSlot;
+    window.closeHeroSlotModal = closeHeroSlotModal;
+    window.openHeroSlotModal = openHeroSlotModal;
+    window.togglePasswordSection = togglePasswordSection;
+    window.changePassword = changePassword;
+    window.addShippingZone = addShippingZone;
+    window.saveSettings = saveSettings;
+    window.setReportPreset = setReportPreset;
+    window.loadSalesReport = loadSalesReport;
+    window.exportCSV = exportCSV;
+    window.exportOrdersCSV = exportOrdersCSV;
+    window.exportOrdersPDF = exportOrdersPDF;
+    window.generateReceipt = generateReceipt;
+    window.sendReceiptWhatsApp = sendReceiptWhatsApp;
+    window.viewOrder = viewOrder;
+    window.quickUpdateOrderStatus = quickUpdateOrderStatus;
+    window.editTestimonial = editTestimonial;
+    window.deleteTestimonial = deleteTestimonial;
+    window.toggleTestimonialActive = toggleTestimonialActive;
+    window.editText = editText;
+    window.syncHeroCards = syncHeroCards;
+    window.deleteHeroSlotImage = deleteHeroSlotImage;
+    window.previewHeroSlotImage = previewHeroSlotImage;
+    window.closeOrderDetailModal = closeOrderDetailModal;
+    window.changeOrderStatus = changeOrderStatus;
+    window.saveOrderNotes = saveOrderNotes;
+    window.renderPagination = renderPagination;
