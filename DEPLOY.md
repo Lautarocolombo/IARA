@@ -1,7 +1,7 @@
 # IARA - Guía de Deploy
 
 ## Estado actual
-- **Frontend:** Vercel (`https://iara-ivory.vercel.app`)
+- **Frontend:** Vercel (`https://iara-lovat-orcin.vercel.app`)
 - **Backend:** Render (`https://iara-uxcu.onrender.com`)
 - **Base de datos:** PostgreSQL en Render (auto-provisionada)
 
@@ -17,8 +17,8 @@
 | `ADMIN_USER` | `Iara` | |
 | `ADMIN_PASS_HASH` | hash bcrypt | Generar con: `node -e "const bcrypt=require('bcrypt'); bcrypt.hash('pulseras2026',10).then(h=>console.log(h))"` |
 | `DATABASE_URL` | connection string de Neon | Render lo genera automáticamente |
-| `ALLOWED_ORIGINS` | `https://iara-ivory.vercel.app,https://*.vercel.app,https://artesaniagualeguay.com,http://localhost:3000` | |
-| `SITE_URL` | `https://iara-ivory.vercel.app` | |
+| `ALLOWED_ORIGINS` | `https://iara-lovat-orcin.vercel.app,https://*.vercel.app,https://artesaniagualeguay.com,http://localhost:3000` | |
+| `SITE_URL` | `https://iara-lovat-orcin.vercel.app` | |
 | `BACKEND_URL` | `https://iara-uxcu.onrender.com` | |
 | `EMAIL_FROM` | `noreply@artesaniagualeguay.com` | |
 | `ADMIN_NOTIFICATION_EMAIL` | `admin@artesaniagualeguay.com` | |
@@ -69,7 +69,7 @@ El backend usa `ALLOWED_ORIGINS` con `credentials: true`. Asegurate de que el do
 
 ### 3. Dominios
 
-- **Vercel:** `https://iara-ivory.vercel.app`
+- **Vercel:** `https://iara-lovat-orcin.vercel.app`
 - **Render:** `https://iara-uxcu.onrender.com`
 
 Si cambiás el dominio de Render, actualizá:
@@ -80,9 +80,9 @@ Si cambiás el dominio de Render, actualizá:
 ### 4. Post-deploy
 
 1. Verificar health check: `curl https://iara-uxcu.onrender.com/health`
-2. Verificar frontend: `https://iara-ivory.vercel.app`
+2. Verificar frontend: `https://iara-lovat-orcin.vercel.app`
 3. Verificar API desde frontend: abrir consola del navegador y verificar que `/api/health` responda 200
-4. Verificar login en admin: `https://iara-ivory.vercel.app/pages/admin.html`
+4. Verificar login en admin: `https://iara-lovat-orcin.vercel.app/pages/admin.html`
 5. Subir una imagen de producto y verificar que persista (requiere Cloudinary configurado)
 
 ### 5. Notas importantes

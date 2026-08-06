@@ -15,9 +15,10 @@ const getSiteTexts = async (req, res) => {
 
 const upsertSiteText = async (req, res) => {
   const { key, value } = req.body || {};
-  if (!key || value === undefined) return res.status(400).json({ error: 'key y value son requeridos' });
+  const resolvedKey = key || req.params.key;
+  if (!resolvedKey || value === undefined) return res.status(400).json({ error: 'key y value son requeridos' });
   try {
-    await query('INSERT INTO site_texts (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = CURRENT_TIMESTAMP', [key, value]);
+    await query('INSERT INTO site_texts (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = CURRENT_TIMESTAMP', [resolvedKey, value]);
     res.json({ ok: true });
   } catch (err) {
     logger.error('Error guardando texto:', err);
