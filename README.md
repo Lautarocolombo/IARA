@@ -51,7 +51,7 @@ http://localhost:3000
 
 ## Deploy
 
-- **Vercel (producción):** `https://iara-lovat.vercel.app`
+- **Vercel (producción):** `https://iara-ivory.vercel.app`
 - **Render (alternativo):** `https://iara-uxcu.onrender.com`
 
 ### Variables de entorno en Vercel
@@ -64,7 +64,7 @@ Configurar en **Vercel Dashboard > Settings > Environment Variables**:
 | `JWT_SECRET` | string seguro aleatorio |
 | `ADMIN_USER` | tu usuario admin |
 | `ADMIN_PASS_HASH` | hash bcrypt de tu contraseña admin (generar con `bcrypt.hash('contraseña', 10)`) |
-| `ALLOWED_ORIGINS` | `https://iara-lovat.vercel.app,http://localhost:3000` |
+| `ALLOWED_ORIGINS` | `https://iara-ivory.vercel.app,http://localhost:3000` |
 | `DATABASE_URL` | connection string de Neon |
 | `RESEND_API_KEY` | (opcional) |
 | `EMAIL_FROM` | `noreply@artesaniagualeguay.com` |
