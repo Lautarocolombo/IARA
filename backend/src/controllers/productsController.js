@@ -54,10 +54,12 @@ async function attachImagesToProducts(products, baseUrl) {
   return products.map(p => {
     const imgs = byProduct[p.id] || [];
     const principal = imgs.find(i => i.es_principal) || imgs[0];
+    const principalUrl = principal ? (principal.url || getPublicUrl(principal.url, resolvedBaseUrl)) : '';
+    const legacyImage = p.image ? getPublicUrl(p.image, resolvedBaseUrl) : '';
     return {
       ...p,
       images: imgs,
-      image: p.image || (principal ? principal.url : '')
+      image: principalUrl || legacyImage
     };
   });
 }

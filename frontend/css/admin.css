@@ -462,6 +462,7 @@ tr:last-child td {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .price-cell {
@@ -992,6 +993,7 @@ tr:last-child td {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .product-image-item-preview:hover .product-image-item-actions .btn {
@@ -1304,6 +1306,7 @@ tr:last-child td {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
 
 .hero-card-preview.placeholder {

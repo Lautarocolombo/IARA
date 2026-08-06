@@ -169,8 +169,9 @@ function renderProducts(productsToRender) {
   }
 
   grid.innerHTML = productsToRender.map(product => {
-    const imageHtml = product.image
-      ? window.renderProductImage(product.image, product.name, { className: 'product-card-img', placeholder: product.emoji || '📿' })
+    const imgUrl = (product.images && product.images.length ? (product.images.find(i => i.es_principal) || product.images[0]).url : '') || product.image;
+    const imageHtml = imgUrl
+      ? window.renderProductImage(imgUrl, product.name, { className: 'product-card-img', placeholder: product.emoji || '📿' })
       : window.renderProductImage('', product.name, { className: 'product-card-img', placeholder: product.emoji || '📿' });
     const catClass = product.category ? `cat-${product.category}` : '';
     const badgeHtml = product.badge ? `<span class="product-badge">${product.badge}</span>` : '';

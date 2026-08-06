@@ -15,7 +15,7 @@
     .product-detail{max-width:900px;margin:0 auto;padding:100px 24px 40px;}
     .product-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:2.5rem;align-items:start;}
     .product-image-large{width:100%;aspect-ratio:1;border-radius:var(--radius-md);background:linear-gradient(135deg,var(--blush),var(--mint));display:flex;align-items:center;justify-content:center;font-size:6rem;border:1px solid #f4c8d4;overflow:hidden;}
-    .product-image-large img{width:100%;height:100%;object-fit:cover;}
+    .product-image-large img{width:100%;height:100%;object-fit:cover;display:block;}
     .product-category{display:inline-block;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.5rem;}
     .product-detail-title{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:700;color:var(--text-dark);margin-bottom:0.75rem;line-height:1.2;}
     .product-detail-price{font-family:'Playfair Display',serif;font-weight:700;font-size:1.5rem;color:var(--rose-dark);margin-bottom:1.5rem;}
@@ -37,9 +37,9 @@
     @keyframes ag-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
     .product-image-gallery{display:flex;gap:0.75rem;align-items:flex-start;}
     .product-image-main{width:100%;aspect-ratio:1;border-radius:var(--radius-md);background:linear-gradient(135deg,var(--blush),var(--mint));border:1px solid #f4c8d4;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;}
-    .product-image-main img{width:100%;height:100%;object-fit:contain;}
+    .product-image-main img{width:100%;height:100%;object-fit:contain;display:block;}
     .product-image-thumbs{display:flex;flex-direction:column;gap:0.5rem;overflow-y:auto;max-height:280px;flex-shrink:0;}
-    .product-image-thumbs img{width:64px;height:64px;object-fit:cover;border-radius:var(--radius-sm);border:1.5px solid transparent;cursor:pointer;transition:border-color .2s,box-shadow .2s;}
+    .product-image-thumbs img{width:64px;height:64px;object-fit:cover;border-radius:var(--radius-sm);border:1.5px solid transparent;cursor:pointer;transition:border-color .2s,box-shadow .2s;display:block;}
     .product-image-thumbs img:hover,.product-image-thumbs img.active{border-color:var(--rose-dark);box-shadow:0 0 0 2px var(--blush);}
     @media(max-width:768px){.product-detail-grid{grid-template-columns:1fr;}}
   </style>

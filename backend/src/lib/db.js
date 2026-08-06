@@ -17,10 +17,15 @@ let pool = null;
 
 function createPool(connectionString) {
   const { Pool } = require('pg');
+  let finalConnectionString = connectionString;
+  if (process.env.NODE_ENV === 'production' && connectionString && !connectionString.includes('sslmode=')) {
+    const separator = connectionString.includes('?') ? '&' : '?';
+    finalConnectionString = connectionString + separator + 'sslmode=require';
+  }
   return new Pool({
-    connectionString,
+    connectionString: finalConnectionString,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    max: 20,
+    max: 5,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,
     allowExitOnIdle: false
@@ -381,6 +386,12 @@ async function initDB() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
     logger.info('Tablas de base de datos inicializadas (SQLite)');
+   try {
+     await ensureAdminUser();
+   } catch (err) {
+     logger.warn({ err: err.message }, 'No se pudo asegurar usuario admin (SQLite)');
+   }
+   return;
     try {
       await query('ALTER TABLE product_images ADD COLUMN cloudinary_public_id TEXT DEFAULT \'\'');
     } catch (err) {
@@ -703,7 +714,24 @@ async function initDB() {
     await query('INSERT INTO migrations (name) VALUES ($1) ON CONFLICT (name) DO NOTHING', [mig.name]);
   }
 
-  logger.info('Tablas de base de datos inicializadas (PostgreSQL)');
-}
+   logger.info('Tablas de base de datos inicializadas (PostgreSQL)');
+   try {
+     await ensureAdminUser();
+   } catch (err) {
+     logger.warn({ err: err.message }, 'No se pudo asegurar usuario admin (PostgreSQL)');
+   }
+ }
 
-module.exports = { query, initDB, pool, connectionString: !!connectionString, getClient, transaction };
+ async function ensureAdminUser() {
+   const ADMIN_USER = process.env.ADMIN_USER;
+   const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH;
+   if (!ADMIN_USER || !ADMIN_PASS_HASH) return;
+   const existing = await query('SELECT id FROM users WHERE username = $1', [ADMIN_USER]);
+   if (existing.rows.length > 0) {
+     await query('UPDATE users SET password_hash = $1, active = TRUE, role = $2 WHERE username = $3', [ADMIN_PASS_HASH, 'admin', ADMIN_USER]);
+   } else {
+     await query('INSERT INTO users (username, password_hash, role, active) VALUES ($1, $2, $3, $4)', [ADMIN_USER, ADMIN_PASS_HASH, 'admin', true]);
+   }
+ }
+
+ module.exports = { query, initDB, pool, connectionString: !!connectionString, getClient, transaction };
