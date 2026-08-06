@@ -23,7 +23,7 @@ services:
       - key: DATABASE_URL
         generateValue: true
       - key: SITE_URL
-        value: https://iara-lovat.vercel.app
+        value: https://iara-ivory.vercel.app
       - key: BACKEND_URL
         value: https://iara-uxcu.onrender.com
       - key: ALLOWED_ORIGINS
@@ -32,6 +32,12 @@ services:
         value: "200"
       - key: SHIPPING_THRESHOLD
         value: "2000"
+      - key: EMAIL_FROM
+        value: noreply@artesaniagualeguay.com
+      - key: ADMIN_NOTIFICATION_EMAIL
+        value: admin@artesaniagualeguay.com
+      - key: RESEND_API_KEY
+        value: ""
       - key: WHATSAPP
         value: "+5493444634444"
       - key: LOG_LEVEL

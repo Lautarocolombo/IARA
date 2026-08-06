@@ -1,3 +1,4 @@
+/* global Chart */
 const API_BASE = CONFIG.API.BASE;
         let authToken = '';
         window.__getAdminToken = () => authToken;
@@ -13,10 +14,20 @@ const API_BASE = CONFIG.API.BASE;
       let testimonialsPendingChanges = false;
       let ordersCurrentPage = 1;
       let ordersTotalPages = 1;
-      let productsCurrentPage = 1;
-      let productsTotalPages = 1;
+     let productsCurrentPage = 1;
+       let productsTotalPages = 1;
 
-    function getApiUrl(path) {
+     function escapeHtml(str) {
+       if (str == null) return '';
+       return String(str)
+         .replace(/&/g, '&amp;')
+         .replace(/</g, '&lt;')
+         .replace(/>/g, '&gt;')
+         .replace(/"/g, '&quot;')
+         .replace(/'/g, '&#39;');
+     }
+
+     function getApiUrl(path) {
       if (!API_BASE) return path;
       return `${API_BASE}${path}`;
     }
@@ -412,7 +423,7 @@ async function loadCategories() {
           const allProducts = productData.products || productData || [];
           const tbody = document.getElementById('categoriesTableBody');
           if (!tbody) return;
-          if (!categories.length) { tbody.innerHTML = `<tr><td colspan='7' class='empty-state'>Sin categorías</td></tr>`; return; }
+          if (!categories.length) { tbody.innerHTML = '<tr><td colspan=\'7\' class=\'empty-state\'>Sin categorías</td></tr>'; return; }
           tbody.innerHTML = categories.map(c => {
             const productCount = allProducts.filter(p => p.category === c.name).length;
             return `<tr>
@@ -543,7 +554,7 @@ function renderProductsTable() {
        });
        const tbody = document.getElementById('tableBody');
        if (filtered.length === 0) {
-         tbody.innerHTML = `<tr><td colspan='8' class='empty-state'><h3>Sin resultados</h3><p>No se encontraron productos.</p></td></tr>`;
+         tbody.innerHTML = '<tr><td colspan=\'8\' class=\'empty-state\'><h3>Sin resultados</h3><p>No se encontraron productos.</p></td></tr>';
          return;
        }
         tbody.innerHTML = filtered.map(p => `<tr>
@@ -755,7 +766,7 @@ function setReportPreset(preset) {
          renderSalesChart(data);
        } catch (err) {
          console.error('[loadSalesReport] Error:', err);
-         document.getElementById('reportContent').innerHTML = `<div class='empty-state'>Error al cargar los datos. Verificá la consola para más detalles.</div>`;
+         document.getElementById('reportContent').innerHTML = '<div class=\'empty-state\'>Error al cargar los datos. Verificá la consola para más detalles.</div>';
        }
      }
 
@@ -798,7 +809,7 @@ function setReportPreset(preset) {
          const canvas = document.getElementById('trendChart');
          if (!container) return;
          if (!data.length) {
-           container.innerHTML = `<div class='empty-state'>Sin datos de tendencia</div>`;
+           container.innerHTML = '<div class=\'empty-state\'>Sin datos de tendencia</div>';
            if (canvas) canvas.style.display = 'none';
            return;
          }
@@ -813,7 +824,7 @@ function setReportPreset(preset) {
          renderTrendChart(data);
        } catch (err) {
          console.error('[loadSalesTrend] Error:', err);
-         document.getElementById('trendContent').innerHTML = `<div class='empty-state'>Error al cargar la tendencia.</div>`;
+         document.getElementById('trendContent').innerHTML = '<div class=\'empty-state\'>Error al cargar la tendencia.</div>';
        }
      }
 
@@ -923,8 +934,8 @@ function setReportPreset(preset) {
 
     async function generateReceipt(id) {
       try {
-        const res = await fetch(`/api/admin/orders/${id}/receipt`, {
-          headers: { Authorization: `Bearer ${getAuthToken()}` }
+        const res = await adminFetch(`/api/admin/orders/${id}/receipt`, {
+          method: 'GET'
         });
         if (!res.ok) throw new Error('Error al generar comprobante');
         const blob = await res.blob();
@@ -942,8 +953,8 @@ function setReportPreset(preset) {
 
     async function sendReceiptWhatsApp(id) {
       try {
-        const res = await fetch(`/api/admin/orders/${id}/receipt/whatsapp`, {
-          headers: { Authorization: `Bearer ${getAuthToken()}` }
+        const res = await adminFetch(`/api/admin/orders/${id}/receipt/whatsapp`, {
+          method: 'POST'
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Error al enviar');
@@ -982,7 +993,7 @@ function setReportPreset(preset) {
           renderOrdersTable();
         } catch (err) {
           console.error('[loadOrders] Error:', err);
-          document.getElementById('ordersTableBody').innerHTML = `<tr><td colspan='7' class='empty-state'>Error al cargar los datos. Verificá la consola para más detalles.</td></tr>`;
+          document.getElementById('ordersTableBody').innerHTML = '<tr><td colspan=\'7\' class=\'empty-state\'>Error al cargar los datos. Verificá la consola para más detalles.</td></tr>';
         }
       }
 
@@ -1002,7 +1013,7 @@ function renderOrdersTable() {
        });
        const tbody = document.getElementById('ordersTableBody');
        if (!filtered.length) {
-         tbody.innerHTML = `<tr><td colspan='7' class='empty-state'><h3>Sin resultados</h3><p>No se encontraron pedidos.</p></td></tr>`;
+         tbody.innerHTML = '<tr><td colspan=\'7\' class=\'empty-state\'><h3>Sin resultados</h3><p>No se encontraron pedidos.</p></td></tr>';
          return;
        }
        tbody.innerHTML = filtered.map(o => {
@@ -1046,7 +1057,7 @@ function renderOrdersTable() {
         if (end < totalPages - 1) pages.push('...');
         if (end < totalPages) pages.push(totalPages);
         container.innerHTML = `<button class='btn btn-secondary btn-sm' onclick='${onChange.name || onChange}(${1})' ${currentPage === 1 ? 'disabled' : ''}>« Primero</button>` +
-          pages.map(p => p === '...' ? `<span class='page-ellipsis'>…</span>` :
+          pages.map(p => p === '...' ? '<span class=\'page-ellipsis\'>…</span>' :
             `<button class='btn btn-${currentPage === p ? 'primary' : 'secondary'} btn-sm' onclick='${onChange.name || onChange}(${p})'>${p}</button>`).join('') +
           `<button class='btn btn-secondary btn-sm' onclick='${onChange.name || onChange}(${totalPages})' ${currentPage === totalPages ? 'disabled' : ''}>Último »</button>`;
       }
@@ -1127,14 +1138,14 @@ function renderOrdersTable() {
         renderTestimonialsTable();
       } catch (err) {
         console.error('[loadTestimonials] Error:', err);
-        document.getElementById('testimonialsTableBody').innerHTML = `<tr><td colspan='5' class='empty-state'>Error al cargar los datos. Verificá la consola para más detalles.</td></tr>`;
+        document.getElementById('testimonialsTableBody').innerHTML = '<tr><td colspan=\'5\' class=\'empty-state\'>Error al cargar los datos. Verificá la consola para más detalles.</td></tr>';
       }
     }
 
     function renderTestimonialsTable() {
       const tbody = document.getElementById('testimonialsTableBody');
       if (!testimonials.length) {
-        tbody.innerHTML = `<tr><td colspan='5' class='empty-state'>Sin testimonios</td></tr>`;
+        tbody.innerHTML = '<tr><td colspan=\'5\' class=\'empty-state\'>Sin testimonios</td></tr>';
         return;
       }
       tbody.innerHTML = testimonials.map(t => `<tr>
@@ -1277,7 +1288,7 @@ function renderOrdersTable() {
         renderSiteTextsTable();
       } catch (err) {
         console.error('[loadSiteTexts] Error:', err);
-        document.getElementById('textsTableBody').innerHTML = `<tr><td colspan='3' class='empty-state'>Error al cargar los datos. Verificá la consola para más detalles.</td></tr>`;
+        document.getElementById('textsTableBody').innerHTML = '<tr><td colspan=\'3\' class=\'empty-state\'>Error al cargar los datos. Verificá la consola para más detalles.</td></tr>';
       }
     }
 
@@ -1285,7 +1296,7 @@ function renderOrdersTable() {
       const tbody = document.getElementById('textsTableBody');
       const entries = Object.entries(siteTexts);
       if (!entries.length) {
-        tbody.innerHTML = `<tr><td colspan='3' class='empty-state'>Sin textos</td></tr>`;
+        tbody.innerHTML = '<tr><td colspan=\'3\' class=\'empty-state\'>Sin textos</td></tr>';
         return;
       }
       tbody.innerHTML = entries.map(([key, value]) => `<tr>
@@ -1341,7 +1352,7 @@ async function loadHeroCardsAdmin() {
          renderHeroSlots();
        } catch (err) {
          console.error('[loadHeroCardsAdmin] Error:', err);
-         document.getElementById('heroSlotsList').innerHTML = `<div class='empty-state'>Error al cargar los datos. Verificá la consola para más detalles.</div>`;
+         document.getElementById('heroSlotsList').innerHTML = '<div class=\'empty-state\'>Error al cargar los datos. Verificá la consola para más detalles.</div>';
        }
      }
 
@@ -1553,7 +1564,7 @@ async function saveSettings() {
         const container = document.getElementById('shippingZonesList');
         if (!container) return;
         if (!zones.length) {
-          container.innerHTML = `<p class='empty-state'>No hay zonas configuradas. Agregá una zona para definir envíos a distintas localidades.</p>`;
+          container.innerHTML = '<p class=\'empty-state\'>No hay zonas configuradas. Agregá una zona para definir envíos a distintas localidades.</p>';
           return;
         }
         container.innerHTML = zones.map((z, i) => `<div class='shipping-zone-item' style='display:flex;gap:0.5rem;align-items:center;margin-bottom:0.5rem;padding:0.5rem;border:1.5px solid var(--border);border-radius:8px;'>
