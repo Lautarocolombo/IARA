@@ -130,7 +130,14 @@ const changePassword = async (req, res) => {
   if (!hashMatch) return res.status(401).json({ error: 'Contraseña actual incorrecta' });
 
   const newHash = await bcrypt.hash(newPassword, 10);
-  res.json({ ok: true, message: 'Contraseña actualizada. Recordá actualizar ADMIN_PASS_HASH en las variables de entorno del servidor.' });
+  if (ADMIN_USER) {
+    try {
+      await query('UPDATE users SET password_hash = $1 WHERE username = $2', [newHash, ADMIN_USER]);
+    } catch (e) {
+      logger.warn({ err: e.message }, 'No se pudo actualizar password_hash en users');
+    }
+  }
+  res.json({ ok: true, message: 'Contraseña actualizada. Si usás variables de entorno, recordá actualizar ADMIN_PASS_HASH en Render.' });
 };
 
 module.exports = { login, refresh, logout, hashPassword, changePassword };
