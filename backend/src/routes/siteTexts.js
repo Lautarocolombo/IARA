@@ -5,7 +5,9 @@ const { getSiteTexts, upsertSiteText, syncTextsToNeon } = require('../controller
 
 router.get('/site-texts', getSiteTexts);
 router.get('/admin/site-texts', adminAuth, getSiteTexts);
+router.post('/admin/site-texts', adminAuth, upsertSiteText);
 router.put('/admin/site-texts', adminAuth, upsertSiteText);
+router.put('/admin/site-texts/:key', adminAuth, upsertSiteText);
 router.post('/admin/sync-texts', adminAuth, syncTextsToNeon);
 
 module.exports = router;

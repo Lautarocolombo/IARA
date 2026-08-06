@@ -23,7 +23,7 @@ services:
       - key: DATABASE_URL
         generateValue: true
       - key: SITE_URL
-        value: https://iara-ivory.vercel.app
+        value: https://iara-lovat-orcin.vercel.app
       - key: BACKEND_URL
         value: https://iara-uxcu.onrender.com
       - key: ALLOWED_ORIGINS
