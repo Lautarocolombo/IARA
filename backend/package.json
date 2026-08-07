@@ -1,4 +1,5 @@
 {
+  "description": "Artesania Gualeguay backend with hero-cards and site-settings routes",
   "name": "artesania-gualeguay-backend",
   "version": "1.0.0",
   "private": true,
