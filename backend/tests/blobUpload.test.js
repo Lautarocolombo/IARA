@@ -65,7 +65,7 @@ describe('Vercel Blob helpers', () => {
     expect(opts.token).toBe('token-falso-para-test');
   });
 
-  test('processFile usa fallback base64 cuando no hay token', async () => {
+  test('processFile usa fallback local cuando no hay token de Blob', async () => {
     const tmpFile = makeTmpFile('test2.png', [0x89, 0x50, 0x4e, 0x47]);
 
     const result = await upload.processFile({
@@ -76,7 +76,7 @@ describe('Vercel Blob helpers', () => {
     });
 
     expect(result.isBlob).toBe(false);
-    expect(result.url).toMatch(/^data:image\/png;base64,/);
+    expect(result.url).toMatch(/\/uploads\/imagenes\/.+\.(png|webp)$/);
     expect(put).not.toHaveBeenCalled();
   });
 
