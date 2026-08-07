@@ -74,11 +74,26 @@ async function optimizeWithSharp(filePath) {
     if (optimizedPath !== filePath && fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
-    return path.basename(optimizedPath);
+    return optimizedPath;
   } catch (err) {
     logger.warn('Sharp no disponible o error en optimización, usando archivo original:', err.message);
-    return path.basename(filePath);
+    return filePath;
   }
+}
+
+async function fileToBase64DataUri(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  const mimeMap = {
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.png': 'image/png',
+    '.webp': 'image/webp',
+    '.gif': 'image/gif'
+  };
+  const mimeType = mimeMap[ext] || 'image/jpeg';
+  const buffer = fs.readFileSync(filePath);
+  const base64 = buffer.toString('base64');
+  return `data:${mimeType};base64,${base64}`;
 }
 
 function isCloudinaryConfigured() {
@@ -151,24 +166,29 @@ async function processFile(file, baseUrl) {
   }
 
   if (!useCloudinary && isProduction) {
-    logger.warn('Cloudinary no está configurado en producción. Las imágenes se guardan localmente y se perderán en el próximo redeploy/reinicio. Configurá CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY y CLOUDINARY_API_SECRET en Render para persistencia.');
+    logger.warn('Cloudinary no configurado. Las imágenes se guardan como base64 en la base de datos Neon. Configurá CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY y CLOUDINARY_API_SECRET si querés URLs externas.');
   }
 
-  const optimizedFilename = await optimizeWithSharp(file.path);
-  const relativePath = `/uploads/products/${optimizedFilename}`;
-  const publicUrl = baseUrl ? `${baseUrl}${relativePath}` : relativePath;
-  return { url: publicUrl, filename: optimizedFilename, cloudinary_public_id: '', isCloudinary: false };
+  const optimizedPath = await optimizeWithSharp(file.path);
+  const dataUri = await fileToBase64DataUri(optimizedPath);
+  
+  if (optimizedPath !== file.path && fs.existsSync(optimizedPath)) {
+    try { fs.unlinkSync(optimizedPath); } catch (e) { /* noop */ }
+  }
+  
+  return { url: dataUri, filename: '', cloudinary_public_id: '', isCloudinary: false };
 }
 
 async function saveFile(req, res) {
   if (!req.file) {
     return res.status(400).json({ error: 'No se recibió imagen' });
   }
-  const relativePath = isVercel ? req.file.filename : `/uploads/products/${req.file.filename}`;
+  const processed = await processFile(req.file, '');
   res.json({
-    url: relativePath,
-    filename: req.file.filename,
-    size: req.file.size
+    url: processed.url,
+    filename: processed.filename,
+    size: req.file.size,
+    isCloudinary: processed.isCloudinary
   });
 }
 
@@ -177,6 +197,7 @@ const fileMissingCache = new Set();
 
 function getPublicUrl(relativePath, baseUrl) {
   if (!relativePath) return '';
+  if (relativePath.startsWith('data:')) return relativePath;
   if (relativePath.startsWith('http')) return relativePath;
   const prefix = baseUrl || process.env.BACKEND_URL || process.env.SITE_URL || '';
   const withPrefix = prefix ? `${prefix}${relativePath}` : relativePath;
