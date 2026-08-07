@@ -712,16 +712,14 @@ async function initDB() {
    }
  }
 
- async function ensureAdminUser() {
-   const ADMIN_USER = process.env.ADMIN_USER;
-   const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH;
-   if (!ADMIN_USER || !ADMIN_PASS_HASH) return;
-   const existing = await query('SELECT id FROM users WHERE username = $1', [ADMIN_USER]);
-   if (existing.rows.length > 0) {
-     await query('UPDATE users SET password_hash = $1, active = TRUE, role = $2 WHERE username = $3', [ADMIN_PASS_HASH, 'admin', ADMIN_USER]);
-   } else {
-     await query('INSERT INTO users (username, password_hash, role, active) VALUES ($1, $2, $3, $4)', [ADMIN_USER, ADMIN_PASS_HASH, 'admin', true]);
-   }
- }
+  async function ensureAdminUser() {
+    const ADMIN_USER = process.env.ADMIN_USER;
+    const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH;
+    if (!ADMIN_USER || !ADMIN_PASS_HASH) return;
+    const existing = await query('SELECT id FROM users WHERE username = $1', [ADMIN_USER]);
+    if (existing.rows.length === 0) {
+      await query('INSERT INTO users (username, password_hash, role, active) VALUES ($1, $2, $3, $4)', [ADMIN_USER, ADMIN_PASS_HASH, 'admin', true]);
+    }
+  }
 
  module.exports = { query, initDB, pool, connectionString: !!connectionString, getClient, transaction };
