@@ -292,16 +292,16 @@ const dbReady = initDB().then(() => {
 
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;
-  dbReady.then(() => {
-    const server = app.listen(PORT, '0.0.0.0', () => logger.info(`Backend escuchando en puerto ${PORT}`));
+  const server = app.listen(PORT, '0.0.0.0', () => logger.info(`Backend escuchando en puerto ${PORT}`));
 
-    server.on('error', (err) => {
-      if (err.code === 'EADDRINUSE') {
-        logger.error(`Puerto ${PORT} en uso. Usá PORT=${Number(PORT) + 1}`);
-        process.exit(1);
-      }
-      throw err;
-    });
+  dbReady.catch(() => {});
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      logger.error(`Puerto ${PORT} en uso. Usá PORT=${Number(PORT) + 1}`);
+      process.exit(1);
+    }
+    throw err;
   });
 } else {
   module.exports = { app, dbReady };
