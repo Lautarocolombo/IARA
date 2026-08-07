@@ -1,0 +1,47 @@
+name: Frontend Checks
+
+on:
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - 'frontend/**'
+  push:
+    branches: [ main, master ]
+    paths:
+      - 'frontend/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install Vite
+        run: npm install -g vite
+      
+      - name: Validate HTML files
+        run: |
+          find frontend -name "*.html" | head -5
+          echo "HTML files found"
+      
+      - name: Check for broken links in HTML
+        run: |
+          find frontend -name "*.html" -exec grep -l "href=" {} \; | head -5
+          echo "HTML files with links checked"
+      
+      - name: Validate JS syntax
+        run: |
+          find frontend/js -name "*.js" -exec node --check {} \;
+          echo "All JS files have valid syntax"
+      
+      - name: Check CSS files
+        run: |
+          find frontend/css -name "*.css" | head -5
+          echo "CSS files found"

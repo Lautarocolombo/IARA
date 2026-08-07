@@ -20,10 +20,8 @@ services:
         value: "$2b$10$PNYO0n9WtFt8/2aNPjqY4Os4KwmW.v40WyC0vW2emATisPTdvdYzW"
         # Password por defecto: "pulseras2026" (hash bcrypt). Cámbialo tras primer login
         # con el endpoint /api/admin/change-password y actualizá esta variable en el Dashboard de Render.
-      - key: DATABASE_URL
-        # Si usás Neon, pegá la connection string de Neon (ej: postgresql://user:pass@ep-xxx-pooler.region.aws.neon.tech/dbname?sslmode=require)
-        # Si usáis la DB de Render, dejálo como generateValue: true
-        # generateValue: true
+       - key: DATABASE_URL
+         value: "postgresql://USER:PASSWORD@HOST:PORT/DBNAME?sslmode=require"
       - key: SITE_URL
         value: https://iara-lovat-orcin.vercel.app
       - key: BACKEND_URL

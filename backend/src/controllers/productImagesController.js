@@ -163,11 +163,6 @@ async function deleteProductImage(req, res) {
       await deleteFromCloudinary(image.cloudinary_public_id);
     }
 
-    const filePath = path.join(__dirname, '..', '..', 'uploads', 'products', image.filename);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
-
     await query('DELETE FROM product_images WHERE id = $1', [imageId]);
 
     if (image.es_principal) {
@@ -213,11 +208,6 @@ async function replaceProductImage(req, res) {
     const oldImage = imageCheck.rows[0];
     if (oldImage.cloudinary_public_id) {
       await deleteFromCloudinary(oldImage.cloudinary_public_id);
-    } else if (oldImage.filename) {
-      const oldFilePath = path.join(__dirname, '..', '..', 'uploads', 'products', oldImage.filename);
-      if (fs.existsSync(oldFilePath)) {
-        fs.unlinkSync(oldFilePath);
-      }
     }
 
     const processed = await processFile(req.file, `${req.protocol}://${req.get('host')}`);

@@ -681,6 +681,7 @@ async function initDB() {
     'ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS free_shipping_from REAL DEFAULT 0',
     'CREATE UNIQUE INDEX IF NOT EXISTS idx_hero_cards_slot ON hero_cards(slot) WHERE slot > 0',
     'CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)',
+    'CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at)',
     'CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at)',
     'CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)',
     'CREATE INDEX IF NOT EXISTS idx_webhook_events_event_id ON webhook_events(event_id)'
