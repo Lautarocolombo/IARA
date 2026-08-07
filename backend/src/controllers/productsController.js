@@ -366,12 +366,16 @@ const toggleProductStatus = async (req, res) => {
 const deleteProduct = async (req, res) => {
   const id = Number(req.params.id);
   try {
-    const orderCheck = await query('SELECT COUNT(*) as count FROM orders WHERE items LIKE $1', [`%${id}%`]);
+    const orderCheck = await query('SELECT COUNT(*) as count FROM orders WHERE CAST(items AS TEXT) LIKE $1', [`%${id}%`]);
     const hasHistoricalOrders = Number(orderCheck.rows[0]?.count || 0) > 0;
 
     const imagesResult = await query('SELECT url, cloudinary_public_id, filename FROM product_images WHERE product_id = $1', [id]);
     for (const img of imagesResult.rows) {
-      await deleteImageAsset(img);
+      try {
+        await deleteImageAsset(img);
+      } catch (imgErr) {
+        logger.warn({ err: imgErr.message }, 'Error eliminando imagen individual al borrar producto');
+      }
     }
     await query('DELETE FROM product_images WHERE product_id = $1', [id]);
 
@@ -387,7 +391,7 @@ const deleteProduct = async (req, res) => {
 
     res.json({ ok: true, logical: hasHistoricalOrders });
   } catch (err) {
-    logger.error('Error eliminando producto:', err);
+    logger.error({ err: err.message, stack: err.stack }, 'Error eliminando producto');
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
