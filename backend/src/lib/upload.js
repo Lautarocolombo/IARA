@@ -95,7 +95,7 @@ async function deleteImageAsset(image) {
   }
 
   if (image.filename && !isBlobUrl(image.url)) {
-    const localPath = path.join(__dirname, '..', '..', 'uploads', 'products', image.filename);
+    const localPath = path.join(__dirname, '..', '..', 'uploads', 'imagenes', image.filename);
     try { if (fs.existsSync(localPath)) { fs.unlinkSync(localPath); deleted = true; } } catch (e) { /* noop */ }
   }
 
@@ -103,7 +103,7 @@ async function deleteImageAsset(image) {
 }
 
 const isVercel = process.env.VERCEL === 'true';
-const uploadsDir = isVercel ? '/tmp/uploads/products' : path.join(__dirname, '..', '..', 'uploads', 'products');
+const uploadsDir = isVercel ? '/tmp/uploads/imagenes' : path.join(__dirname, '..', '..', 'uploads', 'imagenes');
 
 if (!fs.existsSync(uploadsDir)) {
   try {
@@ -253,7 +253,6 @@ async function deleteFromCloudinary(publicId) {
 }
 
 async function processFile(file, _baseUrl) {
-  const isProduction = process.env.NODE_ENV === 'production';
   const useBlob = isBlobConfigured();
 
   if (useBlob) {
@@ -274,20 +273,14 @@ async function processFile(file, _baseUrl) {
     }
   }
 
-  if (!useBlob && isProduction) {
-    logger.warn('BLOB_READ_WRITE_TOKEN no configurado. Las imágenes se guardan como base64 en la base de datos (modo fallback efímero). Configurá BLOB_READ_WRITE_TOKEN para usar Vercel Blob Storage.');
-  }
-
   const optimizedPath = await optimizeWithSharp(file.path);
-  const dataUri = await fileToBase64DataUri(optimizedPath);
+  const filename = path.basename(optimizedPath);
+  const relativeUrl = `/uploads/imagenes/${filename}`;
 
-  if (optimizedPath !== file.path && fs.existsSync(optimizedPath)) {
-    try { fs.unlinkSync(optimizedPath); } catch (e) { /* noop */ }
-  }
+  const resolvedBaseUrl = process.env.BACKEND_URL || process.env.SITE_URL || (process.env.RENDER_EXTERNAL_HOSTNAME ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` : 'http://localhost:10000');
+  const absoluteUrl = `${resolvedBaseUrl}${relativeUrl}`;
 
-  try { fs.unlinkSync(file.path); } catch (e) { /* noop */ }
-
-  return { url: dataUri, filename: '', cloudinary_public_id: '', isCloudinary: false, isBlob: false };
+  return { url: absoluteUrl, filename, cloudinary_public_id: '', isCloudinary: false, isBlob: false };
 }
 
 async function saveFile(req, res) {
