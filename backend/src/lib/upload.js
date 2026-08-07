@@ -252,7 +252,7 @@ async function deleteFromCloudinary(publicId) {
   }
 }
 
-async function processFile(file, _baseUrl) {
+async function processFile(file, baseUrl) {
   const useBlob = isBlobConfigured();
 
   if (useBlob) {
@@ -277,7 +277,7 @@ async function processFile(file, _baseUrl) {
   const filename = path.basename(optimizedPath);
   const relativeUrl = `/uploads/imagenes/${filename}`;
 
-  const resolvedBaseUrl = process.env.BACKEND_URL || process.env.SITE_URL || (process.env.RENDER_EXTERNAL_HOSTNAME ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` : 'http://localhost:10000');
+  const resolvedBaseUrl = baseUrl || process.env.BACKEND_URL || process.env.SITE_URL || (process.env.RENDER_EXTERNAL_HOSTNAME ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` : 'http://localhost:10000');
   const absoluteUrl = `${resolvedBaseUrl}${relativeUrl}`;
 
   return { url: absoluteUrl, filename, cloudinary_public_id: '', isCloudinary: false, isBlob: false };
@@ -323,8 +323,7 @@ function getPublicUrl(relativePath, baseUrl) {
 
 async function saveUploadedFile(file) {
   const processed = await processFile(file);
-  const resolvedBaseUrl = process.env.BACKEND_URL || process.env.SITE_URL || (process.env.RENDER_EXTERNAL_HOSTNAME ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` : 'http://localhost:10000');
-  return getPublicUrl(processed.url, resolvedBaseUrl);
+  return getPublicUrl(processed.url);
 }
 
 module.exports = {

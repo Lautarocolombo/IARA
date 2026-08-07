@@ -1,8 +1,5 @@
-const express = require('express');
-const router = express.Router();
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
-const { adminAuth } = require('../middleware/auth');
 
 const getSiteConfig = async (req, res) => {
   try {
@@ -22,8 +19,8 @@ const getSiteConfig = async (req, res) => {
 
     const publicConfig = {
       analytics: {
-        googleId: '',
-        facebookPixelId: ''
+        googleId: config['google_analytics_id'] || process.env.GOOGLE_ANALYTICS_ID || '',
+        facebookPixelId: config['facebook_pixel_id'] || process.env.FACEBOOK_PIXEL_ID || ''
       },
       payment: {
         mpAlias: paymentConfig.mp_alias || config['mp_alias'] || '',

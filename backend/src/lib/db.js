@@ -390,9 +390,8 @@ async function initDB() {
      await ensureAdminUser();
    } catch (err) {
      logger.warn({ err: err.message }, 'No se pudo asegurar usuario admin (SQLite)');
-   }
-   return;
-    try {
+    }
+     try {
       await query('ALTER TABLE product_images ADD COLUMN cloudinary_public_id TEXT DEFAULT \'\'');
     } catch (err) {
       logger.debug({ err: err.message }, 'Columna cloudinary_public_id ya existe o no se pudo agregar (SQLite)');
@@ -544,26 +543,16 @@ async function initDB() {
     } catch (err) {
       logger.debug({ err: err.message }, 'Índice unique slot ya existe o no se pudo agregar (SQLite)');
     }
-     try {
-       await query('ALTER TABLE products ADD COLUMN sku TEXT DEFAULT \'\'');
-     } catch (err) {
-       logger.debug({ err: err.message }, 'Columna sku ya existe o no se pudo agregar (SQLite)');
-     }
-      try {
-        await query('ALTER TABLE categories ADD COLUMN emoji TEXT DEFAULT \'\'');
+       try {
+        await query('ALTER TABLE products ADD COLUMN sku TEXT DEFAULT \'\'');
       } catch (err) {
-        logger.debug({ err: err.message }, 'Columna emoji ya existe o no se pudo agregar (SQLite)');
+        logger.debug({ err: err.message }, 'Columna sku ya existe o no se pudo agregar (SQLite)');
       }
       try {
-        await query('ALTER TABLE categories ADD COLUMN image TEXT DEFAULT \'\'');
+        await query('ALTER TABLE testimonials ADD COLUMN orden INTEGER DEFAULT 0');
       } catch (err) {
-        logger.debug({ err: err.message }, 'Columna image ya existe o no se pudo agregar (SQLite)');
+        logger.debug({ err: err.message }, 'Columna orden ya existe o no se pudo agregar (SQLite)');
       }
-     try {
-       await query('ALTER TABLE testimonials ADD COLUMN orden INTEGER DEFAULT 0');
-     } catch (err) {
-       logger.debug({ err: err.message }, 'Columna orden ya existe o no se pudo agregar (SQLite)');
-     }
      try {
        await query('ALTER TABLE orders ADD COLUMN payment_method TEXT DEFAULT \'\'');
      } catch (err) {

@@ -324,7 +324,7 @@ const updateProduct = async (req, res) => {
   try {
     const data = productSchema.partial().parse(req.body);
 
-    if (data.slug && data.slug) {
+    if (data.slug) {
       const existingSlug = await query('SELECT id FROM products WHERE slug = $1 AND id != $2 AND deleted = FALSE', [data.slug, id]);
       if (existingSlug.rows.length > 0) {
         return res.status(409).json({ error: `Ya existe un producto con el slug "${data.slug}"` });

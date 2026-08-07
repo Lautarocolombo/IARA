@@ -125,7 +125,7 @@
       email: document.getElementById('shipEmail').value.trim() || ''
     };
 
-    if (!shipping.name || !shipping.address || !shipping.phone || !shipping.zip || !shipping.email) {
+    if (!shipping.name || !shipping.address || !shipping.phone || !shipping.zip || !shipping.city || !shipping.email) {
       showToast('', 'Completá todos los campos obligatorios', 'error');
       return;
     }
