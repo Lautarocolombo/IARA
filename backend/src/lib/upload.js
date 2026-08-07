@@ -330,7 +330,8 @@ function getPublicUrl(relativePath, baseUrl) {
 
 async function saveUploadedFile(file) {
   const processed = await processFile(file);
-  return getPublicUrl(processed.url, '');
+  const resolvedBaseUrl = process.env.BACKEND_URL || process.env.SITE_URL || (process.env.RENDER_EXTERNAL_HOSTNAME ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` : 'http://localhost:10000');
+  return getPublicUrl(processed.url, resolvedBaseUrl);
 }
 
 module.exports = {
