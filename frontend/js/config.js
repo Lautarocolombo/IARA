@@ -65,10 +65,11 @@ const CONFIG = {
     TRANSITION_SPEED: 0.4
   },
 
-  // API — usar URL absoluta de Render en prod; el rewrite de Vercel solo sirve de backup
-  API: {
-    BASE: 'https://iara-os3h.onrender.com'
-  },
+  // API — usar URLs relativas para aprovechar el rewrite de Vercel
+   // (/api/* → Render backend), evitando problemas de CORS y cold starts
+   API: {
+     BASE: ''
+   },
 
    // Imagen placeholder para productos sin imagen
    PLACEHOLDER: {
