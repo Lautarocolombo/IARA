@@ -107,7 +107,7 @@ if (missingEnvVars.length > 0 || missingProductionVars.length > 0) {
     if (!process.env.DATABASE_URL) process.env.DATABASE_URL = '';
     if (!process.env.ALLOWED_ORIGINS) process.env.ALLOWED_ORIGINS = '*';
   }
-  if (missingEnvVars.length > 0 && !process.env.NODE_ENV === 'production') {
+  if (missingEnvVars.length > 0 && process.env.NODE_ENV !== 'production') {
     console.error('\nCómo cargarlas en Render:');
     console.error('  1. https://dashboard.render.com → tu servicio → Settings');
     console.error('  2. Sección "Environment" → "Add Environment Variable"');
@@ -271,10 +271,14 @@ app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUplo
   }
 });
 
+const isVercel = process.env.VERCEL === 'true';
+const isRender = !!process.env.RENDER_EXTERNAL_HOSTNAME;
+const uploadsStaticDir = isVercel || isRender ? '/tmp/uploads' : path.join(__dirname, '..', '..', 'uploads');
+
 app.use('/uploads', (req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   next();
-}, express.static(path.join(__dirname, '..', '..', 'uploads')));
+}, express.static(uploadsStaticDir));
 const staticDir = path.join(__dirname, '..', '..', 'frontend');
 
 app.get('/', (req, res) => {

@@ -65,7 +65,7 @@ describe('Vercel Blob helpers', () => {
     expect(opts.token).toBe('token-falso-para-test');
   });
 
-  test('processFile usa fallback base64 cuando no hay token de Blob', async () => {
+  test('processFile usa fallback con URL local cuando no hay token de Blob ni Cloudinary', async () => {
     const tmpFile = makeTmpFile('test2.png', [0x89, 0x50, 0x4e, 0x47]);
 
     const result = await upload.processFile({
@@ -76,8 +76,33 @@ describe('Vercel Blob helpers', () => {
     });
 
     expect(result.isBlob).toBe(false);
+    expect(result.url).toMatch(/^http:\/\/localhost:10000\/uploads\/imagenes\/test2\.png$/);
+    expect(put).not.toHaveBeenCalled();
+  });
+
+  test('processFile usa fallback base64 en producción ephemeral (Render)', async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    delete process.env.BLOB_READ_WRITE_TOKEN;
+    delete process.env.CLOUDINARY_CLOUD_NAME;
+    delete process.env.CLOUDINARY_API_KEY;
+    delete process.env.CLOUDINARY_API_SECRET;
+
+    const tmpFile = makeTmpFile('test3.png', [0x89, 0x50, 0x4e, 0x47]);
+
+    const result = await upload.processFile({
+      path: tmpFile,
+      originalname: 'test3.png',
+      mimetype: 'image/png',
+      size: 4
+    });
+
+    expect(result.isBlob).toBe(false);
+    expect(result.isCloudinary).toBe(false);
     expect(result.url).toMatch(/^data:image\/png;base64,/);
     expect(put).not.toHaveBeenCalled();
+
+    process.env.NODE_ENV = originalNodeEnv;
   });
 
   test('deleteFromBlob ignora URLs que no son de Blob', async () => {

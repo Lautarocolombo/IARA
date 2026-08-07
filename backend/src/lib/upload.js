@@ -175,7 +175,7 @@ async function optimizeWithSharp(filePath) {
     }
     return optimizedPath;
   } catch (err) {
-    logger.warn('Sharp no disponible o error en optimización, usando archivo original:', err.message);
+    logger.warn({ err: err.message, stack: err.stack }, 'Sharp no disponible o error en optimización, usando archivo original');
     return filePath;
   }
 }
@@ -200,6 +200,25 @@ function isCloudinaryConfigured() {
   const apiKey = process.env.CLOUDINARY_API_KEY;
   const apiSecret = process.env.CLOUDINARY_API_SECRET;
   return !!(cloudName && apiKey && apiSecret);
+}
+
+if (isCloudinaryConfigured()) {
+  logger.info('Cloudinary: configurado (CLOUDINARY_CLOUD_NAME, API_KEY, API_SECRET presentes)');
+} else {
+  logger.warn('Cloudinary: NO configurado. Faltan CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY o CLOUDINARY_API_SECRET. Las imágenes se guardarán localmente.');
+}
+
+let sharpAvailable = false;
+try {
+  require('sharp');
+  sharpAvailable = true;
+} catch (e) {
+  // noop
+}
+if (sharpAvailable) {
+  logger.info('Sharp: disponible para optimización de imágenes');
+} else {
+  logger.warn('Sharp: NO disponible. Las imágenes no se optimizarán a WebP.');
 }
 
 async function ensureCloudinaryConfigured() {
@@ -235,7 +254,7 @@ async function uploadToCloudinary(filePath, _originalName) {
     });
     return { url: result.secure_url, public_id: result.public_id };
   } catch (err) {
-    logger.warn('Error subiendo a Cloudinary, usando local:', err.message);
+    logger.warn({ err: err.message, stack: err.stack, httpStatus: err?.http_code, cloudinaryError: err?.message }, 'Error subiendo a Cloudinary, usando local');
     return null;
   }
 }
@@ -280,6 +299,20 @@ async function processFile(file, baseUrl) {
   const resolvedBaseUrl = baseUrl || process.env.BACKEND_URL || process.env.SITE_URL || (process.env.RENDER_EXTERNAL_HOSTNAME ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` : 'http://localhost:10000');
   const absoluteUrl = `${resolvedBaseUrl}${relativeUrl}`;
 
+  const isEphemeralProd = !isVercel && process.env.NODE_ENV === 'production';
+  if (isEphemeralProd) {
+    try {
+      const dataUri = await fileToBase64DataUri(optimizedPath);
+      try { fs.unlinkSync(file.path); } catch (e) { /* noop */ }
+      if (optimizedPath !== file.path) {
+        try { fs.unlinkSync(optimizedPath); } catch (e) { /* noop */ }
+      }
+      return { url: dataUri, filename, cloudinary_public_id: '', isCloudinary: false, isBlob: false };
+    } catch (e) {
+      logger.warn({ err: e.message, stack: e.stack }, 'Error convirtiendo imagen a base64 para fallback persistente, usando URL local');
+    }
+  }
+
   return { url: absoluteUrl, filename, cloudinary_public_id: '', isCloudinary: false, isBlob: false };
 }
 
@@ -304,21 +337,15 @@ function getPublicUrl(relativePath, baseUrl) {
   if (!relativePath) return '';
   if (relativePath.startsWith('data:')) return relativePath;
   if (relativePath.startsWith('http')) return relativePath;
-  const prefix = baseUrl || process.env.BACKEND_URL || process.env.SITE_URL || '';
+  const prefix = baseUrl || process.env.BACKEND_URL || process.env.SITE_URL || (process.env.RENDER_EXTERNAL_HOSTNAME ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` : 'http://localhost:10000');
   const withPrefix = prefix ? `${prefix}${relativePath}` : relativePath;
-  if (relativePath.startsWith('/uploads/')) {
-    if (fileMissingCache.has(relativePath)) return '';
-    if (fileExistsCache.has(relativePath)) return withPrefix;
+  if (relativePath.startsWith('/uploads/') && process.env.NODE_ENV !== 'production') {
     const filePath = path.join(__dirname, '..', '..', relativePath);
-    if (fs.existsSync(filePath)) {
-      fileExistsCache.add(relativePath);
-      return withPrefix;
+    if (!fs.existsSync(filePath)) {
+      return '';
     }
-    fileMissingCache.add(relativePath);
-    logger.warn(`Imagen no encontrada en filesystem: ${relativePath}`);
-    return '';
   }
-     return withPrefix;
+  return withPrefix;
 }
 
 async function saveUploadedFile(file) {

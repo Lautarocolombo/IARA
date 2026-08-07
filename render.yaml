@@ -23,11 +23,11 @@ services:
        - key: DATABASE_URL
          value: "postgresql://USER:PASSWORD@HOST:PORT/DBNAME?sslmode=require"
       - key: SITE_URL
-        value: https://iara-lovat-orcin.vercel.app
+        value: https://iara-wz9o.vercel.app
       - key: BACKEND_URL
-        value: https://iara-uxcu.onrender.com
+        value: https://iara-os3h.onrender.com
       - key: ALLOWED_ORIGINS
-        value: https://iara-lovat.vercel.app,https://*.vercel.app,https://artesaniagualeguay.com,http://localhost:3000,http://localhost:3001
+        value: https://iara-wz9o.vercel.app,https://*.vercel.app,https://artesaniagualeguay.com,http://localhost:3000,http://localhost:3001
       - key: SHIPPING_COST
         value: "200"
       - key: SHIPPING_THRESHOLD
