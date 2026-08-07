@@ -86,10 +86,6 @@ async function deleteImageAsset(image) {
   if (!image) return false;
   let deleted = false;
 
-  if (image.cloudinary_public_id) {
-    try { if (await deleteFromCloudinary(image.cloudinary_public_id)) deleted = true; } catch (e) { /* noop */ }
-  }
-
   if (image.url) {
     if (await deleteFromBlob(image.url)) deleted = true;
   }
@@ -117,7 +113,7 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadsDir);
   },
-    filename: (req, file, cb) => {
+  filename: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     const safe = file.originalname.replace(ext, '').replace(/[^a-zA-Z0-9._-]/g, '_');
     cb(null, `${Date.now()}_${safe}${ext}`);
@@ -195,19 +191,6 @@ async function fileToBase64DataUri(filePath) {
   return `data:${mimeType};base64,${base64}`;
 }
 
-function isCloudinaryConfigured() {
-  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-  const apiKey = process.env.CLOUDINARY_API_KEY;
-  const apiSecret = process.env.CLOUDINARY_API_SECRET;
-  return !!(cloudName && apiKey && apiSecret);
-}
-
-if (isCloudinaryConfigured()) {
-  logger.info('Cloudinary: configurado (CLOUDINARY_CLOUD_NAME, API_KEY, API_SECRET presentes)');
-} else {
-  logger.warn('Cloudinary: NO configurado. Faltan CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY o CLOUDINARY_API_SECRET. Las imágenes se guardarán localmente.');
-}
-
 let sharpAvailable = false;
 try {
   require('sharp');
@@ -221,56 +204,6 @@ if (sharpAvailable) {
   logger.warn('Sharp: NO disponible. Las imágenes no se optimizarán a WebP.');
 }
 
-async function ensureCloudinaryConfigured() {
-  const cloudinary = require('cloudinary').v2;
-  if (!isCloudinaryConfigured()) {
-    return false;
-  }
-  cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-  });
-  return true;
-}
-
-async function uploadToCloudinary(filePath, _originalName) {
-  try {
-    const cloudinary = require('cloudinary').v2;
-    const configured = await ensureCloudinaryConfigured();
-    if (!configured) {
-      logger.warn('Cloudinary no configurado completamente (faltan CLOUDINARY_CLOUD_NAME, API_KEY o API_SECRET)');
-      return null;
-    }
-    const result = await new Promise((resolve, reject) => {
-      cloudinary.uploader.upload(filePath, {
-        folder: 'artesania-gualeguay/products',
-        resource_type: 'image',
-        transformation: [{ quality: 'auto', fetch_format: 'auto' }]
-      }, (error, result) => {
-        if (error) return reject(error);
-        resolve(result);
-      });
-    });
-    return { url: result.secure_url, public_id: result.public_id };
-  } catch (err) {
-    logger.warn({ err: err.message, stack: err.stack, httpStatus: err?.http_code, cloudinaryError: err?.message }, 'Error subiendo a Cloudinary, usando local');
-    return null;
-  }
-}
-
-async function deleteFromCloudinary(publicId) {
-  try {
-    const cloudinary = require('cloudinary').v2;
-    if (!publicId || !cloudinary.config().cloud_name) return false;
-    await cloudinary.uploader.destroy(publicId, { resource_type: 'image' });
-    return true;
-  } catch (err) {
-    logger.warn('Error eliminando de Cloudinary:', err.message);
-    return false;
-  }
-}
-
 async function processFile(file, baseUrl) {
   const useBlob = isBlobConfigured();
 
@@ -281,15 +214,6 @@ async function processFile(file, baseUrl) {
       return { url: blobResult.url, filename: blobResult.filename, cloudinary_public_id: '', isCloudinary: false, isBlob: true };
     }
     logger.warn('El upload a Vercel Blob falló, intentando fallback...');
-  }
-
-  const useCloudinary = isCloudinaryConfigured();
-  if (useCloudinary) {
-    const cloudinaryResult = await uploadToCloudinary(file.path, file.originalname);
-    if (cloudinaryResult) {
-      try { fs.unlinkSync(file.path); } catch (e) { /* noop */ }
-      return { url: cloudinaryResult.url, filename: path.basename(file.path), cloudinary_public_id: cloudinaryResult.public_id, isCloudinary: true };
-    }
   }
 
   const optimizedPath = await optimizeWithSharp(file.path);
@@ -337,13 +261,19 @@ function getPublicUrl(relativePath, baseUrl) {
   if (!relativePath) return '';
   if (relativePath.startsWith('data:')) return relativePath;
   if (relativePath.startsWith('http')) return relativePath;
-  const prefix = baseUrl || process.env.BACKEND_URL || process.env.SITE_URL || (process.env.RENDER_EXTERNAL_HOSTNAME ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` : 'http://localhost:10000');
+  const prefix = baseUrl || process.env.BACKEND_URL || process.env.SITE_URL || '';
   const withPrefix = prefix ? `${prefix}${relativePath}` : relativePath;
-  if (relativePath.startsWith('/uploads/') && process.env.NODE_ENV !== 'production') {
+  if (relativePath.startsWith('/uploads/')) {
+    if (fileMissingCache.has(relativePath)) return '';
+    if (fileExistsCache.has(relativePath)) return withPrefix;
     const filePath = path.join(__dirname, '..', '..', relativePath);
-    if (!fs.existsSync(filePath)) {
-      return '';
+    if (fs.existsSync(filePath)) {
+      fileExistsCache.add(relativePath);
+      return withPrefix;
     }
+    fileMissingCache.add(relativePath);
+    logger.warn(`Imagen no encontrada en filesystem: ${relativePath}`);
+    return '';
   }
   return withPrefix;
 }
@@ -360,8 +290,6 @@ module.exports = {
   saveFile,
   processFile,
   getPublicUrl,
-  deleteFromCloudinary,
-  uploadToBlob,
   deleteFromBlob,
   deleteImageAsset,
   saveUploadedFile,

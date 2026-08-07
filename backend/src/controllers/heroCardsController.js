@@ -149,7 +149,7 @@ const deleteHeroSlotImage = async (req, res) => {
     if (existing.rows.length === 0) return res.status(404).json({ error: 'Slot de hero no encontrado' });
     const oldImage = existing.rows[0].imagen;
     if (oldImage) {
-      await deleteImageAsset({ url: oldImage, cloudinary_public_id: oldImage.includes('cloudinary.com') ? oldImage.split('/').pop().split('.')[0] : '' });
+      await deleteImageAsset({ url: oldImage, filename: oldImage.split('/').pop() });
     }
     await query('UPDATE hero_cards SET imagen = \'\' WHERE id = $1', [existing.rows[0].id]);
     res.json({ ok: true, message: 'Imagen eliminada' });

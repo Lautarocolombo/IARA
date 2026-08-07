@@ -23,9 +23,7 @@
 | `ADMIN_PASS_HASH` | Hash bcrypt de contraseña admin | `$2b$10$...` | Sí |
 | `RESEND_API_KEY` | API key para envío de emails | `re_...` | No |
 | `EMAIL_FROM` | Remitente de emails | `noreply@artesaniagualeguay.com` | No |
-| `CLOUDINARY_CLOUD_NAME` | Cloud name de Cloudinary | `mi-cloud` | No |
-| `CLOUDINARY_API_KEY` | API key de Cloudinary | `123456...` | No |
-| `CLOUDINARY_API_SECRET` | API secret de Cloudinary | `abcdef...` | No |
+| `BLOB_READ_WRITE_TOKEN` | Token de Vercel Blob para almacenamiento de imágenes | `vercel_blob_...` | No |
 | `LOG_LEVEL` | Nivel de logging | `info` | No |
 | `BUSINESS_NAME` | Nombre del negocio | `Artesanía Gualeguay` | No |
 | `BUSINESS_EMAIL` | Email de contacto | `contacto@artesaniagualeguay.com` | No |

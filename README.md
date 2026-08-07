@@ -85,14 +85,12 @@ Para habilitar el seguimiento, completar los placeholders en `frontend/js/config
 
 Los enlaces a redes sociales en `LINKS` (Instagram, Facebook, Twitter) se configuran con las URLs reales de tus perfiles. Si no configurás estos valores, los enlaces aparecerán como `#` en el sitio.
 
-### Cloudinary / Uploads
+### Almacenamiento de imágenes
 
-En Vercel los uploads se guardan en `/tmp` (efímero). Para persistencia de imágenes, configurar:
-- `CLOUDINARY_CLOUD_NAME`
-- `CLOUDINARY_API_KEY`
-- `CLOUDINARY_API_SECRET`
+Las imágenes se guardan como base64 en la base de datos Neon (PostgreSQL), por lo que no requieren servicios externos ni se pierden en cold starts.
 
-Si no se configura Cloudinary, las imágenes subidas desde el admin se pierden en cada cold start de Vercel.
+Opcionalmente, podés usar Vercel Blob para almacenamiento externo:
+- Configurar `BLOB_READ_WRITE_TOKEN` en Render
 
 ## Tecnologías
 
