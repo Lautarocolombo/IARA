@@ -8,7 +8,7 @@ const PDFDocument = require('pdfkit');
 async function logActivity(user, action, entityType = '', entityId = 0, details = '', ip = '') {
   try {
     await query(
-      'INSERT INTO activity_log (user, action, entity_type, entity_id, details, ip) VALUES ($1, $2, $3, $4, $5, $6)',
+      'INSERT INTO activity_log (username, action, entity_type, entity_id, details, ip) VALUES ($1, $2, $3, $4, $5, $6)',
       [user, action, entityType, entityId, details, ip]
     );
   } catch (err) {
