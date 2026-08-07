@@ -79,10 +79,7 @@ async function uploadProductImages(req, res) {
     res.status(201).json({ ok: true, images: uploaded });
   } catch (err) {
     logger.error({ err: err.message }, 'Error subiendo imágenes');
-    const isConfigError = err.message && err.message.includes('CLOUDINARY');
-    res.status(isConfigError ? 500 : 500).json({
-      error: isConfigError ? err.message : 'Error interno del servidor'
-    });
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 
@@ -215,10 +212,7 @@ async function replaceProductImage(req, res) {
     res.json(updated);
   } catch (err) {
     logger.error('Error reemplazando imagen:', err);
-    const isConfigError = err.message && err.message.includes('CLOUDINARY');
-    res.status(500).json({
-      error: isConfigError ? err.message : 'Error interno del servidor'
-    });
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
 

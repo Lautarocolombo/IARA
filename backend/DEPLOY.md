@@ -17,10 +17,12 @@ DATABASE_URL=postgresql://user:pass@host:5432/db?sslmode=require
 # CORS
 ALLOWED_ORIGINS=https://tudominio.com,https://www.tudominio.com
 
-# Cloudinary (recomendado para producción)
-CLOUDINARY_CLOUD_NAME=<tu cloud name>
-CLOUDINARY_API_KEY=<tu api key>
-CLOUDINARY_API_SECRET=<tu api secret>
+# URLs
+BACKEND_URL=https://tu-backend.onrender.com
+SITE_URL=https://tudominio.com
+
+# Opcional: Vercel Blob para almacenamiento de imágenes (alternativa a base64)
+BLOB_READ_WRITE_TOKEN=<token de Vercel Blob>
 
 # Redis / BullMQ (recomendado para colas)
 REDIS_URL=rediss://default:gQAAAAAAAjJ0AAIgcDIyZDg4NGEwNjVkY2I0YmZkODlmMWRhY2E3YWY4NmU3Zg@witty-troll-143988.upstash.io:6379
@@ -34,10 +36,6 @@ SMTP_PORT=587
 SMTP_USER=tu-usuario@tu-servidor.com
 SMTP_PASS=tu-contraseña
 SMTP_FROM=Artesania Gualeguay <pedidos@artesaniagualeguay.com>
-
-# URLs
-BACKEND_URL=https://tu-backend.onrender.com
-SITE_URL=https://tudominio.com
 ```
 
 ### Frontend (Vercel)
@@ -62,16 +60,17 @@ Los workflows se ejecutan automáticamente cuando:
 
 ## Configuración paso a paso
 
-### 1. Cloudinary
+### 1. Almacenamiento de imágenes
 
-1. Crear cuenta en https://cloudinary.com (plan gratuito disponible)
-2. Obtener `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
-3. Configurar en Render como variables de entorno
-4. El módulo usará Cloudinary automáticamente para:
-   - Upload de imágenes
-   - Variantes on-the-fly (thumbnail, catalog, zoom)
-   - Watermark dinámico (sin regenerar archivos)
-   - CDN y optimización automática
+Las imágenes se guardan como base64 en la base de datos Neon (PostgreSQL).
+
+**Opcional:** Si querés usar Vercel Blob en vez de base64:
+1. Crear cuenta en https://vercel.com
+2. Crear un Blob Store
+3. Obtener `BLOB_READ_WRITE_TOKEN`
+4. Configurar en Render como variable de entorno
+
+El módulo usará Vercel Blob automáticamente si está configurado. Si no, guarda las imágenes en base64.
 
 ### 2. Redis + BullMQ (Colas asíncronas) — Upstash Redis
 
@@ -135,19 +134,17 @@ Los backups se guardan en `/backups/` con retención de 7 días.
 
 ### Upload de imágenes
 1. Admin sube imagen → Validación cliente + servidor
-2. Si Cloudinary está configurado: upload directo a Cloudinary
-3. Si no: almacenamiento local en `/tmp/uploads` (Render) o `uploads/` (Vercel)
-4. Generación de variantes (si Redis disponible: encola; si no: síncrono)
+2. Si Vercel Blob está configurado: upload a Blob
+3. Si no: se convierte a base64 y se guarda en la base de datos Neon
+4. Sharp optimiza a WebP si está disponible
 
 ### Variantes de imagen
-- **Cloudinary**: on-the-fly via CDN (sin storage extra)
-- **Local**: archivos estáticos en `/uploads/products/variants/`
-- El frontend recibe `srcset` + `sizes` listos para usar
+- **Vercel Blob**: URLs públicas directas
+- **Base64 en DB**: el frontend renderiza el data URI directamente
 
 ### Watermark
-- **Cloudinary**: transform on-the-fly con `l_text` en la URL
-- **Local**: Sharp genera archivo con watermark embebido
-- Configurable por imagen: texto, opacidad (0-1), posición, tamaño (%)
+- No disponible en modo base64
+- Disponible con Vercel Blob si se configura
 
 ### Background removal
 - Procesado via API remove.bg
@@ -168,13 +165,11 @@ Los backups se guardan en `/backups/` con retención de 7 días.
 ## Monitoreo
 
 - **Logs**: Pino estructurado en Render
-- **Colas**: BullMQ con Upstash Redis
 - **Health check**: `GET /health`
 
 ## Escalabilidad
 
-- **Imágenes**: Cloudinary maneja CDN y transformaciones
-- **Colas**: Upstash Redis escala automáticamente
+- **Imágenes**: base64 en PostgreSQL (Neon) o Vercel Blob
 - **Backend**: Render escala vertical u horizontal según plan
 - **Frontend**: Vercel CDN global
 
@@ -184,8 +179,8 @@ Los backups se guardan en `/backups/` con retención de 7 días.
 |----------|------|-------|
 | Render (backend) | Free | $0 |
 | Vercel (frontend) | Free | $0 |
-| Cloudinary | Free (25GB, 25GB bandwidth) | $0 |
-| Upstash Redis | Free (10k commands/day) | $0 |
+| Neon (PostgreSQL) | Free | $0 |
+| Vercel Blob | Free tier | $0 |
 | remove.bg | Free (50 imágenes/mes) | $0 |
 | SMTP (Gmail/Resend) | Free tier | $0 |
 

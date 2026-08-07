@@ -41,20 +41,6 @@ async function gracefulShutdown(signal) {
   process.exit(0);
 }
 
-if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
-  try {
-    const cloudinary = require('cloudinary').v2;
-    cloudinary.config({
-      cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-      api_key: process.env.CLOUDINARY_API_KEY,
-      api_secret: process.env.CLOUDINARY_API_SECRET
-    });
-    logger.info('Cloudinary configurado correctamente');
-  } catch (err) {
-    logger.warn({ err: err.message }, 'Error configurando Cloudinary');
-  }
-}
-
 const requiredEnvVars = ['JWT_SECRET', 'ADMIN_USER'];
 const missingEnvVars = requiredEnvVars.filter(key => !process.env[key]);
 const hasAdminPassHash = !!process.env.ADMIN_PASS_HASH;

@@ -23,9 +23,6 @@
 | `EMAIL_FROM` | `noreply@artesaniagualeguay.com` | |
 | `ADMIN_NOTIFICATION_EMAIL` | `admin@artesaniagualeguay.com` | |
 | `RESEND_API_KEY` | `re_...` | Opcional, para envío de emails |
-| `CLOUDINARY_CLOUD_NAME` | tu-cloud-name | **Requerido para persistencia de imágenes** |
-| `CLOUDINARY_API_KEY` | tu-api-key | |
-| `CLOUDINARY_API_SECRET` | tu-api-secret | |
 | `PORT` | `3000` | Render lo asigna automáticamente |
 | `LOG_LEVEL` | `info` | |
 | `SHIPPING_COST` | `200` | |
@@ -83,11 +80,11 @@ Si cambiás el dominio de Render, actualizá:
 2. Verificar frontend: `https://iara-lovat-orcin.vercel.app`
 3. Verificar API desde frontend: abrir consola del navegador y verificar que `/api/health` responda 200
 4. Verificar login en admin: `https://iara-lovat-orcin.vercel.app/pages/admin.html`
-5. Subir una imagen de producto y verificar que persista (requiere Cloudinary configurado)
+5. Subir una imagen de producto y verificar que persista (se guarda como base64 en la base de datos Neon)
 
 ### 5. Notas importantes
 
-- **Imágenes:** Sin Cloudinary, las imágenes subidas desde el admin se pierden en cada deploy de Render porque usa filesystem efímero.
+- **Imágenes:** Las imágenes se guardan como base64 en la base de datos Neon. No requiere servicios externos.
 - **Emails:** Sin `RESEND_API_KEY`, los envíos de email fallan silenciosamente.
 - **Base de datos:** Las migraciones corren automáticamente en `initDB()` al arrancar el backend.
 - **Tests e2e:** Corren contra archivos locales (`file://`). Para correr: `npm run e2e`
@@ -99,8 +96,8 @@ Si cambiás el dominio de Render, actualizá:
 - Verificar que `ALLOWED_ORIGINS` incluya el dominio de Vercel
 
 ### Imágenes no se muestran
-- Verificar que `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY` y `CLOUDINARY_API_SECRET` estén en Render
 - Verificar que `BACKEND_URL` esté correcto en Render
+- Verificar logs del backend para ver si Sharp está disponible
 
 ### CORS errors
 - Verificar `ALLOWED_ORIGINS` en Render incluye el dominio exacto de Vercel
