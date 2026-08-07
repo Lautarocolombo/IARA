@@ -1,7 +1,7 @@
 const { query } = require('../lib/db');
 const { productSchema } = require('../lib/validators');
 const logger = require('../lib/logger');
-const { deleteFromCloudinary, getPublicUrl } = require('../lib/upload');
+const { deleteImageAsset, getPublicUrl } = require('../lib/upload');
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
@@ -369,17 +369,9 @@ const deleteProduct = async (req, res) => {
     const orderCheck = await query('SELECT COUNT(*) as count FROM orders WHERE items LIKE $1', [`%${id}%`]);
     const hasHistoricalOrders = Number(orderCheck.rows[0]?.count || 0) > 0;
 
-    const imagesResult = await query('SELECT cloudinary_public_id, filename FROM product_images WHERE product_id = $1', [id]);
+    const imagesResult = await query('SELECT url, cloudinary_public_id, filename FROM product_images WHERE product_id = $1', [id]);
     for (const img of imagesResult.rows) {
-      if (img.cloudinary_public_id) {
-        await deleteFromCloudinary(img.cloudinary_public_id);
-      }
-      if (img.filename) {
-        const filePath = path.join(__dirname, '..', '..', 'uploads', 'products', img.filename);
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
-        }
-      }
+      await deleteImageAsset(img);
     }
     await query('DELETE FROM product_images WHERE product_id = $1', [id]);
 

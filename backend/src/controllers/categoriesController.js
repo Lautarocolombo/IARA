@@ -1,6 +1,6 @@
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
-const { getPublicUrl } = require('../lib/upload');
+const { saveUploadedFile } = require('../lib/upload');
 
 const ALLOWED_CATEGORY_COLUMNS = ['name', 'slug', 'description', 'active', 'orden', 'emoji', 'image'];
 
@@ -40,7 +40,7 @@ const getPublicCategories = async (req, res) => {
 const createCategory = async (req, res) => {
   let { name, slug, description = '', active = true, orden = 0, emoji = '', image = '' } = req.body || {};
   if (req.file) {
-    image = getPublicUrl(`/uploads/products/${req.file.filename}`);
+    image = await saveUploadedFile(req.file);
   }
   if (typeof active === 'string') active = active !== 'false';
   if (!name || !slug) return res.status(400).json({ error: 'Nombre y slug son requeridos' });
@@ -63,7 +63,7 @@ const updateCategory = async (req, res) => {
   const id = Number(req.params.id);
   const updates = req.body || {};
   if (req.file) {
-    updates.image = getPublicUrl(`/uploads/products/${req.file.filename}`);
+    updates.image = await saveUploadedFile(req.file);
   }
   const fields = Object.keys(updates).filter(k => k !== 'id' && ALLOWED_CATEGORY_COLUMNS.includes(k));
   if (!fields.length) return res.status(400).json({ error: 'Sin datos para actualizar' });

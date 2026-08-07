@@ -91,23 +91,44 @@
   //   - empty/invalid src -> inline placeholder src directly (no error flash)
   //
   // opts: { className, style, placeholder(emoji), lazy, id }
-  window.renderProductImage = function (src, alt, opts) {
-    opts = opts || {};
-    var hasSrc = !!(src && String(src).trim());
-    var symbol = opts.placeholder || DEFAULT_SYMBOL;
-    var attrs = ['<img'];
-    attrs.push(' src="' + (hasSrc ? escapeAttr(src) : getPlaceholderDataUri(symbol)) + '"');
-    attrs.push(' alt="' + escapeAttr(alt == null ? '' : alt) + '"');
-    if (opts.id) attrs.push(' id="' + escapeAttr(opts.id) + '"');
-    if (opts.className) attrs.push(' class="' + escapeAttr(opts.className) + '"');
-    if (opts.style) attrs.push(' style="' + escapeAttr(opts.style) + '"');
-    attrs.push(' loading="' + (opts.lazy === false ? 'eager' : 'lazy') + '"');
-    attrs.push(' decoding="async"');
-    attrs.push(' data-fallback="' + escapeAttr(symbol) + '"');
-    attrs.push(' onerror="window.imgError(this)"');
-    attrs.push(' />');
-    return attrs.join('');
-  };
+   window.renderProductImage = function (src, alt, opts) {
+     opts = opts || {};
+     var hasSrc = !!(src && String(src).trim());
+     var symbol = opts.placeholder || DEFAULT_SYMBOL;
+     var attrs = ['<img'];
+     attrs.push(' src="' + (hasSrc ? escapeAttr(src) : getPlaceholderDataUri(symbol)) + '"');
+     attrs.push(' alt="' + escapeAttr(alt == null ? '' : alt) + '"');
+     if (opts.id) attrs.push(' id="' + escapeAttr(opts.id) + '"');
+     if (opts.className) attrs.push(' class="' + escapeAttr(opts.className) + '"');
+     if (opts.style) attrs.push(' style="' + escapeAttr(opts.style) + '"');
+     attrs.push(' loading="' + (opts.lazy === false ? 'eager' : 'lazy') + '"');
+     attrs.push(' decoding="async"');
+     attrs.push(' data-fallback="' + escapeAttr(symbol) + '"');
+     attrs.push(' onerror="window.imgError(this)"');
+     attrs.push(' />');
+     return attrs.join('');
+   };
+
+   window.getProductImageUrl = function (product) {
+     if (!product) return '';
+     var images = Array.isArray(product.images) ? product.images : [];
+     if (images.length) {
+       var principal = null;
+       for (var i = 0; i < images.length; i++) {
+         if (images[i] && images[i].es_principal) { principal = images[i]; break; }
+       }
+       if (!principal) principal = images[0];
+       if (principal && principal.url) {
+         var u = String(principal.url).trim();
+         if (u) return u;
+       }
+     }
+     if (product.image) {
+       var p = String(product.image).trim();
+       if (p) return p;
+     }
+     return '';
+   };
 
   // Programmatic DOM element version (same guarantees, real event listener).
   window.createSafeImage = function (src, alt, opts) {

@@ -3,6 +3,105 @@ const path = require('path');
 const fs = require('fs');
 const logger = require('./logger');
 
+const BLOB_URL_RE = /^https?:\/\/[^/]+\.blob\.vercel-storage\.com/;
+
+function isBlobConfigured() {
+  return !!process.env.BLOB_READ_WRITE_TOKEN;
+}
+
+let blobModule = null;
+let blobModuleLoadAttempted = false;
+
+function getBlobModule() {
+  if (blobModule) return blobModule;
+  if (blobModuleLoadAttempted) return null;
+  blobModuleLoadAttempted = true;
+  try {
+    blobModule = require('@vercel/blob');
+  } catch (err) {
+    logger.warn('No se pudo cargar @vercel/blob:', err.message);
+    blobModule = null;
+  }
+  return blobModule;
+}
+
+function isBlobUrl(url) {
+  return !!(url && typeof url === 'string' && BLOB_URL_RE.test(url));
+}
+
+async function uploadToBlob(file) {
+  const mod = getBlobModule();
+  if (!mod || !isBlobConfigured()) {
+    return null;
+  }
+  try {
+    let buffer = fs.readFileSync(file.path);
+    let contentType = file.mimetype || 'application/octet-stream';
+
+    try {
+      const sharp = require('sharp');
+      const optimized = await sharp(buffer)
+        .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+        .webp({ quality: 80 })
+        .toBuffer();
+      buffer = optimized;
+      contentType = 'image/webp';
+    } catch (err) {
+      logger.warn('Sharp no disponible para optimización en Blob, subiendo original:', err.message);
+    }
+
+    const ext = path.extname(file.originalname).toLowerCase() || '.webp';
+    const safe = file.originalname
+      .replace(/\.[^.\\/]*$/, '')
+      .replace(/[^a-zA-Z0-9._-]/g, '_');
+    const blobName = `products/${Date.now()}_${safe}${ext}`;
+
+    const blob = await mod.put(blobName, buffer, {
+      access: 'public',
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+      contentType
+    });
+
+    return { url: blob.url, filename: blobName, blobName, isBlob: true };
+  } catch (err) {
+    logger.error('Error subiendo a Vercel Blob:', err.message);
+    return null;
+  }
+}
+
+async function deleteFromBlob(url) {
+  if (!isBlobUrl(url)) return false;
+  const mod = getBlobModule();
+  if (!mod || !isBlobConfigured()) return false;
+  try {
+    await mod.del(url, { token: process.env.BLOB_READ_WRITE_TOKEN });
+    return true;
+  } catch (err) {
+    logger.warn('Error eliminando de Vercel Blob:', err.message);
+    return false;
+  }
+}
+
+async function deleteImageAsset(image) {
+  if (!image) return false;
+  let deleted = false;
+
+  if (image.cloudinary_public_id) {
+    try { if (await deleteFromCloudinary(image.cloudinary_public_id)) deleted = true; } catch (e) { /* noop */ }
+  }
+
+  if (image.url) {
+    if (await deleteFromBlob(image.url)) deleted = true;
+  }
+
+  if (image.filename && !isBlobUrl(image.url)) {
+    const localPath = path.join(__dirname, '..', '..', 'uploads', 'products', image.filename);
+    try { if (fs.existsSync(localPath)) { fs.unlinkSync(localPath); deleted = true; } } catch (e) { /* noop */ }
+  }
+
+  return deleted;
+}
+
 const isVercel = process.env.VERCEL === 'true';
 const uploadsDir = isVercel ? '/tmp/uploads/products' : path.join(__dirname, '..', '..', 'uploads', 'products');
 
@@ -153,10 +252,20 @@ async function deleteFromCloudinary(publicId) {
   }
 }
 
-async function processFile(file, baseUrl) {
+async function processFile(file, _baseUrl) {
   const isProduction = process.env.NODE_ENV === 'production';
-  const useCloudinary = isCloudinaryConfigured();
+  const useBlob = isBlobConfigured();
 
+  if (useBlob) {
+    const blobResult = await uploadToBlob(file);
+    if (blobResult) {
+      try { fs.unlinkSync(file.path); } catch (e) { /* noop */ }
+      return { url: blobResult.url, filename: blobResult.filename, cloudinary_public_id: '', isCloudinary: false, isBlob: true };
+    }
+    logger.warn('El upload a Vercel Blob falló, intentando fallback...');
+  }
+
+  const useCloudinary = isCloudinaryConfigured();
   if (useCloudinary) {
     const cloudinaryResult = await uploadToCloudinary(file.path, file.originalname);
     if (cloudinaryResult) {
@@ -165,18 +274,20 @@ async function processFile(file, baseUrl) {
     }
   }
 
-  if (!useCloudinary && isProduction) {
-    logger.warn('Cloudinary no configurado. Las imágenes se guardan como base64 en la base de datos Neon. Configurá CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY y CLOUDINARY_API_SECRET si querés URLs externas.');
+  if (!useBlob && isProduction) {
+    logger.warn('BLOB_READ_WRITE_TOKEN no configurado. Las imágenes se guardan como base64 en la base de datos (modo fallback efímero). Configurá BLOB_READ_WRITE_TOKEN para usar Vercel Blob Storage.');
   }
 
   const optimizedPath = await optimizeWithSharp(file.path);
   const dataUri = await fileToBase64DataUri(optimizedPath);
-  
+
   if (optimizedPath !== file.path && fs.existsSync(optimizedPath)) {
     try { fs.unlinkSync(optimizedPath); } catch (e) { /* noop */ }
   }
-  
-  return { url: dataUri, filename: '', cloudinary_public_id: '', isCloudinary: false };
+
+  try { fs.unlinkSync(file.path); } catch (e) { /* noop */ }
+
+  return { url: dataUri, filename: '', cloudinary_public_id: '', isCloudinary: false, isBlob: false };
 }
 
 async function saveFile(req, res) {
@@ -188,7 +299,8 @@ async function saveFile(req, res) {
     url: processed.url,
     filename: processed.filename,
     size: req.file.size,
-    isCloudinary: processed.isCloudinary
+    isCloudinary: processed.isCloudinary,
+    isBlob: processed.isBlob
   });
 }
 
@@ -213,7 +325,12 @@ function getPublicUrl(relativePath, baseUrl) {
     logger.warn(`Imagen no encontrada en filesystem: ${relativePath}`);
     return '';
   }
-  return withPrefix;
+     return withPrefix;
+}
+
+async function saveUploadedFile(file) {
+  const processed = await processFile(file);
+  return getPublicUrl(processed.url, '');
 }
 
 module.exports = {
@@ -223,5 +340,11 @@ module.exports = {
   saveFile,
   processFile,
   getPublicUrl,
-  deleteFromCloudinary
+  deleteFromCloudinary,
+  uploadToBlob,
+  deleteFromBlob,
+  deleteImageAsset,
+  saveUploadedFile,
+  isBlobConfigured,
+  isBlobUrl
 };

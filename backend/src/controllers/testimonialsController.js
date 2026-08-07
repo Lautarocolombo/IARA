@@ -1,6 +1,6 @@
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
-const { getPublicUrl } = require('../lib/upload');
+const { saveUploadedFile } = require('../lib/upload');
 
 const ALLOWED_TESTIMONIAL_COLUMNS = ['name', 'comment', 'rating', 'image', 'avatar', 'active', 'orden'];
 
@@ -27,7 +27,7 @@ const getAdminTestimonials = async (req, res) => {
 const createTestimonial = async (req, res) => {
   let { name, comment, rating = 5, image = '', active = true, orden = 0 } = req.body || {};
   if (req.file) {
-    image = getPublicUrl(`/uploads/products/${req.file.filename}`);
+    image = await saveUploadedFile(req.file);
   }
   if (!name || !comment) return res.status(400).json({ error: 'Nombre y comentario son requeridos' });
   try {
@@ -78,7 +78,7 @@ const updateTestimonial = async (req, res) => {
   const id = Number(req.params.id);
   const updates = req.body || {};
   if (req.file) {
-    updates.image = getPublicUrl(`/uploads/products/${req.file.filename}`);
+    updates.image = await saveUploadedFile(req.file);
   }
   const fields = Object.keys(updates).filter(k => k !== 'id' && ALLOWED_TESTIMONIAL_COLUMNS.includes(k));
   if (!fields.length) return res.status(400).json({ error: 'Sin datos para actualizar' });

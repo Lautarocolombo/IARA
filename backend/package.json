@@ -12,6 +12,7 @@
     "lint:fix": "eslint src/server.js --ext .js --fix"
   },
   "dependencies": {
+    "@vercel/blob": "^2.7.0",
     "bcrypt": "^6.0.0",
     "cloudinary": "^1.41.3",
     "cookie-parser": "^1.4.7",
