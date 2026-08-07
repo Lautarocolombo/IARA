@@ -1,6 +1,6 @@
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
-const { getPublicUrl, deleteFromCloudinary } = require('../lib/upload');
+const { getPublicUrl, deleteImageAsset, saveUploadedFile } = require('../lib/upload');
 
 function mapRow(r, baseUrl) {
   return {
@@ -62,7 +62,7 @@ const upsertHeroCard = async (req, res) => {
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
     let imagenUrl = imagen || '';
     if (req.file) {
-      imagenUrl = getPublicUrl(`/uploads/products/${req.file.filename}`, baseUrl);
+      imagenUrl = await saveUploadedFile(req.file);
     }
 
     if (id) {
@@ -111,7 +111,7 @@ const updateHeroSlot = async (req, res) => {
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
     let imagenUrl = imagen || '';
     if (req.file) {
-      imagenUrl = getPublicUrl(`/uploads/products/${req.file.filename}`, baseUrl);
+      imagenUrl = await saveUploadedFile(req.file);
     }
     const existing = await query('SELECT id FROM hero_cards WHERE slot = $1', [slot]);
     if (existing.rows.length === 0) {
@@ -149,8 +149,7 @@ const deleteHeroSlotImage = async (req, res) => {
     if (existing.rows.length === 0) return res.status(404).json({ error: 'Slot de hero no encontrado' });
     const oldImage = existing.rows[0].imagen;
     if (oldImage) {
-      const publicId = oldImage.includes('cloudinary.com') ? oldImage.split('/').pop().split('.')[0] : null;
-      if (publicId) await deleteFromCloudinary(publicId);
+      await deleteImageAsset({ url: oldImage, cloudinary_public_id: oldImage.includes('cloudinary.com') ? oldImage.split('/').pop().split('.')[0] : '' });
     }
     await query('UPDATE hero_cards SET imagen = \'\' WHERE id = $1', [existing.rows[0].id]);
     res.json({ ok: true, message: 'Imagen eliminada' });

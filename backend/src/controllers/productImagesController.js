@@ -1,8 +1,6 @@
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
-const path = require('path');
-const fs = require('fs');
-const { getPublicUrl, deleteFromCloudinary, processFile } = require('../lib/upload');
+const { getPublicUrl, deleteImageAsset, processFile } = require('../lib/upload');
 
 async function getProductImages(req, res) {
   try {
@@ -159,9 +157,7 @@ async function deleteProductImage(req, res) {
     }
 
     const image = result.rows[0];
-    if (image.cloudinary_public_id) {
-      await deleteFromCloudinary(image.cloudinary_public_id);
-    }
+    await deleteImageAsset(image);
 
     await query('DELETE FROM product_images WHERE id = $1', [imageId]);
 
@@ -206,9 +202,7 @@ async function replaceProductImage(req, res) {
     }
 
     const oldImage = imageCheck.rows[0];
-    if (oldImage.cloudinary_public_id) {
-      await deleteFromCloudinary(oldImage.cloudinary_public_id);
-    }
+    await deleteImageAsset(oldImage);
 
     const processed = await processFile(req.file, `${req.protocol}://${req.get('host')}`);
     const result = await query(

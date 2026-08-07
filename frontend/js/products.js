@@ -169,7 +169,7 @@ function renderProducts(productsToRender) {
   }
 
   grid.innerHTML = productsToRender.map(product => {
-    const imgUrl = (product.images && product.images.length ? (product.images.find(i => i.es_principal) || product.images[0]).url : '') || product.image;
+    const imgUrl = window.getProductImageUrl(product) || '';
     const imageHtml = imgUrl
       ? window.renderProductImage(imgUrl, product.name, { className: 'product-card-img', placeholder: product.emoji || '📿' })
       : window.renderProductImage('', product.name, { className: 'product-card-img', placeholder: product.emoji || '📿' });

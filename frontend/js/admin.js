@@ -559,12 +559,11 @@ function renderProductsTable() {
        }
         tbody.innerHTML = filtered.map(p => `<tr>
           <td><code>${escapeHtml(p.slug || '—')}</code></td>
-           <td><div class='product-cell'><div class='thumb'>${(() => { const imgUrl = (p.images && p.images.length ? (p.images.find(i => i.es_principal) || p.images[0]).url : '') || p.image; return imgUrl ? window.renderProductImage(imgUrl, p.name, { placeholder: p.emoji || '📿' }) : (p.emoji || '📿'); })()}</div><div><div class='product-name'>${escapeHtml(p.name)}</div><div class='product-desc'>${escapeHtml(p.description || '')}</div></div></div></td>
-          <td><span class='badge badge-${escapeHtml(p.category)}'>${escapeHtml(p.category)}</span></td>
+           <td><div class='product-cell'><div class='thumb'>${(() => { const imgUrl = window.getProductImageUrl(p) || ''; return imgUrl ? window.renderProductImage(imgUrl, p.name, { placeholder: p.emoji || '📿' }) : (p.emoji || '📿'); })()}</div><div><div class='product-name'>${escapeHtml(p.name)}</div><div class='product-desc'>${escapeHtml(p.description || '')}</div></div></div></td>          <td><span class='badge badge-${escapeHtml(p.category)}'>${escapeHtml(p.category)}</span></td>
           <td><code>${escapeHtml(p.sku || '—')}</code></td>
           <td><span class='price-cell'>$${Number(p.price).toLocaleString('es-AR')}</span></td>
           <td><span class='badge badge-stock ${p.stock > 0 ? 'badge-stock--ok' : 'badge-stock--out'}'>${p.stock > 0 ? `✅ ${p.stock}` : '❌ Sin stock'}</span></td>
-           <td>${(() => { const imgUrl = (p.images && p.images.length ? (p.images.find(i => i.es_principal) || p.images[0]).url : '') || p.image; return imgUrl ? `<div class='thumb'>${window.renderProductImage(imgUrl, p.name, { placeholder: p.emoji || '📿' })}</div>` : `<div class='thumb'>${p.emoji || '📿'}</div>`; })()}</td>
+           <td>${(() => { const imgUrl = window.getProductImageUrl(p) || ''; return imgUrl ? `<div class='thumb'>${window.renderProductImage(imgUrl, p.name, { placeholder: p.emoji || '📿' })}</div>` : `<div class='thumb'>${p.emoji || '📿'}</div>`; })()}</td>
           <td><button class='btn btn-${p.active !== false ? 'secondary' : 'secondary'} btn-sm' onclick='toggleProductStatus(${p.id})'>${p.active !== false ? '✅ Activo' : '❌ Inactivo'}</button></td>
           <td><div class='actions'>
             <button class='btn btn-secondary btn-sm' onclick='editProduct(${p.id})'>✏️ Editar</button>
