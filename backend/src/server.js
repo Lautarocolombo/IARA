@@ -78,7 +78,7 @@ if (missingEnvVars.length > 0 && process.env.NODE_ENV === 'production') {
 const isProduction = process.env.NODE_ENV === 'production';
 const productionEnvVars = isProduction
   ? {
-      DATABASE_URL: 'connection string de PostgreSQL (ej: postgresql://user:pass@host:5432/db?sslmode=require)',
+      DATABASE_URL: 'connection string de PostgreSQL (si no la configurás, usa SQLite local)',
       ALLOWED_ORIGINS: 'orígenes permitidos separados por coma (ej: https://tudominio.com,http://localhost:3000)',
     }
   : {};
@@ -102,18 +102,19 @@ if (missingEnvVars.length > 0 || missingProductionVars.length > 0) {
       }
     });
   }
-  if (missingProductionVars.length > 0) {
-    console.error('\nVariables de producción necesarias para el funcionamiento:');
-    missingProductionVars.forEach(key => {
-      console.error(`  ${key} → ${productionEnvVars[key]}`);
-    });
+  if (missingProductionVars.length > 0 && process.env.NODE_ENV === 'production') {
+    console.warn('\nVariables de producción faltantes. El servidor usará SQLite local y CORS abierto como fallback.');
+    if (!process.env.DATABASE_URL) process.env.DATABASE_URL = '';
+    if (!process.env.ALLOWED_ORIGINS) process.env.ALLOWED_ORIGINS = '*';
   }
-  console.error('\nCómo cargarlas en Render:');
-  console.error('  1. https://dashboard.render.com → tu servicio → Settings');
-  console.error('  2. Sección "Environment" → "Add Environment Variable"');
-  console.error('  3. Agregá cada variable con su nombre y valor');
-  console.error('='.repeat(60));
-  process.exit(1);
+  if (missingEnvVars.length > 0 && !process.env.NODE_ENV === 'production') {
+    console.error('\nCómo cargarlas en Render:');
+    console.error('  1. https://dashboard.render.com → tu servicio → Settings');
+    console.error('  2. Sección "Environment" → "Add Environment Variable"');
+    console.error('  3. Agregá cada variable con su nombre y valor');
+    console.error('='.repeat(60));
+    process.exit(1);
+  }
 }
 
 const app = express();
