@@ -498,7 +498,7 @@ async function loadCategories() {
           await adminFetch(url, { method, body: formData });
         } else {
           const payload = { name, slug, description, active, orden, image: existingImage };
-          await adminFetch(url, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+          await adminFetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
         }
         showSaveStatus('categorySaveStatus', 'success', '✅ Guardado');
         await loadCategories();
@@ -554,7 +554,7 @@ function renderProductsTable() {
        });
        const tbody = document.getElementById('tableBody');
        if (filtered.length === 0) {
-         tbody.innerHTML = '<tr><td colspan=\'8\' class=\'empty-state\'><h3>Sin resultados</h3><p>No se encontraron productos.</p></td></tr>';
+          tbody.innerHTML = '<tr><td colspan=\'9\' class=\'empty-state\'><h3>Sin resultados</h3><p>No se encontraron productos.</p></td></tr>';
          return;
        }
         tbody.innerHTML = filtered.map(p => `<tr>
@@ -1749,6 +1749,10 @@ async function changeOrderStatus(id, newStatus) {
     window.syncHeroCards = syncHeroCards;
     window.deleteHeroSlotImage = deleteHeroSlotImage;
     window.previewHeroSlotImage = previewHeroSlotImage;
+    window.deleteCurrentHeroSlotImage = function () {
+      const idx = state.currentHeroSlotIndex;
+      if (idx !== null && idx !== undefined) deleteHeroSlotImage(idx);
+    };
     window.closeOrderDetailModal = closeOrderDetailModal;
     window.changeOrderStatus = changeOrderStatus;
     window.saveOrderNotes = saveOrderNotes;

@@ -42,6 +42,7 @@ const getSiteSettings = async (req, res) => {
       socials,
       shipping_zones: shippingZones,
       payment: {
+        mp_alias: paymentConfig.mp_alias || '',
         mp_enabled: paymentConfig.mp_enabled !== false,
         cash_enabled: paymentConfig.cash_enabled !== false,
         transfer_alias: paymentConfig.transfer_alias || '',

@@ -18,7 +18,7 @@
 (function () {
   'use strict';
 
-  var DEFAULT_SYMBOL = '\uD83D  📿'; // 📿
+  var DEFAULT_SYMBOL = '📿';
   var _cache = Object.create(null);
 
   function escapeAttr(str) {

@@ -89,6 +89,7 @@
   <script src="../js/safeImage.js"></script>
   <script src="../js/theme.js"></script>
   <script src="../js/ui.js"></script>
+  <script src="../js/wishlist.js"></script>
   <script src="../js/cart.js"></script>
   <script>
     async function loadProduct() {
@@ -113,9 +114,9 @@
           container.innerHTML = '<p>Producto no encontrado.</p>';
           return;
         }
-const images = Array.isArray(product.images) && product.images.length
-	             ? product.images
-	             : (product.image ? [{ url: product.image, es_principal: true }] : [{ url: '../assets/placeholder-product.svg', es_principal: true }]);
+         const images = Array.isArray(product.images) && product.images.length
+ 	             ? product.images
+ 	             : [{ url: window.getProductImageUrl(product) || '../assets/placeholder-product.svg', es_principal: true }];
           const principalImage = images.find(i => i.es_principal) || images[0];
           const thumbsHtml = images.map((img, i) =>
             `${window.renderProductImage(img.url, product.name + ' - imagen ' + (i + 1), { placeholder: '📿' })}`

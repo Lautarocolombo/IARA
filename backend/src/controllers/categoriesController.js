@@ -65,6 +65,7 @@ const updateCategory = async (req, res) => {
   if (req.file) {
     updates.image = await saveUploadedFile(req.file);
   }
+  if (typeof updates.active === 'string') updates.active = updates.active !== 'false';
   const fields = Object.keys(updates).filter(k => k !== 'id' && ALLOWED_CATEGORY_COLUMNS.includes(k));
   if (!fields.length) return res.status(400).json({ error: 'Sin datos para actualizar' });
   const values = [];
