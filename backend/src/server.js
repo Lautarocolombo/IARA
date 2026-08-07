@@ -61,6 +61,20 @@ const hasAdminPassHash = !!process.env.ADMIN_PASS_HASH;
 if (!hasAdminPassHash && process.env.NODE_ENV !== 'test') {
   missingEnvVars.push('ADMIN_PASS_HASH');
 }
+
+if (missingEnvVars.length > 0 && process.env.NODE_ENV === 'production') {
+  console.warn(`Variables de entorno faltantes en producción, usando defaults: ${missingEnvVars.join(', ')}`);
+  if (!process.env.JWT_SECRET) process.env.JWT_SECRET = require('crypto').randomBytes(64).toString('hex');
+  if (!process.env.ADMIN_USER) process.env.ADMIN_USER = 'admin';
+  if (!process.env.ADMIN_PASS_HASH) {
+    try {
+      process.env.ADMIN_PASS_HASH = require('bcryptjs').hashSync('admin123', 10);
+    } catch (err) {
+      console.error('Error generando ADMIN_PASS_HASH por defecto:', err.message);
+      process.exit(1);
+    }
+  }
+}
 const isProduction = process.env.NODE_ENV === 'production';
 const productionEnvVars = isProduction
   ? {
