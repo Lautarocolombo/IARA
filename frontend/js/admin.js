@@ -407,7 +407,8 @@ const API_BASE = CONFIG.API.BASE;
 
     const state = { currentCategoryId: null, currentOrderId: null, currentCustomerId: null, dashboardLoaded: false };
 
-    let deleteOrderState = { id: null, orderNumber: null, customer: null };
+     let deleteOrderState = { id: null, orderNumber: null, customer: null };
+     let selectedOrderIds = new Set();
 
 function openSectionModal() {
         if (currentSection === 'products') openModal();
@@ -969,20 +970,18 @@ function setReportPreset(preset) {
       }
     }
 
-     async function loadOrders() {
-       try {
-         const params = new URLSearchParams();
+      async function loadOrders() {
+        try {
+          selectedOrderIds.clear();
+          updateBulkDeleteButton();
+          const params = new URLSearchParams();
          params.set('page', ordersCurrentPage);
          params.set('limit', 15);
          params.set('sort_by', 'created_at');
          params.set('sort_order', 'desc');
-         const statusFilter = document.getElementById('orderStatusFilter')?.value;
-         if (statusFilter) params.set('status', statusFilter);
-         const dateFrom = document.getElementById('orderDateFrom')?.value;
-         if (dateFrom) params.set('start_date', dateFrom);
-         const dateTo = document.getElementById('orderDateTo')?.value;
-         if (dateTo) params.set('end_date', dateTo);
-         const res = await adminFetch(`/api/admin/orders?${params.toString()}`);
+          const statusFilter = document.getElementById('orderStatusFilter')?.value;
+          if (statusFilter) params.set('status', statusFilter);
+          const res = await adminFetch(`/api/admin/orders?${params.toString()}`);
          const data = await res.json();
           orders = data.orders || data || [];
          ordersTotalPages = data.pagination?.totalPages || data.pages || 1;
@@ -1000,49 +999,58 @@ function setReportPreset(preset) {
       }
 
 function renderOrdersTable() {
-       const q = (document.getElementById('orderSearchInput')?.value || '').toLowerCase();
-       const statusFilter = document.getElementById('orderStatusFilter')?.value || '';
-       const dateFrom = document.getElementById('orderDateFrom')?.value || '';
-       const dateTo = document.getElementById('orderDateTo')?.value || '';
-       const filtered = orders.filter(o => {
-         const customerName = (typeof o.customer === 'string' ? JSON.parse(o.customer) : (o.customer || {})).name || '';
-         const matchesSearch = customerName.toLowerCase().includes(q) || String(o.id).includes(q);
-         const matchesStatus = !statusFilter || o.status === statusFilter;
-         const orderDate = o.created_at ? o.created_at.split('T')[0] : '';
-         const matchesDateFrom = !dateFrom || orderDate >= dateFrom;
-         const matchesDateTo = !dateTo || orderDate <= dateTo;
-         return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo;
-       });
-       const tbody = document.getElementById('ordersTableBody');
-       if (!filtered.length) {
-         tbody.innerHTML = '<tr><td colspan=\'7\' class=\'empty-state\'><h3>Sin resultados</h3><p>No se encontraron pedidos.</p></td></tr>';
-         return;
+        const q = (document.getElementById('orderSearchInput')?.value || '').toLowerCase();
+        const statusFilter = document.getElementById('orderStatusFilter')?.value || '';
+        const dateFrom = document.getElementById('orderDateFrom')?.value || '';
+        const dateTo = document.getElementById('orderDateTo')?.value || '';
+        const filtered = orders.filter(o => {
+          const customerName = (typeof o.customer === 'string' ? JSON.parse(o.customer) : (o.customer || {})).name || '';
+          const matchesSearch = customerName.toLowerCase().includes(q) || String(o.id).includes(q);
+          const matchesStatus = !statusFilter || o.status === statusFilter;
+          const orderDate = o.created_at ? o.created_at.split('T')[0] : '';
+          const matchesDateFrom = !dateFrom || orderDate >= dateFrom;
+          const matchesDateTo = !dateTo || orderDate <= dateTo;
+          return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo;
+        });
+        const tbody = document.getElementById('ordersTableBody');
+        if (!filtered.length) {
+          tbody.innerHTML = '<tr><td colspan=\'8\' class=\'empty-state\'><h3>Sin resultados</h3><p>No se encontraron pedidos.</p></td></tr>';
+          return;
+        }
+         tbody.innerHTML = filtered.map((o, index) => {
+           const customer = typeof o.customer === 'string' ? JSON.parse(o.customer) : (o.customer || {});
+           const isChecked = selectedOrderIds.has(o.id);
+           return `<tr>
+             <td><input type="checkbox" onchange="toggleOrderSelection(${o.id}, this.checked)" ${isChecked ? 'checked' : ''} /></td>
+             <td><strong>#${index + 1}</strong></td>
+             <td>${escapeHtml(customer.name || '—')}</td>
+             <td><span class='price-cell'>$${Number(o.total).toLocaleString('es-AR')}</span></td>
+              <td><span class='badge badge-${o.status === 'delivered' || o.status === 'completed' ? 'stock--ok' : (o.status === 'cancelled' ? 'stock--out' : '')}'>${escapeHtml(o.status || 'pending')}</span></td>
+              <td>${escapeHtml(o.payment_method || '—')}</td>
+             <td>${new Date(o.created_at).toLocaleDateString('es-AR')}</td>
+             <td><div class='actions'>
+              <button class='btn btn-secondary btn-sm' onclick='viewOrder(${o.id})'>👁 Ver</button>
+              <button class='btn btn-danger btn-sm' onclick='openDeleteOrderModal(${o.id}, ${index + 1})' title='Eliminar pedido'>🗑</button>
+              <select class='status-select' onchange='quickUpdateOrderStatus(${o.id}, this.value)' style='margin-left:0.25rem'>
+               <option value='pending' ${o.status === 'pending' ? 'selected' : ''}>⏳</option>
+               <option value='confirmed' ${o.status === 'confirmed' ? 'selected' : ''}>✅</option>
+               <option value='preparing' ${o.status === 'preparing' ? 'selected' : ''}>👨‍🍳</option>
+               <option value='shipped' ${o.status === 'shipped' ? 'selected' : ''}>🚚</option>
+               <option value='delivered' ${o.status === 'delivered' ? 'selected' : ''}>📦</option>
+               <option value='cancelled' ${o.status === 'cancelled' ? 'selected' : ''}>❌</option>
+             </select>
+           </div></td>
+           </tr>`;
+         }).join('');
+         const selectAll = document.getElementById('selectAllOrders');
+         if (selectAll) {
+           const currentPageIds = orders.map(o => o.id);
+           const allSelected = currentPageIds.length > 0 && currentPageIds.every(id => selectedOrderIds.has(id));
+           selectAll.checked = allSelected;
+           selectAll.indeterminate = !allSelected && currentPageIds.some(id => selectedOrderIds.has(id));
+         }
+         renderPagination('ordersPagination', ordersCurrentPage, ordersTotalPages, loadOrders);
        }
-        tbody.innerHTML = filtered.map((o, index) => {
-          const customer = typeof o.customer === 'string' ? JSON.parse(o.customer) : (o.customer || {});
-          return `<tr>
-            <td><strong>#${index + 1}</strong></td>
-            <td>${escapeHtml(customer.name || '—')}</td>
-            <td><span class='price-cell'>$${Number(o.total).toLocaleString('es-AR')}</span></td>
-             <td><span class='badge badge-${o.status === 'delivered' || o.status === 'completed' ? 'stock--ok' : (o.status === 'cancelled' ? 'stock--out' : '')}'>${escapeHtml(o.status || 'pending')}</span></td>
-             <td>${escapeHtml(o.payment_method || '—')}</td>
-            <td>${new Date(o.created_at).toLocaleDateString('es-AR')}</td>
-            <td><div class='actions'>
-             <button class='btn btn-secondary btn-sm' onclick='viewOrder(${o.id})'>👁 Ver</button>
-             <button class='btn btn-danger btn-sm' onclick='openDeleteOrderModal(${o.id}, ${index + 1})' title='Eliminar pedido'>🗑 Eliminar</button>
-             <select class='status-select' onchange='quickUpdateOrderStatus(${o.id}, this.value)' style='margin-left:0.25rem'>
-              <option value='pending' ${o.status === 'pending' ? 'selected' : ''}>⏳</option>
-              <option value='confirmed' ${o.status === 'confirmed' ? 'selected' : ''}>✅</option>
-              <option value='preparing' ${o.status === 'preparing' ? 'selected' : ''}>👨‍🍳</option>
-              <option value='shipped' ${o.status === 'shipped' ? 'selected' : ''}>🚚</option>
-              <option value='delivered' ${o.status === 'delivered' ? 'selected' : ''}>📦</option>
-              <option value='cancelled' ${o.status === 'cancelled' ? 'selected' : ''}>❌</option>
-            </select>
-          </div></td>
-          </tr>`;
-        }).join('');
-        renderPagination('ordersPagination', ordersCurrentPage, ordersTotalPages, loadOrders);
-      }
 
       function renderPagination(containerId, currentPage, totalPages, onChange) {
         const container = document.getElementById(containerId);
@@ -1100,40 +1108,113 @@ function renderOrdersTable() {
       }
 
       async function confirmDeleteOrder() {
-        const { id, orderNumber } = deleteOrderState;
-        if (!id) return;
-        const btn = document.getElementById('confirmDeleteOrderBtn');
+         const { id, orderNumber } = deleteOrderState;
+         if (!id) return;
+         const btn = document.getElementById('confirmDeleteOrderBtn');
+         if (btn) { btn.disabled = true; btn.textContent = 'Eliminando...'; }
+         try {
+           const res = await adminFetch(`/api/admin/orders/${id}`, { method: 'DELETE' });
+           const data = await res.json();
+           if (!res.ok) throw new Error(data.error || 'Error al eliminar el pedido');
+           orders = orders.filter(o => o.id !== id);
+           closeDeleteOrderModal();
+           if (currentSection === 'orders') {
+             if (orders.length === 0 && ordersCurrentPage > 1) {
+               ordersCurrentPage--;
+               await loadOrders();
+             } else {
+               renderOrdersTable();
+             }
+           }
+           showToast(`Pedido #${orderNumber} eliminado correctamente`, 'success');
+         } catch (err) {
+           showToast(err.message, 'error');
+         } finally {
+           if (btn) { btn.disabled = false; btn.textContent = 'Eliminar'; }
+         }
+       }
+
+      function toggleOrderSelection(id, checked) {
+        if (checked) {
+          selectedOrderIds.add(id);
+        } else {
+          selectedOrderIds.delete(id);
+        }
+        updateBulkDeleteButton();
+        const selectAll = document.getElementById('selectAllOrders');
+        if (selectAll) {
+          const currentPageIds = orders.map(o => o.id);
+          const allSelected = currentPageIds.length > 0 && currentPageIds.every(id => selectedOrderIds.has(id));
+          selectAll.checked = allSelected;
+          selectAll.indeterminate = !allSelected && currentPageIds.some(id => selectedOrderIds.has(id));
+        }
+      }
+
+      function toggleSelectAllOrders() {
+        const selectAll = document.getElementById('selectAllOrders');
+        if (!selectAll) return;
+        const currentPageIds = orders.map(o => o.id);
+        if (selectAll.checked) {
+          currentPageIds.forEach(id => selectedOrderIds.add(id));
+        } else {
+          currentPageIds.forEach(id => selectedOrderIds.delete(id));
+        }
+        renderOrdersTable();
+        updateBulkDeleteButton();
+      }
+
+      function updateBulkDeleteButton() {
+        const btn = document.getElementById('bulkDeleteBtn');
+        if (btn) {
+          btn.style.display = selectedOrderIds.size > 0 ? 'inline-flex' : 'none';
+        }
+      }
+
+      function openBulkDeleteModal() {
+        const count = selectedOrderIds.size;
+        const msg = document.getElementById('bulkDeleteModalMessage');
+        if (msg) msg.textContent = `¿Seguro que querés eliminar ${count} pedido${count !== 1 ? 's' : ''}? Esta acción no se puede deshacer.`;
+        const btn = document.getElementById('confirmBulkDeleteBtn');
+        if (btn) { btn.disabled = false; btn.textContent = 'Eliminar seleccionados'; }
+        const overlay = document.getElementById('bulkDeleteModalOverlay');
+        if (overlay) overlay.classList.add('active');
+      }
+
+      function closeBulkDeleteModal() {
+        const overlay = document.getElementById('bulkDeleteModalOverlay');
+        if (overlay) overlay.classList.remove('active');
+      }
+
+      async function confirmBulkDelete() {
+        const ids = Array.from(selectedOrderIds);
+        if (!ids.length) return;
+        const btn = document.getElementById('confirmBulkDeleteBtn');
         if (btn) { btn.disabled = true; btn.textContent = 'Eliminando...'; }
         try {
-          const res = await adminFetch(`/api/admin/orders/${id}`, { method: 'DELETE' });
+          const res = await adminFetch('/api/admin/orders/bulk', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids })
+          });
           const data = await res.json();
-          if (!res.ok) throw new Error(data.error || 'Error al eliminar el pedido');
-          orders = orders.filter(o => o.id !== id);
-          closeDeleteOrderModal();
-          if (currentSection === 'orders') {
-            if (orders.length === 0 && ordersCurrentPage > 1) {
-              ordersCurrentPage--;
-              await loadOrders();
-            } else {
-              renderOrdersTable();
-            }
-          }
-          showToast(`Pedido #${orderNumber} eliminado correctamente`, 'success');
+          if (!res.ok) throw new Error(data.error || 'Error al eliminar los pedidos');
+          const deletedCount = data.deleted || ids.length;
+          selectedOrderIds.clear();
+          closeBulkDeleteModal();
+          await loadOrders();
+          showToast(`${deletedCount} pedido${deletedCount !== 1 ? 's' : ''} eliminado${deletedCount !== 1 ? 's' : ''} correctamente`, 'success');
         } catch (err) {
           showToast(err.message, 'error');
         } finally {
-          if (btn) { btn.disabled = false; btn.textContent = 'Eliminar'; }
+          if (btn) { btn.disabled = false; btn.textContent = 'Eliminar seleccionados'; }
+          updateBulkDeleteButton();
         }
-    }
+      }
 
       async function exportOrdersCSV() {
         const params = new URLSearchParams();
         const statusFilter = document.getElementById('orderStatusFilter')?.value;
         if (statusFilter) params.set('status', statusFilter);
-        const dateFrom = document.getElementById('orderDateFrom')?.value;
-        if (dateFrom) params.set('start_date', dateFrom);
-        const dateTo = document.getElementById('orderDateTo')?.value;
-        if (dateTo) params.set('end_date', dateTo);
         params.set('format', 'csv');
         try {
           const res = await fetch(getApiUrl(`/api/admin/orders/export?${params.toString()}`), {
@@ -1157,10 +1238,6 @@ function renderOrdersTable() {
         const params = new URLSearchParams();
         const statusFilter = document.getElementById('orderStatusFilter')?.value;
         if (statusFilter) params.set('status', statusFilter);
-        const dateFrom = document.getElementById('orderDateFrom')?.value;
-        if (dateFrom) params.set('start_date', dateFrom);
-        const dateTo = document.getElementById('orderDateTo')?.value;
-        if (dateTo) params.set('end_date', dateTo);
         params.set('format', 'pdf');
         try {
           const res = await fetch(getApiUrl(`/api/admin/orders/export?${params.toString()}`), {
@@ -1409,60 +1486,57 @@ async function loadHeroCardsAdmin() {
          const container = document.getElementById('heroSlotsList');
          if (!container) return;
          const slots = [0, 1];
-         container.innerHTML = `<div class="hero-grid">${slots.map(slotIndex => {
-           const card = heroCards.find(c => c.slot === slotIndex) || {};
-           const isPrimary = slotIndex === 0;
-           const hasImage = card.imagen || heroPendingFiles[slotIndex];
-           return `<div class="hero-card">
-             <div class="hero-card-header">
-               <span class="hero-card-title">Slot ${slotIndex + 1} · Hero</span>
-               <span class="hero-card-badge">${isPrimary ? 'Imagen principal' : 'Imagen secundaria'}</span>
-             </div>
-             <div class="hero-card-preview ${card.imagen ? '' : 'placeholder'}">
-                ${card.imagen ? window.renderProductImage(card.imagen, 'Slot ' + (slotIndex + 1), { style: 'max-height:100%;width:100%;object-fit:cover;' }) : '<span>📷</span>'}
-             </div>
-             <div class="hero-card-body">
-               <div class="form-grid-2">
-                 <div class="form-group">
-                   <label>Título</label>
-                   <input type="text" id="heroSlotTitle_${slotIndex}" value="${escapeHtml(card.titulo || '')}" placeholder="Título del hero" />
-                 </div>
-                 <div class="form-group">
-                   <label>Subtítulo</label>
-                   <textarea id="heroSlotSubtitle_${slotIndex}" rows="2" placeholder="Texto descriptivo">${escapeHtml(card.subtitulo || '')}</textarea>
-                 </div>
-               </div>
-               <div class="form-grid-2">
-                 <div class="form-group">
-                   <label>Texto del CTA</label>
-                   <input type="text" id="heroSlotCtaText_${slotIndex}" value="${escapeHtml(card.cta_texto || '')}" placeholder="Ej: Ver productos" />
-                 </div>
-                 <div class="form-group">
-                   <label>URL del CTA</label>
-                   <input type="text" id="heroSlotCtaUrl_${slotIndex}" value="${escapeHtml(card.cta_url || '')}" placeholder="Ej: /products" />
-                 </div>
-               </div>
-               <div class="hero-card-image-row">
-                 <label class="hero-card-file-label">
-                   <span class="btn btn-secondary btn-sm">
-                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                     Cambiar imagen
-                   </span>
-                   <input type="file" id="heroSlotImageFile_${slotIndex}" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewHeroSlotImage(${slotIndex})" />
-                 </label>
-                 ${hasImage ? `<button class="btn btn-danger btn-sm" onclick="deleteHeroSlotImage(${slotIndex})">🗑 Quitar</button>` : ''}
-               </div>
-               <div class="image-preview" id="heroSlotImagePreview_${slotIndex}" style="display:${hasImage ? 'block' : 'none'};">
-                 ${hasImage ? (card.imagen ? window.renderProductImage(card.imagen, 'Slot ' + (slotIndex + 1), { style: 'max-height:120px;width:100%;object-fit:cover;' }) : '') : ''}
-               </div>
-               <input type="hidden" id="heroSlotImage_${slotIndex}" value="${card.imagen || ''}" />
-               <div class="hero-card-footer">
-                 <button class="btn btn-primary btn-sm" onclick="saveHeroSlot(${slotIndex})">💾 Guardar slot</button>
-                 <span class="hero-card-slot-id">Slot ${slotIndex + 1}</span>
-               </div>
-             </div>
-           </div>`;
-         }).join('')}</div>`;
+          container.innerHTML = `<div class="hero-grid">${slots.map(slotIndex => {
+            const card = heroCards.find(c => c.slot === slotIndex) || {};
+            const isPrimary = slotIndex === 0;
+            const hasImage = card.imagen || heroPendingFiles[slotIndex];
+            return `<div class="hero-card">
+              <div class="hero-card-header">
+                <span class="hero-card-title">Slot ${slotIndex + 1} · Hero</span>
+                <span class="hero-card-badge">${isPrimary ? 'Imagen principal' : 'Imagen secundaria'}</span>
+              </div>
+              <div class="hero-card-preview ${card.imagen ? '' : 'placeholder'}">
+                 ${card.imagen ? window.renderProductImage(card.imagen, 'Slot ' + (slotIndex + 1), { style: 'max-height:100%;width:100%;object-fit:cover;' }) : '<span>📷</span>'}
+              </div>
+              <div class="hero-card-body">
+                <div class="form-group">
+                  <label>Título</label>
+                  <input type="text" id="heroSlotTitle_${slotIndex}" value="${escapeHtml(card.titulo || '')}" placeholder="Título del hero" />
+                </div>
+                <div class="form-group">
+                  <label>Subtítulo</label>
+                  <textarea id="heroSlotSubtitle_${slotIndex}" rows="3" placeholder="Texto descriptivo">${escapeHtml(card.subtitulo || '')}</textarea>
+                </div>
+                <div class="hero-card-cta-row">
+                  <div class="form-group">
+                    <label>Texto del CTA</label>
+                    <input type="text" id="heroSlotCtaText_${slotIndex}" value="${escapeHtml(card.cta_texto || '')}" placeholder="Ej: Ver productos" />
+                  </div>
+                  <div class="form-group">
+                    <label>URL del CTA</label>
+                    <input type="text" id="heroSlotCtaUrl_${slotIndex}" value="${escapeHtml(card.cta_url || '')}" placeholder="Ej: /products" />
+                  </div>
+                </div>
+                <div class="hero-card-image-row">
+                  <label class="hero-card-file-label">
+                    <span class="btn btn-secondary btn-sm">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                      Cambiar imagen
+                    </span>
+                    <input type="file" id="heroSlotImageFile_${slotIndex}" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewHeroSlotImage(${slotIndex})" />
+                  </label>
+                  ${hasImage ? `<button class="btn btn-danger btn-sm" onclick="deleteHeroSlotImage(${slotIndex})">🗑 Quitar</button>` : ''}
+                </div>
+                <div class="image-preview" id="heroSlotImagePreview_${slotIndex}" style="display:${hasImage ? 'block' : 'none'};">
+                  ${hasImage ? (card.imagen ? window.renderProductImage(card.imagen, 'Slot ' + (slotIndex + 1), { style: 'max-height:120px;width:100%;object-fit:cover;' }) : '') : ''}
+                </div>
+                <input type="hidden" id="heroSlotImage_${slotIndex}" value="${card.imagen || ''}" />
+                <div class="hero-card-footer">
+                  <button class="btn btn-primary btn-sm" onclick="saveHeroSlot(${slotIndex})">💾 Guardar slot</button>
+                </div>
+              </div>
+            </div>`;
+          }).join('')}</div>`;
        }
 
      function previewHeroSlotImage(slotIndex) {
@@ -1928,6 +2002,7 @@ async function changeOrderStatus(id, newStatus) {
     document.getElementById('categoryModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('categoryModalOverlay')) closeCategoryModal(); });
     document.getElementById('orderDetailModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('orderDetailModalOverlay')) closeOrderDetailModal(); });
     document.getElementById('deleteOrderModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('deleteOrderModalOverlay')) closeDeleteOrderModal(); });
+    document.getElementById('bulkDeleteModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('bulkDeleteModalOverlay')) closeBulkDeleteModal(); });
 
      document.addEventListener('DOMContentLoaded', () => {
         if (authToken) {
@@ -2014,3 +2089,8 @@ async function changeOrderStatus(id, newStatus) {
     window.changeOrderStatus = changeOrderStatus;
     window.saveOrderNotes = saveOrderNotes;
     window.renderPagination = renderPagination;
+    window.toggleOrderSelection = toggleOrderSelection;
+    window.toggleSelectAllOrders = toggleSelectAllOrders;
+    window.openBulkDeleteModal = openBulkDeleteModal;
+    window.closeBulkDeleteModal = closeBulkDeleteModal;
+    window.confirmBulkDelete = confirmBulkDelete;

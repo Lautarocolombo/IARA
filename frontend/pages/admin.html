@@ -195,26 +195,26 @@
               <option value="delivered">Entregado</option>
               <option value="cancelled">Cancelado</option>
             </select>
-            <input type="date" id="orderDateFrom" class="card-filter" onchange="renderOrdersTable()" title="Fecha desde" />
-            <input type="date" id="orderDateTo" class="card-filter" onchange="ordersCurrentPage=1;loadOrders()" title="Fecha hasta" />
             <button class="btn btn-secondary btn-sm" onclick="exportOrdersCSV()">📥 CSV</button>
             <button class="btn btn-secondary btn-sm" onclick="exportOrdersPDF()">📄 PDF</button>
+            <button class="btn btn-danger btn-sm" id="bulkDeleteBtn" onclick="openBulkDeleteModal()" style="display:none;">🗑 Eliminar seleccionados</button>
             <span id="orderPageInfo" style="font-size:0.8rem;color:#64748b;margin-left:0.5rem;"></span>
           </div>
         </div>
        <div class="card-body">
          <table>
-           <thead>
-             <tr>
-               <th>ID</th>
-               <th>Cliente</th>
-               <th>Total</th>
-               <th>Estado</th>
-               <th>Pago</th>
-               <th>Fecha</th>
-               <th>Acciones</th>
-             </tr>
-           </thead>
+            <thead>
+              <tr>
+                <th style="width:40px;"><input type="checkbox" id="selectAllOrders" onchange="toggleSelectAllOrders()" title="Seleccionar todos" /></th>
+                <th>ID</th>
+                <th>Cliente</th>
+                <th>Total</th>
+                <th>Estado</th>
+                <th>Pago</th>
+                <th>Fecha</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
            <tbody id="ordersTableBody">
              <tr><td colspan='7' class='empty-state'>Cargando pedidos...</td></tr>
           </tbody>
@@ -285,7 +285,7 @@
           </div>
         </div>
         <div class="card-body">
-           <div id="heroSlotsList" style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;"></div>
+           <div id="heroSlotsList"></div>
         </div>
       </div>
 
@@ -718,20 +718,36 @@
    </div>
 
   <div class="modal-overlay" id="deleteOrderModalOverlay">
-    <div class="modal" style="max-width:420px">
-      <div class="modal-header">
-        <h3>Eliminar pedido</h3>
-        <button class="btn btn-secondary btn-sm" onclick="closeDeleteOrderModal()">✕</button>
-      </div>
-      <div class="modal-body">
-        <p id="deleteOrderModalMessage">¿Eliminar este pedido? Esta acción no se puede deshacer.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" onclick="closeDeleteOrderModal()">Cancelar</button>
-        <button class="btn btn-danger" id="confirmDeleteOrderBtn" onclick="confirmDeleteOrder()">Eliminar</button>
-      </div>
-    </div>
-  </div>
+     <div class="modal" style="max-width:420px">
+       <div class="modal-header">
+         <h3>Eliminar pedido</h3>
+         <button class="btn btn-secondary btn-sm" onclick="closeDeleteOrderModal()">✕</button>
+       </div>
+       <div class="modal-body">
+         <p id="deleteOrderModalMessage">¿Eliminar este pedido? Esta acción no se puede deshacer.</p>
+       </div>
+       <div class="modal-footer">
+         <button class="btn btn-secondary" onclick="closeDeleteOrderModal()">Cancelar</button>
+         <button class="btn btn-danger" id="confirmDeleteOrderBtn" onclick="confirmDeleteOrder()">Eliminar</button>
+       </div>
+     </div>
+   </div>
+
+  <div class="modal-overlay" id="bulkDeleteModalOverlay">
+     <div class="modal" style="max-width:420px">
+       <div class="modal-header">
+         <h3>Eliminar pedidos seleccionados</h3>
+         <button class="btn btn-secondary btn-sm" onclick="closeBulkDeleteModal()">✕</button>
+       </div>
+       <div class="modal-body">
+         <p id="bulkDeleteModalMessage">¿Seguro que querés eliminar los pedidos seleccionados? Esta acción no se puede deshacer.</p>
+       </div>
+       <div class="modal-footer">
+         <button class="btn btn-secondary" onclick="closeBulkDeleteModal()">Cancelar</button>
+         <button class="btn btn-danger" id="confirmBulkDeleteBtn" onclick="confirmBulkDelete()">Eliminar seleccionados</button>
+       </div>
+     </div>
+   </div>
 
   <div class="toast-container" id="toastContainer"></div>
 
