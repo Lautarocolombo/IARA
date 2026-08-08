@@ -14,44 +14,6 @@
   <link rel="stylesheet" href="../css/base.css" />
   <link rel="stylesheet" href="../css/components.css" />
   <link rel="stylesheet" href="../css/animations.css" />
-  <style>
-    .product-detail{max-width:900px;margin:0 auto;padding:100px 24px 40px;}
-    .product-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:2.5rem;align-items:start;}
-    .product-image-large{width:100%;aspect-ratio:1;border-radius:var(--radius-md);background:linear-gradient(135deg,var(--blush),var(--mint));display:flex;align-items:center;justify-content:center;font-size:6rem;border:1px solid #f4c8d4;overflow:hidden;}
-    @media (max-width: 768px) {
-      .navbar-actions { gap: 6px; }
-      .pill-btn--theme { padding: 6px 8px; }
-      .wishlist-link, .admin-link, .cart-link { padding: 6px; }
-      .product-detail-grid { grid-template-columns: 1fr; }
-      .product-detail-actions { flex-direction: column; }
-      .product-detail-actions .btn-primary, .product-detail-actions .btn-outline { width: 100%; text-align: center; }
-    }
-  </style>
-    .product-image-large img{width:100%;height:100%;object-fit:cover;display:block;}
-    .product-category{display:inline-block;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.5rem;}
-    .product-detail-title{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:700;color:var(--text-dark);margin-bottom:0.75rem;line-height:1.2;}
-    .product-detail-price{font-family:'Playfair Display',serif;font-weight:700;font-size:1.5rem;color:var(--rose-dark);margin-bottom:1.5rem;}
-    .product-detail-desc{color:var(--text-mid);line-height:1.8;margin-bottom:1.5rem;}
-    .product-detail-actions{display:flex;gap:0.75rem;flex-wrap:wrap;}
-    .reviews-section{margin-top:3rem;}
-    .review-card{background:#fff;border-radius:var(--radius-md);box-shadow:var(--shadow-sm);border:1px solid #f4d0da;padding:1.25rem;margin-bottom:1rem;}
-    .review-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;}
-    .review-name{font-weight:600;color:var(--text-dark);}
-    .review-rating{color:var(--gold);}
-    .review-comment{color:var(--text-mid);line-height:1.7;}
-    .review-form{margin-top:2rem;}
-    .review-form textarea{width:100%;padding:0.75rem;border:1px solid var(--rose-light);border-radius:var(--radius-sm);font-family:inherit;font-size:0.9rem;resize:vertical;min-height:80px;}
-    .rating-input{display:flex;gap:0.25rem;}
-    .rating-input button{background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--rose-light);transition:color 0.2s;}
-    .rating-input button.active{color:var(--gold);}
-    .product-image-gallery{display:flex;gap:0.75rem;align-items:flex-start;}
-    .product-image-main{width:100%;aspect-ratio:1;border-radius:var(--radius-md);background:linear-gradient(135deg,var(--blush),var(--mint));border:1px solid #f4c8d4;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;}
-    .product-image-main img{width:100%;height:100%;object-fit:contain;display:block;}
-    .product-image-thumbs{display:flex;flex-direction:column;gap:0.5rem;overflow-y:auto;max-height:280px;flex-shrink:0;}
-    .product-image-thumbs img{width:64px;height:64px;object-fit:cover;border-radius:var(--radius-sm);border:1.5px solid transparent;cursor:pointer;transition:border-color .2s,box-shadow .2s;display:block;}
-    .product-image-thumbs img:hover,.product-image-thumbs img.active{border-color:var(--rose-dark);box-shadow:0 0 0 2px var(--blush);}
-    @media(max-width:768px){.product-detail-grid{grid-template-columns:1fr;}}
-  </style>
 </head>
 <body>
   <a href="#content" class="skip-link">Saltar al contenido</a>
@@ -97,7 +59,7 @@
     </nav>
     <a href="../index.html#catalog" class="back-link">← Volver al catálogo</a>
     <div id="productContent">
-      <div class="loading-skeleton" style="height:400px;"></div>
+      <div class="loading-skeleton loading-skeleton-tall"></div>
     </div>
   </main>
   <script src="../js/config.js"></script>
@@ -138,7 +100,7 @@
           ).join('');
           const imageHtml = images.length
             ? `<div class="product-image-gallery"><div class="product-image-main">${window.renderProductImage(principalImage ? principalImage.url : '', product.name, { id: 'productMainImage', lazy: false, placeholder: '📿' })}</div><div class="product-image-thumbs" id="productThumbs">${thumbsHtml}</div></div>`
-            : `${window.renderProductImage('', product.name, { style: 'width:100%;height:100%;object-fit:cover;', placeholder: '📿' })}`;
+             : `${window.renderProductImage('', product.name, { style: 'width:100%;aspect-ratio:1;object-fit:contain;object-position:center;', placeholder: '📿' })}`;
         container.innerHTML = `
           <div class="product-detail-grid">
             <div class="product-image-large" aria-hidden="true">${imageHtml}</div>
@@ -172,7 +134,7 @@
                 ${[1,2,3,4,5].map(i => `<button type="button" data-rating="${i}" aria-label="Calificación ${i} estrellas">★</button>`).join('')}
               </div>
               <textarea id="reviewComment" placeholder="Tu opinión..." rows="3"></textarea>
-              <button class="btn-primary" style="margin-top:0.5rem;" onclick="submitReview(${productId})">Enviar reseña</button>
+                <button class="btn-primary btn-sm" onclick="submitReview(${productId})">Enviar reseña</button>
             </div>
           </div>
          `;
