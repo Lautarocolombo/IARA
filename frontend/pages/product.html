@@ -18,6 +18,15 @@
     .product-detail{max-width:900px;margin:0 auto;padding:100px 24px 40px;}
     .product-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:2.5rem;align-items:start;}
     .product-image-large{width:100%;aspect-ratio:1;border-radius:var(--radius-md);background:linear-gradient(135deg,var(--blush),var(--mint));display:flex;align-items:center;justify-content:center;font-size:6rem;border:1px solid #f4c8d4;overflow:hidden;}
+    @media (max-width: 768px) {
+      .navbar-actions { gap: 6px; }
+      .pill-btn--theme { padding: 6px 8px; }
+      .wishlist-link, .admin-link, .cart-link { padding: 6px; }
+      .product-detail-grid { grid-template-columns: 1fr; }
+      .product-detail-actions { flex-direction: column; }
+      .product-detail-actions .btn-primary, .product-detail-actions .btn-outline { width: 100%; text-align: center; }
+    }
+  </style>
     .product-image-large img{width:100%;height:100%;object-fit:cover;display:block;}
     .product-category{display:inline-block;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.5rem;}
     .product-detail-title{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:700;color:var(--text-dark);margin-bottom:0.75rem;line-height:1.2;}
@@ -139,8 +148,8 @@
               <p class="product-detail-desc">${product.description || ''}</p>
               <p class="product-detail-price">${formatARS(product.price)}</p>
               <div class="product-detail-actions">
-                <button class="btn-primary" onclick="addToCart(${JSON.stringify({id: product.id, name: product.name, price: product.price, emoji: product.emoji||'📿', image: product.image||'', stock: product.stock||0, unit: 'u', qty: 1})}); event.stopPropagation();">Agregar al carrito</button>
-                <a href="https://wa.me/${CONFIG.CONTACT.WHATSAPP.replace(/[^\\d]/g,'')}?text=Hola! Me interesa el producto: ${product.name}" target="_blank" class="btn-outline" rel="noopener">Consultar por WhatsApp</a>
+                <button class="btn-primary btn-add-cart" data-product-id="${product.id}" data-product-name="${product.name.replace(/"/g, '&quot;')}" data-product-price="${product.price}" data-product-emoji="${product.emoji||'📿'}" data-product-image="${(product.image||'').replace(/"/g, '&quot;')}" data-product-stock="${product.stock||0}">Agregar al carrito</button>
+                <a href="https://wa.me/${CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g,'')}?text=Hola! Me interesa el producto: ${product.name}" target="_blank" class="btn-outline" rel="noopener">Consultar por WhatsApp</a>
               </div>
             </div>
           </div>
@@ -218,6 +227,23 @@
       }
     }
     document.addEventListener('DOMContentLoaded', loadProduct);
+
+    document.getElementById('productContent')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-add-cart');
+      if (!btn) return;
+      e.preventDefault();
+      const product = {
+        id: Number(btn.dataset.productId),
+        name: btn.dataset.productName,
+        price: Number(btn.dataset.productPrice),
+        emoji: btn.dataset.productEmoji || '📿',
+        image: btn.dataset.productImage || '',
+        stock: Number(btn.dataset.productStock || 0),
+        unit: 'u',
+        qty: 1
+      };
+      if (typeof addToCart === 'function') addToCart(product);
+    });
   </script>
 </body>
 </html>
