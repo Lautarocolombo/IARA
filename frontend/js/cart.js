@@ -79,6 +79,8 @@ document.addEventListener('DOMContentLoaded', () => {
   updateCartBadge();
 });
 
+window.addToCart = addToCart;
+
 // Exportar para Node.js (si aplica)
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { getCart, addToCart, removeFromCart, updateCartQty, clearCart, saveCart, updateCartBadge };
