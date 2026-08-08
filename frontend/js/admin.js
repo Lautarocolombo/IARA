@@ -9,7 +9,8 @@ const API_BASE = CONFIG.API.BASE;
      let orders = [];
      let testimonials = [];
      let siteTexts = {};
-     let heroCards = [];
+      let heroCards = [];
+      let heroPendingFiles = {};
       let editingId = null;
       let testimonialsPendingChanges = false;
       let ordersCurrentPage = 1;
@@ -56,7 +57,7 @@ const API_BASE = CONFIG.API.BASE;
        if (section === 'products') loadProducts();
        if (section === 'categories') loadCategories();
        if (section === 'orders') loadOrders();
-       if (section === 'reports') { loadSalesReport(); loadSalesTrend(); }
+        if (section === 'reports') { loadSalesReport(); loadSalesTrend(); loadWeeklySummary(); }
        if (section === 'testimonials') loadTestimonials();
        if (section === 'texts') loadSiteTexts();
        if (section === 'heroImages') loadHeroCardsAdmin();
@@ -405,6 +406,8 @@ const API_BASE = CONFIG.API.BASE;
     });
 
     const state = { currentCategoryId: null, currentOrderId: null, currentCustomerId: null, dashboardLoaded: false };
+
+    let deleteOrderState = { id: null, orderNumber: null, customer: null };
 
 function openSectionModal() {
         if (currentSection === 'products') openModal();
@@ -1015,18 +1018,19 @@ function renderOrdersTable() {
          tbody.innerHTML = '<tr><td colspan=\'7\' class=\'empty-state\'><h3>Sin resultados</h3><p>No se encontraron pedidos.</p></td></tr>';
          return;
        }
-       tbody.innerHTML = filtered.map(o => {
-         const customer = typeof o.customer === 'string' ? JSON.parse(o.customer) : (o.customer || {});
-         return `<tr>
-           <td><strong>#${o.id}</strong></td>
+        tbody.innerHTML = filtered.map((o, index) => {
+          const customer = typeof o.customer === 'string' ? JSON.parse(o.customer) : (o.customer || {});
+          return `<tr>
+            <td><strong>#${index + 1}</strong></td>
             <td>${escapeHtml(customer.name || '—')}</td>
-           <td><span class='price-cell'>$${Number(o.total).toLocaleString('es-AR')}</span></td>
-            <td><span class='badge badge-${o.status === 'delivered' || o.status === 'completed' ? 'stock--ok' : (o.status === 'cancelled' ? 'stock--out' : '')}'>${escapeHtml(o.status || 'pending')}</span></td>
-            <td>${escapeHtml(o.payment_method || '—')}</td>
-           <td>${new Date(o.created_at).toLocaleDateString('es-AR')}</td>
-          <td><div class='actions'>
-            <button class='btn btn-secondary btn-sm' onclick='viewOrder(${o.id})'>👁 Ver</button>
-            <select class='status-select' onchange='quickUpdateOrderStatus(${o.id}, this.value)' style='margin-left:0.25rem'>
+            <td><span class='price-cell'>$${Number(o.total).toLocaleString('es-AR')}</span></td>
+             <td><span class='badge badge-${o.status === 'delivered' || o.status === 'completed' ? 'stock--ok' : (o.status === 'cancelled' ? 'stock--out' : '')}'>${escapeHtml(o.status || 'pending')}</span></td>
+             <td>${escapeHtml(o.payment_method || '—')}</td>
+            <td>${new Date(o.created_at).toLocaleDateString('es-AR')}</td>
+            <td><div class='actions'>
+             <button class='btn btn-secondary btn-sm' onclick='viewOrder(${o.id})'>👁 Ver</button>
+             <button class='btn btn-danger btn-sm' onclick='openDeleteOrderModal(${o.id}, ${index + 1})' title='Eliminar pedido'>🗑 Eliminar</button>
+             <select class='status-select' onchange='quickUpdateOrderStatus(${o.id}, this.value)' style='margin-left:0.25rem'>
               <option value='pending' ${o.status === 'pending' ? 'selected' : ''}>⏳</option>
               <option value='confirmed' ${o.status === 'confirmed' ? 'selected' : ''}>✅</option>
               <option value='preparing' ${o.status === 'preparing' ? 'selected' : ''}>👨‍🍳</option>
@@ -1075,6 +1079,52 @@ function renderOrdersTable() {
           showToast(err.message, 'error');
         }
       }
+
+      function openDeleteOrderModal(realId, orderNumber) {
+        const order = orders.find(o => o.id === realId);
+        const customer = order ? (typeof order.customer === 'string' ? JSON.parse(order.customer) : (order.customer || {})) : {};
+        const customerName = customer.name || '—';
+        deleteOrderState = { id: realId, orderNumber: orderNumber, customer: customerName };
+        const msg = document.getElementById('deleteOrderModalMessage');
+        if (msg) msg.textContent = `¿Eliminar el pedido #${orderNumber} de ${customerName}? Esta acción no se puede deshacer.`;
+        const btn = document.getElementById('confirmDeleteOrderBtn');
+        if (btn) { btn.disabled = false; btn.textContent = 'Eliminar'; }
+        const overlay = document.getElementById('deleteOrderModalOverlay');
+        if (overlay) overlay.classList.add('active');
+      }
+
+      function closeDeleteOrderModal() {
+        const overlay = document.getElementById('deleteOrderModalOverlay');
+        if (overlay) overlay.classList.remove('active');
+        deleteOrderState = { id: null, orderNumber: null, customer: null };
+      }
+
+      async function confirmDeleteOrder() {
+        const { id, orderNumber } = deleteOrderState;
+        if (!id) return;
+        const btn = document.getElementById('confirmDeleteOrderBtn');
+        if (btn) { btn.disabled = true; btn.textContent = 'Eliminando...'; }
+        try {
+          const res = await adminFetch(`/api/admin/orders/${id}`, { method: 'DELETE' });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Error al eliminar el pedido');
+          orders = orders.filter(o => o.id !== id);
+          closeDeleteOrderModal();
+          if (currentSection === 'orders') {
+            if (orders.length === 0 && ordersCurrentPage > 1) {
+              ordersCurrentPage--;
+              await loadOrders();
+            } else {
+              renderOrdersTable();
+            }
+          }
+          showToast(`Pedido #${orderNumber} eliminado correctamente`, 'success');
+        } catch (err) {
+          showToast(err.message, 'error');
+        } finally {
+          if (btn) { btn.disabled = false; btn.textContent = 'Eliminar'; }
+        }
+    }
 
       async function exportOrdersCSV() {
         const params = new URLSearchParams();
@@ -1356,95 +1406,114 @@ async function loadHeroCardsAdmin() {
      }
 
       function renderHeroSlots() {
-        const container = document.getElementById('heroSlotsList');
-        if (!container) return;
-        const slots = [0, 1];
-        container.innerHTML = `<div class="hero-grid">${slots.map(slotIndex => {
-          const card = heroCards.find(c => c.slot === slotIndex) || {};
-          const isPrimary = slotIndex === 0;
-          return `<div class="hero-card">
-            <div class="hero-card-header">
-              <span class="hero-card-title">Slot ${slotIndex + 1} · Hero</span>
-              <span class="hero-card-badge">${isPrimary ? 'Imagen principal' : 'Imagen secundaria'}</span>
-            </div>
-            <div class="hero-card-preview ${card.imagen ? '' : 'placeholder'}">
-               ${card.imagen ? window.renderProductImage(card.imagen, 'Slot ' + (slotIndex + 1), { style: 'max-height:100%;width:100%;object-fit:cover;' }) : '<span>📷</span>'}
-            </div>
-            <div class="hero-card-body">
-              <div class="form-grid-2">
-                <div class="form-group">
-                  <label>Título</label>
-                  <input type="text" id="heroSlotTitle_${slotIndex}" value="${escapeHtml(card.titulo || '')}" placeholder="Título del hero" />
-                </div>
-                <div class="form-group">
-                  <label>Subtítulo</label>
-                  <textarea id="heroSlotSubtitle_${slotIndex}" rows="2" placeholder="Texto descriptivo">${escapeHtml(card.subtitulo || '')}</textarea>
-                </div>
-              </div>
-              <div class="form-grid-2">
-                <div class="form-group">
-                  <label>Texto del CTA</label>
-                  <input type="text" id="heroSlotCtaText_${slotIndex}" value="${escapeHtml(card.cta_texto || '')}" placeholder="Ej: Ver productos" />
-                </div>
-                <div class="form-group">
-                  <label>URL del CTA</label>
-                  <input type="text" id="heroSlotCtaUrl_${slotIndex}" value="${escapeHtml(card.cta_url || '')}" placeholder="Ej: /products" />
-                </div>
-              </div>
-              <div class="hero-card-image-row">
-                <label class="hero-card-file-label">
-                  <span class="btn btn-secondary btn-sm">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                    Cambiar imagen
-                  </span>
-                  <input type="file" id="heroSlotImageFile_${slotIndex}" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewHeroSlotImage(${slotIndex})" />
-                </label>
-                ${card.imagen ? `<button class="btn btn-danger btn-sm" onclick="deleteHeroSlotImage(${slotIndex})">🗑 Quitar</button>` : ''}
-              </div>
-              <div class="image-preview" id="heroSlotImagePreview_${slotIndex}" style="display:${card.imagen ? 'block' : 'none'};">
-                ${card.imagen ? window.renderProductImage(card.imagen, 'Slot ' + (slotIndex + 1), { style: 'max-height:120px;width:100%;object-fit:cover;' }) : ''}
-              </div>
-              <input type="hidden" id="heroSlotImage_${slotIndex}" value="${card.imagen || ''}" />
-              <div class="hero-card-footer">
-                <button class="btn btn-primary btn-sm" onclick="saveHeroSlot(${slotIndex})">💾 Guardar slot</button>
-                <span class="hero-card-slot-id">Slot ${slotIndex + 1}</span>
-              </div>
-            </div>
-          </div>`;
-        }).join('')}</div>`;
-      }
+         const container = document.getElementById('heroSlotsList');
+         if (!container) return;
+         const slots = [0, 1];
+         container.innerHTML = `<div class="hero-grid">${slots.map(slotIndex => {
+           const card = heroCards.find(c => c.slot === slotIndex) || {};
+           const isPrimary = slotIndex === 0;
+           const hasImage = card.imagen || heroPendingFiles[slotIndex];
+           return `<div class="hero-card">
+             <div class="hero-card-header">
+               <span class="hero-card-title">Slot ${slotIndex + 1} · Hero</span>
+               <span class="hero-card-badge">${isPrimary ? 'Imagen principal' : 'Imagen secundaria'}</span>
+             </div>
+             <div class="hero-card-preview ${card.imagen ? '' : 'placeholder'}">
+                ${card.imagen ? window.renderProductImage(card.imagen, 'Slot ' + (slotIndex + 1), { style: 'max-height:100%;width:100%;object-fit:cover;' }) : '<span>📷</span>'}
+             </div>
+             <div class="hero-card-body">
+               <div class="form-grid-2">
+                 <div class="form-group">
+                   <label>Título</label>
+                   <input type="text" id="heroSlotTitle_${slotIndex}" value="${escapeHtml(card.titulo || '')}" placeholder="Título del hero" />
+                 </div>
+                 <div class="form-group">
+                   <label>Subtítulo</label>
+                   <textarea id="heroSlotSubtitle_${slotIndex}" rows="2" placeholder="Texto descriptivo">${escapeHtml(card.subtitulo || '')}</textarea>
+                 </div>
+               </div>
+               <div class="form-grid-2">
+                 <div class="form-group">
+                   <label>Texto del CTA</label>
+                   <input type="text" id="heroSlotCtaText_${slotIndex}" value="${escapeHtml(card.cta_texto || '')}" placeholder="Ej: Ver productos" />
+                 </div>
+                 <div class="form-group">
+                   <label>URL del CTA</label>
+                   <input type="text" id="heroSlotCtaUrl_${slotIndex}" value="${escapeHtml(card.cta_url || '')}" placeholder="Ej: /products" />
+                 </div>
+               </div>
+               <div class="hero-card-image-row">
+                 <label class="hero-card-file-label">
+                   <span class="btn btn-secondary btn-sm">
+                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                     Cambiar imagen
+                   </span>
+                   <input type="file" id="heroSlotImageFile_${slotIndex}" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewHeroSlotImage(${slotIndex})" />
+                 </label>
+                 ${hasImage ? `<button class="btn btn-danger btn-sm" onclick="deleteHeroSlotImage(${slotIndex})">🗑 Quitar</button>` : ''}
+               </div>
+               <div class="image-preview" id="heroSlotImagePreview_${slotIndex}" style="display:${hasImage ? 'block' : 'none'};">
+                 ${hasImage ? (card.imagen ? window.renderProductImage(card.imagen, 'Slot ' + (slotIndex + 1), { style: 'max-height:120px;width:100%;object-fit:cover;' }) : '') : ''}
+               </div>
+               <input type="hidden" id="heroSlotImage_${slotIndex}" value="${card.imagen || ''}" />
+               <div class="hero-card-footer">
+                 <button class="btn btn-primary btn-sm" onclick="saveHeroSlot(${slotIndex})">💾 Guardar slot</button>
+                 <span class="hero-card-slot-id">Slot ${slotIndex + 1}</span>
+               </div>
+             </div>
+           </div>`;
+         }).join('')}</div>`;
+       }
 
      function previewHeroSlotImage(slotIndex) {
-       const fileInput = document.getElementById(`heroSlotImageFile_${slotIndex}`);
-       const preview = document.getElementById(`heroSlotImagePreview_${slotIndex}`);
-       if (!fileInput.files || !fileInput.files[0]) return;
-       const reader = new FileReader();
-       reader.onload = (e) => {
-         preview.style.display = 'block';
-          preview.innerHTML = window.renderProductImage(e.target.result, 'Preview', { style: 'max-height:120px;', lazy: false });
-       };
-       reader.readAsDataURL(fileInput.files[0]);
-     }
+        const fileInput = document.getElementById(`heroSlotImageFile_${slotIndex}`);
+        const preview = document.getElementById(`heroSlotImagePreview_${slotIndex}`);
+        if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
+        const file = fileInput.files[0];
+        heroPendingFiles[slotIndex] = file;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          preview.style.display = 'block';
+           preview.innerHTML = window.renderProductImage(e.target.result, 'Preview', { style: 'max-height:120px;', lazy: false });
+           const card = heroCards.find(c => c.slot === slotIndex) || {};
+           const deleteBtn = document.querySelector(`button[onclick="deleteHeroSlotImage(${slotIndex})"]`);
+           if (deleteBtn && !card.imagen) deleteBtn.style.display = 'inline-flex';
+        };
+        reader.readAsDataURL(file);
+      }
 
       function openHeroSlotModal(slotIndex) {
-        state.currentHeroSlotIndex = slotIndex;
-        document.getElementById('heroSlotModalTitle').textContent = `Editar Slot ${slotIndex + 1}`;
-        clearSaveStatus('heroSlotSaveStatus');
-        const card = heroCards.find(c => c.slot === slotIndex) || {};
-        document.getElementById('heroSlotTitle').value = card.titulo || '';
-        document.getElementById('heroSlotSubtitle').value = card.subtitulo || '';
-        document.getElementById('heroSlotCtaText').value = card.cta_texto || '';
-        document.getElementById('heroSlotCtaUrl').value = card.cta_url || '';
-        document.getElementById('heroSlotImage').value = card.imagen || '';
-        const preview = document.getElementById('heroSlotImagePreview');
-        preview.style.display = card.imagen ? 'block' : 'none';
-        if (card.imagen) {
-           preview.innerHTML = window.renderProductImage(card.imagen || '', 'Slot ' + (slotIndex + 1), { style: 'max-height:200px;width:100%;object-fit:cover;', lazy: false });
-        }
-        const deleteBtn = document.getElementById('heroSlotDeleteBtn');
-        if (deleteBtn) deleteBtn.style.display = card.imagen ? 'inline-flex' : 'none';
-        document.getElementById('heroSlotModalOverlay').classList.add('active');
-      }
+         state.currentHeroSlotIndex = slotIndex;
+         document.getElementById('heroSlotModalTitle').textContent = `Editar Slot ${slotIndex + 1}`;
+         clearSaveStatus('heroSlotSaveStatus');
+         const card = heroCards.find(c => c.slot === slotIndex) || {};
+         document.getElementById('heroSlotTitle').value = card.titulo || '';
+         document.getElementById('heroSlotSubtitle').value = card.subtitulo || '';
+         document.getElementById('heroSlotCtaText').value = card.cta_texto || '';
+         document.getElementById('heroSlotCtaUrl').value = card.cta_url || '';
+         document.getElementById('heroSlotImage').value = card.imagen || '';
+         const modalFileInput = document.getElementById('heroSlotImageFile');
+         if (modalFileInput) modalFileInput.value = '';
+         const preview = document.getElementById('heroSlotImagePreview');
+         const hasImage = card.imagen || heroPendingFiles[slotIndex];
+         preview.style.display = hasImage ? 'block' : 'none';
+         if (hasImage) {
+            if (heroPendingFiles[slotIndex]) {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                preview.innerHTML = window.renderProductImage(e.target.result, 'Slot ' + (slotIndex + 1), { style: 'max-height:200px;width:100%;object-fit:cover;', lazy: false });
+              };
+              reader.readAsDataURL(heroPendingFiles[slotIndex]);
+            } else {
+               preview.innerHTML = window.renderProductImage(card.imagen || '', 'Slot ' + (slotIndex + 1), { style: 'max-height:200px;width:100%;object-fit:cover;', lazy: false });
+            }
+         } else {
+           preview.innerHTML = '';
+         }
+         const deleteBtn = document.getElementById('heroSlotDeleteBtn');
+         if (deleteBtn) deleteBtn.style.display = hasImage ? 'inline-flex' : 'none';
+         document.getElementById('heroSlotModalOverlay').classList.add('active');
+       }
 
      function closeHeroSlotModal() {
        document.getElementById('heroSlotModalOverlay').classList.remove('active');
@@ -1452,45 +1521,162 @@ async function loadHeroCardsAdmin() {
        clearSaveStatus('heroSlotSaveStatus');
      }
 
-      async function saveHeroSlot(slotIndex) {
-        const title = document.getElementById('heroSlotTitle').value.trim();
-        const subtitle = document.getElementById('heroSlotSubtitle').value.trim();
-        const ctaText = document.getElementById('heroSlotCtaText').value.trim();
-        const ctaUrl = document.getElementById('heroSlotCtaUrl').value.trim();
-        const image = document.getElementById('heroSlotImage').value;
-        const payload = { titulo: title, subtitulo: subtitle, cta_texto: ctaText, cta_url: ctaUrl, imagen: image, slot: slotIndex, tipo: 'hero', activo: true };
-        try {
-          showSaveStatus('heroSlotSaveStatus', 'saving', 'Guardando...');
-          await adminFetch(`/api/admin/hero-cards/hero/${slotIndex}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-          showSaveStatus('heroSlotSaveStatus', 'success', '✅ Guardado');
-          await loadHeroCardsAdmin();
-          setTimeout(() => { hideSaveStatus('heroSlotSaveStatus'); closeHeroSlotModal(); }, 1500);
-        } catch (err) {
-          showSaveStatus('heroSlotSaveStatus', 'error', '❌ ' + err.message);
-          setTimeout(() => hideSaveStatus('heroSlotSaveStatus'), 3000);
-        }
-      }
+       async function saveHeroSlot(slotIndex) {
+         const isModal = slotIndex === undefined;
+         const idx = isModal ? state.currentHeroSlotIndex : slotIndex;
 
-      async function deleteHeroSlotImage(slotIndex) {
-        if (!confirm('¿Eliminar la imagen de este slot?')) return;
+         if (idx === null || idx === undefined) return;
+
+         let title, subtitle, ctaText, ctaUrl, image;
+
+         if (isModal) {
+           title = document.getElementById('heroSlotTitle').value.trim();
+           subtitle = document.getElementById('heroSlotSubtitle').value.trim();
+           ctaText = document.getElementById('heroSlotCtaText').value.trim();
+           ctaUrl = document.getElementById('heroSlotCtaUrl').value.trim();
+           image = document.getElementById('heroSlotImage').value;
+         } else {
+           title = document.getElementById(`heroSlotTitle_${idx}`).value.trim();
+           subtitle = document.getElementById(`heroSlotSubtitle_${idx}`).value.trim();
+           ctaText = document.getElementById(`heroSlotCtaText_${idx}`).value.trim();
+           ctaUrl = document.getElementById(`heroSlotCtaUrl_${idx}`).value.trim();
+           image = document.getElementById(`heroSlotImage_${idx}`).value;
+         }
+
+         if (!image && !heroPendingFiles[idx]) {
+           const msg = '❌ La imagen es requerida';
+           if (isModal) {
+             showSaveStatus('heroSlotSaveStatus', 'error', msg);
+           } else {
+             showToast(msg, 'error');
+           }
+           return;
+         }
+
+         const file = heroPendingFiles[idx];
+
+         try {
+           if (isModal) {
+             showSaveStatus('heroSlotSaveStatus', 'saving', 'Guardando...');
+           } else {
+             const btn = document.querySelector(`button[onclick="saveHeroSlot(${idx})"]`);
+             if (btn) { btn.disabled = true; btn.innerHTML = 'Guardando...'; }
+           }
+
+           if (file) {
+             const formData = new FormData();
+             formData.append('image', file);
+             formData.append('titulo', title);
+             formData.append('subtitulo', subtitle);
+             formData.append('cta_texto', ctaText);
+             formData.append('cta_url', ctaUrl);
+             formData.append('slot', String(idx));
+             formData.append('tipo', 'hero');
+             formData.append('activo', 'true');
+
+             await adminFetch(`/api/admin/hero-cards/hero/${idx}`, { method: 'PUT', body: formData });
+             delete heroPendingFiles[idx];
+           } else {
+             const payload = { titulo: title, subtitulo: subtitle, cta_texto: ctaText, cta_url: ctaUrl, imagen: image, slot: idx, tipo: 'hero', activo: true };
+             await adminFetch(`/api/admin/hero-cards/hero/${idx}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+           }
+
+           if (isModal) {
+             showSaveStatus('heroSlotSaveStatus', 'success', '✅ Guardado');
+             await loadHeroCardsAdmin();
+             setTimeout(() => { hideSaveStatus('heroSlotSaveStatus'); closeHeroSlotModal(); }, 1500);
+           } else {
+             showToast('Slot guardado', 'success');
+             await loadHeroCardsAdmin();
+           }
+         } catch (err) {
+           if (isModal) {
+             showSaveStatus('heroSlotSaveStatus', 'error', '❌ ' + err.message);
+             setTimeout(() => hideSaveStatus('heroSlotSaveStatus'), 3000);
+           } else {
+             showToast(err.message, 'error');
+             const btn = document.querySelector(`button[onclick="saveHeroSlot(${idx})"]`);
+             if (btn) { btn.disabled = false; btn.innerHTML = '💾 Guardar slot'; }
+           }
+         }
+       }
+
+       async function deleteHeroSlotImage(slotIndex) {
+         if (!confirm('¿Eliminar la imagen de este slot?')) return;
+         try {
+           await adminFetch(`/api/admin/hero-cards/hero/${slotIndex}/imagen`, { method: 'DELETE' });
+           delete heroPendingFiles[slotIndex];
+           showToast('Imagen eliminada', 'success');
+           await loadHeroCardsAdmin();
+         } catch (err) {
+           showToast(err.message, 'error');
+         }
+       }
+
+       async function syncHeroCards() {
         try {
-          await adminFetch(`/api/admin/hero-cards/hero/${slotIndex}/imagen`, { method: 'DELETE' });
-          showToast('Imagen eliminada', 'success');
+          const btn = document.getElementById('syncHeroBtn');
+          if (btn) { btn.disabled = true; btn.innerHTML = 'Guardando...'; }
+
+          const cards = [];
+          for (let i = 0; i < 2; i++) {
+            const title = document.getElementById(`heroSlotTitle_${i}`).value.trim();
+            const subtitle = document.getElementById(`heroSlotSubtitle_${i}`).value.trim();
+            const ctaText = document.getElementById(`heroSlotCtaText_${i}`).value.trim();
+            const ctaUrl = document.getElementById(`heroSlotCtaUrl_${i}`).value.trim();
+            const image = document.getElementById(`heroSlotImage_${i}`).value;
+
+            cards.push({
+              slot: i,
+              titulo: title,
+              subtitulo: subtitle,
+              cta_texto: ctaText,
+              cta_url: ctaUrl,
+              imagen: image,
+              tipo: 'hero',
+              activo: true
+            });
+          }
+
+          const invalid = cards.filter(c => !c.imagen && !heroPendingFiles[c.slot]);
+          if (invalid.length > 0) {
+            showToast('Todos los slots deben tener imagen', 'error');
+            if (btn) { btn.disabled = false; btn.innerHTML = '💾 Guardar todo'; }
+            return;
+          }
+
+          for (const card of cards) {
+            if (heroPendingFiles[card.slot]) {
+              const formData = new FormData();
+              formData.append('image', heroPendingFiles[card.slot]);
+              formData.append('titulo', card.titulo);
+              formData.append('subtitulo', card.subtitulo);
+              formData.append('cta_texto', card.cta_texto);
+              formData.append('cta_url', card.cta_url);
+              formData.append('slot', String(card.slot));
+              formData.append('tipo', 'hero');
+              formData.append('activo', 'true');
+
+              await adminFetch(`/api/admin/hero-cards/hero/${card.slot}`, { method: 'PUT', body: formData });
+              delete heroPendingFiles[card.slot];
+            } else {
+              await adminFetch(`/api/admin/hero-cards/hero/${card.slot}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(card)
+              });
+            }
+          }
+
+          showToast('Slots sincronizados', 'success');
           await loadHeroCardsAdmin();
         } catch (err) {
           showToast(err.message, 'error');
+        } finally {
+          const btn = document.getElementById('syncHeroBtn');
+          if (btn) { btn.disabled = false; btn.innerHTML = '💾 Guardar todo'; }
         }
       }
-
-      async function syncHeroCards() {
-       try {
-         await adminFetch('/api/admin/hero-cards/sync', { method: 'POST' });
-         showToast('Slots sincronizados', 'success');
-         await loadHeroCardsAdmin();
-       } catch (err) {
-         showToast(err.message, 'error');
-       }
-     }
 
 async function loadSettings() {
        try {
@@ -1693,22 +1879,85 @@ async function changeOrderStatus(id, newStatus) {
       }
     }
 
+    async function resetMetrics() {
+      if (!confirm('¿Seguro que querés reiniciar todas las métricas? Esta acción no se puede deshacer')) return;
+      try {
+        const res = await adminFetch('/api/admin/reports/reset', { method: 'POST' });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error al reiniciar métricas');
+        showToast(`Métricas reiniciadas correctamente. ${data.archived || 0} pedidos archivados.`, 'success');
+        loadSalesReport();
+        loadSalesTrend();
+        loadWeeklySummary();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    }
+
+    async function loadWeeklySummary() {
+      try {
+        const res = await adminFetch('/api/admin/reports/weekly-summary');
+        const data = await res.json();
+        renderWeeklySummary(data);
+      } catch (err) {
+        console.error('[loadWeeklySummary] Error:', err);
+        const container = document.getElementById('weeklySummary');
+        if (container) container.innerHTML = '<div class=\'empty-state\'>Error al cargar el resumen semanal.</div>';
+      }
+    }
+
+    function renderWeeklySummary(data) {
+      const container = document.getElementById('weeklySummary');
+      if (!container) return;
+      const fmt = n => '$' + Number(n).toLocaleString('es-AR');
+      const nivelColor = data.nivelVentas === 'Alta' ? '#16a34a' : (data.nivelVentas === 'Media' ? '#d97706' : '#dc2626');
+      container.innerHTML = `<div class='weekly-summary'>
+        <h4 style="font-family:'Playfair Display', serif; margin-bottom:1rem;">Resumen semanal</h4>
+        <div class='weekly-grid'>
+          <div class='weekly-card'><div class='weekly-value'>${data.pedidosSemana}</div><div class='weekly-label'>Pedidos de la semana</div></div>
+          <div class='weekly-card'><div class='weekly-value'>${fmt(data.totalSemana)}</div><div class='weekly-label'>Total vendido en la semana</div></div>
+          <div class='weekly-card'><div class='weekly-value' style='color:${nivelColor}'>${data.nivelVentas}</div><div class='weekly-label'>Nivel de ventas</div></div>
+        </div>
+      </div>`;
+    }
+
     document.getElementById('modalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('modalOverlay')) closeModal(); });
     document.getElementById('testimonialModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('testimonialModalOverlay')) closeTestimonialModal(); });
     document.getElementById('textModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('textModalOverlay')) closeTextModal(); });
     document.getElementById('heroSlotModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('heroSlotModalOverlay')) closeHeroSlotModal(); });
     document.getElementById('categoryModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('categoryModalOverlay')) closeCategoryModal(); });
     document.getElementById('orderDetailModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('orderDetailModalOverlay')) closeOrderDetailModal(); });
+    document.getElementById('deleteOrderModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('deleteOrderModalOverlay')) closeDeleteOrderModal(); });
 
-    document.addEventListener('DOMContentLoaded', () => {
-       if (authToken) {
-         document.getElementById('loginOverlay').classList.add('hidden');
-         const hash = window.location.hash.slice(1);
-         const validSections = ['products','categories','orders','reports','testimonials','texts','heroImages','settings'];
-         navigateTo(validSections.includes(hash) ? hash : 'products');
+     document.addEventListener('DOMContentLoaded', () => {
+        if (authToken) {
+          document.getElementById('loginOverlay').classList.add('hidden');
+          const hash = window.location.hash.slice(1);
+          const validSections = ['products','categories','orders','reports','testimonials','texts','heroImages','settings'];
+          navigateTo(validSections.includes(hash) ? hash : 'products');
+        }
+       clearSaveStatus('settingsSaveStatus');
+
+       const modalFileInput = document.getElementById('heroSlotImageFile');
+       if (modalFileInput) {
+         modalFileInput.addEventListener('change', () => {
+           const idx = state.currentHeroSlotIndex;
+           if (idx === null || idx === undefined) return;
+           const file = modalFileInput.files[0];
+           if (!file) return;
+           heroPendingFiles[idx] = file;
+           const preview = document.getElementById('heroSlotImagePreview');
+           const reader = new FileReader();
+           reader.onload = (e) => {
+             preview.style.display = 'block';
+             preview.innerHTML = window.renderProductImage(e.target.result, 'Slot ' + (idx + 1), { style: 'max-height:200px;width:100%;object-fit:cover;', lazy: false });
+           };
+           reader.readAsDataURL(file);
+           const deleteBtn = document.getElementById('heroSlotDeleteBtn');
+           if (deleteBtn) deleteBtn.style.display = 'inline-flex';
+         });
        }
-      clearSaveStatus('settingsSaveStatus');
-    });
+     });
 
     window.doLogin = doLogin;
     window.doLogout = doLogout;
@@ -1735,6 +1984,8 @@ async function changeOrderStatus(id, newStatus) {
     window.saveSettings = saveSettings;
     window.setReportPreset = setReportPreset;
     window.loadSalesReport = loadSalesReport;
+    window.resetMetrics = resetMetrics;
+    window.loadWeeklySummary = loadWeeklySummary;
     window.exportCSV = exportCSV;
     window.exportOrdersCSV = exportOrdersCSV;
     window.exportOrdersPDF = exportOrdersPDF;
@@ -1742,6 +1993,9 @@ async function changeOrderStatus(id, newStatus) {
     window.sendReceiptWhatsApp = sendReceiptWhatsApp;
     window.viewOrder = viewOrder;
     window.quickUpdateOrderStatus = quickUpdateOrderStatus;
+    window.openDeleteOrderModal = openDeleteOrderModal;
+    window.closeDeleteOrderModal = closeDeleteOrderModal;
+    window.confirmDeleteOrder = confirmDeleteOrder;
     window.editTestimonial = editTestimonial;
     window.deleteTestimonial = deleteTestimonial;
     window.toggleTestimonialActive = toggleTestimonialActive;
@@ -1751,7 +2005,10 @@ async function changeOrderStatus(id, newStatus) {
     window.previewHeroSlotImage = previewHeroSlotImage;
     window.deleteCurrentHeroSlotImage = function () {
       const idx = state.currentHeroSlotIndex;
-      if (idx !== null && idx !== undefined) deleteHeroSlotImage(idx);
+      if (idx !== null && idx !== undefined) {
+        delete heroPendingFiles[idx];
+        deleteHeroSlotImage(idx);
+      }
     };
     window.closeOrderDetailModal = closeOrderDetailModal;
     window.changeOrderStatus = changeOrderStatus;

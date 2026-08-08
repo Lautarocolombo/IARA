@@ -1226,6 +1226,38 @@ tr:last-child td {
   margin-top: 0.25rem;
 }
 
+/* ==================== WEEKLY SUMMARY ==================== */
+.weekly-summary h4 {
+  font-family: 'Playfair Display', serif;
+  margin-bottom: 1rem;
+}
+.weekly-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+}
+.weekly-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  text-align: center;
+}
+.weekly-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+.weekly-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.25rem;
+}
+
 /* ==================== SETTINGS ==================== */
 .settings-section-title {
   font-family: 'Playfair Display', serif;
