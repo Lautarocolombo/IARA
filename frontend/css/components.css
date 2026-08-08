@@ -713,9 +713,8 @@
 }
 
 .btn-add-cart {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
+  padding: 13px 28px;
+  border-radius: 40px;
   background: var(--rose-dark);
   color: white;
   border: none;
@@ -724,8 +723,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
   flex-shrink: 0;
-  z-index: 2;
 }
 
 .btn-add-cart svg {
@@ -736,10 +737,11 @@
 
 .btn-add-cart:hover {
   background: var(--accent-hover);
-  transform: scale(1.08);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
-.btn-add-cart:active { transform: scale(0.95); }
+.btn-add-cart:active { transform: scale(0.98); }
 
 .product-badge {
   position: absolute;
