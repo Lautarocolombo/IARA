@@ -87,13 +87,18 @@
     window.addEventListener('online', () => {
       setStatus({ online: true, backend: 'checking' });
       checkBackend();
+      hideOfflineBanner();
     });
 
     window.addEventListener('offline', () => {
       setStatus({ online: false, backend: 'offline' });
+      showOfflineBanner();
     });
 
     setStatus({ online: navigator.onLine, backend: 'checking' });
+    if (!navigator.onLine) {
+      showOfflineBanner();
+    }
     checkBackend();
     setInterval(() => {
       if (navigator.onLine) {
@@ -106,6 +111,25 @@
         keepAlive();
       }
     }, KEEP_ALIVE_INTERVAL);
+  }
+
+  function showOfflineBanner() {
+    let banner = document.getElementById('offlineBanner');
+    if (!banner) {
+      banner = document.createElement('div');
+      banner.id = 'offlineBanner';
+      banner.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#dc2626;color:white;padding:12px 24px;border-radius:8px;z-index:9999;font-weight:600;box-shadow:0 4px 12px rgba(0,0,0,0.15);';
+      banner.textContent = 'Sin conexión - Mostrando contenido guardado';
+      document.body.appendChild(banner);
+    }
+    banner.style.display = 'block';
+  }
+
+  function hideOfflineBanner() {
+    const banner = document.getElementById('offlineBanner');
+    if (banner) {
+      banner.style.display = 'none';
+    }
   }
 
   async function keepAlive() {

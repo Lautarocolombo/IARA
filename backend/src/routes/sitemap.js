@@ -12,11 +12,13 @@ router.get('/sitemap', async (req, res) => {
       { loc: '/pages/cart.html', changefreq: 'weekly', priority: 0.8 },
       { loc: '/pages/checkout.html', changefreq: 'weekly', priority: 0.8 },
       { loc: '/pages/orders.html', changefreq: 'monthly', priority: 0.7 },
+      { loc: '/pages/wishlist.html', changefreq: 'monthly', priority: 0.6 },
       { loc: '/pages/privacy.html', changefreq: 'monthly', priority: 0.3 },
       { loc: '/pages/terms.html', changefreq: 'monthly', priority: 0.3 },
-      { loc: '/pages/shipping.html', changefreq: 'monthly', priority: 0.3 },
+      { loc: '/pages/devoluciones.html', changefreq: 'monthly', priority: 0.3 },
       { loc: '/pages/faq.html', changefreq: 'monthly', priority: 0.3 },
-      { loc: '/pages/contact.html', changefreq: 'monthly', priority: 0.3 }
+      { loc: '/pages/contact.html', changefreq: 'monthly', priority: 0.5 },
+      { loc: '/pages/success.html', changefreq: 'monthly', priority: 0.4 }
     ];
     products.rows.forEach(p => {
       pages.push({

@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Panel Admin | Artesanía Gualeguay</title>
+  <meta name="description" content="Panel de administración de Artesanía Gualeguay. Gestioná productos, pedidos y configuración del sitio." />
+  <link rel="canonical" href="https://artesaniagualeguay.com/pages/admin.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
@@ -12,6 +14,7 @@
   <link rel="stylesheet" href="../css/components.css" />
   <link rel="stylesheet" href="../css/animations.css" />
   <link rel="stylesheet" href="../css/admin.css" />
+  <link rel="stylesheet" href="css/pages.css" />
   <script src="../js/config.js"></script>
   <script src="../js/safeImage.js"></script>
   <script src="../js/theme.js"></script>
@@ -21,6 +24,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
+  <a href="#adminMain" class="skip-link">Saltar al contenido principal</a>
   <div class="login-overlay" id="loginOverlay">
     <div class="login-card">
       <h2>🌸 Artesanía Admin</h2>
@@ -41,7 +45,7 @@
       </div>
       <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">Ingresar</button>
       <p class="login-hint" id="loginHint">Verificando conexión con el servidor...</p>
-      <button class="btn btn-secondary btn-sm" id="retryHealthBtn" style="display:none;margin-top:0.5rem;" onclick="checkServerHealth()">Reintentar conexión</button>
+      <button class="btn btn-secondary btn-sm hidden" id="retryHealthBtn" style="margin-top:0.5rem;" onclick="checkServerHealth()">Reintentar conexión</button>
       <p id="loginError" class="login-error" style="display:none;color:var(--accent, #d47090);text-align:center;font-size:0.85rem;margin-top:0.5rem;"></p>
       <a href="../index.html" class="btn btn-secondary" style="width:100%;margin-top:0.75rem;">← Volver al sitio</a>
     </div>
@@ -68,7 +72,7 @@
       </div>
     </aside>
 
-  <main class="main">
+  <main class="main" id="adminMain">
     <div class="header">
       <div class="header-left">
         <a href="../index.html" class="btn btn-secondary btn-sm">← Volver</a>
@@ -750,5 +754,23 @@
   <div class="toast-container" id="toastContainer"></div>
 
   <script src="../js/admin.js?v=2026080614"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>
+    if (window.SENTRY_DSN) {
+      (function() {
+        var script = document.createElement('script');
+        script.src = 'https://browser.sentry-cdn.com/8.x.x/bundle.min.js';
+        script.crossOrigin = 'anonymous';
+        script.onload = function() {
+          Sentry.init({
+            dsn: window.SENTRY_DSN,
+            environment: 'production',
+            tracesSampleRate: 0.1,
+          });
+        };
+        document.head.appendChild(script);
+      })();
+    }
+  </script>
 </body>
 </html>

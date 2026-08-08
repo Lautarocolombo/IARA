@@ -220,7 +220,7 @@ async function processFile(file, baseUrl) {
   const filename = path.basename(optimizedPath);
   const relativeUrl = `/uploads/imagenes/${filename}`;
 
-  const resolvedBaseUrl = baseUrl || process.env.BACKEND_URL || process.env.SITE_URL || (process.env.RENDER_EXTERNAL_HOSTNAME ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` : 'http://localhost:10000');
+  const resolvedBaseUrl = baseUrl || process.env.SITE_URL || process.env.BACKEND_URL || (process.env.RENDER_EXTERNAL_HOSTNAME ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` : 'http://localhost:10000');
   const absoluteUrl = `${resolvedBaseUrl}${relativeUrl}`;
 
   const isEphemeralProd = !isVercel && process.env.NODE_ENV === 'production';

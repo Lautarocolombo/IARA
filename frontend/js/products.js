@@ -1,5 +1,15 @@
 /* ==================== PRODUCT DATA ==================== */
 
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 const defaultProducts = [
   {
     id: 1,
@@ -192,7 +202,7 @@ return `
           </div>
         </a>
         <div style="display:flex;gap:0.5rem;padding:0 0.5rem 0.5rem;">
-          <button class="btn-add-cart" onclick="addToCart(${JSON.stringify({id: product.id, name: product.name, price: product.price, emoji: product.emoji||'📿', image: product.image||'', stock: product.stock||0, unit: 'u', qty: 1})}); event.stopPropagation(); event.preventDefault();" aria-label="Agregar ${product.name} al carrito"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+          <button class="btn-add-cart" data-product-id="${product.id}" data-product-name="${escapeHtml(product.name)}" data-product-price="${product.price}" data-product-emoji="${escapeHtml(product.emoji||'📿')}" data-product-image="${escapeHtml(product.image||'')}" data-product-stock="${product.stock||0}" aria-label="Agregar ${escapeHtml(product.name)} al carrito"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
           <a href="${waLink}" target="_blank" class="btn-outline btn-sm" rel="noopener" title="Consultar por WhatsApp">💬</a>
         </div>
       </div>
@@ -248,6 +258,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     });
   }
+
+  document.getElementById('productsGrid')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-add-cart');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const product = {
+      id: Number(btn.dataset.productId),
+      name: btn.dataset.productName,
+      price: Number(btn.dataset.productPrice),
+      emoji: btn.dataset.productEmoji || '📿',
+      image: btn.dataset.productImage || '',
+      stock: Number(btn.dataset.productStock || 0),
+      unit: 'u',
+      qty: 1
+    };
+    if (typeof addToCart === 'function') addToCart(product);
+  });
 });
 
 // Exportar para Node.js (si aplica)

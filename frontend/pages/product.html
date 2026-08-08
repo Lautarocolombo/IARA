@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Producto — Artesanía Gualeguay</title>
+  <meta name="description" content="Detalle de producto artesanal de Artesanía Gualeguay. Pulseras, souvenirs y accesorios únicos hechos a mano en Gualeguay." />
+  <link rel="canonical" href="https://artesaniagualeguay.com/pages/product.html" />
+  <link rel="stylesheet" href="../css/pages.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -32,9 +35,6 @@
     .rating-input{display:flex;gap:0.25rem;}
     .rating-input button{background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--rose-light);transition:color 0.2s;}
     .rating-input button.active{color:var(--gold);}
-    .back-link{display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-mid);font-size:0.9rem;font-weight:500;margin-bottom:2rem;}
-    .loading-skeleton{background:linear-gradient(90deg,#f4d0da 25%,#fdf6f8 50%,#f4d0da 75%);background-size:200% 100%;animation:ag-shimmer 1.5s infinite;border-radius:var(--radius-sm);}
-    @keyframes ag-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
     .product-image-gallery{display:flex;gap:0.75rem;align-items:flex-start;}
     .product-image-main{width:100%;aspect-ratio:1;border-radius:var(--radius-md);background:linear-gradient(135deg,var(--blush),var(--mint));border:1px solid #f4c8d4;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;}
     .product-image-main img{width:100%;height:100%;object-fit:contain;display:block;}
@@ -59,9 +59,12 @@
       <a href="../index.html" class="nav-back" aria-label="Volver al inicio">← Volver al inicio</a>
 
       <div class="navbar-actions">
-        <button id="themeToggle" class="theme-toggle" title="Cambiar tema" aria-label="Alternar modo claro/oscuro" aria-pressed="false">
-          <span class="theme-icon theme-icon-sun" aria-hidden="true">☀️</span>
-          <span class="theme-icon theme-icon-moon" aria-hidden="true">🌙</span>
+        <button id="themeToggle" class="pill-btn pill-btn--theme" title="Cambiar tema" aria-label="Alternar modo claro/oscuro" aria-pressed="false">
+          <div class="pill-btn__theme-track">
+            <span class="pill-btn__theme-icon pill-btn__theme-icon--sun" aria-hidden="true">☀️</span>
+            <span class="pill-btn__theme-icon pill-btn__theme-icon--moon" aria-hidden="true">🌙</span>
+          </div>
+          <div class="pill-btn__theme-slider" aria-hidden="true"></div>
         </button>
         <a href="wishlist.html" class="wishlist-link" aria-label="Favoritos">
           <span class="wishlist-icon" aria-hidden="true">❤️</span>
@@ -80,6 +83,9 @@
     </div>
   </nav>
   <main id="content" class="product-detail">
+    <nav aria-label="Breadcrumb" class="breadcrumb">
+      <a href="../index.html">Inicio</a> <span aria-hidden="true">/</span> <a href="../index.html#catalog">Catálogo</a> <span aria-hidden="true">/</span> <span>Producto</span>
+    </nav>
     <a href="../index.html#catalog" class="back-link">← Volver al catálogo</a>
     <div id="productContent">
       <div class="loading-skeleton" style="height:400px;"></div>

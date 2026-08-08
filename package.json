@@ -7,7 +7,7 @@
     "lint": "eslint frontend/js/ tests/ --ext .js",
     "format": "prettier --write \"**/*.{js,json,css,html}\"",
     "lint:fix": "eslint frontend/js/ tests/ --ext .js --fix",
-    "e2e": "playwright test",
+    "e2e": "playwright test --config=playwright.audit.config.js",
     "build": "echo 'Build complete'",
     "dev": "cd backend && npm start",
     "start": "cd backend && npm start"

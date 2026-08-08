@@ -4,21 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Página no encontrada | Artesanía Gualeguay</title>
+  <meta name="description" content="Página no encontrada en Artesanía Gualeguay. Volvé al inicio para explorar nuestro catálogo artesanal." />
+  <link rel="canonical" href="https://artesaniagualeguay.com/pages/404.html" />
   <link rel="stylesheet" href="../css/variables.css" />
   <link rel="stylesheet" href="../css/base.css" />
   <link rel="stylesheet" href="../css/components.css" />
   <link rel="stylesheet" href="../css/animations.css" />
-  <style>
-    .error-wrap { max-width: 600px; margin: 0 auto; padding: 120px 24px 40px; text-align: center; }
-    .error-code { font-family: 'Playfair Display', serif; font-size: 6rem; color: var(--rose); font-weight: 700; line-height: 1; }
-    .error-title { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--text-dark); margin: 1rem 0 0.5rem; }
-    .error-desc { color: var(--text-muted); margin-bottom: 2rem; }
-    .error-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
-    .error-actions a { min-width: 160px; text-align: center; }
-  </style>
+  <link rel="stylesheet" href="../css/pages.css" />
 </head>
 <body>
-  <!-- ============== NAVBAR =============== -->
+  <a href="#content" class="skip-link">Saltar al contenido principal</a>
   <nav class="navbar" id="navbar">
     <div class="navbar-container">
       <div class="navbar-brand">
@@ -31,9 +26,12 @@
       <a href="../index.html" class="nav-back" aria-label="Volver al inicio">← Volver al inicio</a>
 
       <div class="navbar-actions">
-        <button id="themeToggle" class="theme-toggle" title="Cambiar tema" aria-label="Alternar modo claro/oscuro" aria-pressed="false">
-          <span class="theme-icon theme-icon-sun" aria-hidden="true">☀️</span>
-          <span class="theme-icon theme-icon-moon" aria-hidden="true">🌙</span>
+        <button id="themeToggle" class="pill-btn pill-btn--theme" title="Cambiar tema" aria-label="Alternar modo claro/oscuro" aria-pressed="false">
+          <div class="pill-btn__theme-track">
+            <span class="pill-btn__theme-icon pill-btn__theme-icon--sun" aria-hidden="true">☀️</span>
+            <span class="pill-btn__theme-icon pill-btn__theme-icon--moon" aria-hidden="true">🌙</span>
+          </div>
+          <div class="pill-btn__theme-slider" aria-hidden="true"></div>
         </button>
         <a href="wishlist.html" class="wishlist-link" aria-label="Favoritos">
           <span class="wishlist-icon" aria-hidden="true">❤️</span>
@@ -53,6 +51,9 @@
   </nav>
 
   <div class="error-wrap reveal visible">
+    <nav aria-label="Breadcrumb" class="breadcrumb">
+      <a href="../index.html">Inicio</a> <span aria-hidden="true">/</span> <span>Página no encontrada</span>
+    </nav>
     <div class="error-code">404</div>
     <h1 class="error-title">Página no encontrada</h1>
     <p class="error-desc">La página que estás buscando no existe o fue movida.</p>

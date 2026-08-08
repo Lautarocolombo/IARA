@@ -53,9 +53,13 @@ const CONFIG = {
   // Meta Pixel (Facebook):
   //   1. Creá un píxel en https://business.facebook.com/events_manager
   //   2. Copiá el ID numérico del píxel
+  // Sentry (error tracking):
+  //   1. Creá un proyecto en https://sentry.io
+  //   2. Copiá el DSN de configuración
   ANALYTICS: {
     GOOGLE_ID: '',
-    FACEBOOK_PIXEL_ID: ''
+    FACEBOOK_PIXEL_ID: '',
+    SENTRY_DSN: ''
   },
 
   // Animaciones

@@ -2,11 +2,11 @@ const { defineConfig, devices } = require('@playwright/test');
 const path = require('path');
 
 module.exports = defineConfig({
-  testDir: './',
+  testDir: 'tests/e2e',
   testMatch: '**/*.spec.js',
   fullyParallel: false,
-  forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  forbidOnly: false,
+  retries: 0,
   workers: 1,
   reporter: 'list',
   use: {

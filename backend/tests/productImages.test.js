@@ -9,9 +9,9 @@ process.env.NODE_ENV = process.env.NODE_ENV || 'test';
 process.env.ADMIN_USER = process.env.ADMIN_USER || 'testadmin';
 process.env.ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH || bcrypt.hashSync('testpassword123', 10);
 process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-jwt-secret';
-process.env.ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS || 'http://localhost:3000';
+process.env.ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS || process.env.TEST_BASE_URL || 'http://localhost:3000';
 process.env.DATABASE_URL = '';
-process.env.BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3000';
+process.env.BACKEND_URL = process.env.BACKEND_URL || process.env.TEST_BASE_URL || 'http://localhost:3000';
 
 const { app, dbReady } = require('../src/server');
 
@@ -82,10 +82,11 @@ describe('Product images on public API', () => {
 
     const found = res.body.find(p => p.id === productId);
     expect(found).toBeTruthy();
-    expect(found.image).toBe('http://localhost:3000/uploads/products/test-principal.webp');
+    const baseUrl = process.env.TEST_BASE_URL || 'http://localhost:3000';
+    expect(found.image).toBe(`${baseUrl}/uploads/products/test-principal.webp`);
     expect(Array.isArray(found.images)).toBe(true);
     expect(found.images.length).toBe(2);
-    expect(found.images[0].url).toBe('http://localhost:3000/uploads/products/test-principal.webp');
+    expect(found.images[0].url).toBe(`${baseUrl}/uploads/products/test-principal.webp`);
     expect(found.images[0].es_principal).toBeTruthy();
   });
 
@@ -106,7 +107,8 @@ describe('Product images on public API', () => {
 
     const res = await request(app).get('/api/products');
     const found = res.body.find(p => p.id === productId);
-    expect(found.image).toBe('http://localhost:3000/uploads/products/test-secundaria.webp');
+    const baseUrl = process.env.TEST_BASE_URL || 'http://localhost:3000';
+    expect(found.image).toBe(`${baseUrl}/uploads/products/test-secundaria.webp`);
     expect(found.images[1].es_principal).toBeTruthy();
     expect(found.images[0].es_principal).toBe(0);
   });

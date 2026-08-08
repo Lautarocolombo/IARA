@@ -111,66 +111,89 @@
     });
   }
 
-  document.getElementById('shippingForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const items = getCart();
-    if (!items.length) { showToast('', 'Carrito vacío', 'error'); return; }
+   document.getElementById('shippingForm').addEventListener('submit', async (e) => {
+     e.preventDefault();
+     const items = getCart();
+     if (!items.length) { showToast('', 'Carrito vacío', 'error'); return; }
 
-    const shipping = {
-      name: document.getElementById('shipName').value.trim(),
-      address: document.getElementById('shipAddress').value.trim(),
-      phone: document.getElementById('shipPhone').value.trim(),
-      zip: document.getElementById('shipZip').value.trim(),
-      city: document.getElementById('shipCity').value.trim(),
-      email: document.getElementById('shipEmail').value.trim() || ''
-    };
+     const shipping = {
+       name: document.getElementById('shipName').value.trim(),
+       address: document.getElementById('shipAddress').value.trim(),
+       phone: document.getElementById('shipPhone').value.trim(),
+       zip: document.getElementById('shipZip').value.trim(),
+       city: document.getElementById('shipCity').value.trim(),
+       email: document.getElementById('shipEmail').value.trim() || ''
+     };
 
-    if (!shipping.name || !shipping.address || !shipping.phone || !shipping.zip || !shipping.city || !shipping.email) {
-      showToast('', 'Completá todos los campos obligatorios', 'error');
-      return;
-    }
+     const requiredFields = [
+       { key: 'name', label: 'Nombre' },
+       { key: 'address', label: 'Dirección' },
+       { key: 'phone', label: 'Teléfono' },
+       { key: 'zip', label: 'Código postal' },
+       { key: 'city', label: 'Localidad' },
+       { key: 'email', label: 'Email' }
+     ];
 
-    const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
-    const shippingCost = subtotal > CONFIG.CART.SHIPPING_THRESHOLD ? 0 : CONFIG.CART.SHIPPING_COST;
-    const total = subtotal + shippingCost;
+     const missing = requiredFields.filter(f => !shipping[f.key]);
+     if (missing.length) {
+       const labels = missing.map(f => f.label).join(', ');
+       showToast('', `Completá los campos obligatorios: ${labels}`, 'error');
+       return;
+     }
 
-    try {
-      const orderRes = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/orders`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: items.map(i => ({ id: i.id, name: i.name, price: i.price, qty: i.qty, emoji: i.emoji, image: i.image })),
-          shipping_name: shipping.name,
-          shipping_address: shipping.address,
-          shipping_phone: shipping.phone,
-          shipping_email: shipping.email || '',
-          shipping_zip: shipping.zip,
-          shipping_city: shipping.city,
-          subtotal, shipping_cost: shippingCost, total
-        })
-      });
-      if (!orderRes) throw new Error('Error al guardar el pedido');
-      const orderData = await orderRes.json();
-      if (!orderRes.ok) throw new Error(orderData.error || 'Error al guardar el pedido');
+     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+     if (!emailRegex.test(shipping.email)) {
+       showToast('', 'Ingresá un email válido', 'error');
+       return;
+     }
 
-      const paymentConfig = await loadMpAlias();
-      document.getElementById('paymentTotalAmount').textContent = formatARS(total);
+     const phoneDigits = shipping.phone.replace(/[^\d]/g, '');
+     if (phoneDigits.length < 8) {
+       showToast('', 'Ingresá un teléfono válido', 'error');
+       return;
+     }
 
-      if (!paymentConfig.active) {
-        document.getElementById('paymentInstructions').style.display = 'none';
-        document.getElementById('checkoutContent').style.display = 'grid';
-        showToast('', 'El pago por transferencia está temporalmente deshabilitado. Contactanos por WhatsApp.', 'error');
-        return;
-      }
+     const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
+     const shippingCost = subtotal > CONFIG.CART.SHIPPING_THRESHOLD ? 0 : CONFIG.CART.SHIPPING_COST;
+     const total = subtotal + shippingCost;
 
-      const waNumber = paymentConfig.whatsapp || (CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, '');
-      const orderId = orderData.id || 'NUEVO';
-      const customerName = shipping.name || 'Cliente';
-      const itemsList = items.map(i => {
-        const line = `• ${i.name} x${i.qty} - ${formatARS(i.price * i.qty)}`;
-        if (i.image) return `${line}\n  Imagen: ${i.image}`;
-        return line;
-      }).join('\n');
+     try {
+       const orderRes = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/orders`, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({
+           items: items.map(i => ({ id: i.id, name: i.name, price: i.price, qty: i.qty, emoji: i.emoji, image: i.image })),
+           shipping_name: shipping.name,
+           shipping_address: shipping.address,
+           shipping_phone: shipping.phone,
+           shipping_email: shipping.email || '',
+           shipping_zip: shipping.zip,
+           shipping_city: shipping.city,
+           subtotal, shipping_cost: shippingCost, total
+         })
+       });
+       if (!orderRes) throw new Error('Error al guardar el pedido');
+       const orderData = await orderRes.json();
+       if (!orderRes.ok) throw new Error(orderData.error || 'Error al guardar el pedido');
+
+       const paymentConfig = await loadMpAlias();
+       document.getElementById('paymentTotalAmount').textContent = formatARS(total);
+
+       if (!paymentConfig.active) {
+         document.getElementById('paymentInstructions').style.display = 'none';
+         document.getElementById('checkoutContent').style.display = 'grid';
+         showToast('', 'El pago por transferencia está temporalmente deshabilitado. Contactanos por WhatsApp.', 'error');
+         return;
+       }
+
+       const waNumber = paymentConfig.whatsapp || (CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, '');
+       const orderId = orderData.id || 'NUEVO';
+       const customerName = shipping.name || 'Cliente';
+       const itemsList = items.map(i => {
+         const line = `• ${i.name} x${i.qty} - ${formatARS(i.price * i.qty)}`;
+         if (i.image) return `${line}\n  Imagen: ${i.image}`;
+         return line;
+       }).join('\n');
       const waMsg = encodeURIComponent(`Hola! Quiero confirmar el pago del pedido AG-${orderId} por un total de ${formatARS(total)}.\n\nCliente: ${customerName}\nProductos:\n${itemsList}\n\n${paymentConfig.message || 'Ya realicé la transferencia. Te envío el comprobante por este medio.'}`);
       document.getElementById('whatsappComprobanteBtn').href = `https://wa.me/${waNumber}?text=${waMsg}`;
 

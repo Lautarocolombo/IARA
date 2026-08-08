@@ -4,32 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mis Pedidos | Artesanía Gualeguay</title>
+  <meta name="description" content="Consultá el historial de tus pedidos en Artesanía Gualeguay. Ingresá tu email para ver el estado de tus compras." />
+  <link rel="canonical" href="https://artesaniagualeguay.com/pages/orders.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/variables.css" />
   <link rel="stylesheet" href="../css/base.css" />
   <link rel="stylesheet" href="../css/components.css" />
   <link rel="stylesheet" href="../css/animations.css" />
-  <style>
-    .orders-wrap{max-width:900px;margin:0 auto;padding:100px 24px 40px;}
-    .order-card{background:#fff;border-radius:var(--radius-md);box-shadow:var(--shadow-sm);border:1px solid #f4d0da;padding:1.5rem;margin-bottom:1rem;}
-    .order-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1rem;}
-    .order-id{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--text-dark);}
-    .order-date{color:var(--text-muted);font-size:0.85rem;}
-    .order-status{display:inline-block;padding:0.25rem 0.75rem;border-radius:999px;font-size:0.8rem;font-weight:600;text-transform:uppercase;}
-    .status-pending{background:#fef3c7;color:#92400e;}
-    .status-approved{background:#d1fae5;color:#065f46;}
-    .status-rejected{background:#fee2e2;color:#991b1b;}
-    .status-shipped{background:#dbeafe;color:#1e40af;}
-    .order-items{margin:1rem 0;}
-    .order-item{display:flex;justify-content:space-between;padding:0.5rem 0;border-bottom:1px solid #f4c8d4;}
-    .order-total{font-weight:700;text-align:right;padding-top:0.5rem;}
-    .empty-orders{text-align:center;padding:3rem 1rem;color:var(--text-muted);}
-    .back-link{display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-mid);font-size:0.9rem;font-weight:500;margin-bottom:2rem;}
-    .loading-skeleton{background:linear-gradient(90deg,#f4d0da 25%,#fdf6f8 50%,#f4d0da 75%);background-size:200% 100%;animation:ag-shimmer 1.5s infinite;border-radius:var(--radius-sm);height:1rem;width:100%;}
-    @keyframes ag-shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-  </style>
+  <link rel="stylesheet" href="../css/pages.css" />
 </head>
 <body>
   <a href="#content" class="skip-link">Saltar al contenido</a>
@@ -46,9 +30,12 @@
       <a href="../index.html" class="nav-back" aria-label="Volver al inicio">← Volver al inicio</a>
 
       <div class="navbar-actions">
-        <button id="themeToggle" class="theme-toggle" title="Cambiar tema" aria-label="Alternar modo claro/oscuro" aria-pressed="false">
-          <span class="theme-icon theme-icon-sun" aria-hidden="true">☀️</span>
-          <span class="theme-icon theme-icon-moon" aria-hidden="true">🌙</span>
+        <button id="themeToggle" class="pill-btn pill-btn--theme" title="Cambiar tema" aria-label="Alternar modo claro/oscuro" aria-pressed="false">
+          <div class="pill-btn__theme-track">
+            <span class="pill-btn__theme-icon pill-btn__theme-icon--sun" aria-hidden="true">☀️</span>
+            <span class="pill-btn__theme-icon pill-btn__theme-icon--moon" aria-hidden="true">🌙</span>
+          </div>
+          <div class="pill-btn__theme-slider" aria-hidden="true"></div>
         </button>
         <a href="wishlist.html" class="wishlist-link" aria-label="Favoritos">
           <span class="wishlist-icon" aria-hidden="true">❤️</span>
@@ -67,6 +54,9 @@
     </div>
   </nav>
   <main id="content" class="orders-wrap">
+    <nav aria-label="Breadcrumb" class="breadcrumb">
+      <a href="../index.html">Inicio</a> <span aria-hidden="true">/</span> <span>Mis Pedidos</span>
+    </nav>
     <a href="../index.html" class="back-link">← Volver al sitio</a>
     <h1>Mis Pedidos</h1>
     <div id="ordersLookup">
@@ -103,7 +93,7 @@
         }
         container.innerHTML = orders.map(order => {
           const statusClass = 'status-' + (order.status || 'pending');
-          const items = JSON.parse(order.items || '[]');
+          const items = (() => { try { return JSON.parse(order.items || '[]'); } catch (e) { return []; } })();
           return `
             <div class="order-card">
               <div class="order-header">
