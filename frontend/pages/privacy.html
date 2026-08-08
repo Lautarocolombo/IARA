@@ -4,23 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Política de Privacidad | Artesanía Gualeguay</title>
+  <meta name="description" content="Política de privacidad de Artesanía Gualeguay. Cómo protegemos tus datos personales y de compra." />
+  <link rel="canonical" href="https://artesaniagualeguay.com/pages/privacy.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/variables.css" />
   <link rel="stylesheet" href="../css/base.css" />
   <link rel="stylesheet" href="../css/components.css" />
   <link rel="stylesheet" href="../css/animations.css" />
-  <style>
-    .legal-content { max-width: 800px; margin: 0 auto; padding: 100px 24px 60px; }
-    .legal-content h1 { font-family: 'Playfair Display', serif; font-size: 2rem; margin-bottom: 0.5rem; }
-    .legal-content h2 { font-family: 'Playfair Display', serif; font-size: 1.4rem; margin-top: 2rem; margin-bottom: 0.75rem; color: var(--text-dark); }
-    .legal-content p { color: var(--text-mid); line-height: 1.8; margin-bottom: 1rem; }
-    .legal-content ul { margin: 0.5rem 0 1.5rem 1.5rem; color: var(--text-mid); }
-    .legal-content li { margin-bottom: 0.5rem; }
-    .back-link { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--text-mid); font-size: 0.9rem; font-weight: 500; margin-bottom: 2rem; }
-    .last-updated { color: var(--text-mid); font-size: 0.85rem; margin-bottom: 1.5rem; }
-  </style>
+  <link rel="stylesheet" href="../css/pages.css" />
 </head>
 <body>
   <a href="#content" class="skip-link">Saltar al contenido principal</a>
@@ -37,9 +30,12 @@
       <a href="../index.html" class="nav-back" aria-label="Volver al inicio">← Volver al inicio</a>
 
       <div class="navbar-actions">
-        <button id="themeToggle" class="theme-toggle" title="Cambiar tema" aria-label="Alternar modo claro/oscuro" aria-pressed="false">
-          <span class="theme-icon theme-icon-sun" aria-hidden="true">☀️</span>
-          <span class="theme-icon theme-icon-moon" aria-hidden="true">🌙</span>
+        <button id="themeToggle" class="pill-btn pill-btn--theme" title="Cambiar tema" aria-label="Alternar modo claro/oscuro" aria-pressed="false">
+          <div class="pill-btn__theme-track">
+            <span class="pill-btn__theme-icon pill-btn__theme-icon--sun" aria-hidden="true">☀️</span>
+            <span class="pill-btn__theme-icon pill-btn__theme-icon--moon" aria-hidden="true">🌙</span>
+          </div>
+          <div class="pill-btn__theme-slider" aria-hidden="true"></div>
         </button>
         <a href="wishlist.html" class="wishlist-link" aria-label="Favoritos">
           <span class="wishlist-icon" aria-hidden="true">❤️</span>

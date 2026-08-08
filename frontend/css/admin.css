@@ -1282,163 +1282,334 @@ tr:last-child td {
 /* ==================== HERO SLOTS GRID ==================== */
 .hero-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
   gap: 24px;
+  align-items: stretch;
 }
 
-.hero-card {
-  border: 1px solid var(--border);
+.hero-slot-card {
+  border: 1.5px solid var(--border);
   border-radius: 16px;
-  background: #fff;
-  min-width: 320px;
-  max-width: 360px;
-  width: 100%;
+  background: var(--surface, #fff);
   padding: 24px;
   display: flex;
   flex-direction: column;
-  align-items: stretch;
-  gap: 16px;
-  box-shadow: var(--shadow-sm});
-  justify-self: center;
+  gap: 18px;
+  box-shadow: 0 4px 16px rgba(212, 112, 144, 0.06);
+  min-width: 0;
+  width: 100%;
+  transition: all .2s ease;
 }
 
-.hero-card-header {
+.hero-slot-card:hover {
+  box-shadow: 0 8px 32px rgba(212, 112, 144, 0.10);
+  border-color: var(--rose-light, #f5c6d4);
+}
+
+.hero-slot-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 
-.hero-card-header .hero-card-title {
+.hero-slot-label {
   font-family: 'Playfair Display', serif;
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 19px;
+  font-weight: 700;
   color: #0f172a;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.hero-card-badge {
-  font-size: 0.7rem;
-  font-weight: 600;
+.hero-slot-header-icon {
+  width: 19px;
+  height: 19px;
+  flex-shrink: 0;
+  color: var(--rose-mid, #d47090);
+}
+
+.hero-slot-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
-  padding: 0.25rem 0.6rem;
+  letter-spacing: 0.06em;
+  padding: 0.3rem 0.8rem;
   border-radius: 999px;
-  background: var(--accent, #a85a6b);
+  background: linear-gradient(135deg, var(--rose, #e8a0b5), var(--rose-mid, #d47090));
   color: #fff;
   white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(212, 112, 144, 0.25);
 }
 
-.hero-card-preview {
+.hero-slot-preview {
   width: 100%;
-  height: 150px;
+  height: 170px;
   background: linear-gradient(135deg, #fce8ee, #d4ede3);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
+  border: 1px solid var(--rose-light, #f5c6d4);
   position: relative;
-  border: 1px solid var(--border);
+  flex-shrink: 0;
+  cursor: pointer;
 }
 
-.hero-card-preview img {
+.hero-slot-preview-inner {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-slot-preview img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
 
-.hero-card-preview.placeholder {
-  color: #94a3b8;
+.hero-slot-placeholder-icon {
   font-size: 2.5rem;
+  color: var(--rose-mid, #d47090);
+  opacity: 0.45;
 }
 
-.hero-card-body {
+.hero-slot-preview.placeholder .hero-slot-placeholder-icon {
+  opacity: 0.35;
+}
+
+.hero-slot-preview-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(212, 112, 144, 0.08);
+  border-radius: 16px;
+  opacity: 0;
+  transition: opacity .2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.hero-slot-preview:hover .hero-slot-preview-overlay {
+  opacity: 1;
+}
+
+.hero-slot-preview-icon {
+  width: 18px;
+  height: 18px;
+  color: #fff;
+}
+
+.hero-slot-preview-action {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.04em;
+}
+
+.hero-slot-preview-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #9a7a88);
+}
+
+.hero-slot-body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   flex: 1;
   width: 100%;
 }
 
-.hero-card-body .form-group {
+.hero-slot-body .form-group {
   width: 100%;
+  margin: 0;
 }
 
-.hero-card-body > .form-group input,
-.hero-card-body > .form-group textarea {
+.hero-slot-body .form-group label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #9a7a88);
+  margin: 0;
+}
+
+.hero-slot-input {
   width: 100%;
-  min-width: 200px;
-  min-height: 40px;
-  padding: 10px 12px;
   box-sizing: border-box;
-  white-space: normal;
+  padding: 12px 14px;
+  border: 1.5px solid var(--rose-light, #f5c6d4);
   border-radius: 10px;
+  font-family: inherit;
   font-size: 0.9rem;
+  background: #fff;
+  color: var(--text-dark, #0f172a);
+  transition: border-color .2s ease, box-shadow .2s ease;
+  white-space: normal;
 }
 
-.hero-card-body .form-group textarea {
-  padding: 8px 12px;
-  min-height: 80px;
+.hero-slot-input:focus {
+  outline: none;
+  border-color: var(--rose-mid, #d47090);
+  box-shadow: 0 0 0 3px rgba(212, 112, 144, 0.15);
+}
+
+.hero-slot-input::placeholder {
+  color: var(--rose-mid, #d47090);
+  opacity: 0.45;
+}
+
+textarea.hero-slot-input {
+  min-height: 90px;
   resize: vertical;
 }
 
-.hero-card-cta-row {
+.hero-slot-cta-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
 
-.hero-card-image-row {
+.hero-slot-image-row {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
-.hero-card-image-row .btn {
+.hero-slot-image-row .btn {
   width: 100%;
   justify-content: center;
 }
 
-.hero-card-file-label {
+.hero-slot-file-label {
   width: 100%;
   cursor: pointer;
   display: block;
 }
 
-.hero-card-file-label .btn {
+.hero-slot-file-label .btn {
   width: 100%;
   justify-content: center;
+  background: linear-gradient(135deg, var(--rose, #e8a0b5), var(--rose-mid, #d47090));
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 8px rgba(212, 112, 144, 0.25);
+  font-weight: 600;
+  font-size: 0.85rem;
+  border-radius: 10px;
+  transition: all .2s ease;
 }
 
-.hero-card-file-label input {
+.hero-slot-file-label .btn:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(212, 112, 144, 0.30);
+}
+
+.hero-slot-file-label input {
   display: none;
 }
 
-.hero-card-footer {
+.hero-slot-footer {
   margin-top: auto;
   padding-top: 16px;
   border-top: 1px solid var(--border);
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  align-items: center;
+  gap: 12px;
 }
 
-.hero-card-footer .btn {
-  width: 100%;
+.hero-slot-footer .btn {
+  flex: 1;
   justify-content: center;
 }
 
-.hero-card-slot-id {
-  display: none;
+.hero-slot-footer .btn-primary {
+  background: linear-gradient(135deg, var(--rose, #e8a0b5), var(--rose-mid, #d47090));
+  color: #fff;
 }
 
-.hero-card .image-preview {
-  width: 100%;
-  max-height: 150px;
-  margin-top: 8px;
-  border-radius: 8px;
-  object-fit: cover;
+.hero-slot-footer .btn-primary:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+.hero-slot-id {
+  font-size: 0.75rem;
+  color: var(--text-muted, #64748b);
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==================== HERO SLOT MODAL ==================== */
+#heroSlotModalOverlay .form-group label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted, #9a7a88);
+  margin: 0;
+}
+
+#heroSlotModalOverlay .form-group input,
+#heroSlotModalOverlay .form-group textarea,
+#heroSlotModalOverlay .form-group select {
+  padding: 12px 14px;
+  border: 1.5px solid var(--rose-light, #f5c6d4);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  background: #fff;
+  color: var(--text-dark, #0f172a);
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+#heroSlotModalOverlay .form-group input:focus,
+#heroSlotModalOverlay .form-group textarea:focus,
+#heroSlotModalOverlay .form-group select:focus {
+  outline: none;
+  border-color: var(--rose-mid, #d47090);
+  box-shadow: 0 0 0 3px rgba(212, 112, 144, 0.15);
+}
+
+#heroSlotModalOverlay .hero-card-image-row .hero-card-file-label .btn {
+  background: linear-gradient(135deg, var(--rose, #e8a0b5), var(--rose-mid, #d47090));
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 8px rgba(212, 112, 144, 0.25);
+  font-weight: 600;
+  font-size: 0.85rem;
+  border-radius: 10px;
+  transition: all .2s ease;
+}
+
+#heroSlotModalOverlay .hero-card-image-row .hero-card-file-label .btn:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(212, 112, 144, 0.30);
+}
+
+#heroSlotModalOverlay .image-preview {
+  border-radius: 16px;
+  border: 1px solid var(--rose-light, #f5c6d4);
+  margin-top: 12px;
 }
 
 /* ==================== TESTIMONIAL TOGGLE ==================== */

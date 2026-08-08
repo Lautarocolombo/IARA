@@ -713,8 +713,8 @@
 }
 
 .btn-add-cart {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: var(--rose-dark);
   color: white;
@@ -803,6 +803,7 @@
 }
 
 .contact-form {
+  grid-column: 1;
   background: #fff;
   padding: 1.75rem;
   border-radius: var(--radius-md);
@@ -849,7 +850,12 @@
   text-align: center;
 }
 
-.contact-info { display: flex; flex-direction: column; gap: 1.75rem; }
+.contact-info {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
 
 .info-item { display: flex; gap: 1rem; align-items: flex-start; }
 
@@ -880,7 +886,9 @@
 }
 
 .map-wrapper {
-  margin-top: 1rem;
+  grid-column: 1;
+  grid-row: 2;
+  margin-top: 24px;
   width: 100%;
   min-height: 300px;
   border-radius: var(--radius-md);
@@ -888,11 +896,37 @@
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--border);
   background: #fff;
+  position: relative;
 }
 
 [data-theme="dark"] .map-wrapper {
   border-color: #3a2028;
   background: var(--cream);
+}
+
+.map-location-card {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-dark);
+  z-index: 10;
+  border: 1px solid var(--border);
+  max-width: calc(100% - 24px);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+[data-theme="dark"] .map-location-card {
+  background: rgba(30, 20, 24, 0.95);
+  border-color: #3a2028;
 }
 
 .map-wrapper iframe {
@@ -929,12 +963,15 @@
 }
 
 .whatsapp-cta {
+  grid-column: 2;
+  grid-row: 2;
   background: linear-gradient(135deg, #f9d7e3, #fde8ef);
   border-radius: var(--radius-md);
   padding: 1.5rem;
   text-align: center;
   border: 1px solid var(--rose-light);
-  margin-top: 1rem;
+  margin-top: 24px;
+  align-self: start;
 }
 
 [data-theme="dark"] .whatsapp-cta {
@@ -1231,6 +1268,8 @@
   .how-grid { grid-template-columns: repeat(2, minmax(180px, 1fr)); }
   .products-grid, .catalog-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
   .about-content, .contact-container { grid-template-columns: 1fr; }
+  .contact-form, .map-wrapper, .whatsapp-cta, .contact-info { grid-column: 1; }
+  .whatsapp-cta { margin-top: 1rem; }
   .about-stats { grid-template-columns: 1fr; }
   .newsletter { padding: 3rem 20px; }
   .newsletter-form { flex-direction: column; }
@@ -1245,6 +1284,35 @@
   .filter-bar { gap: 0.5rem; }
   .products-grid, .catalog-grid { grid-template-columns: 1fr; }
   .how-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 375px) {
+  :root { font-size: 13px; }
+  .navbar { padding: 0 12px; }
+  .navbar-container { height: 56px; }
+  .hero-content { padding: 16px 0; }
+  .hero-buttons { flex-direction: column; }
+  .section-header { padding: 0 12px; }
+  .catalog, .about, .contact, .how-it-works, .testimonials { padding: 2rem 12px; }
+  .footer { padding: 1.5rem 12px 1rem; }
+  .toast { min-width: 95%; right: 0.5rem; }
+}
+
+/* Touch targets: asegurar mínimo 44px en elementos interactivos móviles */
+@media (max-width: 768px) {
+  .navbar-toggle,
+  .pill-btn,
+  .theme-toggle,
+  .wishlist-link,
+  .admin-link,
+  .cart-link,
+  .filter-btn,
+  .btn-add-cart,
+  .search-bar button,
+  .nav-back {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
 
 .search-bar {

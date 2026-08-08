@@ -61,22 +61,45 @@ function initMobileNavbar() {
 
   if (!toggle || !menu) return;
 
+  function openMenu() {
+    menu.classList.add('active');
+    toggle.setAttribute('aria-expanded', 'true');
+    const firstLink = menu.querySelector('.nav-link');
+    if (firstLink) firstLink.focus();
+  }
+
+  function closeMenu() {
+    menu.classList.remove('active');
+    toggle.setAttribute('aria-expanded', 'false');
+    toggle.focus();
+  }
+
   toggle.addEventListener('click', () => {
-    menu.classList.toggle('active');
-    toggle.setAttribute('aria-expanded', menu.classList.contains('active'));
+    const isActive = menu.classList.contains('active');
+    if (isActive) {
+      closeMenu();
+    } else {
+      openMenu();
+    }
   });
 
   menu.querySelectorAll('.nav-link').forEach(link => {
     link.addEventListener('click', () => {
-      menu.classList.remove('active');
-      toggle.setAttribute('aria-expanded', 'false');
+      closeMenu();
     });
   });
 
   document.addEventListener('click', (e) => {
     if (!e.target.closest('.navbar-menu') && !e.target.closest('.navbar-toggle')) {
-      menu.classList.remove('active');
-      toggle.setAttribute('aria-expanded', 'false');
+      if (menu.classList.contains('active')) {
+        closeMenu();
+      }
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && menu.classList.contains('active')) {
+      closeMenu();
     }
   });
 }
@@ -111,6 +134,7 @@ form.addEventListener('submit', async (e) => {
         if (data && data.ok !== false) {
           showToast('', 'Mensaje enviado con éxito. Nos pondremos en contacto pronto.', 'success');
           form.reset();
+          window.open(getWhatsAppLink(whatsappMessage), '_blank');
         } else {
           showToast('', 'Error al enviar el mensaje. Intentá de nuevo.', 'error');
         }
@@ -118,8 +142,6 @@ form.addEventListener('submit', async (e) => {
         console.error('Error enviando contacto:', err);
         showToast('', getFetchErrorMessage(err), 'error');
       }
-
-      window.open(getWhatsAppLink(whatsappMessage), '_blank');
     });
 }
 
@@ -254,6 +276,18 @@ window.addEventListener('unhandledrejection', (event) => {
   const reason = event.reason;
   if (reason && typeof reason === 'object' && reason.message) {
     console.error('Error no capturado:', reason.message);
+    if (typeof showToast === 'function') {
+      showToast('⚠️', 'Ocurrió un error inesperado. Intentá recargar la página.', 'error');
+    }
+  }
+});
+
+window.addEventListener('error', (event) => {
+  if (event.target && event.target.tagName === 'IMG') {
+    if (typeof window.imgError === 'function') {
+      window.imgError(event.target);
+    }
+    event.preventDefault();
   }
 });
 
@@ -338,6 +372,7 @@ window.safeFetch = safeFetch;
 window.fetchWithRetry = fetchWithRetry;
 window.showToast = showToast;
 window.getFetchErrorMessage = getFetchErrorMessage;
+window.escapeHtml = escapeHtml;
 
 function escapeHtml(str) {
   if (!str) return '';
@@ -560,4 +595,8 @@ async function loadHeroCards() {
   } catch (err) {
     console.error('Error cargando cards del hero:', err);
   }
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { escapeHtml, getFetchErrorMessage, showToast, safeFetch, fetchWithRetry, initMobileNavbar, initContactForm };
 }

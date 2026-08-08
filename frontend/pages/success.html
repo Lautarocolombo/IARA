@@ -4,23 +4,22 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pago aprobado | Artesanía Gualeguay</title>
+  <meta name="description" content="Pago aprobado en Artesanía Gualeguay. Tu pedido fue confirmado. Te contactaremos para coordinar el envío." />
+  <link rel="canonical" href="https://artesaniagualeguay.com/pages/success.html" />
 
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/variables.css" />
   <link rel="stylesheet" href="../css/base.css" />
   <link rel="stylesheet" href="../css/components.css" />
   <link rel="stylesheet" href="../css/animations.css" />
-
+  <link rel="stylesheet" href="../css/pages.css" />
   <style>
-    .wrap{max-width:900px;margin:0 auto;padding:7rem 1.5rem;}
-    .card{background:var(--white);border-radius:var(--radius-md);box-shadow:var(--shadow-sm);padding:2.5rem;}
     .ok{font-size:4rem;}
-    p{color:var(--text-muted);margin-top:0.8rem;}
     .actions{display:flex;gap:1rem;flex-wrap:wrap;margin-top:2rem;}
   </style>
 </head>
-  <body>
-  <!-- ============== NAVBAR =============== -->
+<body>
+  <a href="#content" class="skip-link">Saltar al contenido principal</a>
   <nav class="navbar" id="navbar">
     <div class="navbar-container">
       <div class="navbar-brand">
@@ -33,9 +32,12 @@
       <a href="../index.html" class="nav-back" aria-label="Volver al inicio">← Volver al inicio</a>
 
       <div class="navbar-actions">
-        <button id="themeToggle" class="theme-toggle" title="Cambiar tema" aria-label="Alternar modo claro/oscuro" aria-pressed="false">
-          <span class="theme-icon theme-icon-sun" aria-hidden="true">☀️</span>
-          <span class="theme-icon theme-icon-moon" aria-hidden="true">🌙</span>
+        <button id="themeToggle" class="pill-btn pill-btn--theme" title="Cambiar tema" aria-label="Alternar modo claro/oscuro" aria-pressed="false">
+          <div class="pill-btn__theme-track">
+            <span class="pill-btn__theme-icon pill-btn__theme-icon--sun" aria-hidden="true">☀️</span>
+            <span class="pill-btn__theme-icon pill-btn__theme-icon--moon" aria-hidden="true">🌙</span>
+          </div>
+          <div class="pill-btn__theme-slider" aria-hidden="true"></div>
         </button>
         <a href="wishlist.html" class="wishlist-link" aria-label="Favoritos">
           <span class="wishlist-icon" aria-hidden="true">❤️</span>
@@ -54,6 +56,9 @@
     </div>
   </nav>
     <div class="wrap">
+    <nav aria-label="Breadcrumb" class="breadcrumb">
+      <a href="../index.html">Inicio</a> <span aria-hidden="true">/</span> <span>Pago aprobado</span>
+    </nav>
     <div class="card reveal visible">
       <div class="ok" aria-hidden="true">✅</div>
       <h1 style="margin-top:1rem;">¡Pago aprobado!</h1>

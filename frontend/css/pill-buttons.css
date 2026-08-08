@@ -47,8 +47,8 @@
 
 /* ---------- Sizes ---------- */
 .pill-btn--sm {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   font-size: 18px;
 }
 
@@ -280,14 +280,14 @@
 
   .pill-btn--theme {
     width: 64px;
-    height: 36px;
+    height: 44px;
   }
 
   .pill-btn__theme-slider {
-    width: 28px;
-    height: 28px;
-    top: 3px;
-    left: 3px;
+    width: 30px;
+    height: 30px;
+    top: 4px;
+    left: 4px;
   }
 
   [data-theme="dark"] .pill-btn__theme-slider {
@@ -304,8 +304,8 @@
 
   .pill-btn--sm,
   .pill-btn--md {
-    width: 38px;
-    height: 38px;
+    width: 44px;
+    height: 44px;
     font-size: 16px;
   }
 
@@ -325,14 +325,14 @@
 
   .pill-btn--theme {
     width: 56px;
-    height: 32px;
+    height: 44px;
   }
 
   .pill-btn__theme-slider {
-    width: 24px;
-    height: 24px;
-    top: 3px;
-    left: 3px;
+    width: 28px;
+    height: 28px;
+    top: 4px;
+    left: 4px;
   }
 
   [data-theme="dark"] .pill-btn__theme-slider {
@@ -349,8 +349,8 @@
 
   .pill-btn--sm,
   .pill-btn--md {
-    width: 34px;
-    height: 34px;
+    width: 44px;
+    height: 44px;
     font-size: 15px;
   }
 }

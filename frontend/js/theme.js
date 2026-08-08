@@ -29,3 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     themeToggle.addEventListener('click', toggleTheme);
   }
 });
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { initTheme, updateThemeUI, toggleTheme };
+}

@@ -1,18 +1,18 @@
 /* ==================== CSS VARIABLES ==================== */
 :root {
   --rose: #e8a0b5;
-  --rose-dark: #c47d91;
+  --rose-dark: #9e4a60;
   --rose-light: #f5c6d4;
-  --rose-mid: #d47090;
+  --rose-mid: #b85068;
   --cream: #fdf6f8;
   --blush: #fff0f4;
   --text-dark: #3a1f28;
   --text-mid: #7a4a58;
-  --text-muted: #9a7a88;
+  --text-muted: #7a5a68;
   --mint: #e8f4f0;
   --gold: #c9a96e;
   --border: #f4d0da;
-  --accent-hover: #bf5e78;
+  --accent-hover: #8a4058;
 
   --radius-sm: 8px;
   --radius-md: 16px;

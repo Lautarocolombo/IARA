@@ -18,15 +18,19 @@ const API_BASE = CONFIG.API.BASE;
      let productsCurrentPage = 1;
        let productsTotalPages = 1;
 
-     function escapeHtml(str) {
-       if (str == null) return '';
-       return String(str)
-         .replace(/&/g, '&amp;')
-         .replace(/</g, '&lt;')
-         .replace(/>/g, '&gt;')
-         .replace(/"/g, '&quot;')
-         .replace(/'/g, '&#39;');
-     }
+      function escapeHtml(str) {
+        if (str == null) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function safeJsonParse(str, fallback) {
+        try { return JSON.parse(str); } catch (e) { return fallback; }
+      }
 
      function getApiUrl(path) {
       if (!API_BASE) return path;
@@ -681,20 +685,22 @@ function openModal(product = null) {
        document.getElementById('pFeatured').checked = product ? product.featured : false;
        document.getElementById('pActive').checked = product ? product.active !== false : true;
     document.getElementById('pImage').value = product ? (product.image || '') : '';
-        document.getElementById('pId').value = product ? product.id : '';
-        document.getElementById('modalOverlay').classList.add('active');
-        setTimeout(() => {
-          if (window.ProductImages) {
-            window.ProductImages.init(product ? product.id : null);
-          }
-        }, 100);
+       document.getElementById('pId').value = product ? product.id : '';
+       document.getElementById('modalOverlay').classList.add('active');
+       setTimeout(() => {
+         if (window.ProductImages) {
+           window.ProductImages.init(product ? product.id : null);
+         }
+       }, 100);
+       const firstInput = document.getElementById('modalOverlay').querySelector('input, select, textarea, button');
+       if (firstInput) firstInput.focus();
      }
 
-    function closeModal() {
-      document.getElementById('modalOverlay').classList.remove('active');
-      editingId = null;
-      clearSaveStatus('productSaveStatus');
-    }
+     function closeModal() {
+       document.getElementById('modalOverlay').classList.remove('active');
+       editingId = null;
+       clearSaveStatus('productSaveStatus');
+     }
 
      function getAuthToken() {
        return authToken;
@@ -1004,7 +1010,7 @@ function renderOrdersTable() {
         const dateFrom = document.getElementById('orderDateFrom')?.value || '';
         const dateTo = document.getElementById('orderDateTo')?.value || '';
         const filtered = orders.filter(o => {
-          const customerName = (typeof o.customer === 'string' ? JSON.parse(o.customer) : (o.customer || {})).name || '';
+          const customerName = (typeof o.customer === 'string' ? safeJsonParse(o.customer, {}) : (o.customer || {})).name || '';
           const matchesSearch = customerName.toLowerCase().includes(q) || String(o.id).includes(q);
           const matchesStatus = !statusFilter || o.status === statusFilter;
           const orderDate = o.created_at ? o.created_at.split('T')[0] : '';
@@ -1017,9 +1023,9 @@ function renderOrdersTable() {
           tbody.innerHTML = '<tr><td colspan=\'8\' class=\'empty-state\'><h3>Sin resultados</h3><p>No se encontraron pedidos.</p></td></tr>';
           return;
         }
-         tbody.innerHTML = filtered.map((o, index) => {
-           const customer = typeof o.customer === 'string' ? JSON.parse(o.customer) : (o.customer || {});
-           const isChecked = selectedOrderIds.has(o.id);
+          tbody.innerHTML = filtered.map((o, index) => {
+             const customer = typeof o.customer === 'string' ? safeJsonParse(o.customer, {}) : (o.customer || {});
+             const isChecked = selectedOrderIds.has(o.id);
            return `<tr>
              <td><input type="checkbox" onchange="toggleOrderSelection(${o.id}, this.checked)" ${isChecked ? 'checked' : ''} /></td>
              <td><strong>#${index + 1}</strong></td>
@@ -1090,7 +1096,7 @@ function renderOrdersTable() {
 
       function openDeleteOrderModal(realId, orderNumber) {
         const order = orders.find(o => o.id === realId);
-        const customer = order ? (typeof order.customer === 'string' ? JSON.parse(order.customer) : (order.customer || {})) : {};
+        const customer = order ? (typeof order.customer === 'string' ? safeJsonParse(order.customer, {}) : (order.customer || {})) : {};
         const customerName = customer.name || '—';
         deleteOrderState = { id: realId, orderNumber: orderNumber, customer: customerName };
         const msg = document.getElementById('deleteOrderModalMessage');
@@ -1482,73 +1488,87 @@ async function loadHeroCardsAdmin() {
        }
      }
 
-      function renderHeroSlots() {
-         const container = document.getElementById('heroSlotsList');
-         if (!container) return;
-         const slots = [0, 1];
-          container.innerHTML = `<div class="hero-grid">${slots.map(slotIndex => {
-            const card = heroCards.find(c => c.slot === slotIndex) || {};
-            const isPrimary = slotIndex === 0;
-            const hasImage = card.imagen || heroPendingFiles[slotIndex];
-            return `<div class="hero-card">
-              <div class="hero-card-header">
-                <span class="hero-card-title">Slot ${slotIndex + 1} · Hero</span>
-                <span class="hero-card-badge">${isPrimary ? 'Imagen principal' : 'Imagen secundaria'}</span>
-              </div>
-              <div class="hero-card-preview ${card.imagen ? '' : 'placeholder'}">
-                 ${card.imagen ? window.renderProductImage(card.imagen, 'Slot ' + (slotIndex + 1), { style: 'max-height:100%;width:100%;object-fit:cover;' }) : '<span>📷</span>'}
-              </div>
-              <div class="hero-card-body">
-                <div class="form-group">
-                  <label>Título</label>
-                  <input type="text" id="heroSlotTitle_${slotIndex}" value="${escapeHtml(card.titulo || '')}" placeholder="Título del hero" />
-                </div>
-                <div class="form-group">
-                  <label>Subtítulo</label>
-                  <textarea id="heroSlotSubtitle_${slotIndex}" rows="3" placeholder="Texto descriptivo">${escapeHtml(card.subtitulo || '')}</textarea>
-                </div>
-                <div class="hero-card-cta-row">
-                  <div class="form-group">
-                    <label>Texto del CTA</label>
-                    <input type="text" id="heroSlotCtaText_${slotIndex}" value="${escapeHtml(card.cta_texto || '')}" placeholder="Ej: Ver productos" />
+       function renderHeroSlots() {
+          const container = document.getElementById('heroSlotsList');
+          if (!container) return;
+          const slots = [0, 1];
+           const headerIcon = '<svg class="hero-slot-header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>';
+           container.innerHTML = `<div class="hero-grid">${slots.map(slotIndex => {
+             const card = heroCards.find(c => c.slot === slotIndex) || {};
+             const isPrimary = slotIndex === 0;
+             const badgeLabel = isPrimary ? 'IMAGEN PRINCIPAL' : 'SECUNDARIA';
+             const hasImage = card.imagen || heroPendingFiles[slotIndex];
+             const previewContent = card.imagen
+               ? window.renderProductImage(card.imagen, 'Slot ' + (slotIndex + 1), { style: 'max-height:100%;width:100%;object-fit:cover;' })
+               : '<span class="hero-slot-placeholder-icon">📷</span>';
+             return `<div class="hero-slot-card">
+               <div class="hero-slot-header">
+                 <span class="hero-slot-label">
+                    ${headerIcon}
+                    Slot ${slotIndex + 1} · Hero
+                  </span>
+                 <span class="hero-slot-badge">${badgeLabel}</span>
+               </div>
+                <div class="hero-slot-preview ${card.imagen ? '' : 'placeholder'}" data-slot="${slotIndex}" onclick="document.getElementById('heroSlotImageFile_${slotIndex}').click()">
+                  <div class="hero-slot-preview-inner" id="heroSlotPreviewInner_${slotIndex}">
+                    ${previewContent}
                   </div>
-                  <div class="form-group">
-                    <label>URL del CTA</label>
-                    <input type="text" id="heroSlotCtaUrl_${slotIndex}" value="${escapeHtml(card.cta_url || '')}" placeholder="Ej: /products" />
+                  <div class="hero-slot-preview-overlay" aria-hidden="true">
+                    <svg class="hero-slot-preview-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <span class="hero-slot-preview-action">Cambiar</span>
                   </div>
                 </div>
-                <div class="hero-card-image-row">
-                  <label class="hero-card-file-label">
-                    <span class="btn btn-secondary btn-sm">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                      Cambiar imagen
-                    </span>
-                    <input type="file" id="heroSlotImageFile_${slotIndex}" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewHeroSlotImage(${slotIndex})" />
-                  </label>
-                  ${hasImage ? `<button class="btn btn-danger btn-sm" onclick="deleteHeroSlotImage(${slotIndex})">🗑 Quitar</button>` : ''}
-                </div>
-                <div class="image-preview" id="heroSlotImagePreview_${slotIndex}" style="display:${hasImage ? 'block' : 'none'};">
-                  ${hasImage ? (card.imagen ? window.renderProductImage(card.imagen, 'Slot ' + (slotIndex + 1), { style: 'max-height:120px;width:100%;object-fit:cover;' }) : '') : ''}
-                </div>
-                <input type="hidden" id="heroSlotImage_${slotIndex}" value="${card.imagen || ''}" />
-                <div class="hero-card-footer">
-                  <button class="btn btn-primary btn-sm" onclick="saveHeroSlot(${slotIndex})">💾 Guardar slot</button>
-                </div>
-              </div>
-            </div>`;
-          }).join('')}</div>`;
-       }
+                <div class="hero-slot-preview-label">Vista previa en el sitio</div>
+               <div class="hero-slot-body">
+                 <div class="form-group">
+                   <label>Título</label>
+                   <input type="text" id="heroSlotTitle_${slotIndex}" class="hero-slot-input" value="${escapeHtml(card.titulo || '')}" placeholder="Título del hero" />
+                 </div>
+                 <div class="form-group">
+                   <label>Subtítulo</label>
+                   <textarea id="heroSlotSubtitle_${slotIndex}" class="hero-slot-input" rows="3" placeholder="Texto descriptivo">${escapeHtml(card.subtitulo || '')}</textarea>
+                 </div>
+                 <div class="hero-slot-cta-row">
+                   <div class="form-group">
+                     <label>Texto del CTA</label>
+                     <input type="text" id="heroSlotCtaText_${slotIndex}" class="hero-slot-input" value="${escapeHtml(card.cta_texto || '')}" placeholder="Ej: Ver productos" />
+                   </div>
+                   <div class="form-group">
+                     <label>URL del CTA</label>
+                     <input type="text" id="heroSlotCtaUrl_${slotIndex}" class="hero-slot-input" value="${escapeHtml(card.cta_url || '')}" placeholder="Ej: /products" />
+                   </div>
+                 </div>
+                 <div class="hero-slot-image-row">
+                   <label class="hero-slot-file-label">
+                     <span class="btn btn-secondary btn-sm">
+                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                       Cambiar imagen
+                     </span>
+                     <input type="file" id="heroSlotImageFile_${slotIndex}" accept="image/jpeg,image/png,image/webp,image/gif" onchange="previewHeroSlotImage(${slotIndex})" />
+                   </label>
+                   ${hasImage ? `<button class="btn btn-danger btn-sm" onclick="deleteHeroSlotImage(${slotIndex})">🗑 Quitar</button>` : ''}
+                 </div>
+                  <input type="hidden" id="heroSlotImage_${slotIndex}" value="${card.imagen || ''}" />
+                 <div class="hero-slot-footer">
+                   <button class="btn btn-primary" onclick="saveHeroSlot(${slotIndex})">💾 Guardar slot</button>
+                   <span class="hero-slot-id">Slot ${slotIndex + 1}</span>
+                 </div>
+               </div>
+             </div>`;
+           }).join('')}</div>`;
+        }
 
      function previewHeroSlotImage(slotIndex) {
         const fileInput = document.getElementById(`heroSlotImageFile_${slotIndex}`);
-        const preview = document.getElementById(`heroSlotImagePreview_${slotIndex}`);
+        const inner = document.getElementById(`heroSlotPreviewInner_${slotIndex}`);
+         const previewEl = document.querySelector(`.hero-slot-preview[data-slot="${slotIndex}"]`);
         if (!fileInput || !fileInput.files || !fileInput.files[0]) return;
         const file = fileInput.files[0];
         heroPendingFiles[slotIndex] = file;
         const reader = new FileReader();
         reader.onload = (e) => {
-          preview.style.display = 'block';
-           preview.innerHTML = window.renderProductImage(e.target.result, 'Preview', { style: 'max-height:120px;', lazy: false });
+if (previewEl) previewEl.classList.remove('placeholder');
+           if (inner) { inner.innerHTML = window.renderProductImage(e.target.result, 'Preview', { style: 'max-height:100%;width:100%;object-fit:cover;', lazy: false }); }
            const card = heroCards.find(c => c.slot === slotIndex) || {};
            const deleteBtn = document.querySelector(`button[onclick="deleteHeroSlotImage(${slotIndex})"]`);
            if (deleteBtn && !card.imagen) deleteBtn.style.display = 'inline-flex';
@@ -1996,6 +2016,25 @@ async function changeOrderStatus(id, newStatus) {
     }
 
     document.getElementById('modalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('modalOverlay')) closeModal(); });
+    document.getElementById('modalOverlay').addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+      if (e.key === 'Tab') {
+        const modal = document.getElementById('modalOverlay');
+        const focusable = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+        if (focusable.length === 0) return;
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    });
     document.getElementById('testimonialModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('testimonialModalOverlay')) closeTestimonialModal(); });
     document.getElementById('textModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('textModalOverlay')) closeTextModal(); });
     document.getElementById('heroSlotModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('heroSlotModalOverlay')) closeHeroSlotModal(); });
@@ -2024,7 +2063,7 @@ async function changeOrderStatus(id, newStatus) {
            const preview = document.getElementById('heroSlotImagePreview');
            const reader = new FileReader();
            reader.onload = (e) => {
-             preview.style.display = 'block';
+           preview.style.display = 'block';
              preview.innerHTML = window.renderProductImage(e.target.result, 'Slot ' + (idx + 1), { style: 'max-height:200px;width:100%;object-fit:cover;', lazy: false });
            };
            reader.readAsDataURL(file);

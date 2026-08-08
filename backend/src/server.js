@@ -11,6 +11,20 @@ const { handleUploadError, processFile, uploadSingle, getPublicUrl } = require('
 const { errorHandler } = require('./middleware/errorHandler');
 const { notFound } = require('./middleware/errorHandler');
 
+let Sentry = null;
+if (process.env.SENTRY_DSN) {
+  try {
+    Sentry = require('@sentry/node');
+    Sentry.init({
+      dsn: process.env.SENTRY_DSN,
+      environment: process.env.NODE_ENV || 'development',
+      tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+    });
+  } catch (err) {
+    console.warn('Sentry no disponible:', err.message);
+  }
+}
+
 const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
 
 dotenv.config({ override: false });
@@ -41,66 +55,30 @@ async function gracefulShutdown(signal) {
   process.exit(0);
 }
 
-const requiredEnvVars = ['JWT_SECRET', 'ADMIN_USER'];
+const requiredEnvVars = ['JWT_SECRET', 'ADMIN_USER', 'ADMIN_PASS_HASH'];
 const missingEnvVars = requiredEnvVars.filter(key => !process.env[key]);
-const hasAdminPassHash = !!process.env.ADMIN_PASS_HASH;
-if (!hasAdminPassHash && process.env.NODE_ENV !== 'test') {
-  missingEnvVars.push('ADMIN_PASS_HASH');
-}
 
-if (missingEnvVars.length > 0 && process.env.NODE_ENV === 'production') {
-  console.warn(`Variables de entorno faltantes en producción, usando defaults: ${missingEnvVars.join(', ')}`);
-  if (!process.env.JWT_SECRET) process.env.JWT_SECRET = require('crypto').randomBytes(64).toString('hex');
-  if (!process.env.ADMIN_USER) process.env.ADMIN_USER = 'admin';
-  if (!process.env.ADMIN_PASS_HASH) {
-    try {
-      process.env.ADMIN_PASS_HASH = require('bcryptjs').hashSync('admin123', 10);
-    } catch (err) {
-      console.error('Error generando ADMIN_PASS_HASH por defecto:', err.message);
-      process.exit(1);
-    }
-  }
-}
 const isProduction = process.env.NODE_ENV === 'production';
-const productionEnvVars = isProduction
-  ? {
-      DATABASE_URL: 'connection string de PostgreSQL (si no la configurás, usa SQLite local)',
-      ALLOWED_ORIGINS: 'orígenes permitidos separados por coma (ej: https://tudominio.com,http://localhost:3000)',
-    }
-  : {};
-const missingProductionVars = Object.keys(productionEnvVars).filter(key => !process.env[key]);
+if (isProduction) {
+  if (!process.env.DATABASE_URL) missingEnvVars.push('DATABASE_URL');
+  if (!process.env.ALLOWED_ORIGINS) missingEnvVars.push('ALLOWED_ORIGINS');
+}
 
-if (missingEnvVars.length > 0 || missingProductionVars.length > 0) {
+if (missingEnvVars.length > 0) {
   console.error('='.repeat(60));
   console.error('FALTAN VARIABLES DE ENTORNO REQUERIDAS');
   console.error('='.repeat(60));
-  if (missingEnvVars.length > 0) {
-    console.error('\nVariables de inicio (validadas al arrancar):');
-    missingEnvVars.forEach(key => {
-      if (key === 'ADMIN_PASS_HASH') {
-          console.error(`  ${key} → hash bcrypt de la contraseña de admin (generar con: npx bcrypt-cli hash)`);
-        } else if (key === 'JWT_SECRET') {
-        console.error(`  ${key} → generar con: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"`);
-      } else if (key === 'ADMIN_USER') {
-        console.error(`  ${key} → nombre de usuario admin, ej: Iara`);
-      } else {
-        console.error(`  ${key} → ${productionEnvVars[key] || 'valor requerido'}`);
-      }
-    });
-  }
-  if (missingProductionVars.length > 0 && process.env.NODE_ENV === 'production') {
-    console.warn('\nVariables de producción faltantes. El servidor usará SQLite local y CORS abierto como fallback.');
-    if (!process.env.DATABASE_URL) process.env.DATABASE_URL = '';
-    if (!process.env.ALLOWED_ORIGINS) process.env.ALLOWED_ORIGINS = '*';
-  }
-  if (missingEnvVars.length > 0 && process.env.NODE_ENV !== 'production') {
-    console.error('\nCómo cargarlas en Render:');
-    console.error('  1. https://dashboard.render.com → tu servicio → Settings');
-    console.error('  2. Sección "Environment" → "Add Environment Variable"');
-    console.error('  3. Agregá cada variable con su nombre y valor');
-    console.error('='.repeat(60));
-    process.exit(1);
-  }
+  missingEnvVars.forEach(key => {
+    let hint = '';
+    if (key === 'JWT_SECRET') hint = ' (generar con: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"';
+    else if (key === 'ADMIN_USER') hint = ' (ej: Iara)';
+    else if (key === 'ADMIN_PASS_HASH') hint = ' (generar con: npx bcrypt-cli hash)';
+    else if (key === 'DATABASE_URL') hint = ' (connection string de PostgreSQL)';
+    else if (key === 'ALLOWED_ORIGINS') hint = ' (ej: https://tudominio.com,http://localhost:3000)';
+    console.error(`  ${key} → requerido${hint}`);
+  });
+  console.error('='.repeat(60));
+  process.exit(1);
 }
 
 const app = express();
@@ -110,11 +88,11 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ['\'self\''],
-      scriptSrc: ['\'self\'', 'https://cdn.jsdelivr.net'],
+      scriptSrc: ['\'self\'', 'https://cdn.jsdelivr.net', 'https://cdn.vercel-insights.com', 'https://www.googletagmanager.com'],
       styleSrc: ['\'self\'', 'https://fonts.googleapis.com'],
       fontSrc: ['\'self\'', 'https://fonts.gstatic.com'],
       imgSrc: ['\'self\'', 'data:', 'https:', 'blob:'],
-      connectSrc: ['\'self\''],
+      connectSrc: ['\'self\'', 'https://api.resend.com', 'https://vitals.vercel-insights.com', 'https://*.googleanalytics.com', 'https://*.google-analytics.com', 'https://stats.g.doubleclick.net'],
       frameSrc: ['\'self\'', 'https://maps.google.com', 'https://www.google.com'],
       objectSrc: ['\'none\''],
       baseUri: ['\'self\''],
@@ -128,6 +106,10 @@ app.use(helmet({
     preload: true
   }
 }));
+
+if (Sentry) {
+  app.use(Sentry.Handlers.requestHandler());
+}
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -155,7 +137,7 @@ const corsOptions = allowedOrigins.length
        allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With', 'X-Request-ID'],
    }
   : {
-       origin: true,
+       origin: false,
        credentials: true,
        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With', 'X-Request-ID'],
@@ -193,7 +175,27 @@ app.use(limiter);
 
 app.use((req, res, next) => {
   res.setHeader('X-Request-ID', req.headers['x-request-id'] || crypto.randomUUID());
-  logger.debug({ reqId: res.getHeader('X-Request-ID'), method: req.method, url: req.url }, 'Request recibida');
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    if (process.env.NODE_ENV === 'production') {
+      logger.info({
+        reqId: res.getHeader('X-Request-ID'),
+        method: req.method,
+        url: req.url,
+        status: res.statusCode,
+        duration
+      }, 'HTTP request');
+    } else {
+      logger.debug({
+        reqId: res.getHeader('X-Request-ID'),
+        method: req.method,
+        url: req.url,
+        status: res.statusCode,
+        duration
+      }, 'HTTP request');
+    }
+  });
   next();
 });
 
@@ -235,8 +237,67 @@ app.use('/api', require('./routes/reports'));
 app.use('/api', require('./routes/receipts'));
 app.use('/api', require('./routes/heroCards'));
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', uptime: process.uptime() });
+app.get('/metrics', (req, res) => {
+  const clientIp = req.ip || req.connection.remoteAddress || '';
+  const allowedIps = (process.env.METRICS_ALLOWED_IPS || '').split(',').filter(Boolean);
+  const metricsToken = process.env.METRICS_TOKEN;
+
+  if (allowedIps.length && !allowedIps.some(ip => clientIp.startsWith(ip))) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  if (metricsToken && req.headers['x-metrics-token'] !== metricsToken) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
+  const memUsage = process.memoryUsage();
+  const cpuUsage = process.cpuUsage();
+  res.json({
+    uptime: process.uptime(),
+    memory: {
+      rss: memUsage.rss,
+      heapUsed: memUsage.heapUsed,
+      heapTotal: memUsage.heapTotal
+    },
+    cpu: {
+      user: cpuUsage.user,
+      system: cpuUsage.system
+    },
+    nodeVersion: process.version,
+    platform: process.platform
+  });
+});
+
+app.get('/health', async (req, res) => {
+  const health = {
+    status: 'ok',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV || 'development',
+    checks: {}
+  };
+
+  try {
+    const { query } = require('./lib/db');
+    await query('SELECT 1');
+    health.checks.database = 'ok';
+  } catch (err) {
+    health.checks.database = 'error';
+    health.status = 'degraded';
+  }
+
+  health.checks.sentry = Sentry ? 'ok' : 'disabled';
+
+  res.status(health.status === 'ok' ? 200 : 503).json(health);
+});
+
+app.get('/ready', async (req, res) => {
+  try {
+    const { query } = require('./lib/db');
+    await query('SELECT 1');
+    res.status(200).json({ status: 'ready' });
+  } catch {
+    res.status(503).json({ status: 'not ready', reason: 'database' });
+  }
 });
 
 app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUploadError, uploadSingle, async (req, res) => {
@@ -273,6 +334,8 @@ app.get('/', (req, res) => {
 
 app.use(express.static(staticDir));
 
+app.get('/sitemap.xml', require('./routes/sitemap'));
+
 app.get('/*', (req, res) => {
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ error: 'Not Found' });
@@ -281,10 +344,29 @@ app.get('/*', (req, res) => {
 });
 
 app.use(notFound);
+
+if (Sentry) {
+  app.use(Sentry.Handlers.errorHandler());
+}
+
 app.use(errorHandler);
 
-const dbReady = initDB().then(() => {
+const dbReady = initDB().then(async () => {
   logger.info('Base de datos inicializada correctamente');
+  try {
+    const { query } = require('./lib/db');
+    const bcrypt = require('bcryptjs');
+    const result = await query('SELECT COUNT(*) FROM users');
+    if ((result.rows[0]?.count || 0) === 0 && process.env.ADMIN_USER && process.env.ADMIN_PASS_HASH) {
+      await query(
+        'INSERT INTO users (username, password_hash, role, permissions, active) VALUES ($1, $2, $3, $4, $5)',
+        [process.env.ADMIN_USER, process.env.ADMIN_PASS_HASH, 'admin', JSON.stringify({ all: true }), true]
+      );
+      logger.info(`Usuario admin inicial creado: ${process.env.ADMIN_USER}`);
+    }
+  } catch (err) {
+    logger.warn({ err: err.message }, 'No se pudo verificar/crear usuario admin inicial');
+  }
 }).catch(err => {
   logger.error({ err: err.message, stack: err.stack }, 'Error inicializando DB');
   console.error('Error inicializando DB:', err);

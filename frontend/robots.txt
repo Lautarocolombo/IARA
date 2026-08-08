@@ -3,4 +3,4 @@ Allow: /
 Disallow: /backend/
 Disallow: /uploads/
 Disallow: /api/
-Sitemap: /api/sitemap
+Sitemap: /sitemap.xml
