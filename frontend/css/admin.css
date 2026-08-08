@@ -1282,29 +1282,30 @@ tr:last-child td {
 /* ==================== HERO SLOTS GRID ==================== */
 .hero-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 24px;
 }
 
 .hero-card {
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 16px;
   background: #fff;
-  overflow: hidden;
+  min-width: 320px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
 }
 
 .hero-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid var(--border);
-  background: #fafafa;
+  gap: 12px;
 }
 
-.hero-card-title {
+.hero-card-header .hero-card-title {
   font-family: 'Playfair Display', serif;
   font-size: 1rem;
   font-weight: 600;
@@ -1316,22 +1317,24 @@ tr:last-child td {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  padding: 0.2rem 0.5rem;
+  padding: 0.25rem 0.6rem;
   border-radius: 999px;
   background: var(--accent, #a85a6b);
   color: #fff;
+  white-space: nowrap;
 }
 
 .hero-card-preview {
   width: 100%;
-  aspect-ratio: 16 / 5;
+  height: 150px;
   background: linear-gradient(135deg, #fce8ee, #d4ede3);
   display: flex;
   align-items: center;
   justify-content: center;
-  border-bottom: 1px solid var(--border);
+  border-radius: 12px;
   overflow: hidden;
   position: relative;
+  border: 1px solid var(--border);
 }
 
 .hero-card-preview img {
@@ -1347,22 +1350,52 @@ tr:last-child td {
 }
 
 .hero-card-body {
-  padding: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 12px;
   flex: 1;
+}
+
+.hero-card-body .form-group {
+  width: 100%;
+}
+
+.hero-card-body .form-group input,
+.hero-card-body .form-group textarea {
+  width: 100%;
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.hero-card-body .form-group textarea {
+  padding: 8px 12px;
+  min-height: 80px;
+  resize: vertical;
+}
+
+.hero-card-cta-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
 .hero-card-image-row {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .hero-card-file-label {
+  width: 100%;
   cursor: pointer;
+  display: block;
+}
+
+.hero-card-file-label .btn {
+  width: 100%;
+  justify-content: center;
 }
 
 .hero-card-file-label input {
@@ -1370,22 +1403,29 @@ tr:last-child td {
 }
 
 .hero-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--border);
   margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hero-card-footer .btn {
+  width: 100%;
+  justify-content: center;
 }
 
 .hero-card-slot-id {
-  font-size: 0.75rem;
-  color: var(--text-muted);
+  display: none;
 }
 
 .hero-card .image-preview {
-  max-height: 180px;
-  margin-top: 0.5rem;
+  width: 100%;
+  max-height: 150px;
+  margin-top: 8px;
+  border-radius: 8px;
+  object-fit: cover;
 }
 
 /* ==================== TESTIMONIAL TOGGLE ==================== */
