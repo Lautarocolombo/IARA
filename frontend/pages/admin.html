@@ -122,9 +122,10 @@
            <button class="btn btn-secondary btn-sm quick-date-btn" onclick="setReportPreset('7d')">Últimos 7 días</button>
            <button class="btn btn-secondary btn-sm quick-date-btn" onclick="setReportPreset('30d')">Últimos 30 días</button>
            <button class="btn btn-secondary btn-sm quick-date-btn" onclick="setReportPreset('month')">Mes actual</button>
-           <input type="date" id="reportStartDate" class="card-filter" />
-           <input type="date" id="reportEndDate" class="card-filter" />
-           <button class="btn btn-primary btn-sm" onclick="loadSalesReport()">Filtrar</button>
+            <input type="date" id="reportStartDate" class="card-filter" />
+            <input type="date" id="reportEndDate" class="card-filter" />
+            <button class="btn btn-primary btn-sm" onclick="loadSalesReport()">Filtrar</button>
+            <button class="btn btn-danger btn-sm" onclick="resetMetrics()">Reiniciar métricas</button>
          </div>
        </div>
        <div class="card-body">
@@ -132,7 +133,8 @@
          <div class="chart-container"><canvas id="salesChart"></canvas></div>
          <div id="reportContent"></div>
          <div class="chart-container"><canvas id="trendChart"></canvas></div>
-         <div id="trendContent" style="margin-top:1.5rem;"></div>
+          <div id="trendContent" style="margin-top:1.5rem;"></div>
+          <div id="weeklySummary" style="margin-top:1.5rem;"></div>
        </div>
      </div>
     <div class="card" id="productsSection">
@@ -714,6 +716,22 @@
     </div>
   </div>
    </div>
+
+  <div class="modal-overlay" id="deleteOrderModalOverlay">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header">
+        <h3>Eliminar pedido</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeDeleteOrderModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p id="deleteOrderModalMessage">¿Eliminar este pedido? Esta acción no se puede deshacer.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeDeleteOrderModal()">Cancelar</button>
+        <button class="btn btn-danger" id="confirmDeleteOrderBtn" onclick="confirmDeleteOrder()">Eliminar</button>
+      </div>
+    </div>
+  </div>
 
   <div class="toast-container" id="toastContainer"></div>
 

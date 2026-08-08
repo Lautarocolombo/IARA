@@ -1,6 +1,9 @@
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 
+const WEEKLY_BAJA_THRESHOLD = 300;
+const WEEKLY_MEDIA_THRESHOLD = 800;
+
 const getSalesReport = async (req, res) => {
   const startDate = String(req.query.start_date || '');
   const endDate = String(req.query.end_date || '');
@@ -114,4 +117,125 @@ const getSalesTrend = async (req, res) => {
   }
 };
 
-module.exports = { getSalesReport, getSalesTrend };
+const resetMetrics = async (req, res) => {
+  try {
+    await query(`CREATE TABLE IF NOT EXISTS archived_orders (id INTEGER, items JSONB, total REAL, customer JSONB, status TEXT, notes TEXT, shipping_name TEXT, shipping_address TEXT, shipping_phone TEXT, shipping_zip TEXT, shipping_city TEXT, shipping_email TEXT, subtotal REAL DEFAULT 0, shipping_cost REAL DEFAULT 0, created_at TIMESTAMP, archived_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+
+    const ordersResult = await query('SELECT * FROM orders ORDER BY id ASC');
+    const allOrders = ordersResult.rows;
+
+    if (allOrders.length > 0) {
+      await query('BEGIN');
+      try {
+        for (const o of allOrders) {
+          const itemsJson = typeof o.items === 'string' ? o.items : JSON.stringify(o.items || []);
+          const customerJson = typeof o.customer === 'string' ? o.customer : JSON.stringify(o.customer || {});
+          await query(
+            `INSERT INTO archived_orders (id, items, total, customer, status, notes, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, subtotal, shipping_cost, created_at) VALUES ($1, $2::jsonb, $3, $4::jsonb, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+            [
+              o.id,
+              itemsJson,
+              Number(o.total || 0),
+              customerJson,
+              o.status || 'pending',
+              o.notes || '',
+              o.shipping_name || '',
+              o.shipping_address || '',
+              o.shipping_phone || '',
+              o.shipping_zip || '',
+              o.shipping_city || '',
+              o.shipping_email || '',
+              Number(o.subtotal || 0),
+              Number(o.shipping_cost || 0),
+              new Date(o.created_at).toISOString()
+            ]
+          );
+        }
+        await query('COMMIT');
+      } catch (err) {
+        await query('ROLLBACK');
+        throw err;
+      }
+
+      for (const o of allOrders) {
+        const items = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || []);
+        for (const it of items) {
+          const productId = Number(it.id);
+          const qty = Number(it.quantity || 1);
+          await query('UPDATE products SET stock = stock + $1 WHERE id = $2', [qty, productId]);
+        }
+      }
+    }
+
+    await query('DELETE FROM orders');
+    res.json({ ok: true, archived: allOrders.length });
+  } catch (err) {
+    logger.error({ err: err.message }, 'Error reiniciando métricas');
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+const getWeeklySummary = async (req, res) => {
+  try {
+    const now = new Date();
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
+
+    const weekResult = await query(
+      `SELECT COALESCE(SUM(total),0) as total, COUNT(*) as count FROM orders WHERE status != 'cancelled' AND date(created_at) >= $1`,
+      [sevenDaysAgoStr]
+    );
+    const pedidosSemana = Number(weekResult.rows[0].count || 0);
+    const totalSemana = Number(weekResult.rows[0].total || 0);
+
+    const previousWeeksResult = await query(
+      `SELECT date(created_at) as date, COALESCE(SUM(total),0) as total, COUNT(*) as count FROM orders WHERE status != 'cancelled' AND date(created_at) < $1 GROUP BY date(created_at) ORDER BY date ASC`,
+      [sevenDaysAgoStr]
+    );
+
+    let nivelVentas = 'Media';
+    const previousRows = previousWeeksResult.rows || [];
+    if (previousRows.length > 0) {
+      const totalAnterior = previousRows.reduce((sum, r) => sum + Number(r.total || 0), 0);
+      const semanasAnteriores = Math.max(1, Math.floor(previousRows.length / 7));
+      const promedioSemanasAnteriores = totalAnterior / semanasAnteriores;
+      if (promedioSemanasAnteriores > 0) {
+        if (totalSemana > promedioSemanasAnteriores * 1.2) {
+          nivelVentas = 'Alta';
+        } else if (totalSemana < promedioSemanasAnteriores * 0.8) {
+          nivelVentas = 'Baja';
+        } else {
+          nivelVentas = 'Media';
+        }
+      } else {
+        if (totalSemana > WEEKLY_MEDIA_THRESHOLD) {
+          nivelVentas = 'Alta';
+        } else if (totalSemana >= WEEKLY_BAJA_THRESHOLD) {
+          nivelVentas = 'Media';
+        } else {
+          nivelVentas = 'Baja';
+        }
+      }
+    } else {
+      if (totalSemana > WEEKLY_MEDIA_THRESHOLD) {
+        nivelVentas = 'Alta';
+      } else if (totalSemana >= WEEKLY_BAJA_THRESHOLD) {
+        nivelVentas = 'Media';
+      } else {
+        nivelVentas = 'Baja';
+      }
+    }
+
+    res.json({
+      pedidosSemana,
+      totalSemana,
+      nivelVentas
+    });
+  } catch (err) {
+    logger.error('Error obteniendo resumen semanal:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+module.exports = { getSalesReport, getSalesTrend, resetMetrics, getWeeklySummary };
