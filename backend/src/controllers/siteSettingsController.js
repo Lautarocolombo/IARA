@@ -101,6 +101,10 @@ const updateSiteSettings = async (req, res) => {
         free_shipping_from: payment.free_shipping_from !== undefined ? Number(payment.free_shipping_from) : (payload.free_shipping_from !== undefined ? Number(payload.free_shipping_from) : 0)
       };
 
+      if (!values.transfer_alias && values.mp_alias) {
+        values.transfer_alias = values.mp_alias;
+      }
+
       if (row.rows.length === 0) {
         await query(
           `INSERT INTO payment_config (mp_alias, transfer_alias, holder_name, cbu_cvu, whatsapp, message, active, mp_enabled, cash_enabled, shipping_cost, free_shipping_from)

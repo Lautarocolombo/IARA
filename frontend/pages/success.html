@@ -94,7 +94,7 @@
         const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/payment-config`, {}, 2, 1000);
         if(!res) return;
         const data = await res.json();
-        const alias = data.transferAlias || 'iara-salgueiro';
+        const alias = data.mpAlias || data.transferAlias || 'iara-salgueiro';
         const section = document.getElementById('transferAliasSection');
         const aliasEl = document.getElementById('successTransferAlias');
         const noteEl = document.getElementById('successTransferNote');
