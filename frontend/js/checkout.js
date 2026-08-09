@@ -318,7 +318,9 @@
         document.getElementById('transferReceiptBtn').dataset.orderNumber = order.number;
         document.getElementById('transferReceiptBtn').dataset.orderId = order.id || '';
       }
-      window.location.href = 'success.html';
+      document.getElementById('paymentInstructions').style.display = 'block';
+      document.getElementById('transferDataCard').style.display = 'block';
+      document.getElementById('shippingForm').style.display = 'none';
     } catch (e) {
       console.error('Error restaurando pedido desde sesión:', e);
     }

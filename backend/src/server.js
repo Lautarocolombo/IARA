@@ -116,7 +116,16 @@ if (Sentry) {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || '').split(',').filter(Boolean);
+const envOrigins = (process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || '').split(',').filter(Boolean);
+const defaultOrigins = [
+  'https://iara-wz9o.vercel.app',
+  'https://iara-lovat-orcin.vercel.app',
+  'https://artesaniagualeguay.com',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'http://localhost:5173'
+];
+const allowedOrigins = envOrigins.length ? envOrigins : defaultOrigins;
 
 const corsOptions = allowedOrigins.length
   ? {
@@ -139,7 +148,7 @@ const corsOptions = allowedOrigins.length
        allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With', 'X-Request-ID'],
    }
   : {
-       origin: false,
+       origin: true,
        credentials: true,
        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With', 'X-Request-ID'],

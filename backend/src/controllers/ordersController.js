@@ -128,8 +128,8 @@ const createOrder = async (req, res) => {
           shipping_zip || '',
           shipping_city || '',
           shipping_email || '',
-          Number(subtotal) || 0,
-          Number(shipping_cost) || 0,
+          Number(subtotal || 0),
+          Number(shipping_cost || 0),
           notes || ''
         ],
         client
