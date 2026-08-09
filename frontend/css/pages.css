@@ -138,7 +138,7 @@
 }
 
 .order-card {
-  background: #fff;
+  background: var(--white);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   border: 1px solid #f4d0da;
@@ -377,7 +377,7 @@
 }
 
 .review-card {
-  background: #fff;
+  background: var(--white);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   border: 1px solid #f4d0da;
@@ -612,7 +612,7 @@
 }
 
 .transfer-summary {
-  background: #fff;
+  background: var(--white);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 1rem;
@@ -682,7 +682,7 @@
 }
 
 .modal-card {
-  background: #fff;
+  background: var(--white);
   border-radius: var(--radius-md);
   padding: 2rem;
   max-width: 480px;
@@ -693,4 +693,23 @@
 .modal-card h3 {
   font-family: 'Playfair Display', serif;
   margin-bottom: 1rem;
+}
+
+[data-theme="dark"] .order-card {
+  background: var(--surface);
+  border-color: #3a2028;
+}
+
+[data-theme="dark"] .review-card {
+  background: var(--surface);
+  border-color: #3a2028;
+}
+
+[data-theme="dark"] .transfer-summary {
+  background: var(--surface);
+  border-color: #3a2028;
+}
+
+[data-theme="dark"] .modal-card {
+  background: var(--surface);
 }

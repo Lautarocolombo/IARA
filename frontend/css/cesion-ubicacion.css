@@ -14,7 +14,7 @@
 }
 
 .cesion-card {
-  background: #fff;
+  background: var(--white);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-sm);
   border: 1px solid #f4d0da;
@@ -62,7 +62,7 @@
   overflow: hidden;
   box-shadow: var(--shadow-sm);
   border: 1px solid #f4d0da;
-  background: #fff;
+  background: var(--white);
   position: relative;
 }
 

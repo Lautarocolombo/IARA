@@ -61,7 +61,7 @@ async function getPaymentStatus(req, res) {
     );
     res.json(result.rows);
   } catch (err) {
-    logger.error({ err: err.message }, 'Error obteniendo estado de pagos');
+    logger.error('Error obteniendo estado de pagos:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 }

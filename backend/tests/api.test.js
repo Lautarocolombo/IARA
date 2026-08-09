@@ -1,6 +1,6 @@
 const request = require('supertest');
 
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 process.env.NODE_ENV = process.env.NODE_ENV || 'test';
 process.env.ADMIN_USER = process.env.ADMIN_USER || 'testadmin';
 process.env.ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH || bcrypt.hashSync('testpassword123', 10);

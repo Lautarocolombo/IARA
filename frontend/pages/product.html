@@ -35,8 +35,12 @@
       <div class="loading-skeleton loading-skeleton-tall"></div>
     </div>
   </main>
-  <script src="../js/ui.js"></script>
-  <script src="../js/products.js"></script>
+   <script src="../js/ui.js"></script>
+   <script>
+     if (typeof initNavbarScroll === 'function') initNavbarScroll();
+     if (typeof initMobileNavbar === 'function') initMobileNavbar();
+   </script>
+   <script src="../js/products.js"></script>
   <script src="../js/wishlist.js"></script>
   <script src="../js/cart.js"></script>
   <script>
@@ -51,13 +55,19 @@
       }
       try {
         const [productRes, reviewsRes] = await Promise.all([
-          window.fetchWithRetry(`${CONFIG.API.BASE}/api/products`, {}, 2, 1000),
+          window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}`, {}, 2, 1000),
           window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}/reviews`, {}, 2, 1000)
         ]);
-        const productData = productRes ? await productRes.json() : [];
         const reviewsData = reviewsRes ? await reviewsRes.json() : [];
-        const products = Array.isArray(productData) && productData.length ? productData : (typeof defaultProducts !== 'undefined' ? defaultProducts : []);
-        const product = products.find(p => p.id === Number(productId));
+        let product = null;
+        if (productRes && productRes.ok) {
+          product = await productRes.json();
+        } else {
+          const fallbackRes = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products`, {}, 2, 1000);
+          const productData = fallbackRes ? await fallbackRes.json() : [];
+          const products = Array.isArray(productData) && productData.length ? productData : (typeof defaultProducts !== 'undefined' ? defaultProducts : []);
+          product = products.find(p => p.id === Number(productId));
+        }
         if (!product) {
           container.innerHTML = '<p>Producto no encontrado.</p>';
           return;
@@ -217,6 +227,7 @@
       }
     });
 
+    if (typeof initSSESync === 'function') initSSESync();
     startDataSync('product-detail', loadProduct);
     onSyncMessage('products_updated', () => {
       const params = new URLSearchParams(window.location.search);

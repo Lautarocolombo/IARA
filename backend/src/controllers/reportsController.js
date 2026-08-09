@@ -1,4 +1,4 @@
-const { query } = require('../lib/db');
+const { query, transaction } = require('../lib/db');
 const logger = require('../lib/logger');
 
 const WEEKLY_BAJA_THRESHOLD = 300;
@@ -8,7 +8,7 @@ const getSalesReport = async (req, res) => {
   const startDate = String(req.query.start_date || '');
   const endDate = String(req.query.end_date || '');
   const period = req.query.period || '';
-  let where = "WHERE status != 'cancelled'";
+  let where = 'WHERE status != \'cancelled\'';
   const params = [];
 
   const computedStart = computeStartDate(period, startDate);
@@ -119,19 +119,18 @@ const getSalesTrend = async (req, res) => {
 
 const resetMetrics = async (req, res) => {
   try {
-    await query(`CREATE TABLE IF NOT EXISTS archived_orders (id INTEGER, items JSONB, total REAL, customer JSONB, status TEXT, notes TEXT, shipping_name TEXT, shipping_address TEXT, shipping_phone TEXT, shipping_zip TEXT, shipping_city TEXT, shipping_email TEXT, subtotal REAL DEFAULT 0, shipping_cost REAL DEFAULT 0, created_at TIMESTAMP, archived_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
+    await query('CREATE TABLE IF NOT EXISTS archived_orders (id INTEGER, items JSONB, total REAL, customer JSONB, status TEXT, notes TEXT, shipping_name TEXT, shipping_address TEXT, shipping_phone TEXT, shipping_zip TEXT, shipping_city TEXT, shipping_email TEXT, subtotal REAL DEFAULT 0, shipping_cost REAL DEFAULT 0, created_at TIMESTAMP, archived_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)');
 
     const ordersResult = await query('SELECT * FROM orders ORDER BY id ASC');
     const allOrders = ordersResult.rows;
 
     if (allOrders.length > 0) {
-      await query('BEGIN');
-      try {
+      await transaction(async (txClient) => {
         for (const o of allOrders) {
           const itemsJson = typeof o.items === 'string' ? o.items : JSON.stringify(o.items || []);
           const customerJson = typeof o.customer === 'string' ? o.customer : JSON.stringify(o.customer || {});
-          await query(
-            `INSERT INTO archived_orders (id, items, total, customer, status, notes, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, subtotal, shipping_cost, created_at) VALUES ($1, $2::jsonb, $3, $4::jsonb, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+          await txClient.query(
+            'INSERT INTO archived_orders (id, items, total, customer, status, notes, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, subtotal, shipping_cost, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)',
             [
               o.id,
               itemsJson,
@@ -151,11 +150,7 @@ const resetMetrics = async (req, res) => {
             ]
           );
         }
-        await query('COMMIT');
-      } catch (err) {
-        await query('ROLLBACK');
-        throw err;
-      }
+      });
 
       for (const o of allOrders) {
         const items = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || []);
@@ -183,14 +178,14 @@ const getWeeklySummary = async (req, res) => {
     const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
 
     const weekResult = await query(
-      `SELECT COALESCE(SUM(total),0) as total, COUNT(*) as count FROM orders WHERE status != 'cancelled' AND date(created_at) >= $1`,
+      'SELECT COALESCE(SUM(total),0) as total, COUNT(*) as count FROM orders WHERE status != \'cancelled\' AND date(created_at) >= $1',
       [sevenDaysAgoStr]
     );
     const pedidosSemana = Number(weekResult.rows[0].count || 0);
     const totalSemana = Number(weekResult.rows[0].total || 0);
 
     const previousWeeksResult = await query(
-      `SELECT date(created_at) as date, COALESCE(SUM(total),0) as total, COUNT(*) as count FROM orders WHERE status != 'cancelled' AND date(created_at) < $1 GROUP BY date(created_at) ORDER BY date ASC`,
+      'SELECT date(created_at) as date, COALESCE(SUM(total),0) as total, COUNT(*) as count FROM orders WHERE status != \'cancelled\' AND date(created_at) < $1 GROUP BY date(created_at) ORDER BY date ASC',
       [sevenDaysAgoStr]
     );
 

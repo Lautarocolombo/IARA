@@ -81,9 +81,9 @@
         <h4>Artesanía Gualeguay</h4>
         <p>Creando pulseras y souvenirs únicos desde el corazón de Gualeguay, Entre Ríos.</p>
         <div class="social-links">
-          <a href="#" id="instagramLink" title="Instagram" class="social-icon" aria-label="Instagram">📷</a>
-          <a href="#" id="facebookLink" title="Facebook" class="social-icon" aria-label="Facebook">👝</a>
-          <a href="#" id="twitterLink" title="Twitter" class="social-icon" aria-label="Twitter">🐦</a>
+          <a href="javascript:void(0)" id="instagramLink" title="Instagram" class="social-icon" aria-label="Instagram">📷</a>
+          <a href="javascript:void(0)" id="facebookLink" title="Facebook" class="social-icon" aria-label="Facebook">👝</a>
+          <a href="javascript:void(0)" id="twitterLink" title="Twitter" class="social-icon" aria-label="Twitter">🐦</a>
         </div>
       </div>
       <div class="footer-section">
@@ -111,6 +111,10 @@
   </footer>
 
   <script src="../js/ui.js"></script>
+  <script>
+    if (typeof initNavbarScroll === 'function') initNavbarScroll();
+    if (typeof initMobileNavbar === 'function') initMobileNavbar();
+  </script>
   <script src="../js/wishlist.js"></script>
   <script src="../js/cart.js"></script>
 </body>

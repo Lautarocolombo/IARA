@@ -209,7 +209,7 @@ const searchProducts = async (req, res) => {
     if (!q) return res.json([]);
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
     const result = await query(
-      "SELECT * FROM products WHERE active = TRUE AND deleted = FALSE AND (name LIKE $1 OR description LIKE $1 OR category LIKE $1 OR sku LIKE $1) ORDER BY id ASC",
+      'SELECT * FROM products WHERE active = TRUE AND deleted = FALSE AND (name LIKE $1 OR description LIKE $1 OR category LIKE $1 OR sku LIKE $1) ORDER BY id ASC',
       [`%${q}%`]
     );
     const enriched = await attachImagesToProducts(result.rows, baseUrl);

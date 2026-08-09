@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "test": "jest --testEnvironment jsdom",
-    "lint": "eslint frontend/js --ext .js",
+    "lint": "eslint js --ext .js",
     "format": "prettier --write \"frontend/**/*.{js,html,css,json}\""
   },
   "devDependencies": {

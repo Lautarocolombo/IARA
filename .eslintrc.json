@@ -46,6 +46,7 @@
     "loadSiteSettings": "readonly",
     "loadTestimonials": "readonly",
     "loadHeroCards": "readonly",
+    "loadProduct": "readonly",
     "openModalScrollLock": "readonly",
     "unlockModalScroll": "readonly",
     "emitSync": "readonly",

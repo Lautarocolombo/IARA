@@ -11,7 +11,7 @@ const getSiteConfig = async (req, res) => {
     let paymentConfig = paymentRow.rows[0] || null;
     if (!paymentConfig) {
       await query(
-        `INSERT INTO payment_config (mp_alias, holder_name, whatsapp, message, active) VALUES ('iara-salgueiro', '', '', '', true)`
+        'INSERT INTO payment_config (mp_alias, holder_name, whatsapp, message, active) VALUES (\'iara-salgueiro\', \'\', \'\', \'\', true)'
       );
       const retry = await query('SELECT * FROM payment_config LIMIT 1');
       paymentConfig = retry.rows[0] || {};
@@ -52,7 +52,7 @@ const updatePaymentConfig = async (req, res) => {
       );
     } else {
       await query(
-        `UPDATE payment_config SET mp_alias = $1, holder_name = $2, whatsapp = $3, message = $4, active = $5, updated_at = CURRENT_TIMESTAMP WHERE id = $6`,
+        'UPDATE payment_config SET mp_alias = $1, holder_name = $2, whatsapp = $3, message = $4, active = $5, updated_at = CURRENT_TIMESTAMP WHERE id = $6',
         [mpAlias || '', holderName || '', whatsapp || '', message || '', active !== false, row.rows[0].id]
       );
     }

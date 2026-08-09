@@ -358,6 +358,7 @@
           <li><a href="pages/devoluciones.html">Cambios y Devoluciones</a></li>
           <li><a href="pages/cesion-ubicacion.html">Cesión de Ubicación</a></li>
           <li><a href="pages/faq.html">Preguntas Frecuentes</a></li>
+          <li><a href="pages/shipping.html">Envíos</a></li>
         </ul>
       </div>
     </div>
@@ -369,9 +370,13 @@
   <!-- ============== TOAST CONTAINER ============== -->
   <div id="toastContainer" class="toast-container"></div>
 
-  <!-- ============== SCRIPTS ============== -->
-   <script src="js/ui.js"></script>
-   <script src="js/wishlist.js"></script>
+    <!-- ============== SCRIPTS ============== -->
+    <script src="js/ui.js"></script>
+    <script>
+      if (typeof initNavbarScroll === 'function') initNavbarScroll();
+      if (typeof initMobileNavbar === 'function') initMobileNavbar();
+    </script>
+    <script src="js/wishlist.js"></script>
    <script src="js/cart.js"></script>
    <script src="js/products.js"></script>
    <script src="js/hero.js"></script>
@@ -486,6 +491,8 @@
     })();
   </script>
   <script>
+    if (typeof initSSESync === 'function') initSSESync();
+
     if (typeof loadSiteTexts === 'function') {
       loadSiteTexts();
     }

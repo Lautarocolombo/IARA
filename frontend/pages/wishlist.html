@@ -50,6 +50,10 @@
   </main>
 
   <script src="../js/ui.js"></script>
+  <script>
+    if (typeof initNavbarScroll === 'function') initNavbarScroll();
+    if (typeof initMobileNavbar === 'function') initMobileNavbar();
+  </script>
   <script src="../js/wishlist.js"></script>
   <script src="../js/cart.js"></script>
   <script>
@@ -86,6 +90,23 @@
         </div>
       `).join('');
     }
+
+    document.getElementById('wishlistGrid')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-add-cart');
+      if (!btn) return;
+      e.preventDefault();
+      const product = {
+        id: Number(btn.dataset.productId),
+        name: btn.dataset.productName,
+        price: Number(btn.dataset.productPrice),
+        emoji: btn.dataset.productEmoji || '📿',
+        image: btn.dataset.productImage || '',
+        stock: Number(btn.dataset.productStock || 0),
+        unit: 'u',
+        qty: 1
+      };
+      if (typeof addToCart === 'function') addToCart(product);
+    });
 
     document.addEventListener('DOMContentLoaded', renderWishlist);
 

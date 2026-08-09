@@ -41,20 +41,21 @@
      if (transferAliasEl) transferAliasEl.textContent = 'Cargando...';
      try {
        const url = `${CONFIG.API.BASE}/api/payment-config`;
-       const res = await window.fetchWithRetry(url, {}, 2, 1000);
-       if (!res) {
-         if (aliasEl) aliasEl.textContent = 'No configurado';
-         if (transferAliasEl) transferAliasEl.textContent = 'No configurado';
-         return { alias: '', whatsapp: (CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, ''), message: '', active: false };
-       }
+        const res = await window.fetchWithRetry(url, {}, 2, 1000, 8000);
+        if (!res) {
+          if (aliasEl) aliasEl.textContent = 'No configurado';
+          if (transferAliasEl) transferAliasEl.textContent = 'No configurado';
+         return { alias: CONFIG.CONTACT.WHATSAPP_ALIAS || '', whatsapp: (CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, ''), message: '', active: false, mpEnabled: false };
+        }
        const data = await res.json();
        const alias = data.transferAlias || '';
        const cbuCvu = data.cbuCvu || '';
        const holderName = data.holderName || '';
        const whatsapp = (data.whatsapp || CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, '');
        const message = data.message || 'Transferí el total exacto y enviá el comprobante por WhatsApp para confirmar tu pedido.';
-       const active = data.active !== false;
-       if (aliasEl) aliasEl.textContent = alias || 'No configurado';
+        const active = data.active !== false;
+        const mpEnabled = data.mpEnabled === true;
+        if (aliasEl) aliasEl.textContent = alias || 'No configurado';
        if (transferAliasEl) transferAliasEl.textContent = alias || 'No configurado';
        if (cbuCvu) {
          const cbuField = document.getElementById('transferCbuCvu');
@@ -62,17 +63,17 @@
          if (cbuField) cbuField.textContent = cbuCvu;
          if (cbuRow) cbuRow.style.display = '';
        }
-       if (holderName) {
-         const holderField = document.getElementById('transferHolder');
-         const holderRow = document.getElementById('holderField');
-         if (holderField) holderField.textContent = holderName;
-         if (holderRow) holderRow.style.display = '';
-       }
-       return { alias, whatsapp, message, active };
-     } catch (err) {
+        if (holderName) {
+          const holderField = document.getElementById('transferHolder');
+          const holderRow = document.getElementById('holderField');
+          if (holderField) holderField.textContent = holderName;
+          if (holderRow) holderRow.style.display = '';
+        }
+        return { alias, whatsapp, message, active, mpEnabled };
+       } catch (err) {
        if (aliasEl) aliasEl.textContent = 'Error al cargar';
        if (transferAliasEl) transferAliasEl.textContent = 'Error al cargar';
-       return { alias: 'iara-salgueiro', whatsapp: (CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, ''), message: '', active: false };
+        return { alias: CONFIG.CONTACT.WHATSAPP_ALIAS || '', whatsapp: (CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, ''), message: '', active: false };
      }
    }
 
@@ -130,23 +131,8 @@
       return;
     }
 
-    const fields = {
-      name: document.getElementById('shipName'),
-      address: document.getElementById('shipAddress'),
-      zip: document.getElementById('shipZip'),
-      city: document.getElementById('shipCity'),
-      phone: document.getElementById('shipPhone'),
-      email: document.getElementById('shipEmail')
-    };
-
-    const errors = {
-      name: '',
-      address: '',
-      zip: '',
-      city: '',
-      phone: '',
-      email: ''
-    };
+    const fields = checkoutFields;
+    const errors = checkoutErrors;
 
     const shipping = {
       name: fields.name.value.trim(),
@@ -157,21 +143,12 @@
       email: fields.email.value.trim()
     };
 
-    if (!shipping.name) errors.name = 'Ingresá tu nombre';
-    if (!shipping.address) errors.address = 'Ingresá tu dirección';
-    if (!shipping.zip) errors.zip = 'Ingresá el código postal';
-    if (!shipping.city) errors.city = 'Ingresá tu localidad';
-    if (!shipping.phone) errors.phone = 'Ingresá tu teléfono';
-    if (!shipping.email) {
-      errors.email = 'Ingresá tu email';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(shipping.email)) {
-      errors.email = 'Ingresá un email válido';
-    }
-
-    const phoneDigits = shipping.phone.replace(/[^\d]/g, '');
-    if (shipping.phone && phoneDigits.length < 8) {
-      errors.phone = 'Ingresá un teléfono válido';
-    }
+    errors.name = validateField('name', shipping.name);
+    errors.address = validateField('address', shipping.address);
+    errors.zip = validateField('zip', shipping.zip);
+    errors.city = validateField('city', shipping.city);
+    errors.phone = validateField('phone', shipping.phone);
+    errors.email = validateField('email', shipping.email);
 
     const hasErrors = Object.values(errors).some(Boolean);
 
@@ -193,6 +170,12 @@
     const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
     const shippingCost = subtotal > CONFIG.CART.SHIPPING_THRESHOLD ? 0 : CONFIG.CART.SHIPPING_COST;
     const total = subtotal + shippingCost;
+
+    const submitBtn = document.getElementById('checkoutSubmitBtn');
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Procesando...';
+    }
 
     try {
       const orderRes = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/orders`, {
@@ -228,7 +211,11 @@
       if (!paymentConfig.active) {
         document.getElementById('paymentInstructions').style.display = 'none';
         document.getElementById('checkoutContent').style.display = 'grid';
-        showToast('', 'El pago por transferencia está temporalmente deshabilitado. Contactanos por WhatsApp.', 'error');
+        showToast('', 'El pago está temporalmente deshabilitado. Contactanos por WhatsApp.', 'error');
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Continuar al pago';
+        }
         return;
       }
 
@@ -236,17 +223,8 @@
       const orderId = orderData.id || 'NUEVO';
       const orderNumber = `#${String(orderId).padStart(4, '0')}`;
       const customerName = shipping.name || 'Cliente';
-      const waMsg = encodeURIComponent(`Hola! Soy ${customerName}, acabo de hacer el pedido ${orderNumber} por ${formatARS(total)}. Les mando el comprobante de la transferencia.`);
-
-      try {
-        await window.fetchWithRetry(`${CONFIG.API.BASE}/api/payments/transfer`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderId, amount: total, reference: `web-${Date.now()}` })
-        });
-      } catch (e) {
-        console.warn('[checkout] No se pudo confirmar el pago automáticamente:', e);
-      }
+      const productList = items.map(i => `- ${i.name} x${i.qty} = ${formatARS(i.price * i.qty)}`).join('\n');
+      const waMsg = encodeURIComponent(`Hola! Soy ${customerName}, acabo de hacer el pedido ${orderNumber}:\n${productList}\nTotal: ${formatARS(total)}\nLes mando el comprobante de la transferencia.`);
 
       sessionStorage.setItem('ag_last_order', JSON.stringify({
         id: orderId,
@@ -258,10 +236,6 @@
         shippingName: shipping.name,
         shippingEmail: shipping.email
       }));
-
-      document.getElementById('paymentInstructions').style.display = 'block';
-      document.getElementById('transferDataCard').style.display = 'block';
-      document.getElementById('shippingForm').style.display = 'none';
 
       document.getElementById('paymentOrderId').textContent = orderNumber;
       document.getElementById('paymentOrderTotal').textContent = formatARS(total);
@@ -281,10 +255,29 @@
       document.getElementById('transferReceiptBtn').dataset.orderNumber = orderNumber;
       document.getElementById('transferReceiptBtn').dataset.orderId = orderId;
 
+      try {
+        await window.fetchWithRetry(`${CONFIG.API.BASE}/api/payments/transfer`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId, amount: total, reference: `web-${Date.now()}` })
+        });
+      } catch (e) {
+        console.warn('[checkout] No se pudo confirmar el pago automáticamente:', e);
+      }
+
+      document.getElementById('paymentInstructions').style.display = 'block';
+      document.getElementById('transferDataCard').style.display = 'block';
+      document.getElementById('shippingForm').style.display = 'none';
+
       emitSync('order_created');
-    } catch (err) {
+     } catch (err) {
       showToast('', window.getFetchErrorMessage(err) || 'Error al procesar tu compra. Intentá nuevamente o contactanos.', 'error');
       console.error('Checkout error:', err);
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Continuar al pago';
+      }
     }
   });
 
@@ -397,11 +390,78 @@
 
   // Sincronización: refrescar payment-config periódicamente y ante cambios del admin
   startDataSync('payment-config', async () => {
-    if (document.getElementById('paymentInstructions') && document.getElementById('paymentInstructions').style.display !== 'none') {
-      await loadMpAlias();
-    }
+    await loadMpAlias();
   });
 
   onSyncMessage('settings_updated', async () => {
     await loadMpAlias();
+  });
+
+  const checkoutFields = {
+    name: document.getElementById('shipName'),
+    address: document.getElementById('shipAddress'),
+    zip: document.getElementById('shipZip'),
+    city: document.getElementById('shipCity'),
+    phone: document.getElementById('shipPhone'),
+    email: document.getElementById('shipEmail')
+  };
+
+  const checkoutErrors = {
+    name: '',
+    address: '',
+    zip: '',
+    city: '',
+    phone: '',
+    email: ''
+  };
+
+  function validateField(key, value) {
+    if (key === 'name' && !value.trim()) return 'Ingresá tu nombre';
+    if (key === 'address' && !value.trim()) return 'Ingresá tu dirección';
+    if (key === 'zip' && !value.trim()) return 'Ingresá el código postal';
+    if (key === 'city' && !value.trim()) return 'Ingresá tu localidad';
+    if (key === 'phone') {
+      const digits = value.replace(/[^\d]/g, '');
+      if (!value.trim()) return 'Ingresá tu teléfono';
+      if (digits.length < 8) return 'Ingresá un teléfono válido';
+    }
+    if (key === 'email') {
+      if (!value.trim()) return 'Ingresá tu email';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())) return 'Ingresá un email válido';
+    }
+    return '';
+  }
+
+  function showFieldError(key, msg) {
+    checkoutErrors[key] = msg;
+    const errorEl = document.getElementById(`error-${key}`);
+    const group = checkoutFields[key]?.closest('.form-group');
+    if (errorEl) errorEl.textContent = msg;
+    if (group) group.classList.add('has-error');
+  }
+
+  function clearFieldError(key) {
+    checkoutErrors[key] = '';
+    const errorEl = document.getElementById(`error-${key}`);
+    const group = checkoutFields[key]?.closest('.form-group');
+    if (errorEl) errorEl.textContent = '';
+    if (group) group.classList.remove('has-error');
+  }
+
+  Object.keys(checkoutFields).forEach(key => {
+    const field = checkoutFields[key];
+    if (!field) return;
+    field.addEventListener('input', () => {
+      if (checkoutErrors[key]) {
+        clearFieldError(key);
+      }
+    });
+    field.addEventListener('blur', () => {
+      const msg = validateField(key, field.value);
+      if (msg) {
+        showFieldError(key, msg);
+      } else {
+        clearFieldError(key);
+      }
+    });
   });

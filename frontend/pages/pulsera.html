@@ -36,26 +36,44 @@
     </div>
   </main>
   <script src="../js/ui.js"></script>
+  <script>
+    if (typeof initNavbarScroll === 'function') initNavbarScroll();
+    if (typeof initMobileNavbar === 'function') initMobileNavbar();
+  </script>
   <script src="../js/products.js"></script>
   <script src="../js/wishlist.js"></script>
   <script src="../js/cart.js"></script>
-  <script src="../js/products.js"></script>
   <script>
     async function loadPulsera() {
       const container = document.getElementById('productContent');
       if (!container) return;
+      const params = new URLSearchParams(window.location.search);
+      const productId = params.get('id') || '1';
       try {
-        const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products`, {}, 2, 1000);
-        const productData = res ? await res.json() : [];
-        const products = Array.isArray(productData) && productData.length ? productData : (typeof defaultProducts !== 'undefined' ? defaultProducts : []);
-        const product = products.find(p => p.id === 101);
-        if (!product) {
-          container.innerHTML = '<p>Producto no encontrado.</p>';
+        const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}`, {}, 2, 1000);
+        if (!res || !res.ok) {
+          const fallback = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products`, {}, 2, 1000);
+          const productData = fallback ? await fallback.json() : [];
+          const products = Array.isArray(productData) && productData.length ? productData : [];
+          const product = products.find(p => p.id === Number(productId));
+          if (!product) {
+            container.innerHTML = '<p>Producto no encontrado.</p>';
+            return;
+          }
+          renderProduct(product, container);
           return;
         }
+        const product = await res.json();
+        renderProduct(product, container);
+      } catch (err) {
+        container.innerHTML = '<p>Error al cargar el producto.</p>';
+      }
+    }
+
+    function renderProduct(product, container) {
         const images = Array.isArray(product.images) && product.images.length
-               ? product.images
-               : [{ url: window.getProductImageUrl(product) || '../assets/placeholder-product.svg', es_principal: true }];
+           ? product.images
+           : [{ url: window.getProductImageUrl(product) || '../assets/placeholder-product.svg', es_principal: true }];
         const principalImage = images.find(i => i.es_principal) || images[0];
         const thumbsHtml = images.map((img, i) =>
           `${window.renderProductImage(img.url, product.name + ' - imagen ' + (i + 1), { placeholder: '📿' })}`
@@ -111,12 +129,10 @@
             };
             if (typeof addToCart === 'function') addToCart(product);
           });
-        });
-      } catch (err) {
-        container.innerHTML = '<p>Error al cargar el producto.</p>';
-      }
-    }
-    document.addEventListener('DOMContentLoaded', loadPulsera);
+         });
+       }
+     }
+     document.addEventListener('DOMContentLoaded', loadPulsera);
   </script>
 </body>
 </html>

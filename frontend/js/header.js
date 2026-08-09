@@ -45,8 +45,8 @@ function initSiteHeader(options) {
     html += '</ul>';
   } else {
     html += '<a href="' + backHref + '" class="nav-back" aria-label="Volver al inicio">← Volver al inicio</a>';
-    html += '<a href="pages/orders.html" class="nav-back" style="margin-left:0.75rem;font-size:0.85rem;">Mis pedidos</a>';
-    html += '<a href="' + wishlistHref + '" class="nav-back" style="margin-left:0.75rem;font-size:0.85rem;">❤️ Favoritos</a>';
+    html += '<a href="pages/orders.html" class="nav-quick-link" style="margin-left:0.75rem;font-size:0.85rem;">Mis pedidos</a>';
+    html += '<a href="' + wishlistHref + '" class="nav-quick-link" style="margin-left:0.75rem;font-size:0.85rem;">❤️ Favoritos</a>';
   }
 
   html += '<div class="navbar-actions">';
@@ -95,12 +95,5 @@ function initSiteHeader(options) {
     document.body.insertBefore(nav, child);
   } else {
     document.body.prepend(nav);
-  }
-
-  if (typeof initNavbarScroll === 'function') {
-    initNavbarScroll();
-  }
-  if (typeof initMobileNavbar === 'function') {
-    initMobileNavbar();
   }
 }

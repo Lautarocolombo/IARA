@@ -81,14 +81,16 @@ const createOrder = async (req, res) => {
     return res.status(400).json({ error: validation.error.issues[0]?.message || 'Datos inválidos' });
   }
 
-  if (!items || !total) {
+  const validatedItems = validation.data.items;
+
+  if (!validatedItems || !validatedItems.length || !total) {
     logger.info('createOrder: items/total faltantes');
     return res.status(400).json({ error: 'Items y total son requeridos' });
   }
 
   try {
     logger.info('createOrder: intentando transaccion');
-    const customerData = customer && typeof customer === 'object' ? customer : {};
+    const customerData = (typeof customer === 'object' && customer) ? { ...customer } : {};
     if (shipping_name) customerData.name = shipping_name;
     if (shipping_address) customerData.address = shipping_address;
     if (shipping_phone) customerData.phone = shipping_phone;
@@ -98,7 +100,7 @@ const createOrder = async (req, res) => {
 
     const result = await transaction(async (client) => {
       logger.info('createOrder: dentro de transaccion');
-      for (const item of items) {
+      for (const item of validatedItems) {
         logger.info('createOrder: consultando stock para producto', { itemId: item.id });
         const stockResult = await query('SELECT stock FROM products WHERE id = $1', [Number(item.id)], client);
         if (stockResult.rows.length === 0) {
@@ -118,7 +120,7 @@ const createOrder = async (req, res) => {
       const orderResult = await query(
         'INSERT INTO orders (items, total, customer, status, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, subtotal, shipping_cost, notes) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *',
         [
-          JSON.stringify(items),
+          JSON.stringify(validatedItems),
           Number(total),
           JSON.stringify(customerData),
           'pending',
@@ -227,37 +229,38 @@ const deleteOrder = async (req, res) => {
   }
 };
 
-const deleteMultipleOrders = async (req, res) => {
-  const ids = (req.body.ids || []).map(Number).filter(Boolean);
-  if (!ids.length) return res.status(400).json({ error: 'No se proporcionaron IDs de pedidos' });
-  try {
-    const results = { deleted: 0, errors: [] };
-    for (const id of ids) {
-      try {
-        const orderResult = await query('SELECT * FROM orders WHERE id = $1', [id]);
-        if (orderResult.rows.length === 0) {
-          results.errors.push(`Pedido #${id} no encontrado`);
-          continue;
-        }
-        const order = orderResult.rows[0];
-        const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
-        if (order.status === 'pending' || order.status === 'confirmed' || order.status === 'cancelled') {
-          await restoreStockForOrder(items);
-        }
-        const user = req.user?.user || 'admin';
-        await logActivity(user, 'delete', 'order', id, `Pedido #${id} eliminado (bulk)`, req.ip || '');
-        await query('DELETE FROM orders WHERE id = $1', [id]);
-        results.deleted++;
-      } catch (err) {
-        results.errors.push(`Error eliminando pedido #${id}: ${err.message}`);
-      }
-    }
-    res.json(results);
-  } catch (err) {
-    logger.error({ err: err.message }, 'Error en eliminación masiva de pedidos');
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-};
+// Bulk delete removido del flujo público/admin
+// const deleteMultipleOrders = async (req, res) => {
+//   const ids = (req.body.ids || []).map(Number).filter(Boolean);
+//   if (!ids.length) return res.status(400).json({ error: 'No se proporcionaron IDs de pedidos' });
+//   try {
+//     const results = { deleted: 0, errors: [] };
+//     for (const id of ids) {
+//       try {
+//         const orderResult = await query('SELECT * FROM orders WHERE id = $1', [id]);
+//         if (orderResult.rows.length === 0) {
+//           results.errors.push(`Pedido #${id} no encontrado`);
+//           continue;
+//         }
+//         const order = orderResult.rows[0];
+//         const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+//         if (order.status === 'pending' || order.status === 'confirmed' || order.status === 'cancelled') {
+//           await restoreStockForOrder(items);
+//         }
+//         const user = req.user?.user || 'admin';
+//         await logActivity(user, 'delete', 'order', id, `Pedido #${id} eliminado (bulk)`, req.ip || '');
+//         await query('DELETE FROM orders WHERE id = $1', [id]);
+//         results.deleted++;
+//       } catch (err) {
+//         results.errors.push(`Error eliminando pedido #${id}: ${err.message}`);
+//       }
+//     }
+//     res.json(results);
+//   } catch (err) {
+//     logger.error({ err: err.message }, 'Error en eliminación masiva de pedidos');
+//     res.status(500).json({ error: 'Error interno del servidor' });
+//   }
+// };
 
 const updateOrderNotes = async (req, res) => {
   const id = Number(req.params.id);
@@ -360,4 +363,4 @@ const exportOrders = async (req, res) => {
   }
 };
 
-module.exports = { getOrders, getUserOrders, createOrder, updateOrderStatus, deleteOrder, deleteMultipleOrders, updateOrderNotes, getOrderDetail, exportOrders };
+module.exports = { getOrders, getUserOrders, createOrder, updateOrderStatus, deleteOrder, updateOrderNotes, getOrderDetail, exportOrders };

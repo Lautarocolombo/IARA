@@ -6,6 +6,9 @@ const dotenv = require('dotenv');
 const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
 const pino = require('pino');
+
+dotenv.config({ override: false });
+
 const { initDB } = require('./lib/db');
 const { handleUploadError, processFile, uploadSingle, getPublicUrl } = require('./lib/upload');
 const { errorHandler } = require('./middleware/errorHandler');
@@ -26,8 +29,6 @@ if (process.env.SENTRY_DSN) {
 }
 
 const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
-
-dotenv.config({ override: false });
 
 process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);
@@ -180,8 +181,17 @@ const contactLimiter = rateLimit({
   message: { error: 'Demasiados envíos de formulario, intentá de nuevo en una hora' }
 });
 
+const ordersLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Demasiadas solicitudes de pedidos, intentá de nuevo en unos minutos' }
+});
+
 app.use('/api/auth/login', authLimiter);
-app.use('/api/orders', contactLimiter);
+app.use('/api/contact', contactLimiter);
+app.use('/api/orders', ordersLimiter);
 
 app.use((req, res, next) => {
   res.setHeader('X-Request-ID', req.headers['x-request-id'] || crypto.randomUUID());
@@ -376,6 +386,12 @@ const dbReady = initDB().then(async () => {
         [process.env.ADMIN_USER, process.env.ADMIN_PASS_HASH, 'admin', JSON.stringify({ all: true }), true]
       );
       logger.info(`Usuario admin inicial creado: ${process.env.ADMIN_USER}`);
+    } else if (process.env.ADMIN_USER && process.env.ADMIN_PASS_HASH) {
+      const existing = await query('SELECT password_hash FROM users WHERE username = $1', [process.env.ADMIN_USER]);
+      if (existing.rows.length > 0 && existing.rows[0].password_hash !== process.env.ADMIN_PASS_HASH) {
+        await query('UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE username = $2', [process.env.ADMIN_PASS_HASH, process.env.ADMIN_USER]);
+        logger.info(`Hash de admin actualizado para: ${process.env.ADMIN_USER}`);
+      }
     }
   } catch (err) {
     logger.warn({ err: err.message }, 'No se pudo verificar/crear usuario admin inicial');

@@ -90,25 +90,30 @@ async function startImageWorker() {
 
       try {
         switch (type) {
-          case 'optimize':
+          case 'optimize': {
             const optimizedPath = await optimizeImage(filePath);
             return { success: true, path: optimizedPath };
+          }
 
-          case 'watermark':
+          case 'watermark': {
             const watermarkedPath = await applyWatermark(filePath, options.watermark);
             return { success: true, path: watermarkedPath };
+          }
 
-          case 'variant':
+          case 'variant': {
             const variants = await generateVariants(filePath);
             return { success: true, variants };
+          }
 
-          case 'transform':
+          case 'transform': {
             const transformedPath = await transformImage(filePath, options);
             return { success: true, path: transformedPath };
+          }
 
-          case 'remove-bg':
+          case 'remove-bg': {
             const noBgPath = await removeBackground(filePath, options.apiKey);
             return { success: true, path: noBgPath };
+          }
 
           default:
             throw new Error(`Tipo de job desconocido: ${type}`);

@@ -254,8 +254,15 @@ async function initDB() {
       name TEXT DEFAULT '',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
+     try {
+      await query('ALTER TABLE reviews ADD COLUMN name TEXT DEFAULT \'\'');
+    } catch (err) {
+      if (!err.message.includes('duplicate column name')) {
+        throw err;
+      }
+    }
     try {
-      await query(`ALTER TABLE reviews ADD COLUMN name TEXT DEFAULT ''`);
+      await query('ALTER TABLE reviews ADD COLUMN avatar TEXT DEFAULT \'\'');
     } catch (err) {
       if (!err.message.includes('duplicate column name')) {
         throw err;
@@ -669,6 +676,8 @@ async function initDB() {
     'ALTER TABLE hero_cards ADD COLUMN IF NOT EXISTS slot INTEGER DEFAULT 0',
     'ALTER TABLE hero_cards ADD COLUMN IF NOT EXISTS tipo TEXT DEFAULT \'hero\'',
     'ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS orden INTEGER DEFAULT 0',
+    'ALTER TABLE reviews ADD COLUMN IF NOT EXISTS name TEXT DEFAULT \'\'',
+    'ALTER TABLE reviews ADD COLUMN IF NOT EXISTS avatar TEXT DEFAULT \'\'',
     'ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT \'\'',
     'ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS transfer_alias TEXT DEFAULT \'\'',
     'ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS cbu_cvu TEXT DEFAULT \'\'',
@@ -714,20 +723,30 @@ async function initDB() {
 
    logger.info('Tablas de base de datos inicializadas (PostgreSQL)');
    try {
+     const seqTables = ['products', 'categories', 'orders', 'contacts', 'reviews', 'testimonials', 'product_images', 'subscribers', 'webhook_events', 'hero_cards'];
+     for (const table of seqTables) {
+       await query(`SELECT setval('${table}_id_seq', COALESCE((SELECT MAX(id) FROM ${table}), 1), true)`).catch(() => {});
+     }
+   } catch (err) {
+     logger.debug({ err: err.message }, 'Error reseteando sequences');
+   }
+   try {
      await ensureAdminUser();
    } catch (err) {
      logger.warn({ err: err.message }, 'No se pudo asegurar usuario admin (PostgreSQL)');
    }
  }
 
-  async function ensureAdminUser() {
-    const ADMIN_USER = process.env.ADMIN_USER;
-    const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH;
-    if (!ADMIN_USER || !ADMIN_PASS_HASH) return;
-    const existing = await query('SELECT id FROM users WHERE username = $1', [ADMIN_USER]);
-    if (existing.rows.length === 0) {
-      await query('INSERT INTO users (username, password_hash, role, active) VALUES ($1, $2, $3, $4)', [ADMIN_USER, ADMIN_PASS_HASH, 'admin', true]);
-    }
-  }
+   async function ensureAdminUser() {
+     const ADMIN_USER = process.env.ADMIN_USER;
+     const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH;
+     if (!ADMIN_USER || !ADMIN_PASS_HASH) return;
+     const existing = await query('SELECT id, password_hash FROM users WHERE username = $1', [ADMIN_USER]);
+     if (existing.rows.length === 0) {
+       await query('INSERT INTO users (username, password_hash, role, active, permissions) VALUES ($1, $2, $3, $4, $5)', [ADMIN_USER, ADMIN_PASS_HASH, 'admin', true, JSON.stringify({ all: true })]);
+     } else if (existing.rows[0].password_hash !== ADMIN_PASS_HASH) {
+       await query('UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE username = $2', [ADMIN_PASS_HASH, ADMIN_USER]);
+     }
+   }
 
  module.exports = { query, initDB, pool, connectionString: !!connectionString, getClient, transaction };

@@ -33,43 +33,49 @@
       <div class="ok" aria-hidden="true">✅</div>
       <h1>Pedido recibido</h1>
       <p>Te mostramos los datos para transferir y confirmar tu pago.</p>
-      <div id="orderInfo" style="display:none;">
-        <p class="success-order-number">Pedido <strong id="successOrderNumber">--</strong></p>
-        <div id="transferAliasSection" class="transfer-alias-section">
-          <h2>🏦 Datos para transferencia</h2>
-          <div class="transfer-summary" id="successTransferSummary"></div>
-          <div class="transfer-total-highlight">
-            <span>Total a transferir</span>
-            <span class="transfer-total-highlight-amount" id="successTransferTotal">ARS 0,00</span>
-          </div>
-          <div class="transfer-alias-row">
-            <div>
-              <span class="transfer-label">Alias</span>
-              <code id="successTransferAlias">iara-salgueiro</code>
-            </div>
-            <button id="copySuccessAliasBtn" class="btn btn-secondary btn-sm">📋 Copiar</button>
-          </div>
-          <div class="transfer-alias-row" id="successCbuRow" style="display:none; margin-top: 0.75rem;">
-            <div>
-              <span class="transfer-label">CBU / CVU</span>
-              <code id="successTransferCbu">--</code>
-            </div>
-            <button id="copySuccessCbuBtn" class="btn btn-secondary btn-sm">📋 Copiar</button>
-          </div>
-          <div class="transfer-alias-row" id="successHolderRow" style="display:none; margin-top: 0.75rem;">
-            <div>
-              <span class="transfer-label">Titular</span>
-              <span id="successTransferHolder">--</span>
-            </div>
-          </div>
-          <p id="successTransferNote" class="success-note"></p>
-        </div>
-        <div class="actions">
-          <a id="successWhatsappBtn" href="#" target="_blank" class="btn btn-primary">Enviar comprobante por WhatsApp</a>
-          <button id="successReceiptBtn" class="btn btn-secondary">Ya transferí, enviar comprobante</button>
-          <a class="btn btn-outline" href="../index.html">Volver al inicio</a>
-        </div>
-      </div>
+       <div id="orderInfo" style="display:none;">
+         <p class="success-order-number">Pedido <strong id="successOrderNumber">--</strong></p>
+         <div id="transferAliasSection" class="transfer-alias-section">
+           <h2>🏦 Datos para transferencia</h2>
+           <div class="transfer-summary" id="successTransferSummary"></div>
+           <div class="transfer-total-highlight">
+             <span>Total a transferir</span>
+             <span class="transfer-total-highlight-amount" id="successTransferTotal">ARS 0,00</span>
+           </div>
+           <div class="transfer-alias-row">
+             <div>
+               <span class="transfer-label">Alias</span>
+               <code id="successTransferAlias">${CONFIG.CONTACT.WHATSAPP_ALIAS || 'iara-salgueiro'}</code>
+             </div>
+             <button id="copySuccessAliasBtn" class="btn btn-secondary btn-sm">📋 Copiar</button>
+           </div>
+           <div class="transfer-alias-row" id="successCbuRow" style="display:none; margin-top: 0.75rem;">
+             <div>
+               <span class="transfer-label">CBU / CVU</span>
+               <code id="successTransferCbu">--</code>
+             </div>
+             <button id="copySuccessCbuBtn" class="btn btn-secondary btn-sm">📋 Copiar</button>
+           </div>
+           <div class="transfer-alias-row" id="successHolderRow" style="display:none; margin-top: 0.75rem;">
+             <div>
+               <span class="transfer-label">Titular</span>
+               <span id="successTransferHolder">--</span>
+             </div>
+           </div>
+           <p id="successTransferNote" class="success-note"></p>
+         </div>
+         <div class="actions">
+           <a id="successWhatsappBtn" href="javascript:void(0)" target="_blank" class="btn btn-primary">Enviar comprobante por WhatsApp</a>
+           <button id="successReceiptBtn" class="btn btn-secondary">Ya transferí, enviar comprobante</button>
+           <a class="btn btn-outline" href="../index.html">Volver al inicio</a>
+         </div>
+       </div>
+
+       <div id="successFallback" style="display:none;">
+         <p>No se encontró información del pedido.</p>
+         <a href="../index.html#catalog" class="btn-primary">Ver catálogo</a>
+         <a href="../pages/cart.html" class="btn btn-outline" style="margin-top:0.5rem;">Volver al carrito</a>
+       </div>
 
       <div id="receiptModal" class="modal-overlay" style="display:none;">
         <div class="modal-card">
@@ -93,6 +99,10 @@
   </div>
 
   <script src="../js/ui.js"></script>
+  <script>
+    if (typeof initNavbarScroll === 'function') initNavbarScroll();
+    if (typeof initMobileNavbar === 'function') initMobileNavbar();
+  </script>
   <script src="../js/wishlist.js"></script>
   <script src="../js/cart.js"></script>
   <script>
@@ -111,6 +121,7 @@
 
       try {
         const order = JSON.parse(raw);
+        sessionStorage.removeItem('ag_last_order');
         if (order.number) {
           document.getElementById('successOrderNumber').textContent = order.number;
         }
@@ -154,7 +165,7 @@
         const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/payment-config`, {}, 2, 1000);
         if (!res) return;
         const data = await res.json();
-        const alias = data.transferAlias || 'iara-salgueiro';
+        const alias = data.transferAlias || CONFIG.CONTACT.WHATSAPP_ALIAS || '';
         const cbuCvu = data.cbuCvu || '';
         const holderName = data.holderName || '';
         const message = data.message || '';
@@ -258,6 +269,7 @@
       }
     });
 
+    if (typeof initSSESync === 'function') initSSESync();
     startDataSync('success-payment', loadSuccessPaymentConfig);
     onSyncMessage('settings_updated', () => {
       const raw = sessionStorage.getItem('ag_last_order');

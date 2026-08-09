@@ -4,8 +4,8 @@
   --sidebar-bg: #3a1f28;
   --sidebar-text: #d8c4cc;
   --sidebar-active: #f4b8c8;
-  --surface: #ffffff;
-  --border: #f4d0da;
+  --surface: var(--white);
+  --border: var(--border-color);
   --accent: #d47090;
   --accent-hover: #bf5e78;
 }
@@ -194,7 +194,7 @@ body {
   padding: 0.35rem 0.6rem;
   border-radius: 999px;
   border: 1px solid #f4d0da;
-  background: #fff;
+  background: var(--white);
   color: #64748b;
   transition: all 0.2s;
   white-space: nowrap;
@@ -274,7 +274,7 @@ body {
 }
 
 .btn-secondary {
-  background: #fff;
+  background: var(--white);
   color: #334155;
   border: 1px solid var(--border);
 }
@@ -377,7 +377,7 @@ body {
   border: 1px solid var(--border);
   border-radius: 8px;
   font-size: 0.85rem;
-  background: #fff;
+  background: var(--white);
   color: var(--text-dark);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
@@ -506,7 +506,7 @@ tr:last-child td {
 }
 
 .modal {
-  background: #fff;
+  background: var(--white);
   border-radius: 14px;
   width: 100%;
   max-width: 560px;
@@ -527,7 +527,7 @@ tr:last-child td {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: #fff;
+  background: var(--white);
   border-bottom: 1px solid var(--border);
 }
 
@@ -555,7 +555,7 @@ tr:last-child td {
   position: sticky;
   bottom: 0;
   z-index: 10;
-  background: #fff;
+  background: var(--white);
   border-top: 1px solid var(--border);
   box-shadow: 0 -4px 12px rgba(0,0,0,0.06);
 }
@@ -639,7 +639,7 @@ tr:last-child td {
   border-radius: 8px;
   font-family: inherit;
   font-size: 0.9rem;
-  background: #fff;
+  background: var(--white);
   transition: border-color .2s;
 }
 
@@ -715,7 +715,7 @@ tr:last-child td {
 .image-upload:hover,
 .image-upload.drag-over {
   border-color: var(--accent);
-  background: #fff;
+  background: var(--white);
 }
 
 .image-upload input {
@@ -760,7 +760,7 @@ tr:last-child td {
 
 .toast {
   padding: 0.85rem 1rem;
-  background: #fff;
+  background: var(--white);
   color: #0f172a;
   border: 1px solid var(--border);
   border-left: 4px solid var(--accent);
@@ -848,7 +848,7 @@ tr:last-child td {
 }
 
 .login-card {
-  background: #fff;
+  background: var(--white);
   border-radius: 16px;
   width: 100%;
   max-width: 380px;
@@ -978,7 +978,7 @@ tr:last-child td {
   border: 1px solid var(--border);
   border-radius: 10px;
   overflow: hidden;
-  background: #fff;
+  background: var(--white);
   transition: all .2s;
   cursor: grab;
 }
@@ -1046,7 +1046,7 @@ tr:last-child td {
 .image-upload-zone:hover,
 .image-upload-zone.drag-over {
   border-color: var(--accent);
-  background: #fff;
+  background: var(--white);
 }
 
 .image-upload-primary {
@@ -1093,7 +1093,7 @@ tr:last-child td {
   align-items: center;
   gap: 0.5rem;
   padding: 0.4rem 0.6rem;
-  background: #fff;
+  background: var(--white);
   border: 1px solid var(--border);
   border-radius: 8px;
   margin-top: 0.5rem;
@@ -1196,7 +1196,7 @@ tr:last-child td {
   position: relative;
   height: 250px;
   margin-bottom: 1.5rem;
-  background: #fff;
+  background: var(--white);
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 1rem;
@@ -1209,7 +1209,7 @@ tr:last-child td {
   margin-bottom: 1.5rem;
 }
 .metric-card {
-  background: #fff;
+  background: var(--white);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1rem;
@@ -1241,7 +1241,7 @@ tr:last-child td {
   gap: 1rem;
 }
 .weekly-card {
-  background: #fff;
+  background: var(--white);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1rem;
@@ -1294,7 +1294,7 @@ tr:last-child td {
 .hero-slot-card {
   border: 1.5px solid var(--border);
   border-radius: 16px;
-  background: var(--surface, #fff);
+  background: var(--surface);
   padding: 24px;
   display: flex;
   flex-direction: column;
@@ -1458,7 +1458,7 @@ tr:last-child td {
   border-radius: 10px;
   font-family: inherit;
   font-size: 0.9rem;
-  background: #fff;
+  background: var(--white);
   color: var(--text-dark, #0f172a);
   transition: border-color .2s ease, box-shadow .2s ease;
   white-space: normal;
@@ -1580,7 +1580,7 @@ textarea.hero-slot-input {
   border-radius: 10px;
   font-family: inherit;
   font-size: 0.9rem;
-  background: #fff;
+  background: var(--white);
   color: var(--text-dark, #0f172a);
   transition: border-color .2s ease, box-shadow .2s ease;
 }
@@ -1667,7 +1667,7 @@ textarea.hero-slot-input {
   font-size: 0.8rem;
   border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--white);
   color: #334155;
   cursor: pointer;
   transition: all .2s;
@@ -1723,7 +1723,7 @@ textarea.hero-slot-input {
   border-radius: 6px;
   padding: 2px 6px;
   font-size: 0.75rem;
-  background: #fff;
+  background: var(--white);
   color: var(--text-dark);
   min-width: 100px;
 }
@@ -1745,7 +1745,43 @@ textarea.hero-slot-input {
   }
   .modal {
     max-width: 100%;
-    max-height: 100vh;
-    border-radius: 0;
-  }
+     max-height: 100vh;
+     border-radius: 0;
+   }
+}
+
+/* ==================== DARK MODE FOR ADMIN ==================== */
+[data-theme="dark"] .sidebar {
+  background: #1a1014;
+  color: var(--sidebar-text);
+}
+
+[data-theme="dark"] .sidebar-header {
+  border-bottom-color: #3a2028;
+}
+
+[data-theme="dark"] .sidebar nav a {
+  color: var(--sidebar-text);
+}
+
+[data-theme="dark"] .sidebar nav a:hover {
+  background: #3a2028;
+}
+
+[data-theme="dark"] .sidebar nav a.active {
+  color: var(--sidebar-active);
+}
+
+[data-theme="dark"] body {
+  background: var(--cream);
+  color: var(--text-dark);
+}
+
+[data-theme="dark"] .main-content {
+  background: var(--cream);
+}
+
+[data-theme="dark"] .card {
+  background: var(--surface);
+  border-color: #3a2028;
 }

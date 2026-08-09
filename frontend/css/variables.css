@@ -13,6 +13,9 @@
   --gold: #c9a96e;
   --border: #f4d0da;
   --accent-hover: #8a4058;
+  --white: #ffffff;
+  --surface: #ffffff;
+  --border-color: #e9ecef;
 
   --radius-sm: 8px;
   --radius-md: 16px;
@@ -35,6 +38,10 @@
   --text-muted: #b8a0ac;
   --mint: #1a2e28;
   --gold: #d4b878;
+  --border: #3a2028;
+  --surface: #1a1014;
+  --white: #1a1014;
+  --border-color: #3a2a32;
   --shadow-sm: 0 4px 16px rgba(0,0,0,0.20);
   --shadow-md: 0 8px 32px rgba(0,0,0,0.30);
   --shadow-lg: 0 16px 48px rgba(0,0,0,0.40);

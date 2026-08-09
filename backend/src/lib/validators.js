@@ -34,7 +34,9 @@ const orderSchema = z.object({
     name: z.string(),
     price: z.number(),
     quantity: z.number().int().positive().optional(),
-    qty: z.number().int().positive().optional()
+    qty: z.number().int().positive().optional(),
+    emoji: z.string().max(10).optional().default('📿'),
+    image: z.string().url('URL de imagen inválida').optional().or(z.literal('')).default('')
   })).min(1, 'Items son requeridos')
     .transform(items => items.map(item => ({ ...item, quantity: item.quantity || item.qty }))),
   total: z.number().positive('Total debe ser mayor a 0'),

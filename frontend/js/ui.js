@@ -278,6 +278,15 @@ function initSSESync() {
       if (typeof loadTestimonials === 'function') loadTestimonials();
     });
 
+    sseSource.addEventListener('reviews_updated', (e) => {
+      if (e.data) {
+        try {
+          const data = JSON.parse(e.data);
+          if (data.productId && typeof loadProduct === 'function') loadProduct();
+        } catch (err) { /* noop */ }
+      }
+    });
+
     sseSource.onerror = () => {
       console.warn('[SSE] Conexión perdida, reintentando...');
       sseSource.close();
@@ -509,14 +518,20 @@ function getFetchErrorMessage(err) {
   return 'Error de conexión. Intentá nuevamente.';
 }
 
-async function safeFetch(url, opts = {}) {
-  return fetchWithRetry(url, opts, 2, 1000);
+async function safeFetch(url, opts = {}, timeoutMs = 0) {
+  return fetchWithRetry(url, opts, 2, 1000, timeoutMs);
 }
 
-async function fetchWithRetry(url, opts = {}, retries = 2, backoffMs = 1000) {
+async function fetchWithRetry(url, opts = {}, retries = 2, backoffMs = 1000, timeoutMs = 0) {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const res = await fetch(url, opts);
+      const fetchPromise = fetch(url, opts);
+      const res = timeoutMs > 0
+        ? await Promise.race([
+            fetchPromise,
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeoutMs))
+          ])
+        : await fetchPromise;
       if (res.status === 404) {
         console.warn('Endpoint no encontrado:', url);
         showToast('', 'Recurso no disponible en este momento.', 'error');
@@ -733,7 +748,6 @@ function renderTestimonials(testimonials) {
 
 window.loadSiteSettings = loadSiteSettings;
 window.loadSiteTexts = loadSiteTexts;
-window.loadHeroCards = loadHeroCards;
 window.loadTestimonials = loadTestimonials;
 
 if (typeof document !== 'undefined') {

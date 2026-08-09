@@ -1,13 +1,15 @@
 function initPayment() {
-  const checkoutBtn = document.getElementById('mp-checkout-btn');
-  if (checkoutBtn) {
-    checkoutBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      showToast('', 'El pago se realiza por transferencia bancaria + WhatsApp. Completá los datos del checkout.', 'error');
-    });
+  var mpBtn = document.getElementById('mp-checkout-btn');
+  if (mpBtn) {
+    mpBtn.style.display = 'none';
+  }
+
+  var mpContainer = document.getElementById('mp-checkout-container');
+  if (mpContainer) {
+    mpContainer.style.display = 'none';
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', function () {
   initPayment();
 });

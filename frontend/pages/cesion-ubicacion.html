@@ -115,10 +115,10 @@
         <h4>Artesanía Gualeguay</h4>
         <p>Creando pulseras y souvenirs únicos desde el corazón de Gualeguay, Entre Ríos.</p>
         <div class="social-links">
-          <a href="#" id="instagramLink" title="Instagram" class="social-icon" aria-label="Instagram">📷</a>
+          <a href="javascript:void(0)" id="instagramLink" title="Instagram" class="social-icon" aria-label="Instagram">📷</a>
           <a href="https://wa.me/5493444634444" title="WhatsApp" class="social-icon" aria-label="WhatsApp">💬</a>
-          <a href="#" id="facebookLink" title="Facebook" class="social-icon" aria-label="Facebook">👝</a>
-          <a href="#" id="twitterLink" title="Twitter" class="social-icon" aria-label="Twitter">🐦</a>
+          <a href="javascript:void(0)" id="facebookLink" title="Facebook" class="social-icon" aria-label="Facebook">👝</a>
+          <a href="javascript:void(0)" id="twitterLink" title="Twitter" class="social-icon" aria-label="Twitter">🐦</a>
         </div>
       </div>
       <div class="footer-section">
@@ -148,11 +148,15 @@
   <div id="toastContainer" class="toast-container"></div>
 
   <script src="../js/ui.js"></script>
+  <script>
+    if (typeof initNavbarScroll === 'function') initNavbarScroll();
+    if (typeof initMobileNavbar === 'function') initMobileNavbar();
+  </script>
   <script src="../js/wishlist.js"></script>
   <script src="../js/cart.js"></script>
   <script>
     (function() {
-       var API_KEY = '';
+       var API_KEY = (typeof CONFIG !== 'undefined' && CONFIG.CONTACT && CONFIG.CONTACT.GOOGLE_MAPS_API_KEY) ? CONFIG.CONTACT.GOOGLE_MAPS_API_KEY : '';
 
       var map = null;
       var userMarker = null;
@@ -342,11 +346,13 @@
         );
       }
 
-       function loadGoogleMaps() {
-         if (!API_KEY) {
-           if (mapLoading) mapLoading.innerHTML = '<p style="color:var(--text-muted);">El mapa no está disponible. Verificá tu conexión.</p>';
-           return;
-         }
+        function loadGoogleMaps() {
+          if (!API_KEY) {
+            if (mapContainer) {
+              mapContainer.innerHTML = '<iframe src="https://www.google.com/maps?q=San+Antonio+Norte+473,+Gualeguay,+Entre+R%C3%ADos,+Argentina&output=embed" width="100%" height="400" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Mapa del local - Artesanía Gualeguay" class="map-iframe"></iframe>';
+            }
+            return;
+          }
 
          if (typeof google !== 'undefined' && google.maps) {
            initMap();

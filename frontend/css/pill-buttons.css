@@ -6,7 +6,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #fff;
+  background: var(--white);
   border: 1.5px solid var(--rose-light, #f5c6d4);
   border-radius: 999px;
   color: var(--text-dark, #3a1f28);
@@ -87,7 +87,7 @@
   overflow: hidden;
   justify-content: space-between;
   align-items: center;
-  background: #fff;
+  background: var(--white);
   border-color: var(--rose-mid, #d47090);
 }
 
@@ -251,7 +251,7 @@
   display: none;
   align-items: center;
   justify-content: center;
-  border: 2px solid #fff;
+   border: 2px solid var(--white);
   line-height: 1;
   z-index: 5;
   transition: transform 0.2s ease;

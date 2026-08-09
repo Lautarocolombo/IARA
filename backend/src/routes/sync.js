@@ -5,9 +5,7 @@ const EventEmitter = require('events');
 class SyncBus extends EventEmitter {}
 const syncBus = new SyncBus();
 
-module.exports = { syncBus };
-
-router.get('/sync', (req, res) => {
+router.get('/', (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -28,6 +26,8 @@ router.get('/sync', (req, res) => {
     settings_updated: (data) => send('settings_updated', data),
     order_created: (data) => send('order_created', data),
     order_status_updated: (data) => send('order_status_updated', data),
+    testimonials_updated: (data) => send('testimonials_updated', data),
+    reviews_updated: (data) => send('reviews_updated', data),
   };
 
   Object.entries(listeners).forEach(([event, handler]) => {
@@ -44,3 +44,4 @@ router.get('/sync', (req, res) => {
 });
 
 module.exports = router;
+module.exports.syncBus = syncBus;

@@ -19,6 +19,10 @@
   <script src="../js/safeImage.js"></script>
   <script src="../js/theme.js"></script>
   <script src="../js/ui.js"></script>
+  <script>
+    if (typeof initNavbarScroll === 'function') initNavbarScroll();
+    if (typeof initMobileNavbar === 'function') initMobileNavbar();
+  </script>
   <script src="../js/connection.js?v=2026080614"></script>
   <script src="../js/productImages.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -201,7 +205,6 @@
             </select>
             <button class="btn btn-secondary btn-sm" onclick="exportOrdersCSV()">📥 CSV</button>
             <button class="btn btn-secondary btn-sm" onclick="exportOrdersPDF()">📄 PDF</button>
-            <button class="btn btn-danger btn-sm" id="bulkDeleteBtn" onclick="openBulkDeleteModal()" style="display:none;">🗑 Eliminar seleccionados</button>
             <span id="orderPageInfo" style="font-size:0.8rem;color:#64748b;margin-left:0.5rem;"></span>
           </div>
         </div>
@@ -209,7 +212,6 @@
          <table>
             <thead>
               <tr>
-                <th style="width:40px;"><input type="checkbox" id="selectAllOrders" onchange="toggleSelectAllOrders()" title="Seleccionar todos" /></th>
                 <th>ID</th>
                 <th>Cliente</th>
                 <th>Total</th>
@@ -735,22 +737,6 @@
      </div>
    </div>
 
-  <div class="modal-overlay" id="bulkDeleteModalOverlay">
-     <div class="modal" style="max-width:420px">
-       <div class="modal-header">
-         <h3>Eliminar pedidos seleccionados</h3>
-         <button class="btn btn-secondary btn-sm" onclick="closeBulkDeleteModal()">✕</button>
-       </div>
-       <div class="modal-body">
-         <p id="bulkDeleteModalMessage">¿Seguro que querés eliminar los pedidos seleccionados? Esta acción no se puede deshacer.</p>
-       </div>
-       <div class="modal-footer">
-         <button class="btn btn-secondary" onclick="closeBulkDeleteModal()">Cancelar</button>
-         <button class="btn btn-danger" id="confirmBulkDeleteBtn" onclick="confirmBulkDelete()">Eliminar seleccionados</button>
-       </div>
-     </div>
-   </div>
-
   <div class="toast-container" id="toastContainer"></div>
 
   <script src="../js/admin.js?v=2026080614"></script>
@@ -778,6 +764,7 @@
       stopDataSync('admin-orders');
       stopDataSync('admin-reports');
       if (section === 'orders') {
+        if (typeof initSSESync === 'function') initSSESync();
         startDataSync('admin-orders', loadOrders);
       } else if (section === 'reports') {
         startDataSync('admin-reports', () => {

@@ -48,6 +48,10 @@
     </div>
   </main>
   <script src="../js/ui.js"></script>
+  <script>
+    if (typeof initNavbarScroll === 'function') initNavbarScroll();
+    if (typeof initMobileNavbar === 'function') initMobileNavbar();
+  </script>
   <script src="../js/wishlist.js"></script>
   <script src="../js/cart.js"></script>
   <script>
@@ -116,6 +120,7 @@
     function startOrderPolling(email) {
       currentOrderEmail = email;
       stopDataSync('user-orders');
+      if (typeof initSSESync === 'function') initSSESync();
       startDataSync('user-orders', () => {
         if (currentOrderEmail && document.getElementById('ordersContainer')) {
           loadOrders(currentOrderEmail);

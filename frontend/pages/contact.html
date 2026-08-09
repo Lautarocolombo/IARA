@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="../css/pages.css" />
 </head>
 <body>
-  <a href="#home" class="skip-link">Saltar al contenido principal</a>
+  <a href="#content" class="skip-link">Saltar al contenido principal</a>
 
   <script src="../js/config.js"></script>
   <script src="../js/safeImage.js"></script>
@@ -92,6 +92,10 @@
   </footer>
   <div id="toastContainer" class="toast-container"></div>
   <script src="../js/ui.js"></script>
+  <script>
+    if (typeof initNavbarScroll === 'function') initNavbarScroll();
+    if (typeof initMobileNavbar === 'function') initMobileNavbar();
+  </script>
   <script src="../js/wishlist.js"></script>
   <script src="../js/cart.js"></script>
   <script>

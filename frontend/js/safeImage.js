@@ -30,33 +30,41 @@
       .replace(/"/g, '&quot;');
   }
 
-  function buildPlaceholderSvg(symbol) {
+  function buildPlaceholderSvg(symbol, isDark) {
     var sym = String(symbol || DEFAULT_SYMBOL).replace(/[<>'"&]/g, '') || DEFAULT_SYMBOL;
+    var isDarkMode = isDark === true || (document && document.documentElement && document.documentElement.getAttribute('data-theme') === 'dark');
+    var bgFrom = isDarkMode ? '#2a1c24' : '#fde8ef';
+    var bgTo = isDarkMode ? '#4a1f28' : '#f8d5e4';
+    var rectFill = isDarkMode ? '#1a1014' : '#ffffff';
+    var rectStroke = isDarkMode ? '#3a2028' : '#f4c8d4';
+    var iconFill = isDarkMode ? '#d47090' : '#d47090';
+    var lineStroke = isDarkMode ? '#d47090' : '#e8a0b5';
+    var textFill = isDarkMode ? '#d47090' : '#d47090';
     var svg =
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"' +
       ' role="img" aria-label="Imagen no disponible">' +
       '<defs><linearGradient id="agBg" x1="0%" y1="0%" x2="100%" y2="100%">' +
-      '<stop offset="0%" stop-color="#fde8ef"/>' +
-      '<stop offset="100%" stop-color="#f8d5e4"/>' +
+      '<stop offset="0%" stop-color="' + bgFrom + '"/>' +
+      '<stop offset="100%" stop-color="' + bgTo + '"/>' +
       '</linearGradient></defs>' +
       '<rect width="200" height="200" rx="14" fill="url(#agBg)"/>' +
-      '<rect x="42" y="46" width="116" height="76" rx="8" fill="#ffffff" opacity="0.65"' +
-      ' stroke="#f4c8d4" stroke-width="1.5" stroke-dasharray="6 5"/>' +
-      '<circle cx="74" cy="70" r="6" fill="#d47090" opacity="0.45"/>' +
-      '<circle cx="126" cy="70" r="6" fill="#d47090" opacity="0.45"/>' +
-      '<circle cx="100" cy="88" r="6" fill="#d47090" opacity="0.45"/>' +
-      '<line x1="50" y1="126" x2="150" y2="126" stroke="#e8a0b5" stroke-width="2"' +
+      '<rect x="42" y="46" width="116" height="76" rx="8" fill="' + rectFill + '" opacity="0.65"' +
+      ' stroke="' + rectStroke + '" stroke-width="1.5" stroke-dasharray="6 5"/>' +
+      '<circle cx="74" cy="70" r="6" fill="' + iconFill + '" opacity="0.45"/>' +
+      '<circle cx="126" cy="70" r="6" fill="' + iconFill + '" opacity="0.45"/>' +
+      '<circle cx="100" cy="88" r="6" fill="' + iconFill + '" opacity="0.45"/>' +
+      '<line x1="50" y1="126" x2="150" y2="126" stroke="' + lineStroke + '" stroke-width="2"' +
       ' stroke-linecap="round"/>' +
       '<text x="100" y="162" text-anchor="middle" font-family="system-ui,serif"' +
-      ' font-size="54" dominant-baseline="middle" fill="#d47090" opacity="0.85">' + sym + '</text>' +
+      ' font-size="54" dominant-baseline="middle" fill="' + textFill + '" opacity="0.85">' + sym + '</text>' +
       '</svg>';
     return 'data:image/svg+xml,' + encodeURIComponent(svg);
   }
 
-  function getPlaceholderDataUri(symbol) {
-    var key = symbol || DEFAULT_SYMBOL;
+  function getPlaceholderDataUri(symbol, isDark) {
+    var key = (symbol || DEFAULT_SYMBOL) + (isDark ? ':dark' : ':light');
     if (!_cache[key]) {
-      _cache[key] = buildPlaceholderSvg(key);
+      _cache[key] = buildPlaceholderSvg(key in _cache ? symbol : symbol, isDark);
     }
     return _cache[key];
   }
@@ -77,7 +85,8 @@
     if (img.getAttribute('data-safe-failed') === '1') return; // guard #2
     img.setAttribute('data-safe-failed', '1');
     var symbol = fallback || img.getAttribute('data-fallback') || DEFAULT_SYMBOL;
-    var uri = getPlaceholderDataUri(symbol);
+    var isDark = document && document.documentElement && document.documentElement.getAttribute('data-theme') === 'dark';
+    var uri = getPlaceholderDataUri(symbol, isDark);
     if (img.getAttribute('src') !== uri) img.setAttribute('src', uri);
     if (!img.getAttribute('alt')) img.setAttribute('alt', 'Producto');
     img.classList.add('img-placeholder');
@@ -93,10 +102,11 @@
   // opts: { className, style, placeholder(emoji), lazy, id }
    window.renderProductImage = function (src, alt, opts) {
      opts = opts || {};
-     var hasSrc = !!(src && String(src).trim());
-     var symbol = opts.placeholder || DEFAULT_SYMBOL;
-     var attrs = ['<img'];
-     attrs.push(' src="' + (hasSrc ? escapeAttr(src) : getPlaceholderDataUri(symbol)) + '"');
+      var hasSrc = !!(src && String(src).trim());
+      var isDark = document && document.documentElement && document.documentElement.getAttribute('data-theme') === 'dark';
+      var symbol = opts.placeholder || DEFAULT_SYMBOL;
+      var attrs = ['<img'];
+      attrs.push(' src="' + (hasSrc ? escapeAttr(src) : getPlaceholderDataUri(symbol, isDark)) + '"');
      attrs.push(' alt="' + escapeAttr(alt == null ? '' : alt) + '"');
      if (opts.id) attrs.push(' id="' + escapeAttr(opts.id) + '"');
      if (opts.className) attrs.push(' class="' + escapeAttr(opts.className) + '"');
@@ -137,7 +147,7 @@
     if (src && String(src).trim()) {
       img.src = src;
     } else {
-      img.src = getPlaceholderDataUri(opts.placeholder);
+      img.src = getPlaceholderDataUri(opts.placeholder, document.documentElement.getAttribute('data-theme') === 'dark');
     }
     img.alt = alt == null ? '' : alt;
     if (opts.id) img.id = opts.id;

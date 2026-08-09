@@ -115,7 +115,7 @@ const updateSiteSettings = async (req, res) => {
         );
       } else {
         await query(
-          `UPDATE payment_config SET mp_alias = $1, transfer_alias = $2, holder_name = $3, cbu_cvu = $4, whatsapp = $5, message = $6, active = $7, mp_enabled = $8, cash_enabled = $9, shipping_cost = $10, free_shipping_from = $11, updated_at = CURRENT_TIMESTAMP WHERE id = $12`,
+          'UPDATE payment_config SET mp_alias = $1, transfer_alias = $2, holder_name = $3, cbu_cvu = $4, whatsapp = $5, message = $6, active = $7, mp_enabled = $8, cash_enabled = $9, shipping_cost = $10, free_shipping_from = $11, updated_at = CURRENT_TIMESTAMP WHERE id = $12',
           [values.mp_alias, values.transfer_alias, values.holder_name, values.cbu_cvu, values.whatsapp, values.message, values.active, values.mp_enabled, values.cash_enabled, values.shipping_cost, values.free_shipping_from, row.rows[0].id]
         );
       }
@@ -144,7 +144,7 @@ const upsertPaymentConfig = async (data) => {
     );
   } else {
     await query(
-      `UPDATE payment_config SET mp_alias = $1, transfer_alias = $2, holder_name = $3, cbu_cvu = $4, whatsapp = $5, message = $6, active = $7, mp_enabled = $8, cash_enabled = $9, shipping_cost = $10, free_shipping_from = $11, updated_at = CURRENT_TIMESTAMP WHERE id = $12`,
+      'UPDATE payment_config SET mp_alias = $1, transfer_alias = $2, holder_name = $3, cbu_cvu = $4, whatsapp = $5, message = $6, active = $7, mp_enabled = $8, cash_enabled = $9, shipping_cost = $10, free_shipping_from = $11, updated_at = CURRENT_TIMESTAMP WHERE id = $12',
       [data.mpAlias || '', data.transferAlias || '', data.holderName || '', data.cbuCvu || '', data.whatsapp || '', data.message || '', data.active !== false, data.mpEnabled !== false, data.cashEnabled !== false, Number(data.shippingCost) || 0, Number(data.freeShippingFrom) || 0, row.id]
     );
   }
@@ -155,7 +155,7 @@ const getAdminPaymentConfig = async (req, res) => {
     let row = await getPaymentConfigRow();
     if (!row) {
       await query(
-        `INSERT INTO payment_config (mp_alias, transfer_alias, holder_name, cbu_cvu, whatsapp, message, active, mp_enabled, cash_enabled, shipping_cost, free_shipping_from) VALUES ('iara-salgueiro', 'iara-salgueiro', '', '', '', '', true, false, false, 0, 0)`
+        'INSERT INTO payment_config (mp_alias, transfer_alias, holder_name, cbu_cvu, whatsapp, message, active, mp_enabled, cash_enabled, shipping_cost, free_shipping_from) VALUES (\'iara-salgueiro\', \'iara-salgueiro\', \'\', \'\', \'\', \'\', true, false, false, 0, 0)'
       );
       row = await getPaymentConfigRow();
     }

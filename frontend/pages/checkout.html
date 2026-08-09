@@ -79,7 +79,7 @@
             <input type="email" id="shipEmail" required placeholder="tu@email.com" />
             <div class="field-error" id="error-email"></div>
           </div>
-          <button type="submit" class="btn-primary btn-full btn-block">Continuar al pago</button>
+          <button type="submit" class="btn-primary btn-full btn-block" id="checkoutSubmitBtn">Continuar al pago</button>
         </form>
       </div>
 
@@ -105,8 +105,9 @@
             <span class="payment-total-amount" id="paymentTotalAmount">ARS 0,00</span>
           </div>
           <p class="payment-note" id="paymentInstructionsText">Transferí el total exacto y envianos el comprobante por WhatsApp para confirmar tu pedido.</p>
-         <a id="whatsappComprobanteBtn" href="#" target="_blank" class="btn btn-primary btn-full">Enviar comprobante por WhatsApp</a>
-         <a href="cart.html" class="btn btn-secondary btn-full" style="margin-top:0.5rem;">Volver al carrito</a>
+          <a id="whatsappComprobanteBtn" href="javascript:void(0)" target="_blank" class="btn btn-primary btn-full">Enviar comprobante por WhatsApp</a>
+
+          <a href="cart.html" class="btn btn-secondary btn-full" style="margin-top:0.5rem;">Volver al carrito
        </div>
 
         <div class="checkout-card reveal" id="orderSummaryCard">
@@ -154,7 +155,7 @@
              </div>
            </div>
           <p class="transfer-note" id="transferNote">Una vez realizada la transferencia, enviá el comprobante por WhatsApp para confirmar tu pedido.</p>
-          <a id="transferReceiptBtn" href="#" target="_blank" class="btn btn-primary btn-full">Ya transferí, enviar comprobante</a>
+          <a id="transferReceiptBtn" href="javascript:void(0)" target="_blank" class="btn btn-primary btn-full">Ya transferí, enviar comprobante</a>
 
           <!-- FASE 2 — Modal movido a success.html -->
           <!--
@@ -182,12 +183,17 @@
   </div>
 
   <script src="../js/ui.js"></script>
+  <script>
+    if (typeof initNavbarScroll === 'function') initNavbarScroll();
+    if (typeof initMobileNavbar === 'function') initMobileNavbar();
+  </script>
   <script src="../js/wishlist.js"></script>
   <script src="../js/cart.js"></script>
   <script src="../js/payment.js"></script>
   <script src="../js/checkout.js"></script>
 
   <script>
+    if (typeof initSSESync === 'function') initSSESync();
     startDataSync('payment-config', async () => {
       if (document.getElementById('paymentInstructions') && document.getElementById('paymentInstructions').style.display !== 'none') {
         await loadMpAlias();

@@ -15,6 +15,7 @@ const CONFIG = {
   // Información de contacto
   CONTACT: {
     WHATSAPP: '+5493444634444',
+    WHATSAPP_ALIAS: 'iara-salgueiro',
     PHONE: '+54 (3444) 634-4444',
     EMAIL: 'chicafittargentina@gmail.com',
     ADDRESS: 'San Antonio Norte 473, Gualeguay, Entre Ríos, Argentina',

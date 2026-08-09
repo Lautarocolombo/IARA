@@ -106,9 +106,9 @@
         <p>Creando pulseras y souvenirs únicos desde el corazón de Gualeguay, Entre Ríos.</p>
         <div class="social-links">
           <a href="https://wa.me/5493444634444" title="WhatsApp" class="social-icon" aria-label="WhatsApp">💬</a>
-          <a href="#" id="instagramLink" title="Instagram" class="social-icon" aria-label="Instagram">📷</a>
-          <a href="#" id="facebookLink" title="Facebook" class="social-icon" aria-label="Facebook">👍</a>
-          <a href="#" id="twitterLink" title="Twitter" class="social-icon" aria-label="Twitter">🐦</a>
+          <a href="javascript:void(0)" id="instagramLink" title="Instagram" class="social-icon" aria-label="Instagram">📷</a>
+          <a href="javascript:void(0)" id="facebookLink" title="Facebook" class="social-icon" aria-label="Facebook">👍</a>
+          <a href="javascript:void(0)" id="twitterLink" title="Twitter" class="social-icon" aria-label="Twitter">🐦</a>
         </div>
       </div>
       <div class="footer-section">
@@ -146,6 +146,10 @@
   <div id="toastContainer" class="toast-container"></div>
 
   <script src="../js/ui.js"></script>
+  <script>
+    if (typeof initNavbarScroll === 'function') initNavbarScroll();
+    if (typeof initMobileNavbar === 'function') initMobileNavbar();
+  </script>
   <script src="../js/wishlist.js"></script>
   <script src="../js/cart.js"></script>
 
@@ -205,10 +209,12 @@
 
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => {
+        if (typeof initSSESync === 'function') initSSESync();
         updateCartDisplay();
         startDataSync('cart', updateCartDisplay);
       });
     } else {
+      if (typeof initSSESync === 'function') initSSESync();
       updateCartDisplay();
       startDataSync('cart', updateCartDisplay);
     }

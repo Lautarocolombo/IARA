@@ -55,7 +55,7 @@ async function backupDatabase() {
             const columns = Object.keys(row).join(', ');
             const values = Object.values(row).map(v => {
               if (v === null) return 'NULL';
-              if (typeof v === 'string') return `'${v.replace(/'/g, "''")}'`;
+              if (typeof v === 'string') return `'${v.replace(/'/g, '\'\'')}'`;
               if (v instanceof Date) return `'${v.toISOString()}'`;
               if (Buffer.isBuffer(v)) return `'${v.toString('base64')}'::bytea`;
               if (typeof v === 'boolean') return v ? 'TRUE' : 'FALSE';
