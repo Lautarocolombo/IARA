@@ -1191,50 +1191,68 @@ function renderOrdersTable() {
         }
       }
 
+      let orderDetailWasOpenBeforeBulkDelete = false;
+
       function openBulkDeleteModal() {
          const count = selectedOrderIds.size;
+         if (!count) return;
          const msg = document.getElementById('bulkDeleteModalMessage');
          if (msg) msg.textContent = `¿Seguro que querés eliminar ${count} pedido${count !== 1 ? 's' : ''}? Esta acción no se puede deshacer.`;
          const btn = document.getElementById('confirmBulkDeleteBtn');
          if (btn) { btn.disabled = false; btn.textContent = 'Eliminar seleccionados'; }
          const overlay = document.getElementById('bulkDeleteModalOverlay');
-         overlay.classList.add('active');
+         const orderDetailOverlay = document.getElementById('orderDetailModalOverlay');
+         orderDetailWasOpenBeforeBulkDelete = orderDetailOverlay && orderDetailOverlay.classList.contains('active');
+         if (orderDetailOverlay) orderDetailOverlay.classList.remove('active');
+         overlay.classList.add('active', 'confirmation-overlay');
          openModalScrollLock(overlay, closeBulkDeleteModal);
-       }
+        }
 
-      function closeBulkDeleteModal() {
-         const overlay = document.getElementById('bulkDeleteModalOverlay');
-         if (overlay) {
-           overlay.classList.remove('active');
-           unlockModalScroll();
-         }
-       }
+       function closeBulkDeleteModal() {
+          const overlay = document.getElementById('bulkDeleteModalOverlay');
+          if (overlay) {
+            overlay.classList.remove('active', 'confirmation-overlay');
+            unlockModalScroll();
+          }
+          if (orderDetailWasOpenBeforeBulkDelete) {
+            const orderDetailOverlay = document.getElementById('orderDetailModalOverlay');
+            if (orderDetailOverlay && state.currentOrderId) {
+              orderDetailOverlay.classList.add('active');
+              openModalScrollLock(orderDetailOverlay, closeOrderDetailModal);
+            }
+            orderDetailWasOpenBeforeBulkDelete = false;
+          }
+        }
 
       async function confirmBulkDelete() {
-        const ids = Array.from(selectedOrderIds);
-        if (!ids.length) return;
-        const btn = document.getElementById('confirmBulkDeleteBtn');
-        if (btn) { btn.disabled = true; btn.textContent = 'Eliminando...'; }
-        try {
-          const res = await adminFetch('/api/admin/orders/bulk', {
-            method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ids })
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || 'Error al eliminar los pedidos');
-          const deletedCount = data.deleted || ids.length;
-          selectedOrderIds.clear();
-          closeBulkDeleteModal();
-          await loadOrders();
-          showToast(`${deletedCount} pedido${deletedCount !== 1 ? 's' : ''} eliminado${deletedCount !== 1 ? 's' : ''} correctamente`, 'success');
-        } catch (err) {
-          showToast(err.message, 'error');
-        } finally {
-          if (btn) { btn.disabled = false; btn.textContent = 'Eliminar seleccionados'; }
-          updateBulkDeleteButton();
-        }
-      }
+         const ids = Array.from(selectedOrderIds);
+         if (!ids.length) return;
+         const btn = document.getElementById('confirmBulkDeleteBtn');
+         if (btn) { btn.disabled = true; btn.textContent = 'Eliminando...'; }
+         try {
+           const res = await adminFetch('/api/admin/orders/bulk', {
+             method: 'DELETE',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ ids })
+           });
+           const data = await res.json();
+           if (!res.ok) throw new Error(data.error || 'Error al eliminar los pedidos');
+           const deletedCount = data.deleted || ids.length;
+           selectedOrderIds.clear();
+           const overlay = document.getElementById('bulkDeleteModalOverlay');
+           if (overlay) overlay.classList.remove('active', 'confirmation-overlay');
+           unlockModalScroll();
+           const orderDetailOverlay = document.getElementById('orderDetailModalOverlay');
+           if (orderDetailOverlay) orderDetailOverlay.classList.remove('active');
+           await loadOrders();
+           showToast(`${deletedCount} pedido${deletedCount !== 1 ? 's' : ''} eliminado${deletedCount !== 1 ? 's' : ''} correctamente`, 'success');
+         } catch (err) {
+           showToast(err.message, 'error');
+         } finally {
+           if (btn) { btn.disabled = false; btn.textContent = 'Eliminar seleccionados'; }
+           updateBulkDeleteButton();
+         }
+       }
 
       async function exportOrdersCSV() {
         const params = new URLSearchParams();

@@ -6,8 +6,11 @@ function initSiteHeader(options) {
 
   var showBackButton = options.showBackButton || false;
   var backHref = options.backHref || '../index.html';
-  var wishlistHref = options.wishlistHref || 'pages/wishlist.html';
-  var adminHref = options.adminHref || 'pages/admin.html';
+
+  var pathParts = window.location.pathname.split('/');
+  var inSubdir = pathParts.length > 2 && pathParts[1] === 'pages';
+  var wishlistHref = options.wishlistHref || (inSubdir ? 'wishlist.html' : 'pages/wishlist.html');
+  var adminHref = options.adminHref || (inSubdir ? 'admin.html' : 'pages/admin.html');
   var cartHref = options.cartHref || '../pages/cart.html';
 
   var existing = document.getElementById('navbar');
@@ -92,5 +95,12 @@ function initSiteHeader(options) {
     document.body.insertBefore(nav, child);
   } else {
     document.body.prepend(nav);
+  }
+
+  if (typeof initNavbarScroll === 'function') {
+    initNavbarScroll();
+  }
+  if (typeof initMobileNavbar === 'function') {
+    initMobileNavbar();
   }
 }
