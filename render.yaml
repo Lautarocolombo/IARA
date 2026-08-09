@@ -17,9 +17,9 @@ services:
       - key: ADMIN_USER
         value: Iara
       - key: ADMIN_PASS_HASH
-        value: "$2b$10$PNYO0n9WtFt8/2aNPjqY4Os4KwmW.v40WyC0vW2emATisPTdvdYzW"
+        value: "$2a$10$aVs2KUfCkoOM7GPIoWwf5ukXgLe1VuvhswDQK5PAI6FaWDAOdN0zq"
       - key: DATABASE_URL
-        value: "postgresql://USER:PASSWORD@HOST:PORT/DBNAME?sslmode=require"
+        value: "postgresql://neondb_owner:npg_FKbM0xfQ3Lpd@ep-purple-water-axuf1ls3-pooler.c-4.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
       - key: SITE_URL
         value: https://iara-wz9o.vercel.app
       - key: BACKEND_URL
