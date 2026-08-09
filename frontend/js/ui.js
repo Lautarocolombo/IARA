@@ -239,6 +239,7 @@ const SYNC_POLL_MS = 15000;
 let sseSource = null;
 let sseReconnectMs = 2000;
 
+/* eslint-disable-next-line no-unused-vars */
 function initSSESync() {
   if (sseSource) return;
   try {
@@ -293,6 +294,7 @@ function initSSESync() {
   }
 }
 
+/* eslint-disable-next-line no-unused-vars */
 function destroySSESync() {
   if (sseSource) {
     sseSource.close();
@@ -300,6 +302,7 @@ function destroySSESync() {
   }
 }
 
+/* eslint-disable-next-line no-unused-vars */
 function startDataSync(key, fn, immediate) {
   if (SYNC_INTERVALS[key]) return;
   if (sseSource && sseSource.readyState === EventSource.OPEN) {
@@ -313,6 +316,7 @@ function startDataSync(key, fn, immediate) {
   }, SYNC_POLL_MS);
 }
 
+/* eslint-disable-next-line no-unused-vars */
 function stopDataSync(key) {
   if (SYNC_INTERVALS[key]) {
     clearInterval(SYNC_INTERVALS[key]);
@@ -328,6 +332,7 @@ function getSyncChannel() {
   return syncChannel;
 }
 
+/* eslint-disable-next-line no-unused-vars */
 function emitSync(eventType) {
   const ch = getSyncChannel();
   if (ch) {
@@ -336,6 +341,7 @@ function emitSync(eventType) {
   try { localStorage.setItem('app_sync_ts', String(Date.now())); } catch (e) { /* noop */ }
 }
 
+/* eslint-disable-next-line no-unused-vars */
 function onSyncMessage(eventType, handler) {
   const ch = getSyncChannel();
   if (ch) {
@@ -358,6 +364,7 @@ function lockModalScroll() {
   document.body.style.paddingRight = getScrollbarWidth() + 'px';
 }
 
+/* eslint-disable-next-line no-unused-vars */
 function unlockModalScroll() {
   document.body.style.overflow = '';
   document.body.style.paddingRight = '';
@@ -367,6 +374,7 @@ function getScrollbarWidth() {
   return window.innerWidth - document.documentElement.clientWidth;
 }
 
+/* eslint-disable-next-line no-unused-vars */
 function openModalScrollLock(overlayEl, closeFn) {
   if (!overlayEl) return;
   lockModalScroll();

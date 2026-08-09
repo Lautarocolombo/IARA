@@ -135,6 +135,8 @@ async function fetchProducts() {
     }
   } catch (err) {
     console.error('Error cargando productos:', err);
+    products = defaultProducts;
+    if (typeof renderProducts === 'function') renderProducts(getProducts());
   }
 }
 
@@ -306,5 +308,5 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Exportar para Node.js (si aplica)
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { getProducts, getProductsByCategory, getFeaturedProducts, renderProducts, fetchProducts, setProducts };
+  module.exports = { getProducts, getProductsByCategory, getFeaturedProducts, renderProducts, fetchProducts, setProducts, defaultProducts };
 }
