@@ -121,6 +121,12 @@ form.addEventListener('submit', async (e) => {
         return;
       }
 
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        showToast('', 'Ingresá un email válido', 'error');
+        return;
+      }
+
       const whatsappMessage = `Nuevo mensaje de contacto\n\nNombre: ${name}\nEmail: ${email}\n\nMensaje:\n${message}`;
 
       try {
@@ -227,6 +233,160 @@ function initProductFilters() {
   });
 }
 
+// ==================== DATA SYNC ====================
+const SYNC_INTERVALS = {};
+const SYNC_POLL_MS = 15000;
+let sseSource = null;
+let sseReconnectMs = 2000;
+
+function initSSESync() {
+  if (sseSource) return;
+  try {
+    const url = `${CONFIG.API.BASE}/api/sync`;
+    sseSource = new EventSource(url);
+
+    sseSource.addEventListener('products_updated', () => {
+      if (typeof fetchProducts === 'function') {
+        fetchProducts().then(() => {
+          if (typeof renderProducts === 'function') renderProducts(getProducts());
+          if (typeof renderFeaturedProducts === 'function') renderFeaturedProducts();
+        });
+      }
+    });
+
+    sseSource.addEventListener('hero_updated', () => {
+      if (typeof loadHeroCards === 'function') loadHeroCards();
+    });
+
+    sseSource.addEventListener('settings_updated', () => {
+      if (typeof loadMpAlias === 'function') loadMpAlias();
+      if (typeof loadSiteSettings === 'function') loadSiteSettings();
+    });
+
+    sseSource.addEventListener('order_created', () => {
+      if (typeof loadOrders === 'function') loadOrders();
+      if (typeof loadSalesReport === 'function') loadSalesReport();
+    });
+
+    sseSource.addEventListener('order_status_updated', () => {
+      if (typeof loadOrders === 'function') loadOrders();
+      if (typeof loadSalesReport === 'function') loadSalesReport();
+    });
+
+    sseSource.addEventListener('testimonials_updated', () => {
+      if (typeof loadTestimonials === 'function') loadTestimonials();
+    });
+
+    sseSource.onerror = () => {
+      console.warn('[SSE] Conexión perdida, reintentando...');
+      sseSource.close();
+      sseSource = null;
+      setTimeout(initSSESync, sseReconnectMs);
+      sseReconnectMs = Math.min(sseReconnectMs * 2, 30000);
+    };
+
+    sseSource.onopen = () => {
+      sseReconnectMs = 2000;
+    };
+  } catch (e) {
+    console.warn('[SSE] No disponible, usando polling');
+  }
+}
+
+function destroySSESync() {
+  if (sseSource) {
+    sseSource.close();
+    sseSource = null;
+  }
+}
+
+function startDataSync(key, fn, immediate) {
+  if (SYNC_INTERVALS[key]) return;
+  if (sseSource && sseSource.readyState === EventSource.OPEN) {
+    return;
+  }
+  if (immediate !== false) {
+    try { fn(); } catch (e) { /* noop */ }
+  }
+  SYNC_INTERVALS[key] = setInterval(() => {
+    try { fn(); } catch (e) { /* noop */ }
+  }, SYNC_POLL_MS);
+}
+
+function stopDataSync(key) {
+  if (SYNC_INTERVALS[key]) {
+    clearInterval(SYNC_INTERVALS[key]);
+    delete SYNC_INTERVALS[key];
+  }
+}
+
+let syncChannel = null;
+function getSyncChannel() {
+  if (!syncChannel) {
+    try { syncChannel = new BroadcastChannel('app-sync'); } catch (e) { /* noop */ }
+  }
+  return syncChannel;
+}
+
+function emitSync(eventType) {
+  const ch = getSyncChannel();
+  if (ch) {
+    try { ch.postMessage({ type: eventType, ts: Date.now() }); } catch (e) { /* noop */ }
+  }
+  try { localStorage.setItem('app_sync_ts', String(Date.now())); } catch (e) { /* noop */ }
+}
+
+function onSyncMessage(eventType, handler) {
+  const ch = getSyncChannel();
+  if (ch) {
+    ch.addEventListener('message', (ev) => {
+      if (ev.data && ev.data.type === eventType) {
+        try { handler(); } catch (e) { /* noop */ }
+      }
+    });
+  }
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'app_sync_ts' && e.newValue) {
+      try { handler(); } catch (e) { /* noop */ }
+    }
+  });
+}
+
+// Modal scroll lock
+function lockModalScroll() {
+  document.body.style.overflow = 'hidden';
+  document.body.style.paddingRight = getScrollbarWidth() + 'px';
+}
+
+function unlockModalScroll() {
+  document.body.style.overflow = '';
+  document.body.style.paddingRight = '';
+}
+
+function getScrollbarWidth() {
+  return window.innerWidth - document.documentElement.clientWidth;
+}
+
+function openModalScrollLock(overlayEl, closeFn) {
+  if (!overlayEl) return;
+  lockModalScroll();
+  const handler = (e) => {
+    if (e.target === overlayEl) {
+      overlayEl.removeEventListener('click', handler);
+      if (typeof closeFn === 'function') closeFn();
+    }
+  };
+  overlayEl.addEventListener('click', handler);
+  const escHandler = (e) => {
+    if (e.key === 'Escape') {
+      overlayEl.removeEventListener('click', handler);
+      document.removeEventListener('keydown', escHandler);
+      if (typeof closeFn === 'function') closeFn();
+    }
+  };
+  document.addEventListener('keydown', escHandler);
+}
+
 // Update Cart Count Badge (definido en cart.js)
 window.addToCartAndUpdate = function (product) {
   if (typeof addToCart === 'function') addToCart(product);
@@ -264,10 +424,15 @@ document.addEventListener('DOMContentLoaded', () => {
   initSakuraInteraction();
 });
 
-// Detectar cambios en el carrito (para actualizar badge en tiempo real)
+// Detectar cambios en el carrito y wishlist (para actualizar en tiempo real entre pestañas y en la misma página)
 window.addEventListener('storage', (e) => {
   if (typeof CONFIG !== 'undefined' && CONFIG.CART && e.key === CONFIG.CART.STORAGE_KEY) {
     if (typeof updateCartBadge === 'function') updateCartBadge();
+    if (typeof updateCartDisplay === 'function') updateCartDisplay();
+  }
+  if (e.key === 'ag_wishlist') {
+    if (typeof updateWishlistBadge === 'function') updateWishlistBadge();
+    if (typeof renderWishlist === 'function') renderWishlist();
   }
 });
 
@@ -477,18 +642,18 @@ async function loadSiteSettings() {
     const settings = await res.json();
 
     const instagramLink = document.getElementById('instagramLink');
-    if (instagramLink && settings.instagram) {
-      instagramLink.href = settings.instagram;
+    if (instagramLink) {
+      instagramLink.href = settings.instagram || 'https://instagram.com';
     }
 
     const facebookLink = document.getElementById('facebookLink');
-    if (facebookLink && settings.facebook) {
-      facebookLink.href = settings.facebook;
+    if (facebookLink) {
+      facebookLink.href = settings.facebook || 'https://facebook.com';
     }
 
     const twitterLink = document.getElementById('twitterLink');
-    if (twitterLink && settings.twitter) {
-      twitterLink.href = settings.twitter;
+    if (twitterLink) {
+      twitterLink.href = settings.twitter || 'https://twitter.com';
     }
 
     updateContactFromSettings(settings);

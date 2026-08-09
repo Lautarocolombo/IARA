@@ -251,8 +251,16 @@ async function initDB() {
       product_id INTEGER NOT NULL,
       rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
       comment TEXT DEFAULT '',
+      name TEXT DEFAULT '',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
+    try {
+      await query(`ALTER TABLE reviews ADD COLUMN name TEXT DEFAULT ''`);
+    } catch (err) {
+      if (!err.message.includes('duplicate column name')) {
+        throw err;
+      }
+    }
     await query(`CREATE TABLE IF NOT EXISTS contacts (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,

@@ -1,5 +1,6 @@
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
+const { syncBus } = require('../routes/sync');
 
 const getSiteSettings = async (req, res) => {
   try {
@@ -28,6 +29,7 @@ const getSiteSettings = async (req, res) => {
       if (settings[k]) socials[k] = settings[k];
     });
 
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json({
       business_name: settings.business_name || 'Artesanía Gualeguay',
       logo: settings.logo || '',
@@ -120,6 +122,7 @@ const updateSiteSettings = async (req, res) => {
     }
 
     res.json({ ok: true });
+    try { syncBus.emit('settings_updated', {}); } catch (e) { /* noop */ }
   } catch (err) {
     logger.error('Error actualizando settings:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -196,6 +199,7 @@ const updateAdminPaymentConfig = async (req, res) => {
       shippingCost: Number(shippingCost) || 0,
       freeShippingFrom: Number(freeShippingFrom) || 0
     });
+    try { syncBus.emit('settings_updated', {}); } catch (e) { /* noop */ }
   } catch (err) {
     logger.error('Error guardando config de pago:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -206,6 +210,7 @@ const getPublicPaymentConfig = async (req, res) => {
   try {
     let row = await getPaymentConfigRow();
     if (!row) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
       res.json({
         transferAlias: '',
         whatsapp: (process.env.WHATSAPP || '+5493444634444').replace(/[^\d]/g, ''),
@@ -218,6 +223,7 @@ const getPublicPaymentConfig = async (req, res) => {
       });
       return;
     }
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json({
       transferAlias: row.transfer_alias || '',
       holderName: row.holder_name || '',

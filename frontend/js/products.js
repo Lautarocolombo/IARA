@@ -121,7 +121,7 @@ const defaultProducts = [
   }
 ];
 
-let products = (typeof global !== 'undefined' && global.products) ? global.products : defaultProducts.map(p => ({ ...p, stock: p.stock ?? 10 }));
+let products = [];
 
 function setProducts(newProducts) {
   products = newProducts;
@@ -133,8 +133,8 @@ async function fetchProducts() {
     if (res) {
       products = await res.json();
     }
-  } catch {
-    products = defaultProducts;
+  } catch (err) {
+    console.error('Error cargando productos:', err);
   }
 }
 
@@ -203,6 +203,7 @@ return `
         </a>
         <div style="display:flex;gap:0.5rem;padding:0 0.5rem 0.5rem;">
           <button class="btn-add-cart" data-product-id="${product.id}" data-product-name="${escapeHtml(product.name)}" data-product-price="${product.price}" data-product-emoji="${escapeHtml(product.emoji||'📿')}" data-product-image="${escapeHtml(product.image||'')}" data-product-stock="${product.stock||0}" aria-label="Agregar ${escapeHtml(product.name)} al carrito"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+          <button class="btn-wishlist" data-product-id="${product.id}" data-product-name="${escapeHtml(product.name)}" data-product-price="${product.price}" data-product-emoji="${escapeHtml(product.emoji||'📿')}" data-product-image="${escapeHtml(product.image||'')}" aria-label="Agregar a favoritos">${window.isInWishlist(product.id) ? '❤️' : '🤍'}</button>
           <a href="${waLink}" target="_blank" class="btn-outline btn-sm" rel="noopener" title="Consultar por WhatsApp">💬</a>
         </div>
       </div>
@@ -235,6 +236,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (typeof renderFeaturedProducts === 'function') {
     renderFeaturedProducts();
   }
+
+  startDataSync('products', fetchProducts);
 
   const filterButtons = document.querySelectorAll('.filter-btn');
   filterButtons.forEach(btn => {
@@ -275,6 +278,29 @@ document.addEventListener('DOMContentLoaded', async () => {
       qty: 1
     };
     if (typeof addToCart === 'function') addToCart(product);
+  });
+
+  document.getElementById('productsGrid')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('.btn-wishlist');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const product = {
+      id: Number(btn.dataset.productId),
+      name: btn.dataset.productName,
+      price: Number(btn.dataset.productPrice),
+      emoji: btn.dataset.productEmoji || '📿',
+      image: btn.dataset.productImage || ''
+    };
+    if (window.isInWishlist(product.id)) {
+      window.removeFromWishlist(product.id);
+      btn.textContent = '🤍';
+      btn.setAttribute('aria-label', 'Agregar a favoritos');
+    } else {
+      window.addToWishlist(product);
+      btn.textContent = '❤️';
+      btn.setAttribute('aria-label', 'Quitar de favoritos');
+    }
   });
 });
 

@@ -30,61 +30,14 @@
   <a href="#catalog" class="skip-link">Saltar al catálogo</a>
   <a href="#contact" class="skip-link">Saltar a contacto</a>
   <a href="#footer" class="skip-link">Saltar al pie de página</a>
-  <!-- ============== NAVBAR ============== -->
-  <nav class="navbar" id="navbar">
-    <div class="navbar-container">
-      <div class="navbar-brand">
-        <a href="#home" class="logo">
-          <span class="logo-dot" aria-hidden="true"></span>
-          <span class="logo-text">Artesanía Gualeguay</span>
-        </a>
-      </div>
 
-      <button class="navbar-toggle" id="navbarToggle" aria-label="Toggle menu">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-
-      <ul class="navbar-menu" id="navbarMenu">
-        <li><a href="#home" class="nav-link">Inicio</a></li>
-        <li><a href="#catalog" class="nav-link">Catálogo</a></li>
-        <li><a href="#about" class="nav-link">Sobre Nosotros</a></li>
-        <li><a href="#contact" class="nav-link">Contacto</a></li>
-      </ul>
-
-      <div class="navbar-actions">
-        <button id="themeToggle" class="pill-btn pill-btn--theme" title="Cambiar tema" aria-label="Alternar modo claro/oscuro" aria-pressed="false">
-          <div class="pill-btn__theme-track">
-            <span class="pill-btn__theme-icon pill-btn__theme-icon--sun" aria-hidden="true">☀️</span>
-            <span class="pill-btn__theme-icon pill-btn__theme-icon--moon" aria-hidden="true">🌙</span>
-          </div>
-          <div class="pill-btn__theme-slider" aria-hidden="true"></div>
-        </button>
-        <a href="pages/wishlist.html" id="wishlistToggle" class="pill-btn pill-btn--wishlist pill-btn--md" aria-label="Favoritos" aria-pressed="false" title="Favoritos">
-          <span class="pill-btn__icon">
-            <svg class="pill-btn__heart-fill" viewBox="0 0 24 24" width="20" height="20">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </span>
-          <span class="pill-btn__badge" id="wishlistCount" aria-live="polite">0</span>
-        </a>
-        <a href="pages/admin.html" class="pill-btn pill-btn--mascot pill-btn--md" aria-label="Mascota de la marca" title="Panel de Administración">
-          <span class="pill-btn__icon" aria-hidden="true">🐰</span>
-        </a>
-        <a href="pages/cart.html" class="pill-btn pill-btn--cart pill-btn--md" aria-label="Carrito de compras" title="Ver carrito">
-          <span class="pill-btn__icon">
-            <svg viewBox="0 0 24 24" width="20" height="20">
-              <circle cx="9" cy="21" r="1"></circle>
-              <circle cx="20" cy="21" r="1"></circle>
-              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-            </svg>
-          </span>
-          <span class="pill-btn__badge" id="cartCount" aria-live="polite">0</span>
-        </a>
-      </div>
-    </div>
-  </nav>
+  <script src="js/config.js"></script>
+  <script src="js/safeImage.js"></script>
+  <script src="js/header.js"></script>
+  <script>
+    initSiteHeader({ showBackButton: false });
+  </script>
+  <script src="js/theme.js"></script>
 
   <main>
     <!-- ============== HERO SECTION ============== -->
@@ -358,10 +311,10 @@
          <h3>Suscríbete a nuestro Newsletter</h3>
          <p>Recibe ofertas exclusivas y descuentos en tu email</p>
        </div>
-       <form class="newsletter-form" id="newsletterForm">
-         <input type="email" id="newsletterEmail" placeholder="tu@email.com" required />
-         <button type="submit" class="btn-primary">Suscribirse</button>
-       </form>
+        <form class="newsletter-form" id="newsletterForm">
+          <input type="email" id="newsletterEmail" name="email" placeholder="tu@email.com" required />
+          <button type="submit" class="btn-primary">Suscribirse</button>
+        </form>
      </section>
 
      <!-- ============== TESTIMONIALS SECTION ============== -->
@@ -417,9 +370,6 @@
   <div id="toastContainer" class="toast-container"></div>
 
   <!-- ============== SCRIPTS ============== -->
-   <script src="js/config.js"></script>
-   <script src="js/safeImage.js"></script>
-   <script src="js/theme.js"></script>
    <script src="js/ui.js"></script>
    <script src="js/wishlist.js"></script>
    <script src="js/cart.js"></script>
@@ -545,6 +495,23 @@
     if (typeof loadTestimonials === 'function') {
       loadTestimonials();
     }
+    startDataSync('hero-cards', loadHeroCards);
+    startDataSync('site-texts', loadSiteTexts);
+    startDataSync('testimonials', loadTestimonials);
+
+    onSyncMessage('products_updated', () => {
+      if (typeof fetchProducts === 'function') {
+        fetchProducts().then(() => {
+          if (typeof renderProducts === 'function') renderProducts(getProducts());
+          if (typeof renderFeaturedProducts === 'function') renderFeaturedProducts();
+        });
+      }
+    });
+
+    onSyncMessage('hero_updated', loadHeroCards);
+    onSyncMessage('wishlist_updated', () => {
+      if (typeof renderWishlist === 'function') renderWishlist();
+    });
   </script>
   <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
   <script>

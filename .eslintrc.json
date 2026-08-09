@@ -20,6 +20,7 @@
     "saveCart": "readonly",
     "updateCartBadge": "readonly",
     "updateCartDisplay": "readonly",
+    "clearCart": "readonly",
     "showToast": "readonly",
     "renderProducts": "readonly",
     "getProducts": "readonly",

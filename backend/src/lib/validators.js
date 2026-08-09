@@ -53,7 +53,8 @@ const loginSchema = z.object({
 
 const reviewSchema = z.object({
   rating: z.number().int().min(1).max(5),
-  comment: z.string().min(1, 'Comentario es requerido').max(1000)
+  comment: z.string().min(1, 'Comentario es requerido').max(1000),
+  name: z.string().max(100).optional()
 });
 
 const newsletterSchema = z.object({

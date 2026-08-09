@@ -1,6 +1,7 @@
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const { getPublicUrl, deleteImageAsset, saveUploadedFile } = require('../lib/upload');
+const { syncBus } = require('../routes/sync');
 
 function mapRow(r, baseUrl) {
   return {
@@ -35,6 +36,7 @@ const getPublicHeroCards = async (req, res) => {
   try {
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
     const result = await query('SELECT * FROM hero_cards WHERE activo = TRUE ORDER BY slot ASC, id ASC');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json(result.rows.map(r => mapRow(r, baseUrl)));
   } catch (err) {
     logger.error('Error obteniendo hero cards públicos:', err);
@@ -86,6 +88,7 @@ const upsertHeroCard = async (req, res) => {
     }
     const result = await query('SELECT * FROM hero_cards ORDER BY slot ASC, id ASC');
     res.json(result.rows.map(r => mapRow(r, baseUrl)));
+    try { syncBus.emit('hero_updated', {}); } catch (e) { /* noop */ }
   } catch (err) {
     logger.error('Error guardando hero card:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -136,6 +139,7 @@ const updateHeroSlot = async (req, res) => {
     }
     const result = await query('SELECT * FROM hero_cards WHERE slot = $1', [slot]);
     res.json(mapRow(result.rows[0], baseUrl));
+    try { syncBus.emit('hero_updated', { slot }); } catch (e) { /* noop */ }
   } catch (err) {
     logger.error('Error actualizando hero slot:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -153,6 +157,7 @@ const deleteHeroSlotImage = async (req, res) => {
     }
     await query('UPDATE hero_cards SET imagen = \'\' WHERE id = $1', [existing.rows[0].id]);
     res.json({ ok: true, message: 'Imagen eliminada' });
+    try { syncBus.emit('hero_updated', { slot }); } catch (e) { /* noop */ }
   } catch (err) {
     logger.error('Error eliminando imagen de hero slot:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -172,6 +177,7 @@ const syncHeroCards = async (req, res) => {
     }
     const result = await query('SELECT * FROM hero_cards ORDER BY slot ASC, id ASC');
     res.json(result.rows.map(r => mapRow(r, baseUrl)));
+    try { syncBus.emit('hero_updated', {}); } catch (e) { /* noop */ }
   } catch (err) {
     logger.error('Error sincronizando hero cards:', err);
     res.status(500).json({ error: 'Error interno del servidor' });

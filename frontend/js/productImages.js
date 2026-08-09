@@ -4,6 +4,7 @@
 const ITEM_CLASS = 'product-image-item';
 
   let pendingFiles = [];
+  /* eslint-disable-next-line no-unused-vars */
   let pendingMeta = { descripcion: '', categoria: '' };
 
   function init(productId) {
@@ -24,6 +25,7 @@ const ITEM_CLASS = 'product-image-item';
     loadImages(productId);
   }
 
+  /* eslint-disable-next-line no-unused-vars */
   function setupPendingDropzone(dropzone) {
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evt => {
       dropzone.addEventListener(evt, preventDefaults);
@@ -48,7 +50,7 @@ const ITEM_CLASS = 'product-image-item';
     }
   }
 
-  function setupUrlPaste(dropzone) {
+  function setupUrlPaste(_dropzone) {
     const urlInput = document.getElementById('productImageUrl');
     const urlBtn = document.getElementById('productImageUrlBtn');
     if (!urlInput || !urlBtn) return;

@@ -1,0 +1,265 @@
+- generic [active] [ref=e1]:
+  - link "Saltar al contenido principal" [ref=e2] [cursor=pointer]:
+    - /url: "#adminMain"
+  - generic [ref=e4]:
+    - heading "🌸 Artesanía Admin" [level=2] [ref=e5]
+    - paragraph [ref=e6]: Iniciá sesión para continuar
+    - generic [ref=e7]:
+      - generic [ref=e8]: Usuario
+      - textbox "Usuario" [ref=e9]
+    - generic [ref=e10]:
+      - generic [ref=e11]: Contraseña
+      - generic [ref=e12]:
+        - textbox "Contraseña" [ref=e13]
+        - button "Mostrar contraseña" [ref=e14] [cursor=pointer]
+    - button "Ingresar" [ref=e18] [cursor=pointer]
+    - paragraph [ref=e19]: ✅ Servidor conectado
+    - paragraph
+    - link "← Volver al sitio" [ref=e20] [cursor=pointer]:
+      - /url: ../index.html
+  - complementary [ref=e21]:
+    - generic [ref=e22]:
+      - generic [ref=e23]: 🌸
+      - generic [ref=e24]: Artesanía Admin
+    - navigation [ref=e25]:
+      - link "📦 Productos" [ref=e26] [cursor=pointer]:
+        - /url: "#products"
+      - link "🏷 Categorías" [ref=e27] [cursor=pointer]:
+        - /url: "#categories"
+      - link "🧾 Pedidos" [ref=e28] [cursor=pointer]:
+        - /url: "#orders"
+      - link "📈 Reportes" [ref=e29] [cursor=pointer]:
+        - /url: "#reports"
+      - link "💬 Testimonios" [ref=e30] [cursor=pointer]:
+        - /url: "#testimonials"
+      - link "📝 Textos del Sitio" [ref=e31] [cursor=pointer]:
+        - /url: "#texts"
+      - link "🖼 Imágenes del Hero" [ref=e32] [cursor=pointer]:
+        - /url: "#heroImages"
+      - link "⚙️ Configuración" [ref=e33] [cursor=pointer]:
+        - /url: "#settings"
+    - generic [ref=e34]:
+      - link "← Ver sitio" [ref=e35] [cursor=pointer]:
+        - /url: ../index.html
+      - button "Cerrar sesión" [ref=e36] [cursor=pointer]
+  - main [ref=e37]:
+    - generic [ref=e38]:
+      - generic [ref=e39]:
+        - link "← Volver" [ref=e40] [cursor=pointer]:
+          - /url: ../index.html
+        - generic [ref=e41]:
+          - heading "Productos" [level=1] [ref=e42]
+          - paragraph [ref=e43]: Gestioná productos, fotos y precios
+      - generic [ref=e44]:
+        - generic "Estado de conexión" [ref=e45]: Conectado
+        - button "+ Nuevo Producto" [ref=e48] [cursor=pointer]
+    - generic [ref=e49]:
+      - generic [ref=e50]:
+        - heading "Categorías" [level=3] [ref=e51]
+        - button "+ Nueva Categoría" [ref=e53] [cursor=pointer]
+      - table [ref=e55]:
+        - rowgroup [ref=e56]:
+          - row [ref=e57]:
+            - columnheader "Nombre" [ref=e58]
+            - columnheader "Slug" [ref=e59]
+            - columnheader "Descripción" [ref=e60]
+            - columnheader "Productos" [ref=e61]
+            - columnheader "Estado" [ref=e62]
+            - columnheader "Orden" [ref=e63]
+            - columnheader "Acciones" [ref=e64]
+        - rowgroup [ref=e65]:
+          - row [ref=e66]:
+            - cell "Cargando categorías..." [ref=e67]
+    - generic [ref=e69]:
+      - heading "Reportes y Analíticas" [level=3] [ref=e70]
+      - generic [ref=e71]:
+        - button "Hoy" [ref=e72] [cursor=pointer]
+        - button "Últimos 7 días" [ref=e73] [cursor=pointer]
+        - button "Últimos 30 días" [ref=e74] [cursor=pointer]
+        - button "Mes actual" [ref=e75] [cursor=pointer]
+        - textbox [ref=e76]
+        - textbox [ref=e77]
+        - button "Filtrar" [ref=e78] [cursor=pointer]
+        - button "Reiniciar métricas" [ref=e79] [cursor=pointer]
+    - generic [ref=e85]:
+      - generic [ref=e86]:
+        - heading "Catálogo de productos" [level=3] [ref=e87]
+        - generic [ref=e88]:
+          - textbox "Buscar producto..." [ref=e90]
+          - combobox [ref=e91] [cursor=pointer]:
+            - option "Todas las categorías" [selected]
+            - option "Pulseras"
+            - option "Accesorios"
+            - option "Souvenirs"
+          - button "📥 Exportar CSV" [ref=e92] [cursor=pointer]
+          - button "Choose File" [ref=e93]
+          - button "📂 Carga masiva CSV" [ref=e94] [cursor=pointer]
+      - table [ref=e96]:
+        - rowgroup [ref=e97]:
+          - row [ref=e98]:
+            - columnheader "Slug" [ref=e99]
+            - columnheader "Producto" [ref=e100]
+            - columnheader "Categoría" [ref=e101]
+            - columnheader "SKU" [ref=e102]
+            - columnheader "Precio" [ref=e103]
+            - columnheader "Stock" [ref=e104]
+            - columnheader "Imagen" [ref=e105]
+            - columnheader "Estado" [ref=e106]
+            - columnheader "Acciones" [ref=e107]
+        - rowgroup [ref=e108]:
+          - row [ref=e109]:
+            - cell "Cargando productos..." [ref=e110]
+    - generic [ref=e112]:
+      - generic [ref=e113]:
+        - heading "Pedidos" [level=3] [ref=e114]
+        - generic [ref=e115]:
+          - textbox "Buscar pedido..." [ref=e116]
+          - combobox [ref=e117] [cursor=pointer]:
+            - option "Todos los estados" [selected]
+            - option "Pendiente"
+            - option "Confirmado"
+            - option "Preparando"
+            - option "Enviado"
+            - option "Entregado"
+            - option "Cancelado"
+          - button "📥 CSV" [ref=e118] [cursor=pointer]
+          - button "📄 PDF" [ref=e119] [cursor=pointer]
+          - button "🗑 Eliminar seleccionados" [ref=e120] [cursor=pointer]
+      - table [ref=e122]:
+        - rowgroup [ref=e123]:
+          - row [ref=e124]:
+            - columnheader [ref=e125]:
+              - checkbox "Seleccionar todos" [ref=e126]
+            - columnheader "ID" [ref=e127]
+            - columnheader "Cliente" [ref=e128]
+            - columnheader "Total" [ref=e129]
+            - columnheader "Estado" [ref=e130]
+            - columnheader "Pago" [ref=e131]
+            - columnheader "Fecha" [ref=e132]
+            - columnheader "Acciones" [ref=e133]
+        - rowgroup [ref=e134]:
+          - row [ref=e135]:
+            - cell "Cargando pedidos..." [ref=e136]
+    - generic [ref=e138]:
+      - generic [ref=e139]:
+        - heading "Testimonios de clientes" [level=3] [ref=e140]
+        - generic [ref=e141]:
+          - button "+ Nuevo Testimonio" [ref=e142] [cursor=pointer]
+          - button "📥 Exportar CSV" [ref=e143] [cursor=pointer]
+          - button "💾 Guardar cambios" [disabled] [ref=e144]
+      - table [ref=e146]:
+        - rowgroup [ref=e147]:
+          - row [ref=e148]:
+            - columnheader "Cliente" [ref=e149]
+            - columnheader "Comentario" [ref=e150]
+            - columnheader "Valoración" [ref=e151]
+            - columnheader "Orden" [ref=e152]
+            - columnheader "Activo" [ref=e153]
+            - columnheader "Acciones" [ref=e154]
+        - rowgroup [ref=e155]:
+          - row [ref=e156]:
+            - cell "Cargando testimonios..." [ref=e157]
+    - generic [ref=e158]:
+      - generic [ref=e159]:
+        - heading "Textos del sitio" [level=3] [ref=e160]
+        - generic [ref=e161]:
+          - button "+ Nuevo Texto" [ref=e162] [cursor=pointer]
+          - button "💾 Guardar en base de datos" [ref=e163] [cursor=pointer]
+      - table [ref=e165]:
+        - rowgroup [ref=e166]:
+          - row [ref=e167]:
+            - columnheader "Clave" [ref=e168]
+            - columnheader "Valor" [ref=e169]
+            - columnheader "Acciones" [ref=e170]
+        - rowgroup [ref=e171]:
+          - row [ref=e172]:
+            - cell "Cargando textos..." [ref=e173]
+    - generic [ref=e175]:
+      - heading "Imágenes del Hero" [level=3] [ref=e176]
+      - button "💾 Guardar todo" [ref=e178] [cursor=pointer]
+    - generic [ref=e179]:
+      - generic [ref=e180]:
+        - heading "Configuración del sitio" [level=3] [ref=e181]
+        - button "🔑 Cambiar contraseña" [ref=e183] [cursor=pointer]
+      - generic [ref=e184]:
+        - heading "Datos del negocio" [level=4] [ref=e185]
+        - generic [ref=e186]:
+          - generic [ref=e187]: Nombre del negocio
+          - textbox "Artesanía Gualeguay" [ref=e188]
+        - generic [ref=e189]:
+          - generic [ref=e190]: URL del logo
+          - textbox "https://..." [ref=e191]
+        - generic [ref=e192]:
+          - generic [ref=e193]: Email de contacto
+          - textbox "contacto@artesania.com" [ref=e194]
+        - generic [ref=e195]:
+          - generic [ref=e196]: Teléfono / WhatsApp
+          - 'textbox "Ej: 5493444634444" [ref=e197]'
+        - generic [ref=e198]:
+          - generic [ref=e199]: Dirección
+          - 'textbox "Ej: Belgrano 123, Gualeguay" [ref=e200]'
+        - heading "Redes sociales" [level=4] [ref=e201]
+        - generic [ref=e202]:
+          - generic [ref=e203]:
+            - generic [ref=e204]: Instagram
+            - textbox "https://instagram.com/tucuenta" [ref=e205]
+          - generic [ref=e206]:
+            - generic [ref=e207]: Facebook
+            - textbox "https://facebook.com/tucuenta" [ref=e208]
+          - generic [ref=e209]:
+            - generic [ref=e210]: Twitter / X
+            - textbox "https://twitter.com/tucuenta" [ref=e211]
+          - generic [ref=e212]:
+            - generic [ref=e213]: WhatsApp Business
+            - textbox "https://wa.me/5493444634444" [ref=e214]
+        - heading "Configuración de pagos" [level=4] [ref=e215]
+        - generic [ref=e216]:
+          - generic [ref=e217]:
+            - generic [ref=e218]: MercadoPago habilitado
+            - generic [ref=e219]:
+              - generic [ref=e220]:
+                - checkbox
+                - generic [ref=e221] [cursor=pointer]
+              - generic [ref=e222]: "Off"
+          - generic [ref=e223]:
+            - generic [ref=e224]: Efectivo habilitado
+            - generic [ref=e225]:
+              - generic [ref=e226]:
+                - checkbox
+                - generic [ref=e227] [cursor=pointer]
+              - generic [ref=e228]: "Off"
+        - generic [ref=e229]:
+          - generic [ref=e230]: Alias de transferencia
+          - 'textbox "Ej: iara-salgueiro" [ref=e231]'
+          - paragraph [ref=e232]: Los clientes usarán este alias para transferirte el pago.
+        - heading "Envíos" [level=4] [ref=e233]
+        - generic [ref=e234]:
+          - generic [ref=e235]:
+            - generic [ref=e236]: Costo de envío
+            - spinbutton [ref=e237]: "0"
+          - generic [ref=e238]:
+            - generic [ref=e239]: Envío gratis desde ($)
+            - spinbutton [ref=e240]: "0"
+        - generic [ref=e241]:
+          - generic [ref=e242]: Zonas de envío
+          - paragraph [ref=e244]: No hay zonas configuradas. Agregá una zona para definir envíos a distintas localidades.
+          - button "+ Agregar zona" [ref=e245] [cursor=pointer]
+        - generic [ref=e246]:
+          - generic [ref=e247]: Titular de la cuenta
+          - textbox "Nombre del titular" [ref=e248]
+        - generic [ref=e249]:
+          - generic [ref=e250]: CBU/CVU
+          - 'textbox "Ej: 0000000000000000000000" [ref=e251]'
+        - generic [ref=e252]:
+          - generic [ref=e253]: Mensaje de pago
+          - textbox "Mensaje que se muestra al cliente en el checkout..." [ref=e254]: Transferí el total exacto y enviá el comprobante por WhatsApp para confirmar tu pedido.
+        - button "Guardar configuración" [ref=e255] [cursor=pointer]
+      - generic [ref=e256]:
+        - heading "Cambiar contraseña" [level=4] [ref=e257]
+        - generic [ref=e258]:
+          - generic [ref=e259]: Contraseña actual
+          - textbox "Contraseña actual" [ref=e260]
+        - generic [ref=e261]:
+          - generic [ref=e262]: Nueva contraseña
+          - textbox "Mínimo 6 caracteres" [ref=e263]
+        - button "Actualizar contraseña" [ref=e264] [cursor=pointer]

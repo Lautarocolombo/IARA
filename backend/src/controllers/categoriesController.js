@@ -30,6 +30,7 @@ const getPublicCategories = async (req, res) => {
        GROUP BY c.id
        ORDER BY c.orden ASC, c.name ASC`
     );
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json(result.rows);
   } catch (err) {
     logger.error('Error obteniendo categorías públicas:', err);

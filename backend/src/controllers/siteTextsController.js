@@ -6,6 +6,7 @@ const getSiteTexts = async (req, res) => {
     const result = await query('SELECT key, value FROM site_texts');
     const map = {};
     result.rows.forEach(r => { map[r.key] = r.value; });
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json(map);
   } catch (err) {
     logger.error('Error obteniendo textos:', err);

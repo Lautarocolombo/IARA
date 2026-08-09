@@ -121,6 +121,23 @@
   margin-bottom: 1.5rem;
 }
 
+.field-error {
+  color: #dc2626;
+  font-size: 0.8rem;
+  margin-top: 0.35rem;
+  min-height: 1.1em;
+}
+
+.field-error:empty {
+  display: none;
+}
+
+.form-group.has-error input {
+  border-color: #dc2626 !important;
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.15);
+}
+
 .payment-alias-box {
   background: var(--blush);
   border: 1px solid var(--border);
@@ -164,6 +181,24 @@
   border-radius: var(--radius-md);
   padding: 1rem 1.25rem;
   margin-bottom: 1rem;
+}
+
+.payment-order-id-box {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1.25rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: var(--text-mid);
+}
+
+.payment-order-id-value {
+  font-weight: 700;
+  color: var(--text-dark);
 }
 
 .payment-total-amount {
@@ -249,6 +284,133 @@
   margin-top: 1rem;
   padding-top: 0.75rem;
   border-top: 1px solid var(--border);
+}
+
+.transfer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.transfer-header h2 {
+  margin-bottom: 0;
+}
+
+.transfer-order-number {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  color: var(--text-mid);
+}
+
+.transfer-order-number-value {
+  font-weight: 700;
+  color: var(--rose-dark);
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+}
+
+.transfer-summary {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.transfer-summary-empty {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.transfer-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f4c8d4;
+  font-size: 0.95rem;
+}
+
+.transfer-item-row:last-child {
+  border-bottom: none;
+}
+
+.transfer-item-name {
+  color: var(--text-dark);
+  font-weight: 500;
+}
+
+.transfer-item-price {
+  color: var(--rose-dark);
+  font-weight: 600;
+}
+
+.transfer-total-highlight {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--rose-mid);
+  color: #fff;
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.transfer-total-highlight-amount {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem;
+  font-weight: 700;
+}
+
+.transfer-note {
+  font-size: 0.85rem;
+  color: var(--text-mid);
+  line-height: 1.6;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.transfer-data-box .btn-primary {
+  margin-top: 1rem;
+}
+
+/* FASE 2 — Modal (preparado) */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-card {
+  background: #fff;
+  border-radius: var(--radius-md);
+  padding: 2rem;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: var(--shadow-lg);
+}
+
+.modal-card h3 {
+  font-family: 'Playfair Display', serif;
+  margin-bottom: 1rem;
 }
 
 .btn-block {

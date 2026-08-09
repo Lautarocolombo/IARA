@@ -2,6 +2,7 @@ const { query } = require('../lib/db');
 const { productSchema } = require('../lib/validators');
 const logger = require('../lib/logger');
 const { deleteImageAsset, getPublicUrl } = require('../lib/upload');
+const { syncBus } = require('../routes/sync');
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
@@ -185,6 +186,7 @@ const bulkImportProducts = async (req, res) => {
     fs.unlinkSync(req.file.path);
   }
   res.json({ ok: true, total: rows.length, success, errors, errorsDetail: errorDetails });
+  try { syncBus.emit('products_updated', {}); } catch (e) { /* noop */ }
 };
 
 const getPublicProducts = async (req, res) => {
@@ -192,7 +194,9 @@ const getPublicProducts = async (req, res) => {
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
     const result = await query('SELECT * FROM products WHERE active = TRUE AND deleted = FALSE ORDER BY id ASC');
     const enriched = await attachImagesToProducts(result.rows, baseUrl);
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json(enriched);
+    try { syncBus.emit('products_updated', {}); } catch (e) { /* noop */ }
   } catch (err) {
     logger.error('Error obteniendo productos:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -288,7 +292,9 @@ const getProductById = async (req, res) => {
     const result = await query('SELECT * FROM products WHERE id = $1 AND deleted = FALSE', [id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
     const enriched = await attachImagesToProducts(result.rows, baseUrl);
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json(enriched[0]);
+    try { syncBus.emit('products_updated', { id: Number(req.params.id) }); } catch (e) { /* noop */ }
   } catch (err) {
     logger.error('Error obteniendo producto:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -310,6 +316,7 @@ const createProduct = async (req, res) => {
       [data.name, slug, data.category, Number(data.price), data.description || '', data.emoji || '📿', data.image || '', data.badge || '', Number(data.stock), data.featured || false, data.active !== false, data.sku || '']
     );
     res.status(201).json(result.rows[0]);
+    try { syncBus.emit('products_updated', { id: result.rows[0].id }); } catch (e) { /* noop */ }
   } catch (err) {
     if (err.name === 'ZodError') {
       return res.status(400).json({ error: err.issues[0]?.message || 'Datos inválidos' });
@@ -339,6 +346,7 @@ const updateProduct = async (req, res) => {
     const result = await query(`UPDATE products SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = $${values.length} AND deleted = FALSE RETURNING *`, values);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
     res.json(result.rows[0]);
+    try { syncBus.emit('products_updated', { id: Number(req.params.id) }); } catch (e) { /* noop */ }
   } catch (err) {
     if (err.name === 'ZodError') {
       return res.status(400).json({ error: err.issues[0]?.message || 'Datos inválidos' });
@@ -357,6 +365,7 @@ const toggleProductStatus = async (req, res) => {
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
     res.json({ ok: true, active: result.rows[0].active });
+    try { syncBus.emit('products_updated', { id: Number(req.params.id) }); } catch (e) { /* noop */ }
   } catch (err) {
     logger.error('Error cambiando estado del producto:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -390,6 +399,7 @@ const deleteProduct = async (req, res) => {
     }
 
     res.json({ ok: true, logical: hasHistoricalOrders });
+    try { syncBus.emit('products_updated', { id: Number(req.params.id) }); } catch (e) { /* noop */ }
   } catch (err) {
     logger.error({ err: err.message, stack: err.stack }, 'Error eliminando producto');
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -426,6 +436,7 @@ const duplicateProduct = async (req, res) => {
     }
 
     res.status(201).json(result.rows[0]);
+    try { syncBus.emit('products_updated', { id: result.rows[0].id }); } catch (e) { /* noop */ }
   } catch (err) {
     logger.error('Error duplicando producto:', err);
     res.status(500).json({ error: 'Error interno del servidor' });

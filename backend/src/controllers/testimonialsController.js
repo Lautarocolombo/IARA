@@ -1,12 +1,14 @@
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const { saveUploadedFile } = require('../lib/upload');
+const { syncBus } = require('../routes/sync');
 
 const ALLOWED_TESTIMONIAL_COLUMNS = ['name', 'comment', 'rating', 'image', 'avatar', 'active', 'orden'];
 
 const getPublicTestimonials = async (req, res) => {
   try {
     const result = await query('SELECT * FROM testimonials WHERE active = TRUE ORDER BY created_at DESC');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json(result.rows);
   } catch (err) {
     logger.error('Error obteniendo testimonios:', err);
@@ -36,6 +38,7 @@ const createTestimonial = async (req, res) => {
       [name, comment, Number(rating), image, image, active !== false, Number(orden)]
     );
     res.status(201).json(result.rows[0]);
+    try { syncBus.emit('testimonials_updated', { id: result.rows[0].id }); } catch (e) { /* noop */ }
   } catch (err) {
     logger.error('Error creando testimonio:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -52,6 +55,7 @@ const toggleTestimonialActive = async (req, res) => {
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Testimonio no encontrado' });
     res.json(result.rows[0]);
+    try { syncBus.emit('testimonials_updated', { id: Number(req.params.id) }); } catch (e) { /* noop */ }
   } catch (err) {
     logger.error('Error actualizando estado del testimonio:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -68,6 +72,7 @@ const updateTestimonialOrder = async (req, res) => {
       }
     }
     res.json({ ok: true });
+    try { syncBus.emit('testimonials_updated', {}); } catch (e) { /* noop */ }
   } catch (err) {
     logger.error('Error actualizando orden de testimonios:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -98,6 +103,7 @@ const updateTestimonial = async (req, res) => {
     const result = await query(`UPDATE testimonials SET ${setParts.join(', ')} WHERE id = $${values.length} RETURNING *`, values);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Testimonio no encontrado' });
     res.json(result.rows[0]);
+    try { syncBus.emit('testimonials_updated', { id: Number(req.params.id) }); } catch (e) { /* noop */ }
   } catch (err) {
     logger.error('Error actualizando testimonio:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -110,6 +116,7 @@ const deleteTestimonial = async (req, res) => {
     const result = await query('DELETE FROM testimonials WHERE id = $1 RETURNING id', [id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Testimonio no encontrado' });
     res.json({ ok: true });
+    try { syncBus.emit('testimonials_updated', { id: Number(req.params.id) }); } catch (e) { /* noop */ }
   } catch (err) {
     logger.error('Error eliminando testimonio:', err);
     res.status(500).json({ error: 'Error interno del servidor' });

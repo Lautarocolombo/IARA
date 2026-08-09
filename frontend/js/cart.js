@@ -24,7 +24,7 @@ function updateCartBadge() {
 
 function addToCart(product) {
   const existing = cart.find(item => item.id === product.id);
-  const productStock = Number(product.stock ?? Infinity);
+  const productStock = Number(product.stock) > 0 ? Number(product.stock) : Infinity;
   if (existing) {
     const newQty = (existing.qty || 1) + (product.qty || 1);
     if (newQty > productStock) {
@@ -47,7 +47,7 @@ function addToCart(product) {
 function updateCartQty(productId, qty) {
   const item = cart.find(item => item.id === productId);
   if (item) {
-    const productStock = Number(item.stock ?? Infinity);
+    const productStock = Number(item.stock) > 0 ? Number(item.stock) : Infinity;
     const newQty = Math.max(1, Number(qty));
     if (newQty > productStock) {
       showToast('', 'Stock insuficiente', 'error');

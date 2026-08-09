@@ -88,8 +88,10 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ['\'self\''],
-      scriptSrc: ['\'self\'', 'https://cdn.jsdelivr.net', 'https://cdn.vercel-insights.com', 'https://www.googletagmanager.com'],
-      styleSrc: ['\'self\'', 'https://fonts.googleapis.com'],
+      scriptSrc: ['\'self\'', 'https://cdn.jsdelivr.net', 'https://cdn.vercel-insights.com', 'https://www.googletagmanager.com', '\'unsafe-inline\''],
+      scriptSrcAttr: ['\'unsafe-inline\''],
+      styleSrc: ['\'self\'', 'https://fonts.googleapis.com', '\'unsafe-inline\''],
+      styleSrcAttr: ['\'unsafe-inline\''],
       fontSrc: ['\'self\'', 'https://fonts.gstatic.com'],
       imgSrc: ['\'self\'', 'data:', 'https:', 'blob:'],
       connectSrc: ['\'self\'', 'https://api.resend.com', 'https://vitals.vercel-insights.com', 'https://*.googleanalytics.com', 'https://*.google-analytics.com', 'https://stats.g.doubleclick.net'],
@@ -171,7 +173,6 @@ const contactLimiter = rateLimit({
 
 app.use('/api/auth/login', authLimiter);
 app.use('/api/orders', contactLimiter);
-app.use(limiter);
 
 app.use((req, res, next) => {
   res.setHeader('X-Request-ID', req.headers['x-request-id'] || crypto.randomUUID());
@@ -206,7 +207,8 @@ app.use((req, res, next) => {
     req.path === '/api/admin/upload' ||
     (/^\/api\/admin\/products/.test(req.path) && req.method === 'POST') ||
     (req.path === '/api/admin/products/bulk-import');
-  const timeoutMs = isUploadRoute ? UPLOAD_TIMEOUT_MS : TIMEOUT_MS;
+  const isSyncRoute = req.path === '/api/sync';
+  const timeoutMs = isUploadRoute ? UPLOAD_TIMEOUT_MS : (isSyncRoute ? 60000 : TIMEOUT_MS);
   const timeout = setTimeout(() => {
     if (!res.headersSent) {
       res.status(408).json({ error: 'Request timeout', message: 'El servidor tardó demasiado en responder. Intentá de nuevo.' });
@@ -236,6 +238,7 @@ app.use('/api', require('./routes/categories'));
 app.use('/api', require('./routes/reports'));
 app.use('/api', require('./routes/receipts'));
 app.use('/api', require('./routes/heroCards'));
+app.use('/api/sync', require('./routes/sync'));
 
 app.get('/metrics', (req, res) => {
   const clientIp = req.ip || req.connection.remoteAddress || '';
@@ -334,6 +337,8 @@ app.get('/', (req, res) => {
 
 app.use(express.static(staticDir));
 
+app.use('/api', limiter);
+
 app.get('/sitemap.xml', require('./routes/sitemap'));
 
 app.get('/*', (req, res) => {
@@ -355,7 +360,6 @@ const dbReady = initDB().then(async () => {
   logger.info('Base de datos inicializada correctamente');
   try {
     const { query } = require('./lib/db');
-    const bcrypt = require('bcryptjs');
     const result = await query('SELECT COUNT(*) FROM users');
     if ((result.rows[0]?.count || 0) === 0 && process.env.ADMIN_USER && process.env.ADMIN_PASS_HASH) {
       await query(

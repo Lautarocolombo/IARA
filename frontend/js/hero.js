@@ -3,11 +3,16 @@
 
   async function loadHeroCards() {
     try {
-      const res = await fetch('/api/hero-cards', {
-        headers: { 'Accept': 'application/json' }
-      });
-      if (!res.ok) throw new Error('Error cargando hero');
+      const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/hero-cards`, {}, 2, 1000);
+      if (!res) {
+        renderHeroCards([]);
+        return;
+      }
       const cards = await res.json();
+      if (!Array.isArray(cards)) {
+        renderHeroCards([]);
+        return;
+      }
       renderHeroCards(cards);
     } catch (err) {
       console.error('[loadHeroCards] Error:', err);
@@ -86,4 +91,5 @@
   }
 
   window.loadHeroCards = loadHeroCards;
+  window.renderHeroCards = renderHeroCards;
 })();

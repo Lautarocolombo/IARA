@@ -1,0 +1,825 @@
+- generic [active] [ref=f13e1]:
+  - navigation [ref=f13e2]:
+    - generic [ref=f13e3]:
+      - link "Artesanía Gualeguay" [ref=f13e5] [cursor=pointer]:
+        - /url: "#home"
+      - list [ref=f13e8]:
+        - listitem [ref=f13e9]:
+          - link "Inicio" [ref=f13e10] [cursor=pointer]:
+            - /url: "#home"
+        - listitem [ref=f13e11]:
+          - link "Catálogo" [ref=f13e12] [cursor=pointer]:
+            - /url: "#catalog"
+        - listitem [ref=f13e13]:
+          - link "Sobre Nosotros" [ref=f13e14] [cursor=pointer]:
+            - /url: "#about"
+        - listitem [ref=f13e15]:
+          - link "Mis pedidos" [ref=f13e16] [cursor=pointer]:
+            - /url: pages/orders.html
+        - listitem [ref=f13e17]:
+          - link "Contacto" [ref=f13e18] [cursor=pointer]:
+            - /url: "#contact"
+      - generic [ref=f13e19]:
+        - button "Cambiar a modo oscuro" [ref=f13e20] [cursor=pointer]:
+          - generic:
+            - generic: ☀️
+            - generic: 🌙
+        - link "Favoritos" [ref=f13e22] [cursor=pointer]:
+          - /url: wishlist.html
+        - link "Mascota de la marca" [ref=f13e23] [cursor=pointer]:
+          - /url: admin.html
+          - generic: 🐰
+        - link "Carrito de compras" [ref=f13e24] [cursor=pointer]:
+          - /url: ../pages/cart.html
+  - link "Saltar al contenido principal" [ref=f13e25] [cursor=pointer]:
+    - /url: "#home"
+  - link "Saltar al catálogo" [ref=f13e26] [cursor=pointer]:
+    - /url: "#catalog"
+  - link "Saltar a contacto" [ref=f13e27] [cursor=pointer]:
+    - /url: "#contact"
+  - link "Saltar al pie de página" [ref=f13e28] [cursor=pointer]:
+    - /url: "#footer"
+  - main [ref=f13e29]:
+    - generic [ref=f13e31]:
+      - generic [ref=f13e32]:
+        - generic [ref=f13e33]: Colección 2026
+        - generic [ref=f13e35]: Buenos Días Iara 🌸
+        - heading [level=1] [ref=f13e36]:
+          - text: Regalos
+          - emphasis [ref=f13e37]: artesanales
+          - text: que cuentan historias
+        - paragraph [ref=f13e38]: Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es única.
+        - generic [ref=f13e39]:
+          - link "Explorar Catálogo" [ref=f13e40] [cursor=pointer]:
+            - /url: "#catalog"
+          - link "Contactanos" [ref=f13e41] [cursor=pointer]:
+            - /url: "#contact"
+      - generic [ref=f13e42]:
+        - generic [ref=f13e43]:
+          - generic [ref=f13e44]: 📿
+          - generic [ref=f13e45]: Regalos <em>artesanales</em> que cuentan historias
+          - generic [ref=f13e46]: Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es única.
+          - link [ref=f13e47] [cursor=pointer]:
+            - /url: "#catalog"
+            - text: Explorar Catálogo
+        - generic [ref=f13e48]:
+          - generic [ref=f13e49]: 📿
+          - generic [ref=f13e50]: Hecho con amor en Gualeguay
+          - generic [ref=f13e51]: Materiales premium y envíos a todo el país.
+          - link [ref=f13e52] [cursor=pointer]:
+            - /url: "#contact"
+            - text: Contactanos
+    - generic [ref=f13e53]:
+      - generic [ref=f13e58]:
+        - heading "Hecho a mano" [level=4] [ref=f13e59]
+        - paragraph [ref=f13e60]: Cada pieza es artesanal y única
+      - generic [ref=f13e68]:
+        - heading "Envío gratis" [level=4] [ref=f13e69]
+        - paragraph [ref=f13e70]: En compras mayores a ARS 60.000
+      - generic [ref=f13e75]:
+        - heading "Materiales premium" [level=4] [ref=f13e76]
+        - paragraph [ref=f13e77]: Seleccionados con cuidado
+      - generic [ref=f13e85]:
+        - heading "Para regalar" [level=4] [ref=f13e86]
+        - paragraph [ref=f13e87]: Empaques especiales disponibles
+    - generic [ref=f13e88]:
+      - generic [ref=f13e89]:
+        - generic [ref=f13e90]: 0+
+        - generic [ref=f13e91]: Clientes
+      - generic [ref=f13e92]:
+        - generic [ref=f13e93]: 0+
+        - generic [ref=f13e94]: Productos vendidos
+      - generic [ref=f13e95]:
+        - generic [ref=f13e96]: 0+
+        - generic [ref=f13e97]: Años de experiencia
+      - generic [ref=f13e98]:
+        - generic [ref=f13e99]: 0%
+        - generic [ref=f13e100]: Artesanal
+    - generic [ref=f13e101]:
+      - generic [ref=f13e102]:
+        - generic [ref=f13e103]: Proceso
+        - heading "Cómo funciona" [level=2] [ref=f13e104]
+        - paragraph [ref=f13e105]: Cinco pasos simples para comprar tu artesanía
+      - generic [ref=f13e106]:
+        - generic [ref=f13e107]:
+          - heading "1) Elegí productos" [level=3] [ref=f13e108]
+          - paragraph [ref=f13e109]: Filtrá por categoría y elegí tu pieza del catálogo.
+        - generic [ref=f13e110]:
+          - heading "2) Sumá al carrito" [level=3] [ref=f13e111]
+          - paragraph [ref=f13e112]: Presioná "Agregar" para guardar tu selección.
+        - generic [ref=f13e113]:
+          - heading "3) Revisá el carrito" [level=3] [ref=f13e114]
+          - paragraph [ref=f13e115]: Verificá cantidad, subtotal y total antes de pagar.
+        - generic [ref=f13e116]:
+          - heading "4) Pagá con MercadoPago" [level=3] [ref=f13e117]
+          - paragraph [ref=f13e118]: Ingresás al checkout para completar el pago de forma segura.
+        - generic [ref=f13e119]:
+          - heading "5) Confirmación" [level=3] [ref=f13e120]
+          - paragraph [ref=f13e121]: Al finalizar, vas a ver el comprobante en pantalla.
+    - generic [ref=f13e122]:
+      - generic [ref=f13e123]:
+        - generic [ref=f13e124]: Catálogo
+        - heading "Nuestros Productos" [level=2] [ref=f13e125]
+        - paragraph [ref=f13e126]: Descubrí piezas únicas hechas a mano
+      - generic [ref=f13e127]:
+        - button "Todos" [ref=f13e128] [cursor=pointer]
+        - button "Pulseras" [ref=f13e129] [cursor=pointer]
+        - button "Accesorios" [ref=f13e130] [cursor=pointer]
+        - button "Souvenirs" [ref=f13e131] [cursor=pointer]
+      - generic [ref=f13e132]:
+        - textbox "Buscar productos" [ref=f13e133]:
+          - /placeholder: Buscar productos...
+        - button "Buscar" [ref=f13e134] [cursor=pointer]: 🔍
+      - generic [ref=f13e135]:
+        - generic [ref=f13e136]:
+          - link "pulseras Pulsera Minimalista Rosa Diseño minimalista con cuentas de cerámica en tonos rosa pastel $ 450,00" [ref=f13e137] [cursor=pointer]:
+            - /url: pages/product.html?id=1
+            - generic [ref=f13e140]:
+              - generic [ref=f13e141]: pulseras
+              - heading "Pulsera Minimalista Rosa" [level=3] [ref=f13e142]
+              - paragraph [ref=f13e143]: Diseño minimalista con cuentas de cerámica en tonos rosa pastel
+              - generic [ref=f13e144]: $ 450,00
+          - generic [ref=f13e146]:
+            - button "Agregar Pulsera Minimalista Rosa al carrito" [ref=f13e147] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e149] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e150] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Pulsera%20Minimalista%20Rosa%20-%20%24%C2%A0450%2C00
+        - generic [ref=f13e151]:
+          - link "pulseras Pulsera Menta Orgánica Pulsera tejida con materiales ecológicos en tonos verdes $ 520,00" [ref=f13e152] [cursor=pointer]:
+            - /url: pages/product.html?id=2
+            - generic [ref=f13e155]:
+              - generic [ref=f13e156]: pulseras
+              - heading "Pulsera Menta Orgánica" [level=3] [ref=f13e157]
+              - paragraph [ref=f13e158]: Pulsera tejida con materiales ecológicos en tonos verdes
+              - generic [ref=f13e159]: $ 520,00
+          - generic [ref=f13e161]:
+            - button "Agregar Pulsera Menta Orgánica al carrito" [ref=f13e162] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e164] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e165] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Pulsera%20Menta%20Org%C3%A1nica%20-%20%24%C2%A0520%2C00
+        - generic [ref=f13e166]:
+          - link "accesorios Llavero Artesanal Llavero tejido a mano con detalle floral $ 250,00" [ref=f13e167] [cursor=pointer]:
+            - /url: pages/product.html?id=3
+            - generic [ref=f13e170]:
+              - generic [ref=f13e171]: accesorios
+              - heading "Llavero Artesanal" [level=3] [ref=f13e172]
+              - paragraph [ref=f13e173]: Llavero tejido a mano con detalle floral
+              - generic [ref=f13e174]: $ 250,00
+          - generic [ref=f13e176]:
+            - button "Agregar Llavero Artesanal al carrito" [ref=f13e177] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e179] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e180] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Llavero%20Artesanal%20-%20%24%C2%A0250%2C00
+        - generic [ref=f13e181]:
+          - link "souvenirs Souvenir Gualeguay Imán decorativo con representación local $ 380,00" [ref=f13e182] [cursor=pointer]:
+            - /url: pages/product.html?id=4
+            - generic [ref=f13e185]:
+              - generic [ref=f13e186]: souvenirs
+              - heading "Souvenir Gualeguay" [level=3] [ref=f13e187]
+              - paragraph [ref=f13e188]: Imán decorativo con representación local
+              - generic [ref=f13e189]: $ 380,00
+          - generic [ref=f13e191]:
+            - button "Agregar Souvenir Gualeguay al carrito" [ref=f13e192] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e194] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e195] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Souvenir%20Gualeguay%20-%20%24%C2%A0380%2C00
+        - generic [ref=f13e196]:
+          - link "pulseras Pulsera Bohemia Multi Pulsera con múltiples hilos y cuentas en tonos variados $ 590,00" [ref=f13e197] [cursor=pointer]:
+            - /url: pages/product.html?id=5
+            - generic [ref=f13e200]:
+              - generic [ref=f13e201]: pulseras
+              - heading "Pulsera Bohemia Multi" [level=3] [ref=f13e202]
+              - paragraph [ref=f13e203]: Pulsera con múltiples hilos y cuentas en tonos variados
+              - generic [ref=f13e204]: $ 590,00
+          - generic [ref=f13e206]:
+            - button "Agregar Pulsera Bohemia Multi al carrito" [ref=f13e207] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e209] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e210] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Pulsera%20Bohemia%20Multi%20-%20%24%C2%A0590%2C00
+        - generic [ref=f13e211]:
+          - link "accesorios Collar Artesanal Corto Collar corto con colgante hecho a mano $ 650,00" [ref=f13e212] [cursor=pointer]:
+            - /url: pages/product.html?id=6
+            - generic [ref=f13e215]:
+              - generic [ref=f13e216]: accesorios
+              - heading "Collar Artesanal Corto" [level=3] [ref=f13e217]
+              - paragraph [ref=f13e218]: Collar corto con colgante hecho a mano
+              - generic [ref=f13e219]: $ 650,00
+          - generic [ref=f13e221]:
+            - button "Agregar Collar Artesanal Corto al carrito" [ref=f13e222] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e224] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e225] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Collar%20Artesanal%20Corto%20-%20%24%C2%A0650%2C00
+        - generic [ref=f13e226]:
+          - link "pulseras Pack 3 Pulseras Surtidas Set de 3 pulseras con diferentes diseños $ 1.200,00" [ref=f13e227] [cursor=pointer]:
+            - /url: pages/product.html?id=7
+            - generic [ref=f13e230]:
+              - generic [ref=f13e231]: pulseras
+              - heading "Pack 3 Pulseras Surtidas" [level=3] [ref=f13e232]
+              - paragraph [ref=f13e233]: Set de 3 pulseras con diferentes diseños
+              - generic [ref=f13e234]: $ 1.200,00
+          - generic [ref=f13e236]:
+            - button "Agregar Pack 3 Pulseras Surtidas al carrito" [ref=f13e237] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e239] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e240] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Pack%203%20Pulseras%20Surtidas%20-%20%24%C2%A01.200%2C00
+        - generic [ref=f13e241]:
+          - link "pulseras Brazalete Tejido Premium Brazalete ancho tejido con técnica tradicional $ 890,00" [ref=f13e242] [cursor=pointer]:
+            - /url: pages/product.html?id=8
+            - generic [ref=f13e245]:
+              - generic [ref=f13e246]: pulseras
+              - heading "Brazalete Tejido Premium" [level=3] [ref=f13e247]
+              - paragraph [ref=f13e248]: Brazalete ancho tejido con técnica tradicional
+              - generic [ref=f13e249]: $ 890,00
+          - generic [ref=f13e251]:
+            - button "Agregar Brazalete Tejido Premium al carrito" [ref=f13e252] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e254] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e255] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Brazalete%20Tejido%20Premium%20-%20%24%C2%A0890%2C00
+        - generic [ref=f13e256]:
+          - link "souvenirs Souvenir Taza Personalizada Taza de cerámica con diseño exclusivo de Gualeguay $ 320,00" [ref=f13e257] [cursor=pointer]:
+            - /url: pages/product.html?id=9
+            - generic [ref=f13e260]:
+              - generic [ref=f13e261]: souvenirs
+              - heading "Souvenir Taza Personalizada" [level=3] [ref=f13e262]
+              - paragraph [ref=f13e263]: Taza de cerámica con diseño exclusivo de Gualeguay
+              - generic [ref=f13e264]: $ 320,00
+          - generic [ref=f13e266]:
+            - button "Agregar Souvenir Taza Personalizada al carrito" [ref=f13e267] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e269] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e270] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Souvenir%20Taza%20Personalizada%20-%20%24%C2%A0320%2C00
+        - generic [ref=f13e271]:
+          - link "accesorios Anillo Cerámica Anillo ajustable hecho de cerámica cocida artesanalmente $ 280,00" [ref=f13e272] [cursor=pointer]:
+            - /url: pages/product.html?id=10
+            - generic [ref=f13e275]:
+              - generic [ref=f13e276]: accesorios
+              - heading "Anillo Cerámica" [level=3] [ref=f13e277]
+              - paragraph [ref=f13e278]: Anillo ajustable hecho de cerámica cocida artesanalmente
+              - generic [ref=f13e279]: $ 280,00
+          - generic [ref=f13e281]:
+            - button "Agregar Anillo Cerámica al carrito" [ref=f13e282] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e284] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e285] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Anillo%20Cer%C3%A1mica%20-%20%24%C2%A0280%2C00
+        - generic [ref=f13e286]:
+          - link "pulseras Pulsera Amistad Dual Pulsera de amistad para compartir en tonos complementarios $ 480,00" [ref=f13e287] [cursor=pointer]:
+            - /url: pages/product.html?id=11
+            - generic [ref=f13e290]:
+              - generic [ref=f13e291]: pulseras
+              - heading "Pulsera Amistad Dual" [level=3] [ref=f13e292]
+              - paragraph [ref=f13e293]: Pulsera de amistad para compartir en tonos complementarios
+              - generic [ref=f13e294]: $ 480,00
+          - generic [ref=f13e296]:
+            - button "Agregar Pulsera Amistad Dual al carrito" [ref=f13e297] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e299] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e300] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Pulsera%20Amistad%20Dual%20-%20%24%C2%A0480%2C00
+        - generic [ref=f13e301]:
+          - link "souvenirs Marcapáginas Decorativo Marcapáginas hecho a mano con técnica mixta $ 150,00" [ref=f13e302] [cursor=pointer]:
+            - /url: pages/product.html?id=12
+            - generic [ref=f13e305]:
+              - generic [ref=f13e306]: souvenirs
+              - heading "Marcapáginas Decorativo" [level=3] [ref=f13e307]
+              - paragraph [ref=f13e308]: Marcapáginas hecho a mano con técnica mixta
+              - generic [ref=f13e309]: $ 150,00
+          - generic [ref=f13e311]:
+            - button "Agregar Marcapáginas Decorativo al carrito" [ref=f13e312] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e314] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e315] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Marcap%C3%A1ginas%20Decorativo%20-%20%24%C2%A0150%2C00
+        - generic [ref=f13e316]:
+          - link "pulseras Pulsera Perlas Naturales Pulsera con perlas naturales y cierre ajustable $ 620,00" [ref=f13e317] [cursor=pointer]:
+            - /url: pages/product.html?id=13
+            - generic [ref=f13e320]:
+              - generic [ref=f13e321]: pulseras
+              - heading "Pulsera Perlas Naturales" [level=3] [ref=f13e322]
+              - paragraph [ref=f13e323]: Pulsera con perlas naturales y cierre ajustable
+              - generic [ref=f13e324]: $ 620,00
+          - generic [ref=f13e326]:
+            - button "Agregar Pulsera Perlas Naturales al carrito" [ref=f13e327] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e329] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e330] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Pulsera%20Perlas%20Naturales%20-%20%24%C2%A0620%2C00
+        - generic [ref=f13e331]:
+          - link "accesorios Dije Macramé Dije tejido en macramé con hilo encerado $ 350,00" [ref=f13e332] [cursor=pointer]:
+            - /url: pages/product.html?id=14
+            - generic [ref=f13e335]:
+              - generic [ref=f13e336]: accesorios
+              - heading "Dije Macramé" [level=3] [ref=f13e337]
+              - paragraph [ref=f13e338]: Dije tejido en macramé con hilo encerado
+              - generic [ref=f13e339]: $ 350,00
+          - generic [ref=f13e341]:
+            - button "Agregar Dije Macramé al carrito" [ref=f13e342] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e344] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e345] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Dije%20Macram%C3%A9%20-%20%24%C2%A0350%2C00
+        - generic [ref=f13e346]:
+          - link "souvenirs Imán Cerámica Flor Imán de cerámica con detalle flor pintado a mano $ 180,00" [ref=f13e347] [cursor=pointer]:
+            - /url: pages/product.html?id=15
+            - generic [ref=f13e350]:
+              - generic [ref=f13e351]: souvenirs
+              - heading "Imán Cerámica Flor" [level=3] [ref=f13e352]
+              - paragraph [ref=f13e353]: Imán de cerámica con detalle flor pintado a mano
+              - generic [ref=f13e354]: $ 180,00
+          - generic [ref=f13e356]:
+            - button "Agregar Imán Cerámica Flor al carrito" [ref=f13e357] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e359] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e360] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Im%C3%A1n%20Cer%C3%A1mica%20Flor%20-%20%24%C2%A0180%2C00
+        - generic [ref=f13e361]:
+          - link "pulseras Pulsera Trenzada Cuero Pulsera de cuero trenzado con cierre magnético $ 750,00" [ref=f13e362] [cursor=pointer]:
+            - /url: pages/product.html?id=16
+            - generic [ref=f13e365]:
+              - generic [ref=f13e366]: pulseras
+              - heading "Pulsera Trenzada Cuero" [level=3] [ref=f13e367]
+              - paragraph [ref=f13e368]: Pulsera de cuero trenzado con cierre magnético
+              - generic [ref=f13e369]: $ 750,00
+          - generic [ref=f13e371]:
+            - button "Agregar Pulsera Trenzada Cuero al carrito" [ref=f13e372] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e374] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e375] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Pulsera%20Trenzada%20Cuero%20-%20%24%C2%A0750%2C00
+        - generic [ref=f13e376]:
+          - link "accesorios Pack Llaveros x5 Set de 5 llaveros con diseños variados $ 1.100,00" [ref=f13e377] [cursor=pointer]:
+            - /url: pages/product.html?id=17
+            - generic [ref=f13e380]:
+              - generic [ref=f13e381]: accesorios
+              - heading "Pack Llaveros x5" [level=3] [ref=f13e382]
+              - paragraph [ref=f13e383]: Set de 5 llaveros con diseños variados
+              - generic [ref=f13e384]: $ 1.100,00
+          - generic [ref=f13e386]:
+            - button "Agregar Pack Llaveros x5 al carrito" [ref=f13e387] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e389] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e390] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Pack%20Llaveros%20x5%20-%20%24%C2%A01.100%2C00
+        - generic [ref=f13e391]:
+          - link "souvenirs Souvenir Imán Ciudad Imán con ilustración de la ciudad $ 200,00" [ref=f13e392] [cursor=pointer]:
+            - /url: pages/product.html?id=18
+            - generic [ref=f13e395]:
+              - generic [ref=f13e396]: souvenirs
+              - heading "Souvenir Imán Ciudad" [level=3] [ref=f13e397]
+              - paragraph [ref=f13e398]: Imán con ilustración de la ciudad
+              - generic [ref=f13e399]: $ 200,00
+          - generic [ref=f13e401]:
+            - button "Agregar Souvenir Imán Ciudad al carrito" [ref=f13e402] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e404] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e405] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Souvenir%20Im%C3%A1n%20Ciudad%20-%20%24%C2%A0200%2C00
+        - generic [ref=f13e406]:
+          - link "accesorios Collar Largo Boho Collar largo con cuentas y dijes étnicos $ 950,00" [ref=f13e407] [cursor=pointer]:
+            - /url: pages/product.html?id=19
+            - generic [ref=f13e410]:
+              - generic [ref=f13e411]: accesorios
+              - heading "Collar Largo Boho" [level=3] [ref=f13e412]
+              - paragraph [ref=f13e413]: Collar largo con cuentas y dijes étnicos
+              - generic [ref=f13e414]: $ 950,00
+          - generic [ref=f13e416]:
+            - button "Agregar Collar Largo Boho al carrito" [ref=f13e417] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e419] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e420] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Collar%20Largo%20Boho%20-%20%24%C2%A0950%2C00
+        - generic [ref=f13e421]:
+          - link "pulseras Pulsera Ajustable Nudos Pulsera de nudos ajustable estilo surfer $ 400,00" [ref=f13e422] [cursor=pointer]:
+            - /url: pages/product.html?id=20
+            - generic [ref=f13e425]:
+              - generic [ref=f13e426]: pulseras
+              - heading "Pulsera Ajustable Nudos" [level=3] [ref=f13e427]
+              - paragraph [ref=f13e428]: Pulsera de nudos ajustable estilo surfer
+              - generic [ref=f13e429]: $ 400,00
+          - generic [ref=f13e431]:
+            - button "Agregar Pulsera Ajustable Nudos al carrito" [ref=f13e432] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e434] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e435] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Pulsera%20Ajustable%20Nudos%20-%20%24%C2%A0400%2C00
+        - generic [ref=f13e436]:
+          - link "souvenirs Kit Regalo Personalizado Set de regalo con productos a elección $ 1.500,00" [ref=f13e437] [cursor=pointer]:
+            - /url: pages/product.html?id=21
+            - generic [ref=f13e440]:
+              - generic [ref=f13e441]: souvenirs
+              - heading "Kit Regalo Personalizado" [level=3] [ref=f13e442]
+              - paragraph [ref=f13e443]: Set de regalo con productos a elección
+              - generic [ref=f13e444]: $ 1.500,00
+          - generic [ref=f13e446]:
+            - button "Agregar Kit Regalo Personalizado al carrito" [ref=f13e447] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e449] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e450] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Kit%20Regalo%20Personalizado%20-%20%24%C2%A01.500%2C00
+        - generic [ref=f13e451]:
+          - link "accesorios Anillo Anatómico Corazón Anillo con diseño de corazón anatómico $ 380,00" [ref=f13e452] [cursor=pointer]:
+            - /url: pages/product.html?id=22
+            - generic [ref=f13e455]:
+              - generic [ref=f13e456]: accesorios
+              - heading "Anillo Anatómico Corazón" [level=3] [ref=f13e457]
+              - paragraph [ref=f13e458]: Anillo con diseño de corazón anatómico
+              - generic [ref=f13e459]: $ 380,00
+          - generic [ref=f13e461]:
+            - button "Agregar Anillo Anatómico Corazón al carrito" [ref=f13e462] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e464] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e465] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Anillo%20Anat%C3%B3mico%20Coraz%C3%B3n%20-%20%24%C2%A0380%2C00
+        - generic [ref=f13e466]:
+          - link "pulseras Pulsera Multicolor Caramelo Pulsera con hilos de colores vibrantes estilo caramelo $ 580,00" [ref=f13e467] [cursor=pointer]:
+            - /url: pages/product.html?id=23
+            - generic [ref=f13e470]:
+              - generic [ref=f13e471]: pulseras
+              - heading "Pulsera Multicolor Caramelo" [level=3] [ref=f13e472]
+              - paragraph [ref=f13e473]: Pulsera con hilos de colores vibrantes estilo caramelo
+              - generic [ref=f13e474]: $ 580,00
+          - generic [ref=f13e476]:
+            - button "Agregar Pulsera Multicolor Caramelo al carrito" [ref=f13e477] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e479] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e480] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Pulsera%20Multicolor%20Caramelo%20-%20%24%C2%A0580%2C00
+        - generic [ref=f13e481]:
+          - link "accesorios Dije Hoja Minima Dije de hojas con baño en oro $ 220,00" [ref=f13e482] [cursor=pointer]:
+            - /url: pages/product.html?id=24
+            - generic [ref=f13e485]:
+              - generic [ref=f13e486]: accesorios
+              - heading "Dije Hoja Minima" [level=3] [ref=f13e487]
+              - paragraph [ref=f13e488]: Dije de hojas con baño en oro
+              - generic [ref=f13e489]: $ 220,00
+          - generic [ref=f13e491]:
+            - button "Agregar Dije Hoja Minima al carrito" [ref=f13e492] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e494] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e495] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Dije%20Hoja%20Minima%20-%20%24%C2%A0220%2C00
+        - generic [ref=f13e496]:
+          - link "souvenirs Souvenir Lapiz Decorado Lapiz con detalles pintados a mano $ 180,00" [ref=f13e497] [cursor=pointer]:
+            - /url: pages/product.html?id=25
+            - generic [ref=f13e500]:
+              - generic [ref=f13e501]: souvenirs
+              - heading "Souvenir Lapiz Decorado" [level=3] [ref=f13e502]
+              - paragraph [ref=f13e503]: Lapiz con detalles pintados a mano
+              - generic [ref=f13e504]: $ 180,00
+          - generic [ref=f13e506]:
+            - button "Agregar Souvenir Lapiz Decorado al carrito" [ref=f13e507] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e509] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e510] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Souvenir%20Lapiz%20Decorado%20-%20%24%C2%A0180%2C00
+        - generic [ref=f13e511]:
+          - link "pulseras Pack Pulseras x3 Set de 3 pulseras combinadas en tonos pastel $ 1.300,00" [ref=f13e512] [cursor=pointer]:
+            - /url: pages/product.html?id=26
+            - generic [ref=f13e515]:
+              - generic [ref=f13e516]: pulseras
+              - heading "Pack Pulseras x3" [level=3] [ref=f13e517]
+              - paragraph [ref=f13e518]: Set de 3 pulseras combinadas en tonos pastel
+              - generic [ref=f13e519]: $ 1.300,00
+          - generic [ref=f13e521]:
+            - button "Agregar Pack Pulseras x3 al carrito" [ref=f13e522] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e524] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e525] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Pack%20Pulseras%20x3%20-%20%24%C2%A01.300%2C00
+        - generic [ref=f13e526]:
+          - link "accesorios Collar Cadena Perla Collar cadena con dije de perla artesanal $ 890,00" [ref=f13e527] [cursor=pointer]:
+            - /url: pages/product.html?id=27
+            - generic [ref=f13e530]:
+              - generic [ref=f13e531]: accesorios
+              - heading "Collar Cadena Perla" [level=3] [ref=f13e532]
+              - paragraph [ref=f13e533]: Collar cadena con dije de perla artesanal
+              - generic [ref=f13e534]: $ 890,00
+          - generic [ref=f13e536]:
+            - button "Agregar Collar Cadena Perla al carrito" [ref=f13e537] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e539] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e540] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Collar%20Cadena%20Perla%20-%20%24%C2%A0890%2C00
+        - generic [ref=f13e541]:
+          - link "souvenirs Imán Corazón Tallado Imán en forma de corazón con grabado $ 160,00" [ref=f13e542] [cursor=pointer]:
+            - /url: pages/product.html?id=28
+            - generic [ref=f13e545]:
+              - generic [ref=f13e546]: souvenirs
+              - heading "Imán Corazón Tallado" [level=3] [ref=f13e547]
+              - paragraph [ref=f13e548]: Imán en forma de corazón con grabado
+              - generic [ref=f13e549]: $ 160,00
+          - generic [ref=f13e551]:
+            - button "Agregar Imán Corazón Tallado al carrito" [ref=f13e552] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e554] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e555] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Im%C3%A1n%20Coraz%C3%B3n%20Tallado%20-%20%24%C2%A0160%2C00
+        - generic [ref=f13e556]:
+          - link "pulseras Pulsera Hilo Ajustable Pulsera de hilo encerado ajustable $ 340,00" [ref=f13e557] [cursor=pointer]:
+            - /url: pages/product.html?id=29
+            - generic [ref=f13e560]:
+              - generic [ref=f13e561]: pulseras
+              - heading "Pulsera Hilo Ajustable" [level=3] [ref=f13e562]
+              - paragraph [ref=f13e563]: Pulsera de hilo encerado ajustable
+              - generic [ref=f13e564]: $ 340,00
+          - generic [ref=f13e566]:
+            - button "Agregar Pulsera Hilo Ajustable al carrito" [ref=f13e567] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e569] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e570] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Pulsera%20Hilo%20Ajustable%20-%20%24%C2%A0340%2C00
+        - generic [ref=f13e571]:
+          - link "accesorios Llavero Inicial Llavero personalizado con inicial de ceramica $ 260,00" [ref=f13e572] [cursor=pointer]:
+            - /url: pages/product.html?id=30
+            - generic [ref=f13e575]:
+              - generic [ref=f13e576]: accesorios
+              - heading "Llavero Inicial" [level=3] [ref=f13e577]
+              - paragraph [ref=f13e578]: Llavero personalizado con inicial de ceramica
+              - generic [ref=f13e579]: $ 260,00
+          - generic [ref=f13e581]:
+            - button "Agregar Llavero Inicial al carrito" [ref=f13e582] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e584] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e585] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Llavero%20Inicial%20-%20%24%C2%A0260%2C00
+        - generic [ref=f13e586]:
+          - link "souvenirs Souvenir Sobre Madera Souvenir en madera grabada con motivo local $ 430,00" [ref=f13e587] [cursor=pointer]:
+            - /url: pages/product.html?id=31
+            - generic [ref=f13e590]:
+              - generic [ref=f13e591]: souvenirs
+              - heading "Souvenir Sobre Madera" [level=3] [ref=f13e592]
+              - paragraph [ref=f13e593]: Souvenir en madera grabada con motivo local
+              - generic [ref=f13e594]: $ 430,00
+          - generic [ref=f13e596]:
+            - button "Agregar Souvenir Sobre Madera al carrito" [ref=f13e597] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e599] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e600] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Souvenir%20Sobre%20Madera%20-%20%24%C2%A0430%2C00
+        - generic [ref=f13e601]:
+          - link "pulseras Pulsera Destellos Pulsera con cuentas brillantes para ocasiones especiales $ 530,00" [ref=f13e602] [cursor=pointer]:
+            - /url: pages/product.html?id=32
+            - generic [ref=f13e605]:
+              - generic [ref=f13e606]: pulseras
+              - heading "Pulsera Destellos" [level=3] [ref=f13e607]
+              - paragraph [ref=f13e608]: Pulsera con cuentas brillantes para ocasiones especiales
+              - generic [ref=f13e609]: $ 530,00
+          - generic [ref=f13e611]:
+            - button "Agregar Pulsera Destellos al carrito" [ref=f13e612] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e614] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e615] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Pulsera%20Destellos%20-%20%24%C2%A0530%2C00
+        - generic [ref=f13e616]:
+          - link "accesorios Collar Turquesa Natural Collar corto con piedra turquesa natural $ 720,00" [ref=f13e617] [cursor=pointer]:
+            - /url: pages/product.html?id=33
+            - generic [ref=f13e620]:
+              - generic [ref=f13e621]: accesorios
+              - heading "Collar Turquesa Natural" [level=3] [ref=f13e622]
+              - paragraph [ref=f13e623]: Collar corto con piedra turquesa natural
+              - generic [ref=f13e624]: $ 720,00
+          - generic [ref=f13e626]:
+            - button "Agregar Collar Turquesa Natural al carrito" [ref=f13e627] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e629] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e630] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Collar%20Turquesa%20Natural%20-%20%24%C2%A0720%2C00
+        - generic [ref=f13e631]:
+          - link "pulseras Pulsera Nudo Celta Pulsera con nudo celta en hilo encerado $ 470,00" [ref=f13e632] [cursor=pointer]:
+            - /url: pages/product.html?id=34
+            - generic [ref=f13e635]:
+              - generic [ref=f13e636]: pulseras
+              - heading "Pulsera Nudo Celta" [level=3] [ref=f13e637]
+              - paragraph [ref=f13e638]: Pulsera con nudo celta en hilo encerado
+              - generic [ref=f13e639]: $ 470,00
+          - generic [ref=f13e641]:
+            - button "Agregar Pulsera Nudo Celta al carrito" [ref=f13e642] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e644] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e645] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Pulsera%20Nudo%20Celta%20-%20%24%C2%A0470%2C00
+        - generic [ref=f13e646]:
+          - link "souvenirs Imán Madera Corazón Imán de madera con forma de corazón $ 190,00" [ref=f13e647] [cursor=pointer]:
+            - /url: pages/product.html?id=35
+            - generic [ref=f13e650]:
+              - generic [ref=f13e651]: souvenirs
+              - heading "Imán Madera Corazón" [level=3] [ref=f13e652]
+              - paragraph [ref=f13e653]: Imán de madera con forma de corazón
+              - generic [ref=f13e654]: $ 190,00
+          - generic [ref=f13e656]:
+            - button "Agregar Imán Madera Corazón al carrito" [ref=f13e657] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e659] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e660] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Im%C3%A1n%20Madera%20Coraz%C3%B3n%20-%20%24%C2%A0190%2C00
+        - generic [ref=f13e661]:
+          - link "accesorios Pack Dijes x4 Set de 4 dijes combinados para personalizar $ 980,00" [ref=f13e662] [cursor=pointer]:
+            - /url: pages/product.html?id=36
+            - generic [ref=f13e665]:
+              - generic [ref=f13e666]: accesorios
+              - heading "Pack Dijes x4" [level=3] [ref=f13e667]
+              - paragraph [ref=f13e668]: Set de 4 dijes combinados para personalizar
+              - generic [ref=f13e669]: $ 980,00
+          - generic [ref=f13e671]:
+            - button "Agregar Pack Dijes x4 al carrito" [ref=f13e672] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e674] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e675] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Pack%20Dijes%20x4%20-%20%24%C2%A0980%2C00
+        - generic [ref=f13e676]:
+          - link "pulseras Pulsera Rosa Fuerte Pulsera en tono rosa intenso con cierre ajustable $ 510,00" [ref=f13e677] [cursor=pointer]:
+            - /url: pages/product.html?id=37
+            - generic [ref=f13e680]:
+              - generic [ref=f13e681]: pulseras
+              - heading "Pulsera Rosa Fuerte" [level=3] [ref=f13e682]
+              - paragraph [ref=f13e683]: Pulsera en tono rosa intenso con cierre ajustable
+              - generic [ref=f13e684]: $ 510,00
+          - generic [ref=f13e686]:
+            - button "Agregar Pulsera Rosa Fuerte al carrito" [ref=f13e687] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e689] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e690] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Pulsera%20Rosa%20Fuerte%20-%20%24%C2%A0510%2C00
+        - generic [ref=f13e691]:
+          - link "souvenirs Souvenir Llavero Ciudad Llavero con grabado del nombre de la ciudad $ 240,00" [ref=f13e692] [cursor=pointer]:
+            - /url: pages/product.html?id=38
+            - generic [ref=f13e695]:
+              - generic [ref=f13e696]: souvenirs
+              - heading "Souvenir Llavero Ciudad" [level=3] [ref=f13e697]
+              - paragraph [ref=f13e698]: Llavero con grabado del nombre de la ciudad
+              - generic [ref=f13e699]: $ 240,00
+          - generic [ref=f13e701]:
+            - button "Agregar Souvenir Llavero Ciudad al carrito" [ref=f13e702] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e704] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e705] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Souvenir%20Llavero%20Ciudad%20-%20%24%C2%A0240%2C00
+        - generic [ref=f13e706]:
+          - link "accesorios Aros Cadena Fina Aros colgantes con cadena fina artesanal $ 630,00" [ref=f13e707] [cursor=pointer]:
+            - /url: pages/product.html?id=39
+            - generic [ref=f13e710]:
+              - generic [ref=f13e711]: accesorios
+              - heading "Aros Cadena Fina" [level=3] [ref=f13e712]
+              - paragraph [ref=f13e713]: Aros colgantes con cadena fina artesanal
+              - generic [ref=f13e714]: $ 630,00
+          - generic [ref=f13e716]:
+            - button "Agregar Aros Cadena Fina al carrito" [ref=f13e717] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e719] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e720] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Aros%20Cadena%20Fina%20-%20%24%C2%A0630%2C00
+        - generic [ref=f13e721]:
+          - link "pulseras Pulserada Mix 5u Pack de 5 pulseras surtidas en colores pastel $ 1.450,00" [ref=f13e722] [cursor=pointer]:
+            - /url: pages/product.html?id=40
+            - generic [ref=f13e725]:
+              - generic [ref=f13e726]: pulseras
+              - heading "Pulserada Mix 5u" [level=3] [ref=f13e727]
+              - paragraph [ref=f13e728]: Pack de 5 pulseras surtidas en colores pastel
+              - generic [ref=f13e729]: $ 1.450,00
+          - generic [ref=f13e731]:
+            - button "Agregar Pulserada Mix 5u al carrito" [ref=f13e732] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e734] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e735] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Pulserada%20Mix%205u%20-%20%24%C2%A01.450%2C00
+        - generic [ref=f13e736]:
+          - link "accesorios Cuaderno Decorado Cuaderno tapa dura con ilustración artesanal $ 170,00" [ref=f13e737] [cursor=pointer]:
+            - /url: pages/product.html?id=41
+            - generic [ref=f13e740]:
+              - generic [ref=f13e741]: accesorios
+              - heading "Cuaderno Decorado" [level=3] [ref=f13e742]
+              - paragraph [ref=f13e743]: Cuaderno tapa dura con ilustración artesanal
+              - generic [ref=f13e744]: $ 170,00
+          - generic [ref=f13e746]:
+            - button "Agregar Cuaderno Decorado al carrito" [ref=f13e747] [cursor=pointer]
+            - button "Agregar a favoritos" [ref=f13e749] [cursor=pointer]: 🤍
+            - link "💬" [ref=f13e750] [cursor=pointer]:
+              - /url: https://wa.me/5493444634444?text=Hola!%20Me%20interesa%20el%20producto%3A%20Cuaderno%20Decorado%20-%20%24%C2%A0170%2C00
+    - generic [ref=f13e751]:
+      - generic [ref=f13e752]:
+        - generic [ref=f13e753]: Nosotros
+        - heading "Sobre Nosotros" [level=2] [ref=f13e754]
+        - paragraph [ref=f13e755]: La historia detrás de cada creación
+      - generic [ref=f13e756]:
+        - paragraph [ref=f13e758]: Cada pieza es artesanal y única, hecha con amor y dedicación en Gualeguay, Entre Ríos.
+        - generic [ref=f13e759]:
+          - generic [ref=f13e760]:
+            - generic [ref=f13e761]: 500+
+            - generic [ref=f13e762]: Clientes Satisfechos
+          - generic [ref=f13e763]:
+            - generic [ref=f13e764]: 1000+
+            - generic [ref=f13e765]: Productos Vendidos
+          - generic [ref=f13e766]:
+            - generic [ref=f13e767]: 6+
+            - generic [ref=f13e768]: Años de Experiencia
+    - generic [ref=f13e769]:
+      - generic [ref=f13e770]:
+        - generic [ref=f13e771]: Contacto
+        - heading "¿Preguntas?" [level=2] [ref=f13e772]
+        - paragraph [ref=f13e773]: Nos encantaría saber de ti
+      - generic [ref=f13e774]:
+        - generic [ref=f13e775]:
+          - generic [ref=f13e776]:
+            - generic [ref=f13e777]: Nombre *
+            - textbox "Nombre *" [ref=f13e778]:
+              - /placeholder: Tu nombre completo
+          - generic [ref=f13e779]:
+            - generic [ref=f13e780]: Email *
+            - textbox "Email *" [ref=f13e781]:
+              - /placeholder: tu@email.com
+          - generic [ref=f13e782]:
+            - generic [ref=f13e783]: Mensaje *
+            - textbox "Mensaje *" [ref=f13e784]:
+              - /placeholder: ¿En qué podemos ayudarte?
+          - button "Enviar Mensaje" [ref=f13e785] [cursor=pointer]
+        - generic [ref=f13e786]:
+          - generic [ref=f13e787]:
+            - generic [ref=f13e788]: 📍
+            - generic [ref=f13e789]: San Antonio Norte 473, Gualeguay, Entre Ríos, Argentina
+          - iframe [ref=f13e790]
+        - generic [ref=f13e791]:
+          - generic [ref=f13e792]:
+            - generic [ref=f13e793]: 📞
+            - generic [ref=f13e794]:
+              - heading "Teléfono" [level=4] [ref=f13e795]
+              - link "+54 (3444) 634-4444" [ref=f13e796] [cursor=pointer]:
+                - /url: tel:+5493444634444
+          - generic [ref=f13e797]:
+            - generic [ref=f13e798]: 📧
+            - generic [ref=f13e799]:
+              - heading "Email" [level=4] [ref=f13e800]
+              - link "chicafittargentina@gmail.com" [ref=f13e801] [cursor=pointer]:
+                - /url: mailto:chicafittargentina@gmail.com
+          - generic [ref=f13e802]:
+            - generic [ref=f13e803]: 📍
+            - generic [ref=f13e804]:
+              - heading "Ubicación" [level=4] [ref=f13e805]
+              - paragraph [ref=f13e806]: San Antonio Norte 473Gualeguay, Entre Ríos, Argentina
+          - generic [ref=f13e807]:
+            - generic [ref=f13e808]: 🕝
+            - generic [ref=f13e809]:
+              - heading "Horario" [level=4] [ref=f13e810]
+              - paragraph [ref=f13e811]: Abierto full timeTodos los días
+        - generic [ref=f13e812]:
+          - heading "¿Tenés una consulta?" [level=4] [ref=f13e813]
+          - paragraph [ref=f13e814]: Escribinos por WhatsApp y te respondemos al instante
+          - link "Escribinos por WhatsApp" [ref=f13e815] [cursor=pointer]:
+            - /url: https://wa.me/5493444634444
+    - generic [ref=f13e818]:
+      - generic [ref=f13e819]:
+        - heading "Suscríbete a nuestro Newsletter" [level=3] [ref=f13e820]
+        - paragraph [ref=f13e821]: Recibe ofertas exclusivas y descuentos en tu email
+      - generic [ref=f13e822]:
+        - textbox "tu@email.com" [ref=f13e823]
+        - button "Suscribirse" [ref=f13e824] [cursor=pointer]
+    - generic [ref=f13e825]:
+      - generic [ref=f13e826]:
+        - generic [ref=f13e827]: Testimonios
+        - heading "Lo que dicen nuestros clientes" [level=2] [ref=f13e828]
+        - paragraph [ref=f13e829]: Historias reales de personas que confiaron en nosotros
+      - generic [ref=f13e830]:
+        - generic [ref=f13e831]:
+          - generic [ref=f13e832]:
+            - generic [ref=f13e833]: 😊
+            - generic [ref=f13e834]: MarÃa GarcÃa
+            - generic [ref=f13e836]: ⭐⭐⭐⭐⭐
+          - paragraph [ref=f13e837]: Las pulseras son hermosas y el envÃo fue rapidÃsimo. VolverÃ© a comprar!
+        - generic [ref=f13e838]:
+          - generic [ref=f13e839]:
+            - generic [ref=f13e840]: 😊
+            - generic [ref=f13e841]: Juan PÃ©rez
+            - generic [ref=f13e843]: ⭐⭐⭐⭐⭐
+          - paragraph [ref=f13e844]: Me encantÃ³ el packaging, muy cuidado y personalizado. Muy recomendable.
+        - generic [ref=f13e845]:
+          - generic [ref=f13e846]:
+            - generic [ref=f13e847]: 😊
+            - generic [ref=f13e848]: LucÃa FernÃ¡ndez
+            - generic [ref=f13e850]: ⭐⭐⭐⭐
+          - paragraph [ref=f13e851]: ComprÃ© un souvenir para mi amiga y le fascinÃ³. Calidad excelente.
+        - generic [ref=f13e852]:
+          - generic [ref=f13e853]:
+            - generic [ref=f13e854]: 😊
+            - generic [ref=f13e855]: Carlos Ruiz
+            - generic [ref=f13e857]: ⭐⭐⭐⭐⭐
+          - paragraph [ref=f13e858]: Tengo varias piezas de IARA, todas Ãºnicas y de excelente terminaciÃ³n.
+  - contentinfo [ref=f13e859]:
+    - generic [ref=f13e860]:
+      - generic [ref=f13e861]:
+        - heading "Artesanía Gualeguay" [level=4] [ref=f13e862]
+        - paragraph [ref=f13e863]: Creando pulseras y souvenirs únicos desde el corazón de Gualeguay, Entre Ríos.
+        - generic [ref=f13e864]:
+          - link "Instagram" [ref=f13e865] [cursor=pointer]:
+            - /url: https://instagram.com
+            - text: 📷
+          - link "Facebook" [ref=f13e866] [cursor=pointer]:
+            - /url: https://facebook.com
+            - text: 👝
+          - link "Twitter" [ref=f13e867] [cursor=pointer]:
+            - /url: https://twitter.com
+            - text: 🐦
+      - generic [ref=f13e868]:
+        - heading "Enlaces Rápidos" [level=4] [ref=f13e869]
+        - list [ref=f13e870]:
+          - listitem [ref=f13e871]:
+            - link "Inicio" [ref=f13e872] [cursor=pointer]:
+              - /url: "#home"
+          - listitem [ref=f13e873]:
+            - link "Catálogo" [ref=f13e874] [cursor=pointer]:
+              - /url: "#catalog"
+          - listitem [ref=f13e875]:
+            - link "Sobre Nosotros" [ref=f13e876] [cursor=pointer]:
+              - /url: "#about"
+          - listitem [ref=f13e877]:
+            - link "Contacto" [ref=f13e878] [cursor=pointer]:
+              - /url: "#contact"
+      - generic [ref=f13e879]:
+        - heading "Información" [level=4] [ref=f13e880]
+        - list [ref=f13e881]:
+          - listitem [ref=f13e882]:
+            - link "Mis Pedidos" [ref=f13e883] [cursor=pointer]:
+              - /url: pages/orders.html
+          - listitem [ref=f13e884]:
+            - link "Términos y Condiciones" [ref=f13e885] [cursor=pointer]:
+              - /url: pages/terms.html
+          - listitem [ref=f13e886]:
+            - link "Política de Privacidad" [ref=f13e887] [cursor=pointer]:
+              - /url: pages/privacy.html
+          - listitem [ref=f13e888]:
+            - link "Cambios y Devoluciones" [ref=f13e889] [cursor=pointer]:
+              - /url: pages/devoluciones.html
+          - listitem [ref=f13e890]:
+            - link "Cesión de Ubicación" [ref=f13e891] [cursor=pointer]:
+              - /url: pages/cesion-ubicacion.html
+          - listitem [ref=f13e892]:
+            - link "Preguntas Frecuentes" [ref=f13e893] [cursor=pointer]:
+              - /url: pages/faq.html
+    - paragraph [ref=f13e895]: © 2026 Artesanía Gualeguay. Todos los derechos reservados.

@@ -1,3 +1,5 @@
+html, body { overflow-x: hidden; }
+
 /* ==================== COMPONENTS ==================== */
 
 /* ==================== NAVBAR ==================== */
@@ -743,6 +745,52 @@
 
 .btn-add-cart:active { transform: scale(0.98); }
 
+.btn-wishlist {
+  padding: 13px 16px;
+  border-radius: 40px;
+  background: transparent;
+  color: var(--text-dark);
+  border: 2px solid var(--rose-light);
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.btn-wishlist:hover {
+  background: var(--rose-light);
+  transform: translateY(-1px);
+}
+
+.btn-wishlist:active { transform: scale(0.95); }
+
+.btn-wishlist-detail {
+  padding: 13px 18px;
+  border-radius: 40px;
+  background: transparent;
+  color: var(--text-dark);
+  border: 2px solid var(--rose-light);
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.btn-wishlist-detail:hover {
+  background: var(--rose-light);
+  transform: translateY(-1px);
+}
+
+.btn-wishlist-detail:active { transform: scale(0.95); }
+
 .product-badge {
   position: absolute;
   top: 10px;
@@ -1292,6 +1340,12 @@
   :root { font-size: 13px; }
   .navbar { padding: 0 12px; }
   .navbar-container { height: 56px; }
+  .logo-text { display: none; }
+  .nav-back { padding: 0.4rem 0.5rem; font-size: 0.75rem; }
+  .nav-back .nav-back-orders { display: none; }
+  .nav-back .nav-back-wishlist { display: none; }
+  .navbar-actions { gap: 4px; }
+  .pill-btn--md { padding: 6px; }
   .hero-content { padding: 16px 0; }
   .hero-buttons { flex-direction: column; }
   .section-header { padding: 0 12px; }

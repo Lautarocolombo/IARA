@@ -14,7 +14,7 @@
   <link rel="stylesheet" href="../css/components.css" />
   <link rel="stylesheet" href="../css/animations.css" />
   <link rel="stylesheet" href="../css/admin.css" />
-  <link rel="stylesheet" href="css/pages.css" />
+  <link rel="stylesheet" href="../css/pages.css" />
   <script src="../js/config.js"></script>
   <script src="../js/safeImage.js"></script>
   <script src="../js/theme.js"></script>
@@ -771,6 +771,47 @@
         document.head.appendChild(script);
       })();
     }
+
+    const originalNavigateTo = window.navigateTo;
+    window.navigateTo = function(section) {
+      if (typeof originalNavigateTo === 'function') originalNavigateTo(section);
+      stopDataSync('admin-orders');
+      stopDataSync('admin-reports');
+      if (section === 'orders') {
+        startDataSync('admin-orders', loadOrders);
+      } else if (section === 'reports') {
+        startDataSync('admin-reports', () => {
+          if (typeof loadSalesReport === 'function') loadSalesReport();
+          if (typeof loadSalesTrend === 'function') loadSalesTrend();
+          if (typeof loadWeeklySummary === 'function') loadWeeklySummary();
+        });
+      }
+    };
+
+    onSyncMessage('order_created', () => {
+      if (currentSection === 'orders') loadOrders();
+    });
+
+    onSyncMessage('order_status_updated', () => {
+      if (currentSection === 'orders') loadOrders();
+      if (currentSection === 'reports') {
+        if (typeof loadSalesReport === 'function') loadSalesReport();
+        if (typeof loadSalesTrend === 'function') loadSalesTrend();
+        if (typeof loadWeeklySummary === 'function') loadWeeklySummary();
+      }
+    });
+
+    onSyncMessage('products_updated', () => {
+      if (currentSection === 'products') loadProducts();
+    });
+
+    onSyncMessage('hero_updated', () => {
+      if (currentSection === 'heroImages') loadHeroCardsAdmin();
+    });
+
+    onSyncMessage('settings_updated', () => {
+      if (currentSection === 'settings') loadSettings();
+    });
   </script>
 </body>
 </html>

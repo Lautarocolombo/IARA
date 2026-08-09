@@ -1,0 +1,71 @@
+- generic [active] [ref=f7e1]:
+  - navigation [ref=f7e2]:
+    - generic [ref=f7e3]:
+      - link "Artesanía Gualeguay" [ref=f7e5] [cursor=pointer]:
+        - /url: ../index.html
+      - link "Volver al inicio" [ref=f7e8] [cursor=pointer]:
+        - /url: ../index.html
+        - text: ← Volver al inicio
+      - link "Mis pedidos" [ref=f7e9] [cursor=pointer]:
+        - /url: pages/orders.html
+      - link "❤️ Favoritos" [ref=f7e10] [cursor=pointer]:
+        - /url: wishlist.html
+      - generic [ref=f7e11]:
+        - button "Cambiar a modo oscuro" [ref=f7e12] [cursor=pointer]:
+          - generic:
+            - generic: ☀️
+            - generic: 🌙
+        - link "Favoritos" [ref=f7e14] [cursor=pointer]:
+          - /url: wishlist.html
+          - generic [ref=f7e15]: "1"
+        - link "Mascota de la marca" [ref=f7e16] [cursor=pointer]:
+          - /url: admin.html
+          - generic: 🐰
+        - link "Carrito de compras" [ref=f7e17] [cursor=pointer]:
+          - /url: ../pages/cart.html
+  - link "Saltar al contenido" [ref=f7e18] [cursor=pointer]:
+    - /url: "#content"
+  - main [ref=f7e19]:
+    - navigation "Breadcrumb" [ref=f7e20]:
+      - link "Inicio" [ref=f7e21] [cursor=pointer]:
+        - /url: ../index.html
+      - text: /
+      - link "Catálogo" [ref=f7e22] [cursor=pointer]:
+        - /url: ../index.html#catalog
+      - text: / Producto
+    - link "← Volver al catálogo" [ref=f7e23] [cursor=pointer]:
+      - /url: ../index.html#catalog
+    - generic [ref=f7e24]:
+      - generic [ref=f7e25]:
+        - generic [ref=f7e30]:
+          - img [ref=f7e31] [cursor=pointer]
+          - img [ref=f7e32] [cursor=pointer]
+          - img [ref=f7e33] [cursor=pointer]
+          - img [ref=f7e34] [cursor=pointer]
+        - generic [ref=f7e35]:
+          - generic [ref=f7e36]: pulseras
+          - heading "Pulsera Minimalista Rosa" [level=1] [ref=f7e37]
+          - paragraph [ref=f7e38]: Diseño minimalista con cuentas de cerámica en tonos rosa pastel
+          - paragraph [ref=f7e39]: $ 450,00
+          - generic [ref=f7e40]:
+            - button "Agregar al carrito" [ref=f7e41] [cursor=pointer]
+            - button "Favoritos" [ref=f7e42] [cursor=pointer]: ❤️
+            - link "Consultar por WhatsApp" [ref=f7e43] [cursor=pointer]:
+              - /url: "https://wa.me/5493444634444?text=Hola! Me interesa el producto: Pulsera Minimalista Rosa"
+      - generic [ref=f7e44]:
+        - heading "Reseñas" [level=2] [ref=f7e45]
+        - paragraph [ref=f7e47]: Aún no hay reseñas para este producto.
+        - generic [ref=f7e48]:
+          - heading "Dejá tu reseña" [level=3] [ref=f7e49]
+          - generic [ref=f7e50]:
+            - generic [ref=f7e51]: Nombre
+            - textbox "Nombre" [ref=f7e52]:
+              - /placeholder: Tu nombre
+          - generic [ref=f7e53]:
+            - button "Calificación 1 estrellas" [ref=f7e54] [cursor=pointer]: ★
+            - button "Calificación 2 estrellas" [ref=f7e55] [cursor=pointer]: ★
+            - button "Calificación 3 estrellas" [ref=f7e56] [cursor=pointer]: ★
+            - button "Calificación 4 estrellas" [ref=f7e57] [cursor=pointer]: ★
+            - button "Calificación 5 estrellas" [ref=f7e58] [cursor=pointer]: ★
+          - textbox "Tu opinión..." [ref=f7e59]
+          - button "Enviar reseña" [ref=f7e60] [cursor=pointer]

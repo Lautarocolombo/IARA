@@ -1,0 +1,286 @@
+- generic [active] [ref=f6e1]:
+  - link "Saltar al contenido principal" [ref=f6e2] [cursor=pointer]:
+    - /url: "#adminMain"
+  - generic [ref=f6e4]:
+    - heading "🌸 Artesanía Admin" [level=2] [ref=f6e5]
+    - paragraph [ref=f6e6]: Iniciá sesión para continuar
+    - generic [ref=f6e7]:
+      - generic [ref=f6e8]: Usuario
+      - textbox "Usuario" [ref=f6e9]
+    - generic [ref=f6e10]:
+      - generic [ref=f6e11]: Contraseña
+      - generic [ref=f6e12]:
+        - textbox "Contraseña" [ref=f6e13]
+        - button "Mostrar contraseña" [ref=f6e14] [cursor=pointer]
+    - button "Ingresar" [ref=f6e18] [cursor=pointer]
+    - paragraph [ref=f6e19]: ✅ Servidor conectado
+    - link "← Volver al sitio" [ref=f6e20] [cursor=pointer]:
+      - /url: ../index.html
+  - complementary [ref=f6e21]:
+    - generic [ref=f6e22]:
+      - generic [ref=f6e23]: 🌸
+      - generic [ref=f6e24]: Artesanía Admin
+    - navigation [ref=f6e25]:
+      - link "📦 Productos" [ref=f6e26] [cursor=pointer]:
+        - /url: "#products"
+      - link "🏷 Categorías" [ref=f6e27] [cursor=pointer]:
+        - /url: "#categories"
+      - link "🧾 Pedidos" [ref=f6e28] [cursor=pointer]:
+        - /url: "#orders"
+      - link "📈 Reportes" [ref=f6e29] [cursor=pointer]:
+        - /url: "#reports"
+      - link "💬 Testimonios" [ref=f6e30] [cursor=pointer]:
+        - /url: "#testimonials"
+      - link "📝 Textos del Sitio" [ref=f6e31] [cursor=pointer]:
+        - /url: "#texts"
+      - link "🖼 Imágenes del Hero" [ref=f6e32] [cursor=pointer]:
+        - /url: "#heroImages"
+      - link "⚙️ Configuración" [ref=f6e33] [cursor=pointer]:
+        - /url: "#settings"
+    - generic [ref=f6e34]:
+      - link "← Ver sitio" [ref=f6e35] [cursor=pointer]:
+        - /url: ../index.html
+      - button "Cerrar sesión" [ref=f6e36] [cursor=pointer]
+  - main [ref=f6e37]:
+    - generic [ref=f6e38]:
+      - generic [ref=f6e39]:
+        - link "← Volver" [ref=f6e40] [cursor=pointer]:
+          - /url: ../index.html
+        - generic [ref=f6e41]:
+          - heading "Productos" [level=1] [ref=f6e42]
+          - paragraph [ref=f6e43]: Gestioná productos, fotos y precios
+      - generic [ref=f6e44]:
+        - generic "Estado de conexión" [ref=f6e45]: Conectado
+        - button "+ Nuevo Producto" [ref=f6e48] [cursor=pointer]
+    - generic [ref=f6e49]:
+      - generic [ref=f6e50]:
+        - heading "Categorías" [level=3] [ref=f6e51]
+        - button "+ Nueva Categoría" [ref=f6e53] [cursor=pointer]
+      - table [ref=f6e55]:
+        - rowgroup [ref=f6e56]:
+          - row [ref=f6e57]:
+            - columnheader "Nombre" [ref=f6e58]
+            - columnheader "Slug" [ref=f6e59]
+            - columnheader "Descripción" [ref=f6e60]
+            - columnheader "Productos" [ref=f6e61]
+            - columnheader "Estado" [ref=f6e62]
+            - columnheader "Orden" [ref=f6e63]
+            - columnheader "Acciones" [ref=f6e64]
+        - rowgroup [ref=f6e65]:
+          - row [ref=f6e66]:
+            - cell "Cargando categorías..." [ref=f6e67]
+    - generic [ref=f6e68]:
+      - generic [ref=f6e69]:
+        - heading "Catálogo de productos" [level=3] [ref=f6e70]
+        - generic [ref=f6e71]:
+          - textbox "Buscar producto..." [ref=f6e73]
+          - combobox [ref=f6e74] [cursor=pointer]:
+            - option "Todas las categorías" [selected]
+            - option "Pulseras"
+            - option "Accesorios"
+            - option "Souvenirs"
+          - button "📥 Exportar CSV" [ref=f6e75] [cursor=pointer]
+          - button "📂 Carga masiva CSV" [ref=f6e76] [cursor=pointer]
+      - table [ref=f6e78]:
+        - rowgroup [ref=f6e79]:
+          - row [ref=f6e80]:
+            - columnheader "Slug" [ref=f6e81]
+            - columnheader "Producto" [ref=f6e82]
+            - columnheader "Categoría" [ref=f6e83]
+            - columnheader "SKU" [ref=f6e84]
+            - columnheader "Precio" [ref=f6e85]
+            - columnheader "Stock" [ref=f6e86]
+            - columnheader "Imagen" [ref=f6e87]
+            - columnheader "Estado" [ref=f6e88]
+            - columnheader "Acciones" [ref=f6e89]
+        - rowgroup [ref=f6e90]:
+          - row [ref=f6e91]:
+            - cell "Cargando productos..." [ref=f6e92]
+  - generic [ref=f6e94]:
+    - generic [ref=f6e95]:
+      - heading "Nuevo Producto" [level=3] [ref=f6e96]
+      - button "✕" [ref=f6e97] [cursor=pointer]
+    - generic [ref=f6e98]:
+      - generic [ref=f6e99]:
+        - generic [ref=f6e100]: Información básica
+        - generic [ref=f6e101]:
+          - generic [ref=f6e102]: Nombre del producto *
+          - textbox "Nombre del producto" [ref=f6e103]
+        - generic [ref=f6e104]:
+          - generic [ref=f6e105]:
+            - generic [ref=f6e106]: Categoría
+            - combobox [ref=f6e107]:
+              - option "Pulseras" [selected]
+              - option "Accesorios"
+              - option "Souvenirs"
+          - generic [ref=f6e108]:
+            - generic [ref=f6e109]: SKU
+            - textbox "SKU opcional" [ref=f6e110]
+      - generic [ref=f6e111]:
+        - generic [ref=f6e112]: Precio y stock
+        - generic [ref=f6e113]:
+          - generic [ref=f6e114]:
+            - generic [ref=f6e115]: Precio ($) *
+            - spinbutton "0" [ref=f6e116]
+          - generic [ref=f6e117]:
+            - generic [ref=f6e118]: Stock
+            - spinbutton "0" [ref=f6e119]
+            - paragraph [ref=f6e120]: Dejar en 0 para indicar sin stock / producto no disponible.
+      - generic [ref=f6e121]:
+        - generic [ref=f6e122]: Estado
+        - generic [ref=f6e123]:
+          - generic [ref=f6e124]:
+            - generic [ref=f6e125]: Producto destacado
+            - generic [ref=f6e126]:
+              - generic [ref=f6e127]:
+                - checkbox
+                - generic [ref=f6e128] [cursor=pointer]
+              - generic [ref=f6e129]: "No"
+          - generic [ref=f6e130]:
+            - generic [ref=f6e131]: Producto activo
+            - generic [ref=f6e132]:
+              - generic [ref=f6e133]:
+                - checkbox [checked]
+                - generic [ref=f6e134] [cursor=pointer]
+              - generic [ref=f6e135]: Sí
+      - generic [ref=f6e136]:
+        - generic [ref=f6e137]: Descripción
+        - generic [ref=f6e138]:
+          - generic [ref=f6e139]: Descripción
+          - textbox "Descripción corta del producto" [ref=f6e140]
+      - generic [ref=f6e141]:
+        - generic [ref=f6e142]: Imágenes del producto
+        - generic [ref=f6e143]:
+          - generic [ref=f6e144]:
+            - button "Seleccionar imagen(es)" [ref=f6e145] [cursor=pointer]
+            - generic [ref=f6e150]: o
+            - generic [ref=f6e151]:
+              - textbox "o pegá una URL de imagen externa" [ref=f6e152]
+              - button "Agregar URL" [ref=f6e153] [cursor=pointer]
+          - generic [ref=f6e154]: JPG, PNG, WEBP o GIF — máx 5MB c/u. También podés arrastrar archivos sobre esta zona.
+    - generic [ref=f6e155]:
+      - button "Cancelar" [ref=f6e156] [cursor=pointer]
+      - button "Guardar" [ref=f6e157] [cursor=pointer]
+  - generic [ref=f6e159]:
+    - generic [ref=f6e160]:
+      - heading "Nuevo Testimonio" [level=3] [ref=f6e161]
+      - button "✕" [ref=f6e162] [cursor=pointer]
+    - generic [ref=f6e163]:
+      - generic [ref=f6e164]:
+        - generic [ref=f6e165]: Nombre del cliente
+        - textbox "Nombre" [ref=f6e166]
+      - generic [ref=f6e167]:
+        - generic [ref=f6e168]: Comentario
+        - textbox "Comentario del cliente" [ref=f6e169]
+      - generic [ref=f6e170]:
+        - generic [ref=f6e171]: Valoración (1-5)
+        - spinbutton "5" [ref=f6e172]
+      - generic [ref=f6e173]:
+        - generic [ref=f6e174]: Imagen del cliente
+        - button "Choose File" [ref=f6e175]
+        - paragraph [ref=f6e176]: Imagen opcional del cliente.
+    - generic [ref=f6e177]:
+      - button "Cancelar" [ref=f6e178] [cursor=pointer]
+      - button "Guardar" [ref=f6e179] [cursor=pointer]
+  - generic [ref=f6e181]:
+    - generic [ref=f6e182]:
+      - heading "Editar Texto" [level=3] [ref=f6e183]
+      - button "✕" [ref=f6e184] [cursor=pointer]
+    - generic [ref=f6e185]:
+      - generic [ref=f6e186]:
+        - generic [ref=f6e187]: Clave
+        - textbox "hero_title" [disabled] [ref=f6e188]
+      - generic [ref=f6e189]:
+        - generic [ref=f6e190]: Valor
+        - textbox "Texto del sitio" [ref=f6e191]
+    - generic [ref=f6e192]:
+      - button "Cancelar" [ref=f6e193] [cursor=pointer]
+      - button "Guardar" [ref=f6e194] [cursor=pointer]
+  - generic [ref=f6e196]:
+    - generic [ref=f6e197]:
+      - heading "Editar Slot del Hero" [level=3] [ref=f6e198]
+      - button "✕" [ref=f6e199] [cursor=pointer]
+    - generic [ref=f6e200]:
+      - generic [ref=f6e201]:
+        - generic [ref=f6e202]: Imagen
+        - generic [ref=f6e204]:
+          - generic [ref=f6e205] [cursor=pointer]: Cambiar imagen
+          - button "Cambiar imagen" [ref=f6e209]
+        - paragraph [ref=f6e210]: "Recomendación: 1920×600px, máx 2MB. Dejar vacío para mantener la actual."
+      - generic [ref=f6e211]:
+        - generic [ref=f6e212]: Texto
+        - generic [ref=f6e213]:
+          - generic [ref=f6e214]: Título
+          - textbox "Título del hero" [ref=f6e215]
+        - generic [ref=f6e216]:
+          - generic [ref=f6e217]: Subtítulo
+          - textbox "Texto descriptivo del hero" [ref=f6e218]
+        - generic [ref=f6e219]:
+          - generic [ref=f6e220]:
+            - generic [ref=f6e221]: Texto del botón CTA
+            - 'textbox "Ej: Ver productos" [ref=f6e222]'
+          - generic [ref=f6e223]:
+            - generic [ref=f6e224]: URL del CTA
+            - 'textbox "Ej: /products" [ref=f6e225]'
+    - generic [ref=f6e226]:
+      - button "Cancelar" [ref=f6e227] [cursor=pointer]
+      - button "Guardar" [ref=f6e228] [cursor=pointer]
+  - generic [ref=f6e230]:
+    - generic [ref=f6e231]:
+      - heading "Nueva Categoría" [level=3] [ref=f6e232]
+      - button "✕" [ref=f6e233] [cursor=pointer]
+    - generic [ref=f6e234]:
+      - generic [ref=f6e235]:
+        - generic [ref=f6e236]: Nombre
+        - textbox "Nombre de la categoría" [ref=f6e237]
+      - generic [ref=f6e238]:
+        - generic [ref=f6e239]: Slug
+        - textbox "slug-unico" [ref=f6e240]
+      - generic [ref=f6e241]:
+        - generic [ref=f6e242]: Descripción
+        - textbox "Descripción opcional" [ref=f6e243]
+      - generic [ref=f6e244]:
+        - generic [ref=f6e245]:
+          - generic [ref=f6e246]: Orden
+          - spinbutton [ref=f6e247]: "0"
+        - generic [ref=f6e248]:
+          - generic [ref=f6e249]: Estado
+          - combobox [ref=f6e250]:
+            - option "Activo" [selected]
+            - option "Inactivo"
+      - generic [ref=f6e251]:
+        - generic [ref=f6e252]: Imagen de la categoría
+        - button "Choose File" [ref=f6e253]
+        - paragraph [ref=f6e254]: Imagen opcional para la categoría.
+    - generic [ref=f6e255]:
+      - button "Cancelar" [ref=f6e256] [cursor=pointer]
+      - button "Guardar" [ref=f6e257] [cursor=pointer]
+  - generic [ref=f6e259]:
+    - generic [ref=f6e260]:
+      - heading "Detalle del Pedido" [level=3] [ref=f6e261]
+      - button "✕" [ref=f6e262] [cursor=pointer]
+    - generic [ref=f6e263]:
+      - generic [ref=f6e264]:
+        - button "📄 Comprobante" [ref=f6e265] [cursor=pointer]
+        - button "💬 Enviar por WhatsApp" [ref=f6e266] [cursor=pointer]
+      - generic [ref=f6e267]:
+        - generic [ref=f6e268]: Nota interna
+        - textbox "Agregá una nota interna sobre este pedido..." [ref=f6e269]
+        - button "💾 Guardar nota" [ref=f6e270] [cursor=pointer]
+    - button "Cerrar" [ref=f6e272] [cursor=pointer]
+  - generic [ref=f6e274]:
+    - generic [ref=f6e275]:
+      - heading "Eliminar pedido" [level=3] [ref=f6e276]
+      - button "✕" [ref=f6e277] [cursor=pointer]
+    - paragraph [ref=f6e279]: ¿Eliminar este pedido? Esta acción no se puede deshacer.
+    - generic [ref=f6e280]:
+      - button "Cancelar" [ref=f6e281] [cursor=pointer]
+      - button "Eliminar" [ref=f6e282] [cursor=pointer]
+  - generic [ref=f6e284]:
+    - generic [ref=f6e285]:
+      - heading "Eliminar pedidos seleccionados" [level=3] [ref=f6e286]
+      - button "✕" [ref=f6e287] [cursor=pointer]
+    - paragraph [ref=f6e289]: ¿Seguro que querés eliminar los pedidos seleccionados? Esta acción no se puede deshacer.
+    - generic [ref=f6e290]:
+      - button "Cancelar" [ref=f6e291] [cursor=pointer]
+      - button "Eliminar seleccionados" [ref=f6e292] [cursor=pointer]

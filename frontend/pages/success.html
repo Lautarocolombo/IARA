@@ -3,120 +3,283 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pago aprobado | Artesanía Gualeguay</title>
-  <meta name="description" content="Pago aprobado en Artesanía Gualeguay. Tu pedido fue confirmado. Te contactaremos para coordinar el envío." />
+  <title>Pedido recibido | Artesanía Gualeguay</title>
+  <meta name="description" content="Tu pedido fue recibido en Artesanía Gualeguay. Te mostramos los datos para el pago por transferencia." />
   <link rel="canonical" href="https://artesaniagualeguay.com/pages/success.html" />
 
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/variables.css" />
   <link rel="stylesheet" href="../css/base.css" />
   <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/pill-buttons.css" />
   <link rel="stylesheet" href="../css/animations.css" />
   <link rel="stylesheet" href="../css/pages.css" />
 </head>
 <body>
   <a href="#content" class="skip-link">Saltar al contenido principal</a>
-  <nav class="navbar" id="navbar">
-    <div class="navbar-container">
-      <div class="navbar-brand">
-        <a href="../index.html" class="logo">
-          <span class="logo-dot" aria-hidden="true"></span>
-          <span class="logo-text">Artesanía Gualeguay</span>
-        </a>
-      </div>
-
-      <a href="../index.html" class="nav-back" aria-label="Volver al inicio">← Volver al inicio</a>
-
-      <div class="navbar-actions">
-        <button id="themeToggle" class="pill-btn pill-btn--theme" title="Cambiar tema" aria-label="Alternar modo claro/oscuro" aria-pressed="false">
-          <div class="pill-btn__theme-track">
-            <span class="pill-btn__theme-icon pill-btn__theme-icon--sun" aria-hidden="true">☀️</span>
-            <span class="pill-btn__theme-icon pill-btn__theme-icon--moon" aria-hidden="true">🌙</span>
-          </div>
-          <div class="pill-btn__theme-slider" aria-hidden="true"></div>
-        </button>
-        <a href="wishlist.html" class="wishlist-link" aria-label="Favoritos">
-          <span class="wishlist-icon" aria-hidden="true">❤️</span>
-          <span class="wishlist-count" id="wishlistCount">0</span>
-        </a>
-        <a href="admin.html" class="admin-link" aria-label="Panel de Administración" title="Panel de Admin">
-          <span class="admin-icon" aria-hidden="true">🐰</span>
-        </a>
-        <a href="../pages/cart.html" class="cart-link" aria-label="Carrito">
-          <span class="cart-icon" aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-          </span>
-          <span class="cart-count" id="cartCount">0</span>
-        </a>
-      </div>
-    </div>
-  </nav>
-    <div class="wrap">
-    <nav aria-label="Breadcrumb" class="breadcrumb">
-      <a href="../index.html">Inicio</a> <span aria-hidden="true">/</span> <span>Pago aprobado</span>
-    </nav>
-    <div class="card reveal visible">
-      <div class="ok" aria-hidden="true">✅</div>
-      <h1>¡Pago aprobado!</h1>
-      <p>Gracias por tu compra en Artesanía Gualeguay. Te contactaremos si necesitamos coordinar algún detalle.</p>
-      <div id="transferAliasSection" class="transfer-alias-section" style="display:none;">
-        <h2>💳 Transferencia bancaria</h2>
-        <p>Transferí el total exacto al siguiente alias:</p>
-        <div class="transfer-alias-row">
-          <code id="successTransferAlias">iara-salgueiro</code>
-          <button id="copySuccessAliasBtn" class="btn btn-secondary btn-sm">📋 Copiar</button>
-        </div>
-        <p id="successTransferNote" class="success-note"></p>
-      </div>
-      <div class="actions">
-        <a class="btn-primary" href="../index.html">Volver al inicio</a>
-        <a class="btn-secondary" href="../pages/cart.html">Ver carrito</a>
-      </div>
-    </div>
-  </div>
-    </div>
-  </div>
 
   <script src="../js/config.js"></script>
   <script src="../js/safeImage.js"></script>
+  <script src="../js/header.js"></script>
+  <script>
+    initSiteHeader({ showBackButton: true });
+  </script>
   <script src="../js/theme.js"></script>
+  <div class="wrap">
+    <nav aria-label="Breadcrumb" class="breadcrumb">
+      <a href="../index.html">Inicio</a> <span aria-hidden="true">/</span> <span>Pedido recibido</span>
+    </nav>
+    <div class="card reveal visible" id="successCard">
+      <div class="ok" aria-hidden="true">✅</div>
+      <h1>Pedido recibido</h1>
+      <p>Te mostramos los datos para transferir y confirmar tu pago.</p>
+      <div id="orderInfo" style="display:none;">
+        <p class="success-order-number">Pedido <strong id="successOrderNumber">--</strong></p>
+        <div id="transferAliasSection" class="transfer-alias-section">
+          <h2>🏦 Datos para transferencia</h2>
+          <div class="transfer-summary" id="successTransferSummary"></div>
+          <div class="transfer-total-highlight">
+            <span>Total a transferir</span>
+            <span class="transfer-total-highlight-amount" id="successTransferTotal">ARS 0,00</span>
+          </div>
+          <div class="transfer-alias-row">
+            <div>
+              <span class="transfer-label">Alias</span>
+              <code id="successTransferAlias">iara-salgueiro</code>
+            </div>
+            <button id="copySuccessAliasBtn" class="btn btn-secondary btn-sm">📋 Copiar</button>
+          </div>
+          <div class="transfer-alias-row" id="successCbuRow" style="display:none; margin-top: 0.75rem;">
+            <div>
+              <span class="transfer-label">CBU / CVU</span>
+              <code id="successTransferCbu">--</code>
+            </div>
+            <button id="copySuccessCbuBtn" class="btn btn-secondary btn-sm">📋 Copiar</button>
+          </div>
+          <div class="transfer-alias-row" id="successHolderRow" style="display:none; margin-top: 0.75rem;">
+            <div>
+              <span class="transfer-label">Titular</span>
+              <span id="successTransferHolder">--</span>
+            </div>
+          </div>
+          <p id="successTransferNote" class="success-note"></p>
+        </div>
+        <div class="actions">
+          <a id="successWhatsappBtn" href="#" target="_blank" class="btn btn-primary">Enviar comprobante por WhatsApp</a>
+          <button id="successReceiptBtn" class="btn btn-secondary">Ya transferí, enviar comprobante</button>
+          <a class="btn btn-outline" href="../index.html">Volver al inicio</a>
+        </div>
+      </div>
+
+      <div id="receiptModal" class="modal-overlay" style="display:none;">
+        <div class="modal-card">
+          <h3>Subir comprobante de transferencia</h3>
+          <p>Pedido <strong id="receiptModalOrderNumber">--</strong></p>
+          <form id="receiptForm">
+            <div class="form-group">
+              <label>Nombre del titular</label>
+              <input type="text" id="receiptHolderName" required />
+            </div>
+            <div class="form-group">
+              <label>Comprobante (imagen)</label>
+              <input type="file" id="receiptFile" accept="image/*" required />
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">Enviar comprobante</button>
+            <button type="button" class="btn btn-secondary btn-full" onclick="closeReceiptModal()">Cancelar</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="../js/ui.js"></script>
   <script src="../js/wishlist.js"></script>
   <script src="../js/cart.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded',()=>{
-      document.querySelectorAll('.reveal').forEach(el=>el.classList.add('visible'));
-      loadSuccessAlias();
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
+
+      const raw = sessionStorage.getItem('ag_last_order');
+      const orderInfo = document.getElementById('orderInfo');
+      const fallback = document.getElementById('successFallback');
+
+      if (!raw) {
+        if (orderInfo) orderInfo.style.display = 'none';
+        if (fallback) fallback.style.display = 'block';
+        return;
+      }
+
+      try {
+        const order = JSON.parse(raw);
+        if (order.number) {
+          document.getElementById('successOrderNumber').textContent = order.number;
+        }
+        if (order.total) {
+          document.getElementById('successTransferTotal').textContent = formatARS(order.total);
+        }
+        if (Array.isArray(order.items) && order.items.length) {
+          const summaryHtml = order.items.map(i => `
+            <div class="transfer-item-row">
+              <span class="transfer-item-name">${i.name} x${i.qty}</span>
+              <span class="transfer-item-price">${formatARS(i.price * i.qty)}</span>
+            </div>
+          `).join('');
+          document.getElementById('successTransferSummary').innerHTML = summaryHtml;
+        }
+
+        if (order.waNumber && order.waMsg) {
+          const waBtn = document.getElementById('successWhatsappBtn');
+          if (waBtn) waBtn.href = `https://wa.me/${order.waNumber}?text=${order.waMsg}`;
+        }
+
+        const receiptBtn = document.getElementById('successReceiptBtn');
+        if (receiptBtn) {
+          receiptBtn.dataset.orderId = order.id || '';
+          receiptBtn.dataset.orderNumber = order.number || '';
+        }
+
+        loadSuccessPaymentConfig(order);
+
+        if (orderInfo) orderInfo.style.display = 'block';
+        if (fallback) fallback.style.display = 'none';
+      } catch (e) {
+        console.error('Error leyendo pedido para success:', e);
+        if (orderInfo) orderInfo.style.display = 'none';
+        if (fallback) fallback.style.display = 'block';
+      }
     });
 
-    async function loadSuccessAlias(){
-      try{
+    async function loadSuccessPaymentConfig(order) {
+      try {
         const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/payment-config`, {}, 2, 1000);
-        if(!res) return;
+        if (!res) return;
         const data = await res.json();
-        const alias = data.mpAlias || data.transferAlias || 'iara-salgueiro';
-        const section = document.getElementById('transferAliasSection');
+        const alias = data.transferAlias || 'iara-salgueiro';
+        const cbuCvu = data.cbuCvu || '';
+        const holderName = data.holderName || '';
+        const message = data.message || '';
+
         const aliasEl = document.getElementById('successTransferAlias');
         const noteEl = document.getElementById('successTransferNote');
-        if(section) section.style.display = 'block';
-        if(aliasEl) aliasEl.textContent = alias;
-        if(noteEl && data.message) noteEl.textContent = data.message;
-      }catch(e){
-        const section = document.getElementById('transferAliasSection');
-        if(section) section.style.display = 'block';
+        if (aliasEl) aliasEl.textContent = alias;
+        if (noteEl && message) noteEl.textContent = message;
+
+        const cbuRow = document.getElementById('successCbuRow');
+        const cbuEl = document.getElementById('successTransferCbu');
+        if (cbuRow && cbuEl && cbuCvu) {
+          cbuEl.textContent = cbuCvu;
+          cbuRow.style.display = 'flex';
+        }
+
+        const holderRow = document.getElementById('successHolderRow');
+        const holderEl = document.getElementById('successTransferHolder');
+        if (holderRow && holderEl && holderName) {
+          holderEl.textContent = holderName;
+          holderRow.style.display = 'flex';
+        }
+      } catch (e) {
+        console.error('Error cargando config de pago en success:', e);
       }
     }
 
-    document.addEventListener('click', function(e){
-      if(e.target && e.target.id === 'copySuccessAliasBtn'){
+    function openReceiptModal() {
+      const modal = document.getElementById('receiptModal');
+      if (!modal) return;
+      const btn = document.getElementById('successReceiptBtn');
+      if (btn) {
+        document.getElementById('receiptModalOrderNumber').textContent = btn.dataset.orderNumber || '--';
+      }
+      openModalScrollLock(modal, closeReceiptModal);
+    }
+
+    function closeReceiptModal() {
+      const modal = document.getElementById('receiptModal');
+      if (modal) modal.style.display = 'none';
+      unlockModalScroll();
+    }
+
+    const receiptBtn = document.getElementById('successReceiptBtn');
+    if (receiptBtn) {
+      receiptBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        openReceiptModal();
+      });
+    }
+
+    const receiptForm = document.getElementById('receiptForm');
+    if (receiptForm) {
+      receiptForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('successReceiptBtn');
+        const orderId = btn ? (btn.dataset.orderId || '') : '';
+        const orderNumber = btn ? (btn.dataset.orderNumber || '') : '';
+        const fileInput = document.getElementById('receiptFile');
+        const holderInput = document.getElementById('receiptHolderName');
+        if (!orderId || !fileInput.files.length) {
+          showToast('', 'Completá todos los campos', 'error');
+          return;
+        }
+        const formData = new FormData();
+        formData.append('image', fileInput.files[0]);
+        formData.append('holderName', holderInput.value.trim());
+        try {
+          const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/orders/${orderId}/receipt`, {
+            method: 'POST',
+            body: formData
+          });
+          if (!res) throw new Error('Error de conexión');
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Error al subir el comprobante');
+          showToast('', 'Comprobante enviado correctamente', 'success');
+          closeReceiptModal();
+          receiptForm.reset();
+        } catch (err) {
+          showToast('', window.getFetchErrorMessage(err) || 'Error al enviar el comprobante', 'error');
+        }
+      });
+    }
+
+    document.addEventListener('click', function(e) {
+      if (e.target && e.target.id === 'copySuccessAliasBtn') {
         const alias = document.getElementById('successTransferAlias')?.textContent;
-        if(!alias) return;
-        navigator.clipboard.writeText(alias).then(()=>{
-          e.target.textContent = '✅ Copyado';
-          setTimeout(()=>{ e.target.textContent = '📋 Copiar'; }, 2000);
-        }).catch(()=>{});
+        if (!alias) return;
+        navigator.clipboard.writeText(alias).then(() => {
+          e.target.textContent = '✅ Copiado';
+          setTimeout(() => { e.target.textContent = '📋 Copiar'; }, 2000);
+        }).catch(() => {});
+      }
+      if (e.target && e.target.id === 'copySuccessCbuBtn') {
+        const cbu = document.getElementById('successTransferCbu')?.textContent;
+        if (!cbu) return;
+        navigator.clipboard.writeText(cbu).then(() => {
+          e.target.textContent = '✅ Copiado';
+          setTimeout(() => { e.target.textContent = '📋 Copiar'; }, 2000);
+        }).catch(() => {});
+      }
+    });
+
+    startDataSync('success-payment', loadSuccessPaymentConfig);
+    onSyncMessage('settings_updated', () => {
+      const raw = sessionStorage.getItem('ag_last_order');
+      if (raw) {
+        try {
+          const order = JSON.parse(raw);
+          loadSuccessPaymentConfig(order);
+        } catch (e) { /* noop */ }
       }
     });
   </script>
-</body>
+  <footer class="footer">
+    <div class="footer-bottom">
+      <p>&copy; 2026 Artesanía Gualeguay. Todos los derechos reservados.</p>
+      <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #64748b;">
+        <a href="../pages/terms.html" style="margin-right: 1rem;">Términos y Condiciones</a>
+        <a href="../pages/privacy.html" style="margin-right: 1rem;">Política de Privacidad</a>
+        <a href="../pages/devoluciones.html" style="margin-right: 1rem;">Cambios y Devoluciones</a>
+        <a href="../pages/orders.html" style="margin-right: 1rem;">Mis Pedidos</a>
+        <a href="../pages/wishlist.html">Favoritos</a>
+      </div>
+    </div>
+  </footer>
+ </body>
 </html>

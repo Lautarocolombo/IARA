@@ -2,21 +2,17 @@
 const API_BASE = CONFIG.API.BASE;
         let authToken = '';
         window.__getAdminToken = () => authToken;
-    let userRole = localStorage.getItem('ag_admin_role') || 'admin';
-     let currentSection = 'products';
-     let products = [];
-     let categories = [];
-     let orders = [];
-     let testimonials = [];
-     let siteTexts = {};
-      let heroCards = [];
-      let heroPendingFiles = {};
-      let editingId = null;
-      let testimonialsPendingChanges = false;
-      let ordersCurrentPage = 1;
-      let ordersTotalPages = 1;
-     let productsCurrentPage = 1;
-       let productsTotalPages = 1;
+      let currentSection = 'products';
+      let products = [];
+      let categories = [];
+      let orders = [];
+      let testimonials = [];
+      let siteTexts = {};
+       let heroCards = [];
+       let heroPendingFiles = {};
+       let editingId = null;
+       let ordersCurrentPage = 1;
+       let ordersTotalPages = 1;
 
       function escapeHtml(str) {
         if (str == null) return '';
@@ -83,7 +79,6 @@ const API_BASE = CONFIG.API.BASE;
       let controller = new AbortController();
       const timeoutMs = 8000;
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-      console.log('[admin] checkServerHealth: inicio, API_BASE=', API_BASE, 'url=', getApiUrl('/api/health'));
       try {
         btn.textContent = 'Verificando...';
         btn.disabled = true;
@@ -96,14 +91,12 @@ const API_BASE = CONFIG.API.BASE;
         );
         const res = await Promise.race([fetchPromise, timeoutPromise]);
         clearTimeout(timeoutId);
-        console.log('[admin] checkServerHealth: status=', res.status, 'ok=', res.ok);
         if (!res.ok) throw new Error(`Servidor respondió con estado ${res.status}`);
         hint.textContent = '✅ Servidor conectado';
         hint.style.color = '#10b981';
         if (retryBtn) retryBtn.style.display = 'none';
       } catch (err) {
         clearTimeout(timeoutId);
-        console.error('[admin] checkServerHealth: error', err.name, err.message, err);
         const isAborted = err.name === 'AbortError';
         const isTimeout = err.message === 'timeout';
         let message = '⚠️ El servidor no responde. Podés intentar igualmente iniciar sesión.';
@@ -176,9 +169,7 @@ const API_BASE = CONFIG.API.BASE;
         );
         const res = await Promise.race([fetchPromise, timeoutPromise]);
         clearTimeout(timeoutId);
-        console.log('[admin] doLogin: status=', res.status, 'ok=', res.ok);
         const data = await res.json().catch(() => ({}));
-        console.log('[admin] doLogin: data=', data);
         if (!res.ok) {
           let errorMsg = data.error || `Error ${res.status}`;
           if (res.status === 401) {
@@ -197,7 +188,6 @@ const API_BASE = CONFIG.API.BASE;
         showToast(`Bienvenida, ${data.user}`, 'success');
         navigateTo('products');
       } catch (err) {
-        console.error('[admin] doLogin: error', err.name, err.message, err);
         let userMessage = 'Error inesperado. Por favor, recargá la página.';
         if (err.message === 'timeout') {
           userMessage = 'El servidor tardó demasiado en responder. Recargá la página e intentá nuevamente.';
@@ -233,7 +223,9 @@ const API_BASE = CONFIG.API.BASE;
     async function doLogout() {
       try {
         await fetch(getApiUrl('/api/auth/logout'), { method: 'POST', credentials: 'include' });
-      } catch (e) { /* ignore */ }
+      } catch (e) {
+        console.warn('[doLogout] Error cerrando sesión:', e);
+      }
       authToken = '';
       document.getElementById('loginOverlay').classList.remove('hidden');
       showToast('Sesión cerrada', 'default');
@@ -249,6 +241,7 @@ const API_BASE = CONFIG.API.BASE;
           const isFormData = opts.body instanceof FormData;
           let finalHeaders = headers;
           if (isFormData) {
+            /* eslint-disable-next-line no-unused-vars */
             const { 'Content-Type': _ct, ...rest } = headers;
             finalHeaders = rest;
           }
@@ -265,7 +258,9 @@ const API_BASE = CONFIG.API.BASE;
                 authToken = refreshData.token;
                 return adminFetch(url, opts, true);
               }
-            } catch (e) { /* ignore */ }
+             } catch (e) {
+               console.warn('[adminFetch] Error refrescando token:', e);
+             }
             authToken = '';
             document.getElementById('loginOverlay').classList.remove('hidden');
             throw new Error('Sesión expirada. Iniciá sesión nuevamente.');
@@ -472,11 +467,14 @@ async function loadCategories() {
         imgPreview.style.display = 'none';
         imgPreview.innerHTML = '';
       }
-      document.getElementById('categoryModalOverlay').classList.add('active');
+      const overlay = document.getElementById('categoryModalOverlay');
+      overlay.classList.add('active');
+      openModalScrollLock(overlay, closeCategoryModal);
     }
 
     function closeCategoryModal() {
       document.getElementById('categoryModalOverlay').classList.remove('active');
+      unlockModalScroll();
       state.currentCategoryId = null;
       clearSaveStatus('categorySaveStatus');
     }
@@ -501,7 +499,6 @@ async function loadCategories() {
           formData.append('description', description);
           formData.append('orden', orden);
           formData.append('active', active);
-          formData.append('image', existingImage);
           formData.append('image', imageFile);
           await adminFetch(url, { method, body: formData });
         } else {
@@ -581,50 +578,57 @@ function renderProductsTable() {
         </tr>`).join('');
      }
 
-    function editProduct(id) {
+     /* eslint-disable-next-line no-unused-vars */
+     function editProduct(id) {
       const p = products.find(x => x.id === id);
       if (p) openModal(p);
     }
 
-     async function deleteProduct(id) {
+      /* eslint-disable-next-line no-unused-vars */
+      async function deleteProduct(id) {
        if (!confirm('¿Eliminar producto?')) return;
        try {
          await adminFetch(`/api/admin/products/${id}`, { method: 'DELETE' });
-         showToast('Producto eliminado', 'success');
-         await loadProducts();
-       } catch (err) {
-         showToast(err.message, 'error');
-       }
-     }
-
-     async function toggleProductStatus(id) {
-        const product = products.find(p => p.id === id);
-        if (!product) return;
-        try {
-          await adminFetch(`/api/admin/products/${id}/estado`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ active: product.active !== false ? false : true })
-          });
-          showToast('Estado actualizado', 'success');
+          showToast('Producto eliminado', 'success');
           await loadProducts();
-        } catch (err) {
-          showToast(err.message, 'error');
-        }
-     }
-
-     async function duplicateProduct(id) {
-        const product = products.find(p => p.id === id);
-        if (!product) return;
-        if (!confirm(`¿Duplicar "${product.name}"?`)) return;
-        try {
-          await adminFetch(`/api/admin/products/${id}/duplicar`, { method: 'POST' });
-          showToast('Producto duplicado', 'success');
-          await loadProducts();
+          emitSync('products_updated');
         } catch (err) {
           showToast(err.message, 'error');
         }
       }
+
+     /* eslint-disable-next-line no-unused-vars */
+      async function toggleProductStatus(id) {
+         const product = products.find(p => p.id === id);
+         if (!product) return;
+         try {
+           await adminFetch(`/api/admin/products/${id}/estado`, {
+             method: 'PATCH',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ active: product.active !== false ? false : true })
+           });
+           showToast('Estado actualizado', 'success');
+           await loadProducts();
+           emitSync('products_updated');
+         } catch (err) {
+           showToast(err.message, 'error');
+         }
+      }
+
+      /* eslint-disable-next-line no-unused-vars */
+      async function duplicateProduct(id) {
+         const product = products.find(p => p.id === id);
+         if (!product) return;
+         if (!confirm(`¿Duplicar "${product.name}"?`)) return;
+         try {
+           await adminFetch(`/api/admin/products/${id}/duplicar`, { method: 'POST' });
+           showToast('Producto duplicado', 'success');
+           await loadProducts();
+           emitSync('products_updated');
+         } catch (err) {
+           showToast(err.message, 'error');
+         }
+       }
 
      async function saveProduct() {
         const name = document.getElementById('pName').value.trim();
@@ -658,8 +662,9 @@ function renderProductsTable() {
             }
           }
           showSaveStatus('productSaveStatus', 'success', '✅ Guardado correctamente');
-          await loadProducts();
-          setTimeout(() => {
+           await loadProducts();
+           emitSync('products_updated');
+           setTimeout(() => {
             if (window.ProductImages && editingId) {
               window.ProductImages.init(editingId);
             }
@@ -686,22 +691,26 @@ function openModal(product = null) {
        document.getElementById('pActive').checked = product ? product.active !== false : true;
     document.getElementById('pImage').value = product ? (product.image || '') : '';
        document.getElementById('pId').value = product ? product.id : '';
-       document.getElementById('modalOverlay').classList.add('active');
+       const overlay = document.getElementById('modalOverlay');
+       overlay.classList.add('active');
+       openModalScrollLock(overlay, closeModal);
        setTimeout(() => {
          if (window.ProductImages) {
            window.ProductImages.init(product ? product.id : null);
          }
        }, 100);
-       const firstInput = document.getElementById('modalOverlay').querySelector('input, select, textarea, button');
+       const firstInput = overlay.querySelector('input, select, textarea, button');
        if (firstInput) firstInput.focus();
      }
 
-     function closeModal() {
-       document.getElementById('modalOverlay').classList.remove('active');
-       editingId = null;
-       clearSaveStatus('productSaveStatus');
-     }
+      function closeModal() {
+        document.getElementById('modalOverlay').classList.remove('active');
+        unlockModalScroll();
+        editingId = null;
+        clearSaveStatus('productSaveStatus');
+      }
 
+     /* eslint-disable-next-line no-unused-vars */
      function getAuthToken() {
        return authToken;
      }
@@ -913,6 +922,7 @@ function setReportPreset(preset) {
       }
     }
 
+     /* eslint-disable-next-line no-unused-vars */
      async function handleBulkImport(input) {
       const file = input.files[0];
       if (!file) return;
@@ -1028,7 +1038,7 @@ function renderOrdersTable() {
              const isChecked = selectedOrderIds.has(o.id);
            return `<tr>
              <td><input type="checkbox" onchange="toggleOrderSelection(${o.id}, this.checked)" ${isChecked ? 'checked' : ''} /></td>
-             <td><strong>#${index + 1}</strong></td>
+             <td><strong>#${o.id}</strong></td>
              <td>${escapeHtml(customer.name || '—')}</td>
              <td><span class='price-cell'>$${Number(o.total).toLocaleString('es-AR')}</span></td>
               <td><span class='badge badge-${o.status === 'delivered' || o.status === 'completed' ? 'stock--ok' : (o.status === 'cancelled' ? 'stock--out' : '')}'>${escapeHtml(o.status || 'pending')}</span></td>
@@ -1080,38 +1090,43 @@ function renderOrdersTable() {
       }
 
       async function quickUpdateOrderStatus(id, newStatus) {
-        if (!newStatus) return;
-        try {
-          await adminFetch(`/api/admin/orders/${id}/status`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: newStatus })
-          });
-          showToast('Estado actualizado', 'success');
-          await loadOrders();
-        } catch (err) {
-          showToast(err.message, 'error');
-        }
+         if (!newStatus) return;
+         try {
+           await adminFetch(`/api/admin/orders/${id}/status`, {
+             method: 'PATCH',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ status: newStatus })
+           });
+           showToast('Estado actualizado', 'success');
+           await loadOrders();
+           emitSync('order_status_updated');
+         } catch (err) {
+           showToast(err.message, 'error');
+         }
       }
 
       function openDeleteOrderModal(realId, orderNumber) {
-        const order = orders.find(o => o.id === realId);
-        const customer = order ? (typeof order.customer === 'string' ? safeJsonParse(order.customer, {}) : (order.customer || {})) : {};
-        const customerName = customer.name || '—';
-        deleteOrderState = { id: realId, orderNumber: orderNumber, customer: customerName };
-        const msg = document.getElementById('deleteOrderModalMessage');
-        if (msg) msg.textContent = `¿Eliminar el pedido #${orderNumber} de ${customerName}? Esta acción no se puede deshacer.`;
-        const btn = document.getElementById('confirmDeleteOrderBtn');
-        if (btn) { btn.disabled = false; btn.textContent = 'Eliminar'; }
-        const overlay = document.getElementById('deleteOrderModalOverlay');
-        if (overlay) overlay.classList.add('active');
-      }
+         const order = orders.find(o => o.id === realId);
+         const customer = order ? (typeof order.customer === 'string' ? safeJsonParse(order.customer, {}) : (order.customer || {})) : {};
+         const customerName = customer.name || '—';
+         deleteOrderState = { id: realId, orderNumber: orderNumber, customer: customerName };
+         const msg = document.getElementById('deleteOrderModalMessage');
+         if (msg) msg.textContent = `¿Eliminar el pedido #${orderNumber} de ${customerName}? Esta acción no se puede deshacer.`;
+         const btn = document.getElementById('confirmDeleteOrderBtn');
+         if (btn) { btn.disabled = false; btn.textContent = 'Eliminar'; }
+         const overlay = document.getElementById('deleteOrderModalOverlay');
+         overlay.classList.add('active');
+         openModalScrollLock(overlay, closeDeleteOrderModal);
+       }
 
       function closeDeleteOrderModal() {
-        const overlay = document.getElementById('deleteOrderModalOverlay');
-        if (overlay) overlay.classList.remove('active');
-        deleteOrderState = { id: null, orderNumber: null, customer: null };
-      }
+         const overlay = document.getElementById('deleteOrderModalOverlay');
+         if (overlay) {
+           overlay.classList.remove('active');
+           unlockModalScroll();
+         }
+         deleteOrderState = { id: null, orderNumber: null, customer: null };
+       }
 
       async function confirmDeleteOrder() {
          const { id, orderNumber } = deleteOrderState;
@@ -1177,19 +1192,23 @@ function renderOrdersTable() {
       }
 
       function openBulkDeleteModal() {
-        const count = selectedOrderIds.size;
-        const msg = document.getElementById('bulkDeleteModalMessage');
-        if (msg) msg.textContent = `¿Seguro que querés eliminar ${count} pedido${count !== 1 ? 's' : ''}? Esta acción no se puede deshacer.`;
-        const btn = document.getElementById('confirmBulkDeleteBtn');
-        if (btn) { btn.disabled = false; btn.textContent = 'Eliminar seleccionados'; }
-        const overlay = document.getElementById('bulkDeleteModalOverlay');
-        if (overlay) overlay.classList.add('active');
-      }
+         const count = selectedOrderIds.size;
+         const msg = document.getElementById('bulkDeleteModalMessage');
+         if (msg) msg.textContent = `¿Seguro que querés eliminar ${count} pedido${count !== 1 ? 's' : ''}? Esta acción no se puede deshacer.`;
+         const btn = document.getElementById('confirmBulkDeleteBtn');
+         if (btn) { btn.disabled = false; btn.textContent = 'Eliminar seleccionados'; }
+         const overlay = document.getElementById('bulkDeleteModalOverlay');
+         overlay.classList.add('active');
+         openModalScrollLock(overlay, closeBulkDeleteModal);
+       }
 
       function closeBulkDeleteModal() {
-        const overlay = document.getElementById('bulkDeleteModalOverlay');
-        if (overlay) overlay.classList.remove('active');
-      }
+         const overlay = document.getElementById('bulkDeleteModalOverlay');
+         if (overlay) {
+           overlay.classList.remove('active');
+           unlockModalScroll();
+         }
+       }
 
       async function confirmBulkDelete() {
         const ids = Array.from(selectedOrderIds);
@@ -1295,13 +1314,15 @@ function renderOrdersTable() {
 
     let testimonialOrdenChanges = {};
 
-    function markTestimonialOrdenChanged(id, value) {
+     /* eslint-disable-next-line no-unused-vars */
+     function markTestimonialOrdenChanged(id, value) {
       testimonialOrdenChanges[id] = Number(value);
       const saveBtn = document.getElementById('saveTestimonialsBtn');
       if (saveBtn) saveBtn.disabled = false;
     }
 
-    async function saveTestimonialsChanges() {
+     /* eslint-disable-next-line no-unused-vars */
+     async function saveTestimonialsChanges() {
       if (Object.keys(testimonialOrdenChanges).length === 0) {
         showToast('No hay cambios para guardar', 'default');
         return;
@@ -1340,11 +1361,14 @@ function renderOrdersTable() {
         preview.style.display = 'none';
         preview.innerHTML = '';
       }
-      document.getElementById('testimonialModalOverlay').classList.add('active');
+      const overlay = document.getElementById('testimonialModalOverlay');
+      overlay.classList.add('active');
+      openModalScrollLock(overlay, closeTestimonialModal);
     }
 
     function closeTestimonialModal() {
       document.getElementById('testimonialModalOverlay').classList.remove('active');
+      unlockModalScroll();
       state.currentTestimonialId = null;
       clearSaveStatus('testimonialSaveStatus');
     }
@@ -1366,7 +1390,6 @@ function renderOrdersTable() {
           formData.append('comment', comment);
           formData.append('rating', rating);
           formData.append('active', true);
-          formData.append('image', existingImage);
           formData.append('image', imageFile);
           await adminFetch(url, { method, body: formData });
         } else {
@@ -1444,11 +1467,14 @@ function renderOrdersTable() {
       clearSaveStatus('textSaveStatus');
       document.getElementById('textKey').value = text ? text.key : '';
       document.getElementById('textValue').value = text ? text.value : '';
-      document.getElementById('textModalOverlay').classList.add('active');
+      const overlay = document.getElementById('textModalOverlay');
+      overlay.classList.add('active');
+      openModalScrollLock(overlay, closeTextModal);
     }
 
     function closeTextModal() {
       document.getElementById('textModalOverlay').classList.remove('active');
+      unlockModalScroll();
       state.currentTextKey = null;
       clearSaveStatus('textSaveStatus');
     }
@@ -1606,14 +1632,17 @@ if (previewEl) previewEl.classList.remove('placeholder');
          }
          const deleteBtn = document.getElementById('heroSlotDeleteBtn');
          if (deleteBtn) deleteBtn.style.display = hasImage ? 'inline-flex' : 'none';
-         document.getElementById('heroSlotModalOverlay').classList.add('active');
+         const overlay = document.getElementById('heroSlotModalOverlay');
+         overlay.classList.add('active');
+         openModalScrollLock(overlay, closeHeroSlotModal);
        }
 
-     function closeHeroSlotModal() {
-       document.getElementById('heroSlotModalOverlay').classList.remove('active');
-       state.currentHeroSlotIndex = null;
-       clearSaveStatus('heroSlotSaveStatus');
-     }
+      function closeHeroSlotModal() {
+        document.getElementById('heroSlotModalOverlay').classList.remove('active');
+        unlockModalScroll();
+        state.currentHeroSlotIndex = null;
+        clearSaveStatus('heroSlotSaveStatus');
+      }
 
        async function saveHeroSlot(slotIndex) {
          const isModal = slotIndex === undefined;
@@ -1675,14 +1704,16 @@ if (previewEl) previewEl.classList.remove('placeholder');
              await adminFetch(`/api/admin/hero-cards/hero/${idx}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
            }
 
-           if (isModal) {
-             showSaveStatus('heroSlotSaveStatus', 'success', '✅ Guardado');
-             await loadHeroCardsAdmin();
-             setTimeout(() => { hideSaveStatus('heroSlotSaveStatus'); closeHeroSlotModal(); }, 1500);
-           } else {
-             showToast('Slot guardado', 'success');
-             await loadHeroCardsAdmin();
-           }
+            if (isModal) {
+              showSaveStatus('heroSlotSaveStatus', 'success', '✅ Guardado');
+              await loadHeroCardsAdmin();
+              emitSync('hero_updated');
+              setTimeout(() => { hideSaveStatus('heroSlotSaveStatus'); closeHeroSlotModal(); }, 1500);
+            } else {
+              showToast('Slot guardado', 'success');
+              await loadHeroCardsAdmin();
+              emitSync('hero_updated');
+            }
          } catch (err) {
            if (isModal) {
              showSaveStatus('heroSlotSaveStatus', 'error', '❌ ' + err.message);
@@ -1763,8 +1794,9 @@ if (previewEl) previewEl.classList.remove('placeholder');
           }
 
           showToast('Slots sincronizados', 'success');
-          await loadHeroCardsAdmin();
-        } catch (err) {
+           await loadHeroCardsAdmin();
+           emitSync('hero_updated');
+         } catch (err) {
           showToast(err.message, 'error');
         } finally {
           const btn = document.getElementById('syncHeroBtn');
@@ -1825,12 +1857,13 @@ async function saveSettings() {
           shipping_cost: Number(document.getElementById('settingShippingCost').value) || 0,
           free_shipping_from: Number(document.getElementById('settingFreeShippingFrom').value) || 0,
         };
-       try {
-         showSaveStatus('settingsSaveStatus', 'saving', 'Guardando...');
-         await adminFetch('/api/admin/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-         showSaveStatus('settingsSaveStatus', 'success', '✅ Configuración guardada');
-         setTimeout(() => hideSaveStatus('settingsSaveStatus'), 2000);
-       } catch (err) {
+        try {
+          showSaveStatus('settingsSaveStatus', 'saving', 'Guardando...');
+          await adminFetch('/api/admin/settings', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+          showSaveStatus('settingsSaveStatus', 'success', '✅ Configuración guardada');
+          emitSync('settings_updated');
+          setTimeout(() => hideSaveStatus('settingsSaveStatus'), 2000);
+        } catch (err) {
          showSaveStatus('settingsSaveStatus', 'error', '❌ ' + err.message);
           setTimeout(() => hideSaveStatus('settingsSaveStatus'), 3000);
         }
@@ -1860,12 +1893,14 @@ async function saveSettings() {
         renderShippingZones();
       }
 
-      function removeShippingZone(index) {
+       /* eslint-disable-next-line no-unused-vars */
+       function removeShippingZone(index) {
         window.shippingZones.splice(index, 1);
         renderShippingZones();
       }
 
-      function updateShippingZone(index, field, value) {
+       /* eslint-disable-next-line no-unused-vars */
+       function updateShippingZone(index, field, value) {
         if (!window.shippingZones[index]) return;
         window.shippingZones[index][field] = field === 'gratis' ? value === true : (field === 'costo' ? Number(value) || 0 : value);
       }
@@ -1897,66 +1932,70 @@ async function saveSettings() {
       showToast('CSV exportado', 'success');
     }
 
-async function viewOrder(id) {
-       state.currentOrderId = id;
-       try {
-         const res = await adminFetch(`/api/admin/orders/${id}`);
-         const order = await res.json();
-         const customer = order.customer || {};
-         const items = Array.isArray(order.items) ? order.items : [];
-          const itemsText = items.map((it, i) => `${i+1}. ${escapeHtml(it.name || 'Producto')} x${it.quantity || 1} — $${Number(it.price || 0).toLocaleString('es-AR')}`).join('<br/>');
-          document.getElementById('orderDetailTitle').textContent = `Pedido #${order.id}`;
-          document.getElementById('orderDetailContent').innerHTML = `<div class='order-detail-grid'>
-            <div><strong>Cliente:</strong> ${escapeHtml(customer.name || '—')}</div>
-            <div><strong>Email:</strong> ${escapeHtml(customer.email || '—')}</div>
-            <div><strong>Teléfono:</strong> ${escapeHtml(customer.phone || '—')}</div>
-            <div><strong>Dirección:</strong> ${escapeHtml(customer.address || '—')}</div>
-           <div><strong>Total:</strong> $${Number(order.total).toLocaleString('es-AR')}</div>
-           <div><strong>Estado:</strong> ${order.status || 'pending'}</div>
-           <div><strong>Medio de pago:</strong> ${order.payment_method || '—'}</div>
-           <div style='grid-column:1/-1'><strong>Items:</strong><br/>${itemsText || 'Sin items'}</div>
-         </div>
-         <div class='form-group' style='margin-top:1rem'>
-           <label>Cambiar estado</label>
-           <select id='orderStatusSelect' onchange='changeOrderStatus(${order.id})'>
-             <option value='pending' ${order.status === 'pending' ? 'selected' : ''}>Pendiente</option>
-             <option value='confirmed' ${order.status === 'confirmed' ? 'selected' : ''}>Confirmado</option>
-             <option value='preparing' ${order.status === 'preparing' ? 'selected' : ''}>Preparando</option>
-             <option value='shipped' ${order.status === 'shipped' ? 'selected' : ''}>Enviado</option>
-             <option value='delivered' ${order.status === 'delivered' ? 'selected' : ''}>Entregado</option>
-             <option value='cancelled' ${order.status === 'cancelled' ? 'selected' : ''}>Cancelado</option>
-           </select>
-         </div>`;
-         document.getElementById('orderNotes').value = order.notes || '';
-         document.getElementById('orderDetailModalOverlay').classList.add('active');
+     async function viewOrder(id) {
+        state.currentOrderId = id;
+        try {
+          const res = await adminFetch(`/api/admin/orders/${id}`);
+          const order = await res.json();
+          const customer = order.customer || {};
+          const items = Array.isArray(order.items) ? order.items : [];
+           const itemsText = items.map((it, i) => `${i+1}. ${escapeHtml(it.name || 'Producto')} x${it.quantity || 1} — $${Number(it.price || 0).toLocaleString('es-AR')}`).join('<br/>');
+           document.getElementById('orderDetailTitle').textContent = `Pedido #${order.id}`;
+           document.getElementById('orderDetailContent').innerHTML = `<div class='order-detail-grid'>
+             <div><strong>Cliente:</strong> ${escapeHtml(customer.name || '—')}</div>
+             <div><strong>Email:</strong> ${escapeHtml(customer.email || '—')}</div>
+             <div><strong>Teléfono:</strong> ${escapeHtml(customer.phone || '—')}</div>
+             <div><strong>Dirección:</strong> ${escapeHtml(customer.address || '—')}</div>
+            <div><strong>Total:</strong> $${Number(order.total).toLocaleString('es-AR')}</div>
+            <div><strong>Estado:</strong> ${order.status || 'pending'}</div>
+            <div><strong>Medio de pago:</strong> ${order.payment_method || '—'}</div>
+            <div style='grid-column:1/-1'><strong>Items:</strong><br/>${itemsText || 'Sin items'}</div>
+          </div>
+          <div class='form-group' style='margin-top:1rem'>
+            <label>Cambiar estado</label>
+            <select id='orderStatusSelect' onchange='changeOrderStatus(${order.id})'>
+              <option value='pending' ${order.status === 'pending' ? 'selected' : ''}>Pendiente</option>
+              <option value='confirmed' ${order.status === 'confirmed' ? 'selected' : ''}>Confirmado</option>
+              <option value='preparing' ${order.status === 'preparing' ? 'selected' : ''}>Preparando</option>
+              <option value='shipped' ${order.status === 'shipped' ? 'selected' : ''}>Enviado</option>
+              <option value='delivered' ${order.status === 'delivered' ? 'selected' : ''}>Entregado</option>
+              <option value='cancelled' ${order.status === 'cancelled' ? 'selected' : ''}>Cancelado</option>
+            </select>
+          </div>`;
+          document.getElementById('orderNotes').value = order.notes || '';
+          const overlay = document.getElementById('orderDetailModalOverlay');
+          overlay.classList.add('active');
+          openModalScrollLock(overlay, closeOrderDetailModal);
+         } catch (err) {
+           showToast(err.message, 'error');
+         }
+       }
+
+     async function changeOrderStatus(id, newStatus) {
+         const select = document.getElementById('orderStatusSelect');
+         const status = select ? select.value : newStatus;
+         if (!status) return;
+         try {
+           await adminFetch(`/api/admin/orders/${id}/status`, {
+             method: 'PATCH',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ status })
+           });
+          showToast('Estado actualizado', 'success');
+          await loadOrders();
+          emitSync('order_status_updated');
         } catch (err) {
           showToast(err.message, 'error');
         }
       }
 
-async function changeOrderStatus(id, newStatus) {
-        const select = document.getElementById('orderStatusSelect');
-        const status = select ? select.value : newStatus;
-        if (!status) return;
-        try {
-          await adminFetch(`/api/admin/orders/${id}/status`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status })
-          });
-         showToast('Estado actualizado', 'success');
-         await loadOrders();
-       } catch (err) {
-         showToast(err.message, 'error');
-       }
-     }
+      function closeOrderDetailModal() {
+        document.getElementById('orderDetailModalOverlay').classList.remove('active');
+        unlockModalScroll();
+        state.currentOrderId = null;
+      }
 
-     function closeOrderDetailModal() {
-       document.getElementById('orderDetailModalOverlay').classList.remove('active');
-       state.currentOrderId = null;
-     }
-
-    async function saveOrderNotes() {
+     async function saveOrderNotes() {
       if (!state.currentOrderId) return;
       const notes = document.getElementById('orderNotes').value;
       try {
@@ -2015,7 +2054,6 @@ async function changeOrderStatus(id, newStatus) {
       </div>`;
     }
 
-    document.getElementById('modalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('modalOverlay')) closeModal(); });
     document.getElementById('modalOverlay').addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         closeModal();
@@ -2035,13 +2073,6 @@ async function changeOrderStatus(id, newStatus) {
         }
       }
     });
-    document.getElementById('testimonialModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('testimonialModalOverlay')) closeTestimonialModal(); });
-    document.getElementById('textModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('textModalOverlay')) closeTextModal(); });
-    document.getElementById('heroSlotModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('heroSlotModalOverlay')) closeHeroSlotModal(); });
-    document.getElementById('categoryModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('categoryModalOverlay')) closeCategoryModal(); });
-    document.getElementById('orderDetailModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('orderDetailModalOverlay')) closeOrderDetailModal(); });
-    document.getElementById('deleteOrderModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('deleteOrderModalOverlay')) closeDeleteOrderModal(); });
-    document.getElementById('bulkDeleteModalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('bulkDeleteModalOverlay')) closeBulkDeleteModal(); });
 
      document.addEventListener('DOMContentLoaded', () => {
         if (authToken) {

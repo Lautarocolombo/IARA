@@ -12,7 +12,7 @@ describe('ui.js utilidades', () => {
     expect(uiModule.escapeHtml('<script>alert(1)</script>')).toBe('&lt;script&gt;alert(1)&lt;/script&gt;');
     expect(uiModule.escapeHtml('a & b')).toBe('a &amp; b');
     expect(uiModule.escapeHtml('"hola"')).toBe('&quot;hola&quot;');
-    expect(uiModule.escapeHtml("it's")).toBe('it&#39;s');
+    expect(uiModule.escapeHtml('it\'s')).toBe('it&#39;s');
     expect(uiModule.escapeHtml('')).toBe('');
     expect(uiModule.escapeHtml(null)).toBe('');
   });

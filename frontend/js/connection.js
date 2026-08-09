@@ -5,7 +5,6 @@
   const KEEP_ALIVE_INTERVAL = 10 * 60 * 1000;
   const MAX_RETRIES = 4;
   const BASE_DELAY = 1000;
-  const TIMEOUT = 10000;
 
   let status = {
     online: navigator.onLine,
@@ -24,7 +23,7 @@
 
   function notify() {
     listeners.forEach(fn => {
-      try { fn(status); } catch (e) { /* noop */ }
+      try { fn(status); } catch (e) { console.warn('[Connection] listener error:', e); }
     });
   }
 
@@ -52,8 +51,6 @@
       );
       const res = await Promise.race([fetchPromise, timeoutPromise]);
       clearTimeout(timeoutId);
-      console.log('[connection] checkBackend: status=', res.status, 'ok=', res.ok);
-
       const data = await res.json().catch(() => ({}));
       const isOk = res.ok && (data.status === 'ok' || data.status === 'degraded' || data.status === 'sqlite-fallback');
 
@@ -143,7 +140,7 @@
       });
       clearTimeout(timeoutId);
     } catch (e) {
-      // silencioso: solo mantenemos el intento
+      console.warn('[connection] keepAlive falló:', e);
     }
   }
 

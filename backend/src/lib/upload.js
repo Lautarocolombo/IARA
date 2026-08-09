@@ -99,7 +99,9 @@ async function deleteImageAsset(image) {
 }
 
 const isVercel = process.env.VERCEL === 'true';
-const uploadsDir = isVercel ? '/tmp/uploads/imagenes' : path.join(__dirname, '..', '..', 'uploads', 'imagenes');
+const isRender = !!process.env.RENDER_EXTERNAL_HOSTNAME;
+const isEphemeralProd = !isVercel && process.env.NODE_ENV === 'production';
+const uploadsDir = (isVercel || isRender || isEphemeralProd) ? '/tmp/uploads/imagenes' : path.join(__dirname, '..', '..', 'uploads', 'imagenes');
 
 if (!fs.existsSync(uploadsDir)) {
   try {
@@ -223,7 +225,7 @@ async function processFile(file, baseUrl) {
   const resolvedBaseUrl = baseUrl || process.env.SITE_URL || process.env.BACKEND_URL || (process.env.RENDER_EXTERNAL_HOSTNAME ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` : 'http://localhost:10000');
   const absoluteUrl = `${resolvedBaseUrl}${relativeUrl}`;
 
-  const isEphemeralProd = !isVercel && process.env.NODE_ENV === 'production';
+  const isEphemeralProd = !isVercel && (process.env.NODE_ENV === 'production' || !!process.env.RENDER_EXTERNAL_HOSTNAME);
   if (isEphemeralProd) {
     try {
       const dataUri = await fileToBase64DataUri(optimizedPath);

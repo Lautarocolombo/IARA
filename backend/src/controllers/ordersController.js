@@ -1,6 +1,7 @@
 const { query, transaction } = require('../lib/db');
 const logger = require('../lib/logger');
 const { orderSchema } = require('../lib/validators');
+const { syncBus } = require('../routes/sync');
 const path = require('path');
 const fs = require('fs');
 const PDFDocument = require('pdfkit');
@@ -61,6 +62,7 @@ const getUserOrders = async (req, res) => {
       return res.status(400).json({ error: 'Email es requerido para buscar pedidos' });
     }
     const result = await query('SELECT * FROM orders WHERE shipping_email = $1 ORDER BY created_at DESC', [email]);
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json(result.rows);
   } catch (err) {
     logger.error({ err: err.message }, 'Error obteniendo tus pedidos');
@@ -138,6 +140,7 @@ const createOrder = async (req, res) => {
 
     logger.info({ orderId: result.id, total, itemsCount: items.length }, 'Orden creada');
     res.status(201).json(result);
+    try { syncBus.emit('order_created', { id: result.id }); } catch (e) { /* noop */ }
   } catch (err) {
     logger.error({ err: err.message }, 'Error creando pedido');
     res.status(400).json({ error: err.message || 'Error interno del servidor' });
@@ -197,6 +200,7 @@ const updateOrderStatus = async (req, res) => {
     const user = req.user?.user || 'admin';
     await logActivity(user, 'update', 'order', id, logMsgs.join('; '), req.ip || '');
     res.json(result.rows[0]);
+    try { syncBus.emit('order_status_updated', { id: Number(req.params.id), status: updates.status }); } catch (e) { /* noop */ }
   } catch (err) {
     logger.error({ err: err.message }, 'Error actualizando pedido');
     res.status(500).json({ error: 'Error interno del servidor' });

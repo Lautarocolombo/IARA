@@ -1,0 +1,16 @@
+{
+  "name": "artesania-gualeguay-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "jest --testEnvironment jsdom",
+    "lint": "eslint frontend/js --ext .js",
+    "format": "prettier --write \"frontend/**/*.{js,html,css,json}\""
+  },
+  "devDependencies": {
+    "eslint": "^8.57.1",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "prettier": "^3.0.0"
+  }
+}

@@ -12,98 +12,111 @@
   <link rel="stylesheet" href="../css/variables.css" />
   <link rel="stylesheet" href="../css/base.css" />
   <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/pill-buttons.css" />
   <link rel="stylesheet" href="../css/animations.css" />
   <link rel="stylesheet" href="../css/pages.css" />
 </head>
 <body>
   <a href="#content" class="skip-link">Saltar al contenido principal</a>
-  <nav class="navbar" id="navbar">
-    <div class="navbar-container">
-      <div class="navbar-brand">
-        <a href="../index.html" class="logo">
-          <span class="logo-dot" aria-hidden="true"></span>
-          <span class="logo-text">Artesanía Gualeguay</span>
-        </a>
-      </div>
-
-      <a href="../index.html" class="nav-back" aria-label="Volver al inicio">← Volver al inicio</a>
-
-      <div class="navbar-actions">
-        <button id="themeToggle" class="pill-btn pill-btn--theme" title="Cambiar tema" aria-label="Alternar modo claro/oscuro" aria-pressed="false">
-          <div class="pill-btn__theme-track">
-            <span class="pill-btn__theme-icon pill-btn__theme-icon--sun" aria-hidden="true">☀️</span>
-            <span class="pill-btn__theme-icon pill-btn__theme-icon--moon" aria-hidden="true">🌙</span>
-          </div>
-          <div class="pill-btn__theme-slider" aria-hidden="true"></div>
-        </button>
-        <a href="wishlist.html" class="wishlist-link" aria-label="Favoritos">
-          <span class="wishlist-icon" aria-hidden="true">❤️</span>
-          <span class="wishlist-count" id="wishlistCount">0</span>
-        </a>
-        <a href="admin.html" class="admin-link" aria-label="Panel de Administración" title="Panel de Admin">
-          <span class="admin-icon" aria-hidden="true">🐰</span>
-        </a>
-        <a href="../pages/cart.html" class="cart-link" aria-label="Carrito">
-          <span class="cart-icon" aria-hidden="true">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-          </span>
-          <span class="cart-count" id="cartCount">0</span>
-        </a>
-      </div>
-    </div>
-  </nav>
-    <div class="container page-wrap">
-    <nav aria-label="Breadcrumb" class="breadcrumb">
-      <a href="../index.html">Inicio</a> <span aria-hidden="true">/</span> <a href="../index.html#catalog">Catálogo</a> <span aria-hidden="true">/</span> <span>La Llave del Amor</span>
-    </nav>
-    <a class="back" href="../index.html#catalog" style="display:inline-flex;align-items:center;gap:0.4rem;color:var(--text-mid);font-size:0.9rem;font-weight:500;margin-bottom:1.5rem;transition:var(--transition);">
-      ← Volver al catálogo
-    </a>
-
-    <div class="product" style="display:grid;grid-template-columns:220px 1fr;gap:2.5rem;align-items:start;background:#fff;padding:2rem;border-radius:var(--radius-md);box-shadow:var(--shadow-sm);border:1px solid #f4d0da;">
-      <div style="display:flex;align-items:center;justify-content:center;">
-        <div style="width:100%;aspect-ratio:1;border-radius:var(--radius-md);background:linear-gradient(135deg, #fde8ef, #f8d5e4);display:flex;align-items:center;justify-content:center;font-size:4rem;overflow:hidden;border:1px solid #f4c8d4;">
-          📿
-        </div>
-      </div>
-
-      <div>
-        <span style="display:inline-block;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.5rem;">Pulseras</span>
-        <h1 style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:700;color:var(--text-dark);margin-bottom:0.75rem;line-height:1.2;">Pulsera — La Llave del Amor</h1>
-        <p style="color:var(--text-mid);line-height:1.6;margin-bottom:1rem;font-size:0.95rem;">Pulsera a juego para parejas. Materiales premium, cierre ajustable.</p>
-        <p style="font-family:'Playfair Display',serif;font-weight:700;font-size:1.5rem;color:var(--rose-dark);margin-top:0.5rem;margin-bottom:1.5rem;" id="productPrice">$2.800</p>
-
-        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
-          <button
-            class="btn-primary"
-            onclick='addToCart({id:101,name:"Pulsera La Llave del Amor",price:2800,emoji:"📿",stock:10,unit:"par",qty:1}); event.stopPropagation();'
-            style="display:inline-flex;align-items:center;gap:0.4rem;"
-          >Agregar al carrito</button>
-
-          <button
-            class="btn-outline"
-            onclick="location.href='../index.html'"
-            style="display:inline-flex;align-items:center;gap:0.4rem;"
-          >Ver catálogo</button>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <script src="../js/config.js"></script>
   <script src="../js/safeImage.js"></script>
+  <script src="../js/header.js"></script>
+  <script>
+    initSiteHeader({ showBackButton: true });
+  </script>
   <script src="../js/theme.js"></script>
+  <main id="content" class="product-detail">
+    <nav aria-label="Breadcrumb" class="breadcrumb">
+      <a href="../index.html">Inicio</a> <span aria-hidden="true">/</span> <a href="../index.html#catalog">Catálogo</a> <span aria-hidden="true">/</span> <span>La Llave del Amor</span>
+    </nav>
+    <a href="../index.html#catalog" class="back-link">← Volver al catálogo</a>
+    <div id="productContent">
+      <div class="loading-skeleton loading-skeleton-tall"></div>
+    </div>
+  </main>
   <script src="../js/ui.js"></script>
+  <script src="../js/products.js"></script>
   <script src="../js/wishlist.js"></script>
   <script src="../js/cart.js"></script>
+  <script src="../js/products.js"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      const el = document.getElementById('productPrice');
-      if (el && typeof formatARS === 'function') {
-        el.textContent = formatARS(2800);
+    async function loadPulsera() {
+      const container = document.getElementById('productContent');
+      if (!container) return;
+      try {
+        const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products`, {}, 2, 1000);
+        const productData = res ? await res.json() : [];
+        const products = Array.isArray(productData) && productData.length ? productData : (typeof defaultProducts !== 'undefined' ? defaultProducts : []);
+        const product = products.find(p => p.id === 101);
+        if (!product) {
+          container.innerHTML = '<p>Producto no encontrado.</p>';
+          return;
+        }
+        const images = Array.isArray(product.images) && product.images.length
+               ? product.images
+               : [{ url: window.getProductImageUrl(product) || '../assets/placeholder-product.svg', es_principal: true }];
+        const principalImage = images.find(i => i.es_principal) || images[0];
+        const thumbsHtml = images.map((img, i) =>
+          `${window.renderProductImage(img.url, product.name + ' - imagen ' + (i + 1), { placeholder: '📿' })}`
+        ).join('');
+        const imageHtml = images.length
+          ? `<div class="product-image-gallery"><div class="product-image-main">${window.renderProductImage(principalImage ? principalImage.url : '', product.name, { id: 'productMainImage', lazy: false, placeholder: '📿' })}</div><div class="product-image-thumbs" id="productThumbs">${thumbsHtml}</div></div>`
+          : `${window.renderProductImage('', product.name, { style: 'width:100%;aspect-ratio:1;object-fit:contain;object-position:center;', placeholder: '📿' })}`;
+        container.innerHTML = `
+          <div class="product-detail-grid">
+            <div class="product-image-large" aria-hidden="true">${imageHtml}</div>
+            <div>
+              <span class="product-category">${product.category || ''}</span>
+              <h1 class="product-detail-title">${product.name}</h1>
+              <p class="product-detail-desc">${product.description || ''}</p>
+              <p class="product-detail-price">${formatARS(product.price)}</p>
+              <div class="product-detail-actions">
+                <button class="btn-primary btn-add-cart" data-product-id="${product.id}" data-product-name="${product.name.replace(/"/g, '&quot;')}" data-product-price="${product.price}" data-product-emoji="${product.emoji||'📿'}" data-product-image="${(product.image||'').replace(/"/g, '&quot;')}" data-product-stock="${product.stock||0}">Agregar al carrito</button>
+                <a href="https://wa.me/${CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g,'')}?text=Hola! Me interesa el producto: ${product.name}" target="_blank" class="btn-outline" rel="noopener">Consultar por WhatsApp</a>
+              </div>
+            </div>
+          </div>
+          <div class="reviews-section">
+            <h2>Reseñas</h2>
+            <div id="reviewsList">
+              <p>Aún no hay reseñas para este producto.</p>
+            </div>
+          </div>
+        `;
+        const thumbs = document.querySelectorAll('#productThumbs img');
+        if (thumbs.length) {
+          thumbs.forEach((t, i) => {
+            if (i === 0) t.classList.add('active');
+            t.addEventListener('click', () => {
+              const main = document.getElementById('productMainImage');
+              if (!main) return;
+              main.src = t.src;
+              thumbs.forEach(tb => tb.classList.remove('active'));
+              t.classList.add('active');
+            });
+          });
+        }
+        document.querySelectorAll('.btn-add-cart').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const product = {
+              id: Number(btn.dataset.productId),
+              name: btn.dataset.productName,
+              price: Number(btn.dataset.productPrice),
+              emoji: btn.dataset.productEmoji || '📿',
+              image: btn.dataset.productImage || '',
+              stock: Number(btn.dataset.productStock || 0),
+              unit: 'u',
+              qty: 1
+            };
+            if (typeof addToCart === 'function') addToCart(product);
+          });
+        });
+      } catch (err) {
+        container.innerHTML = '<p>Error al cargar el producto.</p>';
       }
-      updateCartBadge();
-    });
+    }
+    document.addEventListener('DOMContentLoaded', loadPulsera);
   </script>
 </body>
 </html>
