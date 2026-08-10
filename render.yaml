@@ -2,14 +2,15 @@ services:
   - type: web
     name: iara-backend
     env: node
-    rootDirectory: backend
     plan: free
-    buildCommand: npm install --legacy-peer-deps
-    startCommand: npm start
+    buildCommand: npm ci && cd backend && npm ci --only=production --no-audit --no-fund
+    startCommand: cd backend && npm start
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: NODE_VERSION
+        value: "20"
       - key: PORT
         value: "3000"
       - key: JWT_SECRET
