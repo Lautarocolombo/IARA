@@ -71,7 +71,17 @@ const ITEM_CLASS = 'product-image-item';
     });
   }
 
-  function addPendingUrl() {
+  function validateExternalImageUrl(url) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(true);
+      img.onerror = () => resolve(false);
+      img.src = url;
+      setTimeout(() => resolve(false), 10000);
+    });
+  }
+
+  async function addPendingUrl() {
     const urlInput = document.getElementById('productImageUrl');
     const url = urlInput ? urlInput.value.trim() : '';
     if (!url) return;
@@ -84,6 +94,11 @@ const ITEM_CLASS = 'product-image-item';
     const allowedExts = ['jpg', 'jpeg', 'png', 'webp', 'gif'];
     if (!allowedExts.includes(ext)) {
       showToast('Formato no permitido. Usá JPG, PNG, WEBP o GIF', 'error');
+      return;
+    }
+    const valid = await validateExternalImageUrl(url);
+    if (!valid) {
+      showToast('No se pudo acceder a la imagen. Verificá la URL.', 'error');
       return;
     }
     pendingFiles.push({
@@ -215,7 +230,12 @@ const ITEM_CLASS = 'product-image-item';
       const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}/images`, {}, 2, 1000);
       if (!res) throw new Error('Error de red');
       const images = await res.json();
-      renderGallery(gallery, images, productId);
+      let orderedImages = images;
+      const savedOrder = (() => { try { return JSON.parse(localStorage.getItem(`ag_product_images_order_${productId}`)); } catch (e) { return null; } })();
+      if (Array.isArray(savedOrder) && savedOrder.length === images.length) {
+        orderedImages = savedOrder.map(id => images.find(img => img.id === id)).filter(Boolean);
+      }
+      renderGallery(gallery, orderedImages, productId);
     } catch (err) {
       gallery.innerHTML = '<p class="empty-state">No se pudieron cargar las imágenes</p>';
     }
@@ -235,7 +255,7 @@ const ITEM_CLASS = 'product-image-item';
       item.dataset.orden = img.orden;
        item.innerHTML = `
         <div class="${ITEM_CLASS}-preview">
-           ${window.renderProductImage(img.url, img.descripcion || 'Producto', { placeholder: '📿' })}
+           ${window.renderProductImage(img.url, img.descripcion || img.alt || 'Producto', { placeholder: '📿' })}
           ${img.descripcion ? `<div class="${ITEM_CLASS}-label" title="${escapeHtml(img.descripcion)}">${escapeHtml(img.descripcion)}</div>` : ''}
           ${img.categoria ? `<span class="${ITEM_CLASS}-category cat-${img.categoria}" title="${escapeHtml(img.categoria)}">${escapeHtml(img.categoria)}</span>` : ''}
         </div>
@@ -566,6 +586,7 @@ xhr.addEventListener('load', () => {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || 'Error al sincronizar orden');
       }
+      try { localStorage.setItem(`ag_product_images_order_${productId}`, JSON.stringify(orderedIds)); } catch (e) { /* noop */ }
     } catch (err) {
       showToast(err.message, 'error');
     }

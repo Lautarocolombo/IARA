@@ -7,7 +7,7 @@ router.get('/admin/orders/:id/receipt', adminAuth, generateReceiptPDF);
 router.get('/admin/orders/:id/receipt/whatsapp', adminAuth, sendReceiptWhatsApp);
 
 const upload = require('../lib/upload');
-router.post('/orders/:id/receipt', upload.uploadSingle, async (req, res) => {
+router.post('/orders/:id/receipt', upload.uploadReceipt, async (req, res) => {
   try {
     const { uploadReceipt } = require('../controllers/receiptsController');
     return uploadReceipt(req, res);
