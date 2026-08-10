@@ -409,15 +409,36 @@ const API_BASE = CONFIG.API.BASE;
       setTimeout(checkServerHealth, 800);
     });
 
-    const state = { currentCategoryId: null, currentOrderId: null, currentCustomerId: null, dashboardLoaded: false };
+    const state = { currentCategoryId: null, currentOrderId: null, currentCustomerId: null, currentTestimonialId: null, currentTextKey: null, currentHeroSlotIndex: null, dashboardLoaded: false };
 
-    function closeAllModals() {
-      document.querySelectorAll('.modal-overlay').forEach(el => {
-        el.classList.remove('active');
-      });
+    let activeModal = null;
+
+    function setActiveModal(name, _data) {
+      closeModal();
+      activeModal = name;
+      const overlay = document.querySelector(`.modal-overlay[data-modal="${name}"]`);
+      if (overlay) {
+        overlay.classList.add('active');
+        /* eslint-disable-next-line no-undef */
+        lockModalScroll();
+      }
+    }
+
+    function closeModal() {
+      if (!activeModal) { unlockModalScroll(); return; }
+      const overlay = document.querySelector(`.modal-overlay[data-modal="${activeModal}"]`);
+      if (overlay) overlay.classList.remove('active');
+      if (activeModal === 'product') { editingId = null; clearSaveStatus('productSaveStatus'); }
+      if (activeModal === 'category') { state.currentCategoryId = null; clearSaveStatus('categorySaveStatus'); }
+      if (activeModal === 'order') { state.currentOrderId = null; }
+      if (activeModal === 'testimonial') { state.currentTestimonialId = null; clearSaveStatus('testimonialSaveStatus'); }
+      if (activeModal === 'text') { state.currentTextKey = null; clearSaveStatus('textSaveStatus'); }
+      if (activeModal === 'heroSlot') { state.currentHeroSlotIndex = null; clearSaveStatus('heroSlotSaveStatus'); }
+      activeModal = null;
       unlockModalScroll();
     }
-    window.closeAllModals = closeAllModals;
+    window.closeAllModals = closeModal;
+    window.closeModal = closeModal;
 
    function openSectionModal() {
         if (currentSection === 'products') openModal();
@@ -459,35 +480,29 @@ async function loadCategories() {
       }
 
     function openCategoryModal(cat = null) {
-      closeAllModals();
-      state.currentCategoryId = cat ? cat.id : null;
-      document.getElementById('categoryModalTitle').textContent = cat ? 'Editar Categoría' : 'Nueva Categoría';
-      clearSaveStatus('categorySaveStatus');
-      document.getElementById('catName').value = cat ? cat.name : '';
-      document.getElementById('catSlug').value = cat ? cat.slug : '';
-      document.getElementById('catDescription').value = cat ? (cat.description || '') : '';
-      document.getElementById('catOrden').value = cat ? cat.orden : 0;
-      document.getElementById('catActive').value = cat ? String(cat.active) : 'true';
-      document.getElementById('catImage').value = cat ? (cat.image || '') : '';
-      document.getElementById('catImageFile').value = '';
-      const imgPreview = document.getElementById('catImagePreview');
-      if (cat && cat.image) {
-        imgPreview.style.display = 'block';
-         imgPreview.innerHTML = window.renderProductImage(cat.image || '', 'Preview', { style: 'max-height:80px;' });
-      } else {
-        imgPreview.style.display = 'none';
-        imgPreview.innerHTML = '';
-      }
-      const overlay = document.getElementById('categoryModalOverlay');
-      overlay.classList.add('active');
-      openModalScrollLock(overlay, closeCategoryModal);
-    }
+       state.currentCategoryId = cat ? cat.id : null;
+       document.getElementById('categoryModalTitle').textContent = cat ? 'Editar Categoría' : 'Nueva Categoría';
+       clearSaveStatus('categorySaveStatus');
+       document.getElementById('catName').value = cat ? cat.name : '';
+       document.getElementById('catSlug').value = cat ? cat.slug : '';
+       document.getElementById('catDescription').value = cat ? (cat.description || '') : '';
+       document.getElementById('catOrden').value = cat ? cat.orden : 0;
+       document.getElementById('catActive').value = cat ? String(cat.active) : 'true';
+       document.getElementById('catImage').value = cat ? (cat.image || '') : '';
+       document.getElementById('catImageFile').value = '';
+       const imgPreview = document.getElementById('catImagePreview');
+       if (cat && cat.image) {
+         imgPreview.style.display = 'block';
+          imgPreview.innerHTML = window.renderProductImage(cat.image || '', 'Preview', { style: 'max-height:80px;' });
+       } else {
+         imgPreview.style.display = 'none';
+         imgPreview.innerHTML = '';
+       }
+       setActiveModal('category', cat);
+     }
 
     function closeCategoryModal() {
-      document.getElementById('categoryModalOverlay').classList.remove('active');
-      unlockModalScroll();
-      state.currentCategoryId = null;
-      clearSaveStatus('categorySaveStatus');
+      closeModal();
     }
 
     async function saveCategory() {
@@ -681,40 +696,31 @@ function renderProductsTable() {
       }
 
 function openModal(product = null) {
-   closeAllModals();
-   editingId = product ? product.id : null;
-       document.getElementById('modalTitle').textContent = product ? 'Editar Producto' : 'Nuevo Producto';
-       clearSaveStatus('productSaveStatus');
-       document.getElementById('pName').value = product ? product.name : '';
-       document.getElementById('pCategory').value = product ? product.category : 'pulseras';
-       document.getElementById('pPrice').value = product ? product.price : '';
-       document.getElementById('pStock').value = product ? product.stock : '';
-       document.getElementById('pSku').value = product ? (product.sku || '') : '';
-       document.getElementById('pDesc').value = product ? (product.description || '') : '';
-       document.getElementById('pFeatured').checked = product ? product.featured : false;
-       document.getElementById('pActive').checked = product ? product.active !== false : true;
-    document.getElementById('pImage').value = product ? (product.image || '') : '';
-       document.getElementById('pId').value = product ? product.id : '';
-       const overlay = document.getElementById('modalOverlay');
-       overlay.classList.add('active');
-       openModalScrollLock(overlay, closeModal);
-       setTimeout(() => {
-         if (window.ProductImages) {
-           window.ProductImages.init(product ? product.id : null);
-         }
-       }, 100);
-       const firstInput = overlay.querySelector('input, select, textarea, button');
-       if (firstInput) firstInput.focus();
-     }
-
-      function closeModal() {
-        document.getElementById('modalOverlay').classList.remove('active');
-        unlockModalScroll();
-        editingId = null;
+    editingId = product ? product.id : null;
+        document.getElementById('modalTitle').textContent = product ? 'Editar Producto' : 'Nuevo Producto';
         clearSaveStatus('productSaveStatus');
+        document.getElementById('pName').value = product ? product.name : '';
+        document.getElementById('pCategory').value = product ? product.category : 'pulseras';
+        document.getElementById('pPrice').value = product ? product.price : '';
+        document.getElementById('pStock').value = product ? product.stock : '';
+        document.getElementById('pSku').value = product ? (product.sku || '') : '';
+        document.getElementById('pDesc').value = product ? (product.description || '') : '';
+        document.getElementById('pFeatured').checked = product ? product.featured : false;
+        document.getElementById('pActive').checked = product ? product.active !== false : true;
+     document.getElementById('pImage').value = product ? (product.image || '') : '';
+        document.getElementById('pId').value = product ? product.id : '';
+        setActiveModal('product', product);
+        setTimeout(() => {
+          if (window.ProductImages) {
+            window.ProductImages.init(product ? product.id : null);
+          }
+        }, 100);
+        const overlay = document.getElementById('modalOverlay');
+        const firstInput = overlay ? overlay.querySelector('input, select, textarea, button') : null;
+        if (firstInput) firstInput.focus();
       }
 
-     /* eslint-disable-next-line no-unused-vars */
+      /* eslint-disable-next-line no-unused-vars */
      function getAuthToken() {
        return authToken;
      }
@@ -1228,34 +1234,28 @@ function renderOrdersTable() {
     }
 
     function openTestimonialModal(testimonial = null) {
-      closeAllModals();
-      state.currentTestimonialId = testimonial ? testimonial.id : null;
-      document.getElementById('testimonialModalTitle').textContent = testimonial ? 'Editar Testimonio' : 'Nuevo Testimonio';
-      clearSaveStatus('testimonialSaveStatus');
-      document.getElementById('tName').value = testimonial ? testimonial.name : '';
-      document.getElementById('tComment').value = testimonial ? testimonial.comment : '';
-       document.getElementById('tRating').value = testimonial ? testimonial.rating : 5;
-      document.getElementById('tId').value = testimonial ? testimonial.id : '';
-      document.getElementById('tImage').value = testimonial ? (testimonial.image || testimonial.avatar || '') : '';
-      document.getElementById('tImageFile').value = '';
-      const preview = document.getElementById('testimonialImagePreview');
-      if (testimonial && (testimonial.image || testimonial.avatar)) {
-        preview.style.display = 'block';
-         preview.innerHTML = window.renderProductImage(testimonial.image || testimonial.avatar || '', 'Preview', { style: 'max-height:80px;' });
-      } else {
-        preview.style.display = 'none';
-        preview.innerHTML = '';
-      }
-      const overlay = document.getElementById('testimonialModalOverlay');
-      overlay.classList.add('active');
-      openModalScrollLock(overlay, closeTestimonialModal);
-    }
+       state.currentTestimonialId = testimonial ? testimonial.id : null;
+       document.getElementById('testimonialModalTitle').textContent = testimonial ? 'Editar Testimonio' : 'Nuevo Testimonio';
+       clearSaveStatus('testimonialSaveStatus');
+       document.getElementById('tName').value = testimonial ? testimonial.name : '';
+       document.getElementById('tComment').value = testimonial ? testimonial.comment : '';
+        document.getElementById('tRating').value = testimonial ? testimonial.rating : 5;
+       document.getElementById('tId').value = testimonial ? testimonial.id : '';
+       document.getElementById('tImage').value = testimonial ? (testimonial.image || testimonial.avatar || '') : '';
+       document.getElementById('tImageFile').value = '';
+       const preview = document.getElementById('testimonialImagePreview');
+       if (testimonial && (testimonial.image || testimonial.avatar)) {
+         preview.style.display = 'block';
+          preview.innerHTML = window.renderProductImage(testimonial.image || testimonial.avatar || '', 'Preview', { style: 'max-height:80px;' });
+       } else {
+         preview.style.display = 'none';
+         preview.innerHTML = '';
+       }
+       setActiveModal('testimonial', testimonial);
+     }
 
     function closeTestimonialModal() {
-      document.getElementById('testimonialModalOverlay').classList.remove('active');
-      unlockModalScroll();
-      state.currentTestimonialId = null;
-      clearSaveStatus('testimonialSaveStatus');
+      closeModal();
     }
 
     async function saveTestimonial() {
@@ -1346,22 +1346,16 @@ function renderOrdersTable() {
     }
 
     function openTextModal(text = null) {
-      closeAllModals();
-      state.currentTextKey = text ? text.key : null;
-      document.getElementById('textModalTitle').textContent = text ? 'Editar Texto' : 'Nuevo Texto';
-      clearSaveStatus('textSaveStatus');
-      document.getElementById('textKey').value = text ? text.key : '';
-      document.getElementById('textValue').value = text ? text.value : '';
-      const overlay = document.getElementById('textModalOverlay');
-      overlay.classList.add('active');
-      openModalScrollLock(overlay, closeTextModal);
-    }
+       state.currentTextKey = text ? text.key : null;
+       document.getElementById('textModalTitle').textContent = text ? 'Editar Texto' : 'Nuevo Texto';
+       clearSaveStatus('textSaveStatus');
+       document.getElementById('textKey').value = text ? text.key : '';
+       document.getElementById('textValue').value = text ? text.value : '';
+       setActiveModal('text', text);
+     }
 
     function closeTextModal() {
-      document.getElementById('textModalOverlay').classList.remove('active');
-      unlockModalScroll();
-      state.currentTextKey = null;
-      clearSaveStatus('textSaveStatus');
+      closeModal();
     }
 
     function editText(key) {
@@ -1487,48 +1481,42 @@ if (previewEl) previewEl.classList.remove('placeholder');
         reader.readAsDataURL(file);
       }
 
-      function openHeroSlotModal(slotIndex) {
-         closeAllModals();
-         state.currentHeroSlotIndex = slotIndex;
-         document.getElementById('heroSlotModalTitle').textContent = `Editar Slot ${slotIndex + 1}`;
-         clearSaveStatus('heroSlotSaveStatus');
-         const card = heroCards.find(c => c.slot === slotIndex) || {};
-         document.getElementById('heroSlotTitle').value = card.titulo || '';
-         document.getElementById('heroSlotSubtitle').value = card.subtitulo || '';
-         document.getElementById('heroSlotCtaText').value = card.cta_texto || '';
-         document.getElementById('heroSlotCtaUrl').value = card.cta_url || '';
-         document.getElementById('heroSlotImage').value = card.imagen || '';
-         const modalFileInput = document.getElementById('heroSlotImageFile');
-         if (modalFileInput) modalFileInput.value = '';
-         const preview = document.getElementById('heroSlotImagePreview');
-         const hasImage = card.imagen || heroPendingFiles[slotIndex];
-         preview.style.display = hasImage ? 'block' : 'none';
-         if (hasImage) {
-            if (heroPendingFiles[slotIndex]) {
-              const reader = new FileReader();
-              reader.onload = (e) => {
-                preview.innerHTML = window.renderProductImage(e.target.result, 'Slot ' + (slotIndex + 1), { style: 'max-height:200px;width:100%;object-fit:cover;', lazy: false });
-              };
-              reader.readAsDataURL(heroPendingFiles[slotIndex]);
-            } else {
-               preview.innerHTML = window.renderProductImage(card.imagen || '', 'Slot ' + (slotIndex + 1), { style: 'max-height:200px;width:100%;object-fit:cover;', lazy: false });
-            }
-         } else {
-           preview.innerHTML = '';
-         }
-         const deleteBtn = document.getElementById('heroSlotDeleteBtn');
-         if (deleteBtn) deleteBtn.style.display = hasImage ? 'inline-flex' : 'none';
-         const overlay = document.getElementById('heroSlotModalOverlay');
-         overlay.classList.add('active');
-         openModalScrollLock(overlay, closeHeroSlotModal);
-       }
+       function openHeroSlotModal(slotIndex) {
+          state.currentHeroSlotIndex = slotIndex;
+          document.getElementById('heroSlotModalTitle').textContent = `Editar Slot ${slotIndex + 1}`;
+          clearSaveStatus('heroSlotSaveStatus');
+          const card = heroCards.find(c => c.slot === slotIndex) || {};
+          document.getElementById('heroSlotTitle').value = card.titulo || '';
+          document.getElementById('heroSlotSubtitle').value = card.subtitulo || '';
+          document.getElementById('heroSlotCtaText').value = card.cta_texto || '';
+          document.getElementById('heroSlotCtaUrl').value = card.cta_url || '';
+          document.getElementById('heroSlotImage').value = card.imagen || '';
+          const modalFileInput = document.getElementById('heroSlotImageFile');
+          if (modalFileInput) modalFileInput.value = '';
+          const preview = document.getElementById('heroSlotImagePreview');
+          const hasImage = card.imagen || heroPendingFiles[slotIndex];
+          preview.style.display = hasImage ? 'block' : 'none';
+          if (hasImage) {
+             if (heroPendingFiles[slotIndex]) {
+               const reader = new FileReader();
+               reader.onload = (e) => {
+                 preview.innerHTML = window.renderProductImage(e.target.result, 'Slot ' + (slotIndex + 1), { style: 'max-height:200px;width:100%;object-fit:cover;', lazy: false });
+               };
+               reader.readAsDataURL(heroPendingFiles[slotIndex]);
+             } else {
+                preview.innerHTML = window.renderProductImage(card.imagen || '', 'Slot ' + (slotIndex + 1), { style: 'max-height:200px;width:100%;object-fit:cover;', lazy: false });
+             }
+          } else {
+            preview.innerHTML = '';
+          }
+          const deleteBtn = document.getElementById('heroSlotDeleteBtn');
+          if (deleteBtn) deleteBtn.style.display = hasImage ? 'inline-flex' : 'none';
+          setActiveModal('heroSlot', slotIndex);
+        }
 
-      function closeHeroSlotModal() {
-        document.getElementById('heroSlotModalOverlay').classList.remove('active');
-        unlockModalScroll();
-        state.currentHeroSlotIndex = null;
-        clearSaveStatus('heroSlotSaveStatus');
-      }
+       function closeHeroSlotModal() {
+          closeModal();
+       }
 
        async function saveHeroSlot(slotIndex) {
          const isModal = slotIndex === undefined;
@@ -1818,9 +1806,7 @@ async function saveSettings() {
     }
 
       async function viewOrder(id) {
-         closeAllModals();
          state.currentOrderId = id;
-         const overlay = document.getElementById('orderDetailModalOverlay');
          const contentEl = document.getElementById('orderDetailContent');
 
          showSaveStatus('orderDetailSaveStatus', 'saving', 'Cargando pedido...');
@@ -1828,8 +1814,7 @@ async function saveSettings() {
          document.getElementById('orderDetailTitle').textContent = 'Cargando pedido...';
          document.getElementById('orderNotes').value = '';
 
-         overlay.classList.add('active');
-         openModalScrollLock(overlay, closeOrderDetailModal);
+         setActiveModal('order', { id });
 
          try {
            const res = await adminFetch(`/api/admin/orders/${id}`);
@@ -1846,7 +1831,7 @@ async function saveSettings() {
            contentEl.innerHTML = renderOrderDetail(order, customer, items);
          } catch (err) {
            clearSaveStatus('orderDetailSaveStatus');
-           contentEl.innerHTML = `<div class='empty-state' style='padding:2rem;text-align:center;'><h3>❌ Error al cargar el pedido</h3><p style='color:#dc2626;font-size:0.85rem;margin-top:0.5rem;'>${escapeHtml(err.message || 'No se pudieron cargar los datos del pedido')}</p><p style='font-size:0.8rem;color:#64748b;margin-top:0.5rem;'>Probá recargar la página o consultá la consola para más detalles.</p></div>`;
+           contentEl.innerHTML = `<div class='empty-state' style='padding:2rem;text-align:center;'><h3>❌ No se pudo cargar el pedido</h3><p style='color:#dc2626;font-size:0.85rem;margin-top:0.5rem;'>${escapeHtml(err.message || 'No se pudieron cargar los datos del pedido')}</p><p style='font-size:0.8rem;color:#64748b;margin-top:0.5rem;'>Probá recargar la página o consultá la consola para más detalles.</p></div>`;
            showToast(err.message, 'error');
          }
        }
@@ -1935,11 +1920,9 @@ async function saveSettings() {
         }
       }
 
-      function closeOrderDetailModal() {
-        document.getElementById('orderDetailModalOverlay').classList.remove('active');
-        unlockModalScroll();
-        state.currentOrderId = null;
-      }
+       function closeOrderDetailModal() {
+          closeModal();
+        }
 
      async function saveOrderNotes() {
       if (!state.currentOrderId) return;
@@ -1999,23 +1982,14 @@ async function saveSettings() {
       </div>`;
     }
 
-    document.getElementById('modalOverlay').addEventListener('keydown', (e) => {
+    document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         closeModal();
       }
-      if (e.key === 'Tab') {
-        const modal = document.getElementById('modalOverlay');
-        const focusable = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-        if (focusable.length === 0) return;
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
+    });
+    document.addEventListener('click', (e) => {
+      if (e.target && e.target.classList.contains('modal-overlay')) {
+        closeModal();
       }
     });
 
