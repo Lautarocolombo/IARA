@@ -20,7 +20,7 @@
   <script src="../js/theme.js"></script>
   <script src="../js/ui.js"></script>
   <script src="../js/connection.js?v=2026080614"></script>
-  <script src="../js/admin.js?v=2026081003"></script>
+  <script src="../js/admin.js?v=2026081004"></script>
 </head>
 <body>
   <div class="login-overlay" id="loginOverlay">
@@ -41,15 +41,18 @@
           </button>
         </div>
       </div>
-      <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">Ingresar</button>
+      <button class="btn btn-primary btn-full" id="loginBtn" onclick="doLogin()">Ingresar</button>
       <p class="login-hint" id="loginHint">Verificando conexión con el servidor...</p>
       <button class="btn btn-secondary btn-sm hidden" id="retryHealthBtn" style="margin-top:0.5rem;" onclick="checkServerHealth()">Reintentar conexión</button>
       <p id="loginError" class="login-error" style="display:none;color:var(--accent, #d47090);text-align:center;font-size:0.85rem;margin-top:0.5rem;"></p>
-      <a href="../index.html" class="btn btn-secondary" style="width:100%;margin-top:0.75rem;">← Volver al sitio</a>
+      <a href="../index.html" class="btn btn-secondary btn-full" style="margin-top:0.75rem;">← Volver al sitio</a>
     </div>
   </div>
 
-  <div class="toast-container" id="toastContainer"></div>
+  <div class="connection-indicator" id="connectionIndicator" title="Estado de conexión">
+    <span class="dot"></span>
+    <span class="connection-text">Verificando...</span>
+  </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script>

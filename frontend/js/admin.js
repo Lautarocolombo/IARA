@@ -11,40 +11,42 @@ async function checkServerHealth() {
   const btn = document.getElementById('loginBtn');
   const hint = document.getElementById('loginHint');
   const retryBtn = document.getElementById('retryHealthBtn');
+  const indicator = document.getElementById('connectionIndicator');
   let controller = new AbortController();
   const timeoutMs = 8000;
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    btn.textContent = 'Verificando...';
-    btn.disabled = true;
+    if (btn) btn.textContent = 'Verificando...';
+    if (btn) btn.disabled = true;
     const res = await fetch(getApiUrl('/api/health'), {
       method: 'GET',
       signal: controller.signal
     });
     clearTimeout(timeoutId);
     if (!res.ok) throw new Error(`Servidor respondió con estado ${res.status}`);
-    hint.textContent = '✅ Servidor conectado';
-    hint.style.color = '#10b981';
+    if (hint) {
+      hint.textContent = '✅ Servidor conectado';
+      hint.style.color = '#10b981';
+    }
+    if (indicator) indicator.classList.add('connected');
     if (retryBtn) retryBtn.style.display = 'none';
   } catch (err) {
     clearTimeout(timeoutId);
-    const isTimeout = err.message === 'timeout';
-    const isAborted = err.name === 'AbortError';
     let message = '⚠️ El servidor no responde. Podés intentar igualmente iniciar sesión.';
-    if (isTimeout) {
+    if (err.name === 'AbortError') {
       message = '⚠️ La verificación tardó demasiado. Podés intentar igualmente iniciar sesión.';
-    } else if (isAborted) {
-      message = '⚠️ La conexión se canceló. Podés intentar igualmente iniciar sesión.';
     }
-    hint.textContent = message;
-    hint.style.color = '#f59e0b';
+    if (hint) {
+      hint.textContent = message;
+      hint.style.color = '#f59e0b';
+    }
+    if (indicator) indicator.classList.remove('connected');
     if (retryBtn) {
       retryBtn.style.display = 'inline-block';
       retryBtn.onclick = () => { checkServerHealth(); };
     }
   } finally {
-    btn.textContent = 'Ingresar';
-    btn.disabled = false;
+    if (btn) { btn.textContent = 'Ingresar'; btn.disabled = false; }
   }
 }
 
@@ -89,31 +91,20 @@ async function doLogin() {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       let errorMsg = data.error || `Error ${res.status}`;
-      if (res.status === 401) {
-        errorMsg = 'Usuario o contraseña incorrectos';
-      } else if (res.status === 400) {
-        errorMsg = data.error || 'Datos inválidos';
-      } else if (res.status === 500) {
-        errorMsg = 'Error en el servidor. Recargá la página e intentá nuevamente.';
-      } else if (res.status === 403) {
-        errorMsg = 'Acceso denegado';
-      }
+      if (res.status === 401) errorMsg = 'Usuario o contraseña incorrectos';
+      else if (res.status === 400) errorMsg = data.error || 'Datos inválidos';
+      else if (res.status === 500) errorMsg = 'Error en el servidor. Recargá la página e intentá nuevamente.';
       throw new Error(errorMsg);
     }
     authToken = data.token;
-    document.getElementById('loginOverlay').classList.add('hidden');
+    const userNameEl = document.getElementById('adminUserName');
+    if (userNameEl && data.user) userNameEl.textContent = data.user;
     window.location.href = '../index.html';
   } catch (err) {
     let userMessage = 'Error inesperado. Por favor, recargá la página.';
-    if (err.message === 'timeout') {
-      userMessage = 'El servidor tardó demasiado en responder. Recargá la página e intentá nuevamente.';
-    } else if (err.name === 'AbortError') {
-      userMessage = 'La conexión se canceló. Recargá la página e intentá nuevamente.';
-    } else if (err.name === 'TypeError' && err.message.includes('fetch')) {
-      userMessage = 'No se pudo conectar al servidor. Verificá tu conexión o recargá la página.';
-    } else {
-      userMessage = err.message || userMessage;
-    }
+    if (err.name === 'AbortError') userMessage = 'El servidor tardó demasiado en responder. Recargá la página e intentá nuevamente.';
+    else if (err.name === 'TypeError' && err.message.includes('fetch')) userMessage = 'No se pudo conectar al servidor. Verificá tu conexión o recargá la página.';
+    else userMessage = err.message || userMessage;
     showLoginError(errorEl, userMessage);
   } finally {
     btn.textContent = 'Ingresar';
@@ -128,7 +119,7 @@ async function doLogout() {
     console.warn('[doLogout] Error cerrando sesión:', e);
   }
   authToken = '';
-  document.getElementById('loginOverlay').classList.remove('hidden');
+  window.location.href = '../index.html';
 }
 
 async function adminFetch(url, opts = {}, isRetry = false) {
@@ -162,17 +153,15 @@ async function adminFetch(url, opts = {}, isRetry = false) {
         console.warn('[adminFetch] Error refrescando token:', e);
       }
       authToken = '';
-      document.getElementById('loginOverlay').classList.remove('hidden');
+      document.getElementById('loginOverlay')?.classList.remove('hidden');
       throw new Error('Sesión expirada. Iniciá sesión nuevamente.');
     }
     if (res.status === 401) {
       authToken = '';
-      document.getElementById('loginOverlay').classList.remove('hidden');
+      document.getElementById('loginOverlay')?.classList.remove('hidden');
       throw new Error('Sesión expirada. Iniciá sesión nuevamente.');
     }
-    if (res.status === 403) {
-      throw new Error('Acceso denegado. No tenés permisos para esta acción.');
-    }
+    if (res.status === 403) throw new Error('Acceso denegado. No tenés permisos para esta acción.');
     if (!res.ok) {
       let errorMsg = res.statusText;
       const contentType = res.headers.get('content-type') || '';
@@ -187,15 +176,8 @@ async function adminFetch(url, opts = {}, isRetry = false) {
     return res;
   } catch (err) {
     clearTimeout(timeout);
-    if (err.name === 'AbortError') {
-      console.error('[adminFetch] Timeout:', fullUrl);
-      throw new Error('El servidor no respondió en el tiempo esperado. Verificá tu conexión e intentá nuevamente.');
-    }
-    if (err.message === 'Failed to fetch' || err.message?.includes('fetch')) {
-      console.error('[adminFetch] Network error:', fullUrl);
-      throw new Error('No se pudo conectar al servidor. Verificá tu conexión e intentá recargar la página.');
-    }
-    console.error('[adminFetch] Error:', err.message, 'URL:', fullUrl);
+    if (err.name === 'AbortError') throw new Error('El servidor no respondió en el tiempo esperado. Verificá tu conexión e intentá nuevamente.');
+    if (err.message === 'Failed to fetch' || err.message?.includes('fetch')) throw new Error('No se pudo conectar al servidor. Verificá tu conexión e intentá recargar la página.');
     throw err;
   }
 }
