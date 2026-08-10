@@ -140,7 +140,7 @@ const createOrder = async (req, res) => {
       return orderResult.rows[0];
     });
 
-    logger.info({ orderId: result.id, total, itemsCount: items.length }, 'Orden creada');
+    logger.info({ orderId: result.id, total, itemsCount: validatedItems.length }, 'Orden creada');
     res.status(201).json(result);
     try { syncBus.emit('order_created', { id: result.id }); } catch (e) { /* noop */ }
   } catch (err) {

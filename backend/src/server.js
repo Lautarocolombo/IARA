@@ -387,10 +387,13 @@ const dbReady = initDB().then(async () => {
       );
       logger.info(`Usuario admin inicial creado: ${process.env.ADMIN_USER}`);
     } else if (process.env.ADMIN_USER && process.env.ADMIN_PASS_HASH) {
-      const existing = await query('SELECT password_hash FROM users WHERE username = $1', [process.env.ADMIN_USER]);
-      if (existing.rows.length > 0 && existing.rows[0].password_hash !== process.env.ADMIN_PASS_HASH) {
-        await query('UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE username = $2', [process.env.ADMIN_PASS_HASH, process.env.ADMIN_USER]);
-        logger.info(`Hash de admin actualizado para: ${process.env.ADMIN_USER}`);
+      const existing = await query('SELECT password_hash, permissions FROM users WHERE username = $1', [process.env.ADMIN_USER]);
+      if (existing.rows.length > 0) {
+        const needsUpdate = existing.rows[0].password_hash !== process.env.ADMIN_PASS_HASH || existing.rows[0].permissions !== JSON.stringify({ all: true });
+        if (needsUpdate) {
+          await query('UPDATE users SET password_hash = $1, permissions = $2, updated_at = CURRENT_TIMESTAMP WHERE username = $3', [process.env.ADMIN_PASS_HASH, JSON.stringify({ all: true }), process.env.ADMIN_USER]);
+          logger.info(`Hash/permisos de admin actualizados para: ${process.env.ADMIN_USER}`);
+        }
       }
     }
   } catch (err) {

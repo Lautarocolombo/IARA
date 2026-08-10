@@ -59,7 +59,7 @@ const login = async (req, res) => {
         const jwtUser = cleanUsername;
         const dbCheck = await query('SELECT username, password_hash FROM users WHERE username = $1', [jwtUser]);
         if (!dbCheck.rows.length) {
-          await query('INSERT INTO users (username, password_hash, role, active, permissions) VALUES ($1, $2, $3, $4, $5)', [jwtUser, envPassHash, role, JSON.stringify(permissions), true]);
+          await query('INSERT INTO users (username, password_hash, role, permissions, active) VALUES ($1, $2, $3, $4, $5)', [jwtUser, envPassHash, role, JSON.stringify(permissions), true]);
         } else if (dbCheck.rows[0].password_hash !== envPassHash) {
           await query('UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE username = $2', [envPassHash, jwtUser]);
         }

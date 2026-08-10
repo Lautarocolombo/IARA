@@ -411,9 +411,15 @@ const API_BASE = CONFIG.API.BASE;
 
     const state = { currentCategoryId: null, currentOrderId: null, currentCustomerId: null, dashboardLoaded: false };
 
-     let deleteOrderState = { id: null, orderNumber: null, customer: null };
+    function closeAllModals() {
+      document.querySelectorAll('.modal-overlay').forEach(el => {
+        el.classList.remove('active');
+      });
+      unlockModalScroll();
+    }
+    window.closeAllModals = closeAllModals;
 
-function openSectionModal() {
+   function openSectionModal() {
         if (currentSection === 'products') openModal();
         if (currentSection === 'categories') openCategoryModal();
         if (currentSection === 'testimonials') openTestimonialModal();
@@ -453,6 +459,7 @@ async function loadCategories() {
       }
 
     function openCategoryModal(cat = null) {
+      closeAllModals();
       state.currentCategoryId = cat ? cat.id : null;
       document.getElementById('categoryModalTitle').textContent = cat ? 'Editar Categoría' : 'Nueva Categoría';
       clearSaveStatus('categorySaveStatus');
@@ -523,20 +530,15 @@ async function loadCategories() {
       if (cat) openCategoryModal(cat);
     }
 
-async function deleteCategory(id, productCount = 0) {
-       if (productCount > 0) {
-         if (!confirm(`Esta categoría tiene ${productCount} producto${productCount !== 1 ? 's' : ''} asociado${productCount !== 1 ? 's' : ''}. ¿Eliminarla de todos modos? Los productos quedarán sin categoría.`)) return;
-       } else {
-         if (!confirm('¿Eliminar categoría?')) return;
-       }
-       try {
-         await adminFetch(`/api/admin/categories/${id}`, { method: 'DELETE' });
-         showToast('Categoría eliminada', 'success');
-         await loadCategories();
-       } catch (err) {
-         showToast(err.message, 'error');
-       }
-     }
+ async function deleteCategory(id, productCount = 0) {
+        try {
+          await adminFetch(`/api/admin/categories/${id}`, { method: 'DELETE' });
+          showToast('Categoría eliminada', 'success');
+          await loadCategories();
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      }
 
 async function loadProducts() {
       try {
@@ -588,18 +590,16 @@ function renderProductsTable() {
       if (p) openModal(p);
     }
 
-      /* eslint-disable-next-line no-unused-vars */
       async function deleteProduct(id) {
-       if (!confirm('¿Eliminar producto?')) return;
-       try {
-         await adminFetch(`/api/admin/products/${id}`, { method: 'DELETE' });
-          showToast('Producto eliminado', 'success');
-          await loadProducts();
-          emitSync('products_updated');
-        } catch (err) {
-          showToast(err.message, 'error');
-        }
-      }
+        try {
+          await adminFetch(`/api/admin/products/${id}`, { method: 'DELETE' });
+           showToast('Producto eliminado', 'success');
+           await loadProducts();
+           emitSync('products_updated');
+         } catch (err) {
+           showToast(err.message, 'error');
+         }
+       }
 
      /* eslint-disable-next-line no-unused-vars */
       async function toggleProductStatus(id) {
@@ -623,7 +623,6 @@ function renderProductsTable() {
       async function duplicateProduct(id) {
          const product = products.find(p => p.id === id);
          if (!product) return;
-         if (!confirm(`¿Duplicar "${product.name}"?`)) return;
          try {
            await adminFetch(`/api/admin/products/${id}/duplicar`, { method: 'POST' });
            showToast('Producto duplicado', 'success');
@@ -682,7 +681,8 @@ function renderProductsTable() {
       }
 
 function openModal(product = null) {
-       editingId = product ? product.id : null;
+   closeAllModals();
+   editingId = product ? product.id : null;
        document.getElementById('modalTitle').textContent = product ? 'Editar Producto' : 'Nuevo Producto';
        clearSaveStatus('productSaveStatus');
        document.getElementById('pName').value = product ? product.name : '';
@@ -1046,7 +1046,7 @@ function renderOrdersTable() {
              <td>${new Date(o.created_at).toLocaleDateString('es-AR')}</td>
              <td><div class='actions'>
               <button class='btn btn-secondary btn-sm' onclick='viewOrder(${o.id})'>👁 Ver</button>
-              <button class='btn btn-danger btn-sm' onclick='openDeleteOrderModal(${o.id}, ${index + 1})' title='Eliminar pedido'>🗑</button>
+               <button class='btn btn-danger btn-sm' onclick='deleteOrder(${o.id})' title='Eliminar pedido'>🗑</button>
               <select class='status-select' onchange='quickUpdateOrderStatus(${o.id}, this.value)' style='margin-left:0.25rem'>
                <option value='pending' ${o.status === 'pending' ? 'selected' : ''}>⏳</option>
                <option value='confirmed' ${o.status === 'confirmed' ? 'selected' : ''}>✅</option>
@@ -1098,57 +1098,33 @@ function renderOrdersTable() {
          }
       }
 
-      function openDeleteOrderModal(realId, orderNumber) {
-         const order = orders.find(o => o.id === realId);
-         const customer = order ? (typeof order.customer === 'string' ? safeJsonParse(order.customer, {}) : (order.customer || {})) : {};
-         const customerName = customer.name || '—';
-         deleteOrderState = { id: realId, orderNumber: orderNumber, customer: customerName };
-         const msg = document.getElementById('deleteOrderModalMessage');
-         if (msg) msg.textContent = `¿Eliminar el pedido #${orderNumber} de ${customerName}? Esta acción no se puede deshacer.`;
-         const btn = document.getElementById('confirmDeleteOrderBtn');
-         if (btn) { btn.disabled = false; btn.textContent = 'Eliminar'; }
-         const overlay = document.getElementById('deleteOrderModalOverlay');
-         overlay.classList.add('active');
-         openModalScrollLock(overlay, closeDeleteOrderModal);
-       }
+       async function deleteOrder(realId) {
+          const order = orders.find(o => o.id === realId);
+          const orderNumber = order ? (orders.indexOf(order) + 1) : realId;
+          const orderDetailWasOpen = state.currentOrderId === realId;
+          try {
+            const res = await adminFetch(`/api/admin/orders/${realId}`, { method: 'DELETE' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || 'Error al eliminar el pedido');
+            orders = orders.filter(o => o.id !== realId);
+            if (orderDetailWasOpen) {
+              closeOrderDetailModal();
+            }
+            if (currentSection === 'orders') {
+              if (orders.length === 0 && ordersCurrentPage > 1) {
+                ordersCurrentPage--;
+                await loadOrders();
+              } else {
+                renderOrdersTable();
+              }
+            }
+            showToast(`Pedido #${orderNumber} eliminado`, 'success');
+          } catch (err) {
+            showToast(err.message, 'error');
+          }
+        }
 
-      function closeDeleteOrderModal() {
-         const overlay = document.getElementById('deleteOrderModalOverlay');
-         if (overlay) {
-           overlay.classList.remove('active');
-           unlockModalScroll();
-         }
-         deleteOrderState = { id: null, orderNumber: null, customer: null };
-       }
-
-      async function confirmDeleteOrder() {
-         const { id, orderNumber } = deleteOrderState;
-         if (!id) return;
-         const btn = document.getElementById('confirmDeleteOrderBtn');
-         if (btn) { btn.disabled = true; btn.textContent = 'Eliminando...'; }
-         try {
-           const res = await adminFetch(`/api/admin/orders/${id}`, { method: 'DELETE' });
-           const data = await res.json();
-           if (!res.ok) throw new Error(data.error || 'Error al eliminar el pedido');
-           orders = orders.filter(o => o.id !== id);
-           closeDeleteOrderModal();
-           if (currentSection === 'orders') {
-             if (orders.length === 0 && ordersCurrentPage > 1) {
-               ordersCurrentPage--;
-               await loadOrders();
-             } else {
-               renderOrdersTable();
-             }
-           }
-           showToast(`Pedido #${orderNumber} eliminado correctamente`, 'success');
-         } catch (err) {
-           showToast(err.message, 'error');
-         } finally {
-           if (btn) { btn.disabled = false; btn.textContent = 'Eliminar'; }
-         }
-       }
-
-        async function exportOrdersCSV() {
+         async function exportOrdersCSV() {
          const params = new URLSearchParams();
          const statusFilter = document.getElementById('orderStatusFilter')?.value;
          if (statusFilter) params.set('status', statusFilter);
@@ -1252,6 +1228,7 @@ function renderOrdersTable() {
     }
 
     function openTestimonialModal(testimonial = null) {
+      closeAllModals();
       state.currentTestimonialId = testimonial ? testimonial.id : null;
       document.getElementById('testimonialModalTitle').textContent = testimonial ? 'Editar Testimonio' : 'Nuevo Testimonio';
       clearSaveStatus('testimonialSaveStatus');
@@ -1319,7 +1296,6 @@ function renderOrdersTable() {
     }
 
     async function deleteTestimonial(id) {
-      if (!confirm('¿Eliminar testimonio?')) return;
       try {
         await adminFetch(`/api/admin/testimonials/${id}`, { method: 'DELETE' });
         showToast('Testimonio eliminado', 'success');
@@ -1370,6 +1346,7 @@ function renderOrdersTable() {
     }
 
     function openTextModal(text = null) {
+      closeAllModals();
       state.currentTextKey = text ? text.key : null;
       document.getElementById('textModalTitle').textContent = text ? 'Editar Texto' : 'Nuevo Texto';
       clearSaveStatus('textSaveStatus');
@@ -1511,6 +1488,7 @@ if (previewEl) previewEl.classList.remove('placeholder');
       }
 
       function openHeroSlotModal(slotIndex) {
+         closeAllModals();
          state.currentHeroSlotIndex = slotIndex;
          document.getElementById('heroSlotModalTitle').textContent = `Editar Slot ${slotIndex + 1}`;
          clearSaveStatus('heroSlotSaveStatus');
@@ -1635,16 +1613,15 @@ if (previewEl) previewEl.classList.remove('placeholder');
        }
 
        async function deleteHeroSlotImage(slotIndex) {
-         if (!confirm('¿Eliminar la imagen de este slot?')) return;
-         try {
-           await adminFetch(`/api/admin/hero-cards/hero/${slotIndex}/imagen`, { method: 'DELETE' });
-           delete heroPendingFiles[slotIndex];
-           showToast('Imagen eliminada', 'success');
-           await loadHeroCardsAdmin();
-         } catch (err) {
-           showToast(err.message, 'error');
-         }
-       }
+          try {
+            await adminFetch(`/api/admin/hero-cards/hero/${slotIndex}/imagen`, { method: 'DELETE' });
+            delete heroPendingFiles[slotIndex];
+            showToast('Imagen eliminada', 'success');
+            await loadHeroCardsAdmin();
+          } catch (err) {
+            showToast(err.message, 'error');
+          }
+        }
 
        async function syncHeroCards() {
         try {
@@ -1840,46 +1817,107 @@ async function saveSettings() {
       showToast('CSV exportado', 'success');
     }
 
-     async function viewOrder(id) {
-        state.currentOrderId = id;
-        try {
-          const res = await adminFetch(`/api/admin/orders/${id}`);
-          const order = await res.json();
-          const customer = order.customer || {};
+      async function viewOrder(id) {
+         closeAllModals();
+         state.currentOrderId = id;
+         const overlay = document.getElementById('orderDetailModalOverlay');
+         const contentEl = document.getElementById('orderDetailContent');
+
+         showSaveStatus('orderDetailSaveStatus', 'saving', 'Cargando pedido...');
+         contentEl.innerHTML = '<div class="empty-state" style="padding:2rem;text-align:center;">Cargando...</div>';
+         document.getElementById('orderDetailTitle').textContent = 'Cargando pedido...';
+         document.getElementById('orderNotes').value = '';
+
+         overlay.classList.add('active');
+         openModalScrollLock(overlay, closeOrderDetailModal);
+
+         try {
+           const res = await adminFetch(`/api/admin/orders/${id}`);
+           const order = await res.json();
+           if (!order || !order.id) throw new Error('No se recibieron los datos del pedido');
+
+           const customer = typeof order.customer === 'string' ? safeJsonParse(order.customer, {}) : (order.customer || {});
            const items = Array.isArray(order.items) ? order.items : (typeof order.items === 'string' ? safeJsonParse(order.items, []) : []);
-           const itemsText = items.map((it, i) => `${i+1}. ${escapeHtml(it.name || 'Producto')} x${it.quantity || 1} — $${Number(it.price || 0).toLocaleString('es-AR')}`).join('<br/>');
+
            document.getElementById('orderDetailTitle').textContent = `Pedido #${order.id}`;
-           document.getElementById('orderDetailContent').innerHTML = `<div class='order-detail-grid'>
-             <div><strong>Cliente:</strong> ${escapeHtml(customer.name || '—')}</div>
-             <div><strong>Email:</strong> ${escapeHtml(customer.email || '—')}</div>
-             <div><strong>Teléfono:</strong> ${escapeHtml(customer.phone || '—')}</div>
-             <div><strong>Dirección:</strong> ${escapeHtml(customer.address || '—')}</div>
-            <div><strong>Total:</strong> $${Number(order.total).toLocaleString('es-AR')}</div>
-            <div><strong>Estado:</strong> ${order.status || 'pending'}</div>
-            <div><strong>Medio de pago:</strong> ${order.payment_method || '—'}</div>
-            <div style='grid-column:1/-1'><strong>Items:</strong><br/>${itemsText || 'Sin items'}</div>
-          </div>
-          <div class='form-group' style='margin-top:1rem'>
-            <label>Cambiar estado</label>
-            <select id='orderStatusSelect' onchange='changeOrderStatus(${order.id})'>
-              <option value='pending' ${order.status === 'pending' ? 'selected' : ''}>Pendiente</option>
-              <option value='confirmed' ${order.status === 'confirmed' ? 'selected' : ''}>Confirmado</option>
-              <option value='preparing' ${order.status === 'preparing' ? 'selected' : ''}>Preparando</option>
-              <option value='shipped' ${order.status === 'shipped' ? 'selected' : ''}>Enviado</option>
-              <option value='delivered' ${order.status === 'delivered' ? 'selected' : ''}>Entregado</option>
-              <option value='cancelled' ${order.status === 'cancelled' ? 'selected' : ''}>Cancelado</option>
-            </select>
-          </div>`;
-          document.getElementById('orderNotes').value = order.notes || '';
-          const overlay = document.getElementById('orderDetailModalOverlay');
-          overlay.classList.add('active');
-          openModalScrollLock(overlay, closeOrderDetailModal);
+           document.getElementById('orderNotes').value = order.notes || '';
+           hideSaveStatus('orderDetailSaveStatus', false);
+
+           contentEl.innerHTML = renderOrderDetail(order, customer, items);
          } catch (err) {
+           clearSaveStatus('orderDetailSaveStatus');
+           contentEl.innerHTML = `<div class='empty-state' style='padding:2rem;text-align:center;'><h3>❌ Error al cargar el pedido</h3><p style='color:#dc2626;font-size:0.85rem;margin-top:0.5rem;'>${escapeHtml(err.message || 'No se pudieron cargar los datos del pedido')}</p><p style='font-size:0.8rem;color:#64748b;margin-top:0.5rem;'>Probá recargar la página o consultá la consola para más detalles.</p></div>`;
            showToast(err.message, 'error');
          }
        }
 
-     async function changeOrderStatus(id, newStatus) {
+       function renderOrderDetail(order, customer, items) {
+         const fmt = (n) => `$${Number(n || 0).toLocaleString('es-AR')}`;
+         const subtotal = Number(order.subtotal || 0);
+         const shipping = Number(order.shipping_cost || 0);
+         const total = Number(order.total || 0);
+         const orderDate = order.created_at ? new Date(order.created_at).toLocaleString('es-AR') : '—';
+         const itemRow = (it) => {
+           const qty = Number(it.quantity || it.qty || 1);
+           const price = Number(it.price || 0);
+           const lineTotal = price * qty;
+           const img = it.image
+             ? window.renderProductImage(it.image, it.name || 'Producto', { style: 'width:48px;height:48px;object-fit:cover;border-radius:8px;', placeholder: it.emoji || '📿', lazy: false })
+             : (it.emoji || '📿');
+           return `<div class='order-product-row'>
+             <div class='order-product-thumb'>${img}</div>
+             <div class='order-product-info'>
+               <div class='order-product-name'>${escapeHtml(it.name || 'Producto')}</div>
+               <div class='order-product-meta'>Cant: ${qty} · ${fmt(price)} c/u</div>
+             </div>
+             <div class='order-product-total'>${fmt(lineTotal)}</div>
+           </div>`;
+         };
+         const itemsHtml = items && items.length ? items.map(itemRow).join('') : '<div class="empty-state" style="padding:1rem;text-align:center;color:#64748b;">Sin productos</div>';
+         const statusClass = order.status === 'delivered' || order.status === 'completed' ? 'stock--ok' : (order.status === 'cancelled' ? 'stock--out' : '');
+
+         return `<div class='order-detail-content'>
+           <div class='admin-section'>
+             <div class='admin-section-title'>Datos del Cliente</div>
+             <div class='order-detail-grid'>
+               <div><strong>Nombre:</strong> ${escapeHtml(customer.name || order.shipping_name || '—')}</div>
+               <div><strong>Email:</strong> ${escapeHtml(customer.email || order.shipping_email || '—')}</div>
+               <div><strong>Teléfono:</strong> ${escapeHtml(customer.phone || order.shipping_phone || '—')}</div>
+               <div><strong>Dirección:</strong> ${escapeHtml(customer.address || order.shipping_address || '—')}</div>
+               <div><strong>Fecha:</strong> ${escapeHtml(orderDate)}</div>
+               <div><strong>Estado:</strong> <span class='badge badge-${statusClass}'>${escapeHtml(order.status || 'pending')}</span></div>
+               <div><strong>Pago:</strong> ${escapeHtml(order.payment_method || '—')}</div>
+             </div>
+           </div>
+
+           <div class='admin-section'>
+             <div class='admin-section-title'>Productos (${items.length})</div>
+             <div class='order-products-list'>${itemsHtml}</div>
+           </div>
+
+           <div class='admin-section'>
+             <div class='admin-section-title'>Resumen</div>
+             <div class='order-totals'>
+               <div class='order-total-row'><span>Subtotal</span><span>${fmt(subtotal)}</span></div>
+               <div class='order-total-row'><span>Envío</span><span>${fmt(shipping)}</span></div>
+               <div class='order-total-row order-total-row--grand'><span>Total</span><span>${fmt(total)}</span></div>
+             </div>
+           </div>
+         </div>
+         <div class='form-group' style='margin-top:1rem'>
+           <label>Cambiar estado</label>
+           <select id='orderStatusSelect' onchange='changeOrderStatus(${order.id})'>
+             <option value='pending' ${order.status === 'pending' ? 'selected' : ''}>Pendiente</option>
+             <option value='confirmed' ${order.status === 'confirmed' ? 'selected' : ''}>Confirmado</option>
+             <option value='preparing' ${order.status === 'preparing' ? 'selected' : ''}>Preparando</option>
+             <option value='shipped' ${order.status === 'shipped' ? 'selected' : ''}>Enviado</option>
+             <option value='delivered' ${order.status === 'delivered' ? 'selected' : ''}>Entregado</option>
+             <option value='cancelled' ${order.status === 'cancelled' ? 'selected' : ''}>Cancelado</option>
+           </select>
+          </div>`;
+        }
+
+      async function changeOrderStatus(id, newStatus) {
          const select = document.getElementById('orderStatusSelect');
          const status = select ? select.value : newStatus;
          if (!status) return;
@@ -1921,7 +1959,6 @@ async function saveSettings() {
     }
 
     async function resetMetrics() {
-      if (!confirm('¿Seguro que querés reiniciar todas las métricas? Esta acción no se puede deshacer')) return;
       try {
         const res = await adminFetch('/api/admin/reports/reset', { method: 'POST' });
         const data = await res.json();
@@ -2046,9 +2083,7 @@ async function saveSettings() {
     window.sendReceiptWhatsApp = sendReceiptWhatsApp;
     window.viewOrder = viewOrder;
     window.quickUpdateOrderStatus = quickUpdateOrderStatus;
-    window.openDeleteOrderModal = openDeleteOrderModal;
-    window.closeDeleteOrderModal = closeDeleteOrderModal;
-    window.confirmDeleteOrder = confirmDeleteOrder;
+    window.deleteOrder = deleteOrder;
     window.editTestimonial = editTestimonial;
     window.deleteTestimonial = deleteTestimonial;
     window.toggleTestimonialActive = toggleTestimonialActive;

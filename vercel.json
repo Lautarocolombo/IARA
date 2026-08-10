@@ -4,7 +4,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://iara-uxcu.onrender.com/api/$1"
+      "destination": "https://iara-os3h.onrender.com/api/$1"
     },
     {
       "source": "/uploads/(.*)",

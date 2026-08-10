@@ -21,7 +21,7 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: SITE_URL
-        value: https://iara-wz9o.vercel.app
+        value: https://artesania-gualeguay.vercel.app
       - key: BACKEND_URL
          value: https://iara-uxcu.onrender.com
       - key: ALLOWED_ORIGINS

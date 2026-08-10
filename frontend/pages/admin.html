@@ -715,27 +715,13 @@
         </div>
       </div>
       <div class="modal-footer">
+        <button class="btn btn-danger btn-sm" id="detailDeleteBtn" onclick="deleteOrder(state.currentOrderId)">🗑 Eliminar</button>
         <button class="btn btn-secondary" onclick="closeOrderDetailModal()">Cerrar</button>
       </div>
     </div>
   </div>
-   </div>
-
-  <div class="modal-overlay" id="deleteOrderModalOverlay">
-     <div class="modal" style="max-width:420px">
-       <div class="modal-header">
-         <h3>Eliminar pedido</h3>
-         <button class="btn btn-secondary btn-sm" onclick="closeDeleteOrderModal()">✕</button>
-       </div>
-       <div class="modal-body">
-         <p id="deleteOrderModalMessage">¿Eliminar este pedido? Esta acción no se puede deshacer.</p>
-       </div>
-       <div class="modal-footer">
-         <button class="btn btn-secondary" onclick="closeDeleteOrderModal()">Cancelar</button>
-         <button class="btn btn-danger" id="confirmDeleteOrderBtn" onclick="confirmDeleteOrder()">Eliminar</button>
-       </div>
-     </div>
-   </div>
+    </div>
+  </div>
 
   <div class="toast-container" id="toastContainer"></div>
 

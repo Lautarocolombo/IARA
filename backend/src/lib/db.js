@@ -737,16 +737,19 @@ async function initDB() {
    }
  }
 
-   async function ensureAdminUser() {
-     const ADMIN_USER = process.env.ADMIN_USER;
-     const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH;
-     if (!ADMIN_USER || !ADMIN_PASS_HASH) return;
-     const existing = await query('SELECT id, password_hash FROM users WHERE username = $1', [ADMIN_USER]);
-     if (existing.rows.length === 0) {
-       await query('INSERT INTO users (username, password_hash, role, active, permissions) VALUES ($1, $2, $3, $4, $5)', [ADMIN_USER, ADMIN_PASS_HASH, 'admin', true, JSON.stringify({ all: true })]);
-     } else if (existing.rows[0].password_hash !== ADMIN_PASS_HASH) {
-       await query('UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE username = $2', [ADMIN_PASS_HASH, ADMIN_USER]);
-     }
-   }
+    async function ensureAdminUser() {
+      const ADMIN_USER = process.env.ADMIN_USER;
+      const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH;
+      if (!ADMIN_USER || !ADMIN_PASS_HASH) return;
+      const existing = await query('SELECT id, password_hash, permissions FROM users WHERE username = $1', [ADMIN_USER]);
+      if (existing.rows.length === 0) {
+        await query('INSERT INTO users (username, password_hash, role, active, permissions) VALUES ($1, $2, $3, $4, $5)', [ADMIN_USER, ADMIN_PASS_HASH, 'admin', true, JSON.stringify({ all: true })]);
+      } else {
+        const needsUpdate = existing.rows[0].password_hash !== ADMIN_PASS_HASH || existing.rows[0].permissions !== JSON.stringify({ all: true });
+        if (needsUpdate) {
+          await query('UPDATE users SET password_hash = $1, permissions = $2, updated_at = CURRENT_TIMESTAMP WHERE username = $3', [ADMIN_PASS_HASH, JSON.stringify({ all: true }), ADMIN_USER]);
+        }
+      }
+    }
 
  module.exports = { query, initDB, pool, connectionString: !!connectionString, getClient, transaction };

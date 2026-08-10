@@ -315,7 +315,6 @@ const ITEM_CLASS = 'product-image-item';
         e.target.value = '';
       });
       item.querySelector('[data-action="delete"]')?.addEventListener('click', async () => {
-        if (!confirm('¿Eliminar imagen?')) return;
         await deleteImage(productId, img.id);
         await loadImages(productId);
       });
