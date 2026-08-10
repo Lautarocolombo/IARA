@@ -2263,6 +2263,9 @@ textarea.hero-slot-input {
 .status-shipped { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
 .status-delivered { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
 .status-cancelled { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+.status-awaiting_verification { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+.status-expired { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+.status-rejected { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
 
 /* ==================== STORYTELL TEXT EDITOR ==================== */
 

@@ -91,7 +91,7 @@ async function deleteImageAsset(image) {
   }
 
   if (image.filename && !isBlobUrl(image.url)) {
-    const localPath = path.join(__dirname, '..', '..', 'uploads', 'imagenes', image.filename);
+    const localPath = path.join(uploadsDir, image.filename);
     try { if (fs.existsSync(localPath)) { fs.unlinkSync(localPath); deleted = true; } } catch (e) { /* noop */ }
   }
 
@@ -142,6 +142,25 @@ const upload = multer({
 
 const uploadSingle = upload.single('image');
 const uploadMultiple = upload.array('images', 10);
+
+const receiptFileFilter = (req, file, cb) => {
+  const allowedReceipts = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+  if (allowedReceipts.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Tipo de archivo no permitido. Usá JPG, PNG, WEBP o PDF.'), false);
+  }
+};
+
+const receiptUpload = multer({
+  storage,
+  fileFilter: receiptFileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024
+  }
+});
+
+const uploadReceipt = receiptUpload.single('image');
 
 function handleUploadError(err, req, res, next) {
   if (err instanceof multer.MulterError) {
@@ -226,16 +245,15 @@ async function processFile(file, baseUrl) {
   const absoluteUrl = `${resolvedBaseUrl}${relativeUrl}`;
 
   const isEphemeralProd = !isVercel && (process.env.NODE_ENV === 'production' || !!process.env.RENDER_EXTERNAL_HOSTNAME);
-  if (isEphemeralProd) {
+  if (isEphemeralProd && !useBlob) {
     try {
-      const dataUri = await fileToBase64DataUri(optimizedPath);
-      try { fs.unlinkSync(file.path); } catch (e) { /* noop */ }
-      if (optimizedPath !== file.path) {
-        try { fs.unlinkSync(optimizedPath); } catch (e) { /* noop */ }
-      }
-      return { url: dataUri, filename, cloudinary_public_id: '', isCloudinary: false, isBlob: false };
+      const fileBuffer = fs.readFileSync(file.path);
+      const base64 = fileBuffer.toString('base64');
+      const mimeType = file.mimetype || 'application/octet-stream';
+      const dataUrl = `data:${mimeType};base64,${base64}`;
+      return { url: dataUrl, filename, cloudinary_public_id: '', isCloudinary: false, isBlob: false };
     } catch (e) {
-      logger.warn({ err: e.message, stack: e.stack }, 'Error convirtiendo imagen a base64 para fallback persistente, usando URL local');
+      throw new Error('Producción ephemeral detectada sin Vercel Blob configurado. Configure BLOB_READ_WRITE_TOKEN para persistir imágenes.');
     }
   }
 
@@ -288,6 +306,7 @@ async function saveUploadedFile(file) {
 module.exports = {
   uploadSingle,
   uploadMultiple,
+  uploadReceipt,
   handleUploadError,
   saveFile,
   processFile,

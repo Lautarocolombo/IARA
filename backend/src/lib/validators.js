@@ -45,7 +45,16 @@ const orderSchema = z.object({
     email: z.string().email().optional(),
     phone: z.string().optional(),
     address: z.string().optional()
-  }).optional().default({})
+  }).optional().default({}),
+  shipping_name: z.string().optional().default(''),
+  shipping_address: z.string().optional().default(''),
+  shipping_zip: z.string().optional().default(''),
+  shipping_city: z.string().optional().default(''),
+  shipping_province: z.string().optional().default(''),
+  shipping_phone: z.string().optional().default(''),
+  shipping_email: z.string().email().optional().or(z.literal('')).default(''),
+  subtotal: z.number().nonnegative().optional().default(0),
+  shipping_cost: z.number().nonnegative().optional().default(0)
 });
 
 const loginSchema = z.object({

@@ -1,3 +1,5 @@
+/* ==================== ADMIN AUTH ==================== */
+
 const API_BASE = CONFIG.API.BASE;
 let authToken = '';
 window.__getAdminToken = () => authToken;
@@ -132,7 +134,6 @@ async function adminFetch(url, opts = {}, isRetry = false) {
     const isFormData = opts.body instanceof FormData;
     let finalHeaders = headers;
     if (isFormData) {
-      /* eslint-disable-next-line no-unused-vars */
       const { 'Content-Type': _ct, ...rest } = headers;
       finalHeaders = rest;
     }

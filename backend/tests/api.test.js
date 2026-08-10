@@ -63,6 +63,7 @@ describe('API Endpoints', () => {
     test('devuelve 400 si faltan campos', async () => {
       const res = await request(app)
         .post('/api/contact')
+        .set('X-Requested-With', 'XMLHttpRequest')
         .send({ name: 'Test', email: 'test@test.com' });
       expect(res.statusCode).toBe(400);
     });
@@ -70,6 +71,7 @@ describe('API Endpoints', () => {
     test('devuelve 201 con datos válidos', async () => {
       const res = await request(app)
         .post('/api/contact')
+        .set('X-Requested-With', 'XMLHttpRequest')
         .send({ name: 'Test User', email: 'test@test.com', message: 'Test message' });
       expect(res.statusCode).toBe(201);
       expect(res.body).toHaveProperty('ok', true);
@@ -80,6 +82,7 @@ describe('API Endpoints', () => {
     test('devuelve 400 sin email', async () => {
       const res = await request(app)
         .post('/api/subscribe')
+        .set('X-Requested-With', 'XMLHttpRequest')
         .send({ email: 'invalid' });
       expect(res.statusCode).toBe(400);
     });
