@@ -501,6 +501,10 @@ tr:last-child td {
   display: flex;
 }
 
+.modal-overlay.confirmation-overlay {
+  z-index: 110;
+}
+
 .modal {
   background: var(--white);
   border-radius: 14px;
@@ -1160,7 +1164,7 @@ tr:last-child td {
 }
 .order-detail-grid div {
   font-size: 0.9rem;
-  color: #334155;
+   color: #334155;
 }
 
 @media (max-width: 768px) {

@@ -409,11 +409,11 @@ const API_BASE = CONFIG.API.BASE;
       setTimeout(checkServerHealth, 800);
     });
 
-    const state = { currentCategoryId: null, currentOrderId: null, currentCustomerId: null, currentTestimonialId: null, currentTextKey: null, currentHeroSlotIndex: null, dashboardLoaded: false };
+    const state = { currentCategoryId: null, currentOrderId: null, currentCustomerId: null, currentTestimonialId: null, currentTextKey: null, currentHeroSlotIndex: null, deleteOrderId: null, deleteOrderNumber: null, dashboardLoaded: false };
 
     let activeModal = null;
 
-    function setActiveModal(name, _data) {
+    function setActiveModal(name) {
       closeModal();
       activeModal = name;
       const overlay = document.querySelector(`.modal-overlay[data-modal="${name}"]`);
@@ -431,6 +431,7 @@ const API_BASE = CONFIG.API.BASE;
       if (activeModal === 'product') { editingId = null; clearSaveStatus('productSaveStatus'); }
       if (activeModal === 'category') { state.currentCategoryId = null; clearSaveStatus('categorySaveStatus'); }
       if (activeModal === 'order') { state.currentOrderId = null; }
+      if (activeModal === 'orderDelete') { state.deleteOrderId = null; state.deleteOrderNumber = null; clearSaveStatus('deleteOrderSaveStatus'); }
       if (activeModal === 'testimonial') { state.currentTestimonialId = null; clearSaveStatus('testimonialSaveStatus'); }
       if (activeModal === 'text') { state.currentTextKey = null; clearSaveStatus('textSaveStatus'); }
       if (activeModal === 'heroSlot') { state.currentHeroSlotIndex = null; clearSaveStatus('heroSlotSaveStatus'); }
@@ -440,7 +441,7 @@ const API_BASE = CONFIG.API.BASE;
     window.closeAllModals = closeModal;
     window.closeModal = closeModal;
 
-   function openSectionModal() {
+function openSectionModal() {
         if (currentSection === 'products') openModal();
         if (currentSection === 'categories') openCategoryModal();
         if (currentSection === 'testimonials') openTestimonialModal();
@@ -481,24 +482,24 @@ async function loadCategories() {
 
     function openCategoryModal(cat = null) {
        state.currentCategoryId = cat ? cat.id : null;
-       document.getElementById('categoryModalTitle').textContent = cat ? 'Editar Categoría' : 'Nueva Categoría';
-       clearSaveStatus('categorySaveStatus');
-       document.getElementById('catName').value = cat ? cat.name : '';
-       document.getElementById('catSlug').value = cat ? cat.slug : '';
-       document.getElementById('catDescription').value = cat ? (cat.description || '') : '';
-       document.getElementById('catOrden').value = cat ? cat.orden : 0;
-       document.getElementById('catActive').value = cat ? String(cat.active) : 'true';
-       document.getElementById('catImage').value = cat ? (cat.image || '') : '';
-       document.getElementById('catImageFile').value = '';
-       const imgPreview = document.getElementById('catImagePreview');
-       if (cat && cat.image) {
-         imgPreview.style.display = 'block';
-          imgPreview.innerHTML = window.renderProductImage(cat.image || '', 'Preview', { style: 'max-height:80px;' });
-       } else {
-         imgPreview.style.display = 'none';
-         imgPreview.innerHTML = '';
-       }
-       setActiveModal('category', cat);
+      document.getElementById('categoryModalTitle').textContent = cat ? 'Editar Categoría' : 'Nueva Categoría';
+      clearSaveStatus('categorySaveStatus');
+      document.getElementById('catName').value = cat ? cat.name : '';
+      document.getElementById('catSlug').value = cat ? cat.slug : '';
+      document.getElementById('catDescription').value = cat ? (cat.description || '') : '';
+      document.getElementById('catOrden').value = cat ? cat.orden : 0;
+      document.getElementById('catActive').value = cat ? String(cat.active) : 'true';
+      document.getElementById('catImage').value = cat ? (cat.image || '') : '';
+      document.getElementById('catImageFile').value = '';
+      const imgPreview = document.getElementById('catImagePreview');
+      if (cat && cat.image) {
+        imgPreview.style.display = 'block';
+         imgPreview.innerHTML = window.renderProductImage(cat.image || '', 'Preview', { style: 'max-height:80px;' });
+      } else {
+        imgPreview.style.display = 'none';
+        imgPreview.innerHTML = '';
+      }
+       setActiveModal('category');
      }
 
     function closeCategoryModal() {
@@ -545,15 +546,20 @@ async function loadCategories() {
       if (cat) openCategoryModal(cat);
     }
 
- async function deleteCategory(id, productCount = 0) {
-        try {
-          await adminFetch(`/api/admin/categories/${id}`, { method: 'DELETE' });
-          showToast('Categoría eliminada', 'success');
-          await loadCategories();
-        } catch (err) {
-          showToast(err.message, 'error');
-        }
-      }
+async function deleteCategory(id, productCount = 0) {
+       if (productCount > 0) {
+         if (!confirm(`Esta categoría tiene ${productCount} producto${productCount !== 1 ? 's' : ''} asociado${productCount !== 1 ? 's' : ''}. ¿Eliminarla de todos modos? Los productos quedarán sin categoría.`)) return;
+       } else {
+         if (!confirm('¿Eliminar categoría?')) return;
+       }
+       try {
+         await adminFetch(`/api/admin/categories/${id}`, { method: 'DELETE' });
+         showToast('Categoría eliminada', 'success');
+         await loadCategories();
+       } catch (err) {
+         showToast(err.message, 'error');
+       }
+     }
 
 async function loadProducts() {
       try {
@@ -605,16 +611,18 @@ function renderProductsTable() {
       if (p) openModal(p);
     }
 
+      /* eslint-disable-next-line no-unused-vars */
       async function deleteProduct(id) {
-        try {
-          await adminFetch(`/api/admin/products/${id}`, { method: 'DELETE' });
-           showToast('Producto eliminado', 'success');
-           await loadProducts();
-           emitSync('products_updated');
-         } catch (err) {
-           showToast(err.message, 'error');
-         }
-       }
+       if (!confirm('¿Eliminar producto?')) return;
+       try {
+         await adminFetch(`/api/admin/products/${id}`, { method: 'DELETE' });
+          showToast('Producto eliminado', 'success');
+          await loadProducts();
+          emitSync('products_updated');
+        } catch (err) {
+          showToast(err.message, 'error');
+        }
+      }
 
      /* eslint-disable-next-line no-unused-vars */
       async function toggleProductStatus(id) {
@@ -638,6 +646,7 @@ function renderProductsTable() {
       async function duplicateProduct(id) {
          const product = products.find(p => p.id === id);
          if (!product) return;
+         if (!confirm(`¿Duplicar "${product.name}"?`)) return;
          try {
            await adminFetch(`/api/admin/products/${id}/duplicar`, { method: 'POST' });
            showToast('Producto duplicado', 'success');
@@ -709,7 +718,7 @@ function openModal(product = null) {
         document.getElementById('pActive').checked = product ? product.active !== false : true;
      document.getElementById('pImage').value = product ? (product.image || '') : '';
         document.getElementById('pId').value = product ? product.id : '';
-        setActiveModal('product', product);
+        setActiveModal('product');
         setTimeout(() => {
           if (window.ProductImages) {
             window.ProductImages.init(product ? product.id : null);
@@ -721,9 +730,9 @@ function openModal(product = null) {
       }
 
       /* eslint-disable-next-line no-unused-vars */
-     function getAuthToken() {
-       return authToken;
-     }
+      function getAuthToken() {
+        return authToken;
+      }
 
 function setReportPreset(preset) {
        const now = new Date();
@@ -1052,7 +1061,7 @@ function renderOrdersTable() {
              <td>${new Date(o.created_at).toLocaleDateString('es-AR')}</td>
              <td><div class='actions'>
               <button class='btn btn-secondary btn-sm' onclick='viewOrder(${o.id})'>👁 Ver</button>
-               <button class='btn btn-danger btn-sm' onclick='deleteOrder(${o.id})' title='Eliminar pedido'>🗑</button>
+              <button class='btn btn-danger btn-sm' onclick='openDeleteOrderModal(${o.id}, ${index + 1})' title='Eliminar pedido'>🗑</button>
               <select class='status-select' onchange='quickUpdateOrderStatus(${o.id}, this.value)' style='margin-left:0.25rem'>
                <option value='pending' ${o.status === 'pending' ? 'selected' : ''}>⏳</option>
                <option value='confirmed' ${o.status === 'confirmed' ? 'selected' : ''}>✅</option>
@@ -1104,33 +1113,52 @@ function renderOrdersTable() {
          }
       }
 
-       async function deleteOrder(realId) {
-          const order = orders.find(o => o.id === realId);
-          const orderNumber = order ? (orders.indexOf(order) + 1) : realId;
-          const orderDetailWasOpen = state.currentOrderId === realId;
-          try {
-            const res = await adminFetch(`/api/admin/orders/${realId}`, { method: 'DELETE' });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Error al eliminar el pedido');
-            orders = orders.filter(o => o.id !== realId);
-            if (orderDetailWasOpen) {
-              closeOrderDetailModal();
-            }
-            if (currentSection === 'orders') {
-              if (orders.length === 0 && ordersCurrentPage > 1) {
-                ordersCurrentPage--;
-                await loadOrders();
-              } else {
-                renderOrdersTable();
-              }
-            }
-            showToast(`Pedido #${orderNumber} eliminado`, 'success');
-          } catch (err) {
-            showToast(err.message, 'error');
-          }
-        }
+      function openDeleteOrderModal(realId, orderNumber) {
+         const order = orders.find(o => o.id === realId);
+         const customer = order ? (typeof order.customer === 'string' ? safeJsonParse(order.customer, {}) : (order.customer || {})) : {};
+         const customerName = customer.name || '—';
+         state.deleteOrderId = realId;
+         state.deleteOrderNumber = orderNumber;
+         const msg = document.getElementById('deleteOrderModalMessage');
+         if (msg) msg.textContent = `¿Eliminar el pedido #${orderNumber} de ${customerName}? Esta acción no se puede deshacer.`;
+         const btn = document.getElementById('confirmDeleteOrderBtn');
+         if (btn) { btn.disabled = false; btn.textContent = 'Eliminar'; }
+         setActiveModal('orderDelete');
+       }
 
-         async function exportOrdersCSV() {
+       function closeDeleteOrderModal() {
+          closeModal();
+       }
+
+      async function confirmDeleteOrder() {
+         const id = state.deleteOrderId;
+         const orderNumber = state.deleteOrderNumber;
+         if (!id) return;
+         const btn = document.getElementById('confirmDeleteOrderBtn');
+         if (btn) { btn.disabled = true; btn.textContent = 'Eliminando...'; }
+         try {
+           const res = await adminFetch(`/api/admin/orders/${id}`, { method: 'DELETE' });
+           const data = await res.json();
+           if (!res.ok) throw new Error(data.error || 'Error al eliminar el pedido');
+           orders = orders.filter(o => o.id !== id);
+           closeDeleteOrderModal();
+           if (currentSection === 'orders') {
+             if (orders.length === 0 && ordersCurrentPage > 1) {
+               ordersCurrentPage--;
+               await loadOrders();
+             } else {
+               renderOrdersTable();
+             }
+           }
+           showToast(`Pedido #${orderNumber} eliminado correctamente`, 'success');
+         } catch (err) {
+           showToast(err.message, 'error');
+         } finally {
+           if (btn) { btn.disabled = false; btn.textContent = 'Eliminar'; }
+         }
+       }
+
+        async function exportOrdersCSV() {
          const params = new URLSearchParams();
          const statusFilter = document.getElementById('orderStatusFilter')?.value;
          if (statusFilter) params.set('status', statusFilter);
@@ -1234,24 +1262,24 @@ function renderOrdersTable() {
     }
 
     function openTestimonialModal(testimonial = null) {
-       state.currentTestimonialId = testimonial ? testimonial.id : null;
-       document.getElementById('testimonialModalTitle').textContent = testimonial ? 'Editar Testimonio' : 'Nuevo Testimonio';
-       clearSaveStatus('testimonialSaveStatus');
-       document.getElementById('tName').value = testimonial ? testimonial.name : '';
-       document.getElementById('tComment').value = testimonial ? testimonial.comment : '';
-        document.getElementById('tRating').value = testimonial ? testimonial.rating : 5;
-       document.getElementById('tId').value = testimonial ? testimonial.id : '';
-       document.getElementById('tImage').value = testimonial ? (testimonial.image || testimonial.avatar || '') : '';
-       document.getElementById('tImageFile').value = '';
-       const preview = document.getElementById('testimonialImagePreview');
-       if (testimonial && (testimonial.image || testimonial.avatar)) {
-         preview.style.display = 'block';
-          preview.innerHTML = window.renderProductImage(testimonial.image || testimonial.avatar || '', 'Preview', { style: 'max-height:80px;' });
-       } else {
-         preview.style.display = 'none';
-         preview.innerHTML = '';
+      state.currentTestimonialId = testimonial ? testimonial.id : null;
+      document.getElementById('testimonialModalTitle').textContent = testimonial ? 'Editar Testimonio' : 'Nuevo Testimonio';
+      clearSaveStatus('testimonialSaveStatus');
+      document.getElementById('tName').value = testimonial ? testimonial.name : '';
+      document.getElementById('tComment').value = testimonial ? testimonial.comment : '';
+       document.getElementById('tRating').value = testimonial ? testimonial.rating : 5;
+      document.getElementById('tId').value = testimonial ? testimonial.id : '';
+      document.getElementById('tImage').value = testimonial ? (testimonial.image || testimonial.avatar || '') : '';
+      document.getElementById('tImageFile').value = '';
+      const preview = document.getElementById('testimonialImagePreview');
+      if (testimonial && (testimonial.image || testimonial.avatar)) {
+        preview.style.display = 'block';
+         preview.innerHTML = window.renderProductImage(testimonial.image || testimonial.avatar || '', 'Preview', { style: 'max-height:80px;' });
+      } else {
+        preview.style.display = 'none';
+        preview.innerHTML = '';
        }
-       setActiveModal('testimonial', testimonial);
+       setActiveModal('testimonial');
      }
 
     function closeTestimonialModal() {
@@ -1296,6 +1324,7 @@ function renderOrdersTable() {
     }
 
     async function deleteTestimonial(id) {
+      if (!confirm('¿Eliminar testimonio?')) return;
       try {
         await adminFetch(`/api/admin/testimonials/${id}`, { method: 'DELETE' });
         showToast('Testimonio eliminado', 'success');
@@ -1351,7 +1380,7 @@ function renderOrdersTable() {
        clearSaveStatus('textSaveStatus');
        document.getElementById('textKey').value = text ? text.key : '';
        document.getElementById('textValue').value = text ? text.value : '';
-       setActiveModal('text', text);
+       setActiveModal('text');
      }
 
     function closeTextModal() {
@@ -1481,37 +1510,37 @@ if (previewEl) previewEl.classList.remove('placeholder');
         reader.readAsDataURL(file);
       }
 
-       function openHeroSlotModal(slotIndex) {
-          state.currentHeroSlotIndex = slotIndex;
-          document.getElementById('heroSlotModalTitle').textContent = `Editar Slot ${slotIndex + 1}`;
-          clearSaveStatus('heroSlotSaveStatus');
-          const card = heroCards.find(c => c.slot === slotIndex) || {};
-          document.getElementById('heroSlotTitle').value = card.titulo || '';
-          document.getElementById('heroSlotSubtitle').value = card.subtitulo || '';
-          document.getElementById('heroSlotCtaText').value = card.cta_texto || '';
-          document.getElementById('heroSlotCtaUrl').value = card.cta_url || '';
-          document.getElementById('heroSlotImage').value = card.imagen || '';
-          const modalFileInput = document.getElementById('heroSlotImageFile');
-          if (modalFileInput) modalFileInput.value = '';
-          const preview = document.getElementById('heroSlotImagePreview');
-          const hasImage = card.imagen || heroPendingFiles[slotIndex];
-          preview.style.display = hasImage ? 'block' : 'none';
-          if (hasImage) {
-             if (heroPendingFiles[slotIndex]) {
-               const reader = new FileReader();
-               reader.onload = (e) => {
-                 preview.innerHTML = window.renderProductImage(e.target.result, 'Slot ' + (slotIndex + 1), { style: 'max-height:200px;width:100%;object-fit:cover;', lazy: false });
-               };
-               reader.readAsDataURL(heroPendingFiles[slotIndex]);
-             } else {
-                preview.innerHTML = window.renderProductImage(card.imagen || '', 'Slot ' + (slotIndex + 1), { style: 'max-height:200px;width:100%;object-fit:cover;', lazy: false });
-             }
-          } else {
-            preview.innerHTML = '';
-          }
+      function openHeroSlotModal(slotIndex) {
+         state.currentHeroSlotIndex = slotIndex;
+         document.getElementById('heroSlotModalTitle').textContent = `Editar Slot ${slotIndex + 1}`;
+         clearSaveStatus('heroSlotSaveStatus');
+         const card = heroCards.find(c => c.slot === slotIndex) || {};
+         document.getElementById('heroSlotTitle').value = card.titulo || '';
+         document.getElementById('heroSlotSubtitle').value = card.subtitulo || '';
+         document.getElementById('heroSlotCtaText').value = card.cta_texto || '';
+         document.getElementById('heroSlotCtaUrl').value = card.cta_url || '';
+         document.getElementById('heroSlotImage').value = card.imagen || '';
+         const modalFileInput = document.getElementById('heroSlotImageFile');
+         if (modalFileInput) modalFileInput.value = '';
+         const preview = document.getElementById('heroSlotImagePreview');
+         const hasImage = card.imagen || heroPendingFiles[slotIndex];
+         preview.style.display = hasImage ? 'block' : 'none';
+         if (hasImage) {
+            if (heroPendingFiles[slotIndex]) {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                preview.innerHTML = window.renderProductImage(e.target.result, 'Slot ' + (slotIndex + 1), { style: 'max-height:200px;width:100%;object-fit:cover;', lazy: false });
+              };
+              reader.readAsDataURL(heroPendingFiles[slotIndex]);
+            } else {
+               preview.innerHTML = window.renderProductImage(card.imagen || '', 'Slot ' + (slotIndex + 1), { style: 'max-height:200px;width:100%;object-fit:cover;', lazy: false });
+            }
+         } else {
+           preview.innerHTML = '';
+         }
           const deleteBtn = document.getElementById('heroSlotDeleteBtn');
           if (deleteBtn) deleteBtn.style.display = hasImage ? 'inline-flex' : 'none';
-          setActiveModal('heroSlot', slotIndex);
+          setActiveModal('heroSlot');
         }
 
        function closeHeroSlotModal() {
@@ -1601,15 +1630,16 @@ if (previewEl) previewEl.classList.remove('placeholder');
        }
 
        async function deleteHeroSlotImage(slotIndex) {
-          try {
-            await adminFetch(`/api/admin/hero-cards/hero/${slotIndex}/imagen`, { method: 'DELETE' });
-            delete heroPendingFiles[slotIndex];
-            showToast('Imagen eliminada', 'success');
-            await loadHeroCardsAdmin();
-          } catch (err) {
-            showToast(err.message, 'error');
-          }
-        }
+         if (!confirm('¿Eliminar la imagen de este slot?')) return;
+         try {
+           await adminFetch(`/api/admin/hero-cards/hero/${slotIndex}/imagen`, { method: 'DELETE' });
+           delete heroPendingFiles[slotIndex];
+           showToast('Imagen eliminada', 'success');
+           await loadHeroCardsAdmin();
+         } catch (err) {
+           showToast(err.message, 'error');
+         }
+       }
 
        async function syncHeroCards() {
         try {
@@ -1814,7 +1844,7 @@ async function saveSettings() {
          document.getElementById('orderDetailTitle').textContent = 'Cargando pedido...';
          document.getElementById('orderNotes').value = '';
 
-         setActiveModal('order', { id });
+         setActiveModal('order');
 
          try {
            const res = await adminFetch(`/api/admin/orders/${id}`);
@@ -1842,6 +1872,7 @@ async function saveSettings() {
          const shipping = Number(order.shipping_cost || 0);
          const total = Number(order.total || 0);
          const orderDate = order.created_at ? new Date(order.created_at).toLocaleString('es-AR') : '—';
+         const statusBadge = order.status === 'delivered' || order.status === 'completed' ? 'stock--ok' : (order.status === 'cancelled' ? 'stock--out' : '');
          const itemRow = (it) => {
            const qty = Number(it.quantity || it.qty || 1);
            const price = Number(it.price || 0);
@@ -1858,8 +1889,9 @@ async function saveSettings() {
              <div class='order-product-total'>${fmt(lineTotal)}</div>
            </div>`;
          };
-         const itemsHtml = items && items.length ? items.map(itemRow).join('') : '<div class="empty-state" style="padding:1rem;text-align:center;color:#64748b;">Sin productos</div>';
-         const statusClass = order.status === 'delivered' || order.status === 'completed' ? 'stock--ok' : (order.status === 'cancelled' ? 'stock--out' : '');
+         const itemsHtml = items && items.length
+           ? items.map(itemRow).join('')
+           : '<div class="empty-state" style="padding:1rem;text-align:center;color:#64748b;">Sin productos</div>';
 
          return `<div class='order-detail-content'>
            <div class='admin-section'>
@@ -1870,7 +1902,7 @@ async function saveSettings() {
                <div><strong>Teléfono:</strong> ${escapeHtml(customer.phone || order.shipping_phone || '—')}</div>
                <div><strong>Dirección:</strong> ${escapeHtml(customer.address || order.shipping_address || '—')}</div>
                <div><strong>Fecha:</strong> ${escapeHtml(orderDate)}</div>
-               <div><strong>Estado:</strong> <span class='badge badge-${statusClass}'>${escapeHtml(order.status || 'pending')}</span></div>
+               <div><strong>Estado:</strong> <span class='badge badge-${statusBadge}'>${escapeHtml(order.status || 'pending')}</span></div>
                <div><strong>Pago:</strong> ${escapeHtml(order.payment_method || '—')}</div>
              </div>
            </div>
@@ -1899,7 +1931,7 @@ async function saveSettings() {
              <option value='delivered' ${order.status === 'delivered' ? 'selected' : ''}>Entregado</option>
              <option value='cancelled' ${order.status === 'cancelled' ? 'selected' : ''}>Cancelado</option>
            </select>
-          </div>`;
+           </div>`;
         }
 
       async function changeOrderStatus(id, newStatus) {
@@ -1921,8 +1953,8 @@ async function saveSettings() {
       }
 
        function closeOrderDetailModal() {
-          closeModal();
-        }
+         closeModal();
+       }
 
      async function saveOrderNotes() {
       if (!state.currentOrderId) return;
@@ -1942,6 +1974,7 @@ async function saveSettings() {
     }
 
     async function resetMetrics() {
+      if (!confirm('¿Seguro que querés reiniciar todas las métricas? Esta acción no se puede deshacer')) return;
       try {
         const res = await adminFetch('/api/admin/reports/reset', { method: 'POST' });
         const data = await res.json();
@@ -1982,16 +2015,16 @@ async function saveSettings() {
       </div>`;
     }
 
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        closeModal();
-      }
-    });
-    document.addEventListener('click', (e) => {
-      if (e.target && e.target.classList.contains('modal-overlay')) {
-        closeModal();
-      }
-    });
+     document.addEventListener('keydown', (e) => {
+       if (e.key === 'Escape') {
+         closeModal();
+       }
+     });
+     document.addEventListener('click', (e) => {
+       if (e.target && e.target.classList.contains('modal-overlay')) {
+         closeModal();
+       }
+     });
 
      document.addEventListener('DOMContentLoaded', () => {
         if (authToken) {
@@ -2057,7 +2090,9 @@ async function saveSettings() {
     window.sendReceiptWhatsApp = sendReceiptWhatsApp;
     window.viewOrder = viewOrder;
     window.quickUpdateOrderStatus = quickUpdateOrderStatus;
-    window.deleteOrder = deleteOrder;
+    window.openDeleteOrderModal = openDeleteOrderModal;
+    window.closeDeleteOrderModal = closeDeleteOrderModal;
+    window.confirmDeleteOrder = confirmDeleteOrder;
     window.editTestimonial = editTestimonial;
     window.deleteTestimonial = deleteTestimonial;
     window.toggleTestimonialActive = toggleTestimonialActive;

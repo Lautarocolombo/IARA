@@ -420,7 +420,7 @@
          </div>
    </main>
 
-    <div class="modal-overlay" id="modalOverlay" data-modal="product">
+   <div class="modal-overlay" id="modalOverlay">
      <div class="modal">
        <div class="modal-header modal-header--sticky">
          <h3 id="modalTitle">Nuevo Producto</h3>
@@ -534,7 +534,7 @@
      </div>
    </div>
 
-   <div class="modal-overlay" id="testimonialModalOverlay" data-modal="testimonial">
+  <div class="modal-overlay" id="testimonialModalOverlay">
     <div class="modal">
       <div class="modal-header">
         <h3 id="testimonialModalTitle">Nuevo Testimonio</h3>
@@ -570,7 +570,7 @@
     </div>
   </div>
 
-<div class="modal-overlay" id="textModalOverlay" data-modal="text">
+<div class="modal-overlay" id="textModalOverlay">
      <div class="modal">
        <div class="modal-header">
          <h3 id="textModalTitle">Editar Texto</h3>
@@ -594,7 +594,7 @@
      </div>
    </div>
 
-  <div class="modal-overlay" id="heroSlotModalOverlay" data-modal="heroSlot">
+ <div class="modal-overlay" id="heroSlotModalOverlay">
        <div class="modal">
          <div class="modal-header modal-header--sticky">
            <h3 id="heroSlotModalTitle">Editar Slot del Hero</h3>
@@ -647,7 +647,7 @@
          </div>
        </div>
      </div>
-   <div class="modal-overlay" id="categoryModalOverlay" data-modal="category">
+  <div class="modal-overlay" id="categoryModalOverlay">
     <div class="modal">
       <div class="modal-header">
         <h3 id="categoryModalTitle">Nueva Categoría</h3>
@@ -695,7 +695,7 @@
       </div>
     </div>
   </div>
-    <div class="modal-overlay" id="orderDetailModalOverlay" data-modal="order">
+   <div class="modal-overlay" id="orderDetailModalOverlay">
     <div class="modal" style="max-width:640px">
       <div class="modal-header">
         <h3 id="orderDetailTitle">Detalle del Pedido</h3>
@@ -715,17 +715,31 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn btn-danger btn-sm" id="detailDeleteBtn" onclick="deleteOrder(state.currentOrderId)">🗑 Eliminar</button>
         <button class="btn btn-secondary" onclick="closeOrderDetailModal()">Cerrar</button>
       </div>
     </div>
   </div>
-    </div>
-  </div>
+   </div>
+
+  <div class="modal-overlay" id="deleteOrderModalOverlay" data-modal="orderDelete">
+     <div class="modal" style="max-width:420px">
+       <div class="modal-header">
+         <h3>Eliminar pedido</h3>
+         <button class="btn btn-secondary btn-sm" onclick="closeDeleteOrderModal()">✕</button>
+       </div>
+       <div class="modal-body">
+         <p id="deleteOrderModalMessage">¿Eliminar este pedido? Esta acción no se puede deshacer.</p>
+       </div>
+       <div class="modal-footer">
+         <button class="btn btn-secondary" onclick="closeDeleteOrderModal()">Cancelar</button>
+         <button class="btn btn-danger" id="confirmDeleteOrderBtn" onclick="confirmDeleteOrder()">Eliminar</button>
+       </div>
+     </div>
+   </div>
 
   <div class="toast-container" id="toastContainer"></div>
 
-  <script src="../js/admin.js?v=2026080903"></script>
+  <script src="../js/admin.js?v=2026080614"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script>
     if (window.SENTRY_DSN) {
