@@ -248,13 +248,13 @@ const getSalesSummary = async (req, res) => {
   try {
     const [ordersResult, salesResult] = await Promise.all([
       query(
-        `SELECT created_at as date, total FROM orders WHERE status != 'cancelled' AND date(created_at) >= $1 ORDER BY date ASC`,
+         'SELECT created_at as date, total FROM orders WHERE status != ' + "'" + 'cancelled' + "'" + ' AND date(created_at) >= $1 ORDER BY date ASC',
         [startDateStr]
       ),
       (async () => {
         try {
           return await query(
-            `SELECT sale_date as date, total FROM sales WHERE date(sale_date) >= $1 ORDER BY date ASC`,
+            'SELECT sale_date as date, total FROM sales WHERE date(sale_date) >= $1 ORDER BY date ASC',
             [startDateStr]
           );
         } catch (err) {
@@ -292,7 +292,7 @@ const getSalesSummary = async (req, res) => {
   }
 };
 
-function groupByWeek(rawData, startDate) {
+function groupByWeek(rawData, _startDate) {
   const weeks = [];
   const now = new Date();
 
@@ -329,7 +329,7 @@ function groupByWeek(rawData, startDate) {
   }));
 }
 
-function groupByMonth(rawData, startDate) {
+function groupByMonth(rawData, _startDate) {
   const months = [];
   const now = new Date();
   const currentYear = now.getFullYear();

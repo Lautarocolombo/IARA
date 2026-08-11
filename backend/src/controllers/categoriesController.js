@@ -120,7 +120,6 @@ const deleteCategory = async (req, res) => {
     const catResult = await query('SELECT slug, name FROM categories WHERE id = $1', [id]);
     if (catResult.rows.length === 0) return res.status(404).json({ error: 'Categoría no encontrada' });
     const slug = catResult.rows[0].slug;
-    const name = catResult.rows[0].name;
 
     const childCountResult = await query('SELECT COUNT(*) as count FROM categories WHERE parent_id = $1', [id]);
     const childCount = Number(childCountResult.rows[0]?.count || 0);

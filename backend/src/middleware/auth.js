@@ -1,5 +1,4 @@
 const jwt = require('jsonwebtoken');
-const logger = require('../lib/logger');
 
 function adminAuth(req, res, next) {
   const authHeader = req.headers.authorization || '';

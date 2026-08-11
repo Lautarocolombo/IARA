@@ -56,6 +56,13 @@
       if (holderEl) holderEl.value = data.holderName || '';
       if (activeEl) activeEl.checked = data.active !== false;
 
+      var notifyAdminEl = document.getElementById('pmNotifyAdmin');
+      var notifyClientApprovedEl = document.getElementById('pmNotifyClientApproved');
+      var notifyClientRejectedEl = document.getElementById('pmNotifyClientRejected');
+      if (notifyAdminEl) notifyAdminEl.checked = data.notifyAdminNewProof !== false;
+      if (notifyClientApprovedEl) notifyClientApprovedEl.checked = data.notifyClientApproved !== false;
+      if (notifyClientRejectedEl) notifyClientRejectedEl.checked = data.notifyClientRejected !== false;
+
       var previewAlias = document.getElementById('pmPreviewAlias');
       var previewHolder = document.getElementById('pmPreviewHolder');
       var previewStatus = document.getElementById('pmPreviewStatus');
@@ -86,9 +93,9 @@
           transferAlias: alias,
           holderName: holder,
           active: active,
-          notifyAdminNewProof: true,
-          notifyClientApproved: true,
-          notifyClientRejected: true
+          notifyAdminNewProof: document.getElementById('pmNotifyAdmin')?.checked !== false,
+          notifyClientApproved: document.getElementById('pmNotifyClientApproved')?.checked !== false,
+          notifyClientRejected: document.getElementById('pmNotifyClientRejected')?.checked !== false
         })
       });
 

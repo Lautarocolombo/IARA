@@ -18,6 +18,13 @@
     sales: null
   };
 
+  var SECTION_SAVE_BUTTONS = {
+    content: ['saveHeroBtn', 'saveAboutBtn', 'saveFeaturesBtn', 'saveProcessBtn', 'saveStatsBtn', 'saveContactBtn', 'saveFeaturedBtn'],
+    products: ['updateProductBtn', 'submitProductBtn'],
+    categories: ['editCategoryBtn', 'saveCategoryBtn'],
+    sales: ['saveSaleBtn']
+  };
+
   var SECTIONS = {
     'section-content': 'content',
     'section-products': 'products',
@@ -31,26 +38,14 @@
     return SECTIONS[active.id] || null;
   }
 
-  window.markDirty = function (section) {
-    if (!section || !window.__adminDirtyState.hasOwnProperty(section)) return;
-    window.__adminDirtyState[section] = true;
-    updateUnsavedUI();
-  };
-
-  window.clearDirty = function (section) {
-    if (!section || !window.__adminDirtyState.hasOwnProperty(section)) return;
-    window.__adminDirtyState[section] = false;
-    updateUnsavedUI();
-  };
-
-  window.updateUnsavedUI = function () {
+  function updateUnsavedUI() {
     var indicator = document.getElementById('unsavedIndicator');
     var saveAllBtn = document.getElementById('saveAllBtn');
     var discardBtn = document.getElementById('discardChangesBtn');
     if (!indicator || !saveAllBtn || !discardBtn) return;
 
     var current = getCurrentSection();
-    var hasDirty = current ? window.__adminDirtyState[current] : false;
+    var hasDirty = current ? Object.prototype.hasOwnProperty.call(window.__adminDirtyState, current) && window.__adminDirtyState[current] : false;
 
     if (hasDirty) {
       indicator.style.display = 'inline-flex';
@@ -61,15 +56,52 @@
       saveAllBtn.style.display = 'none';
       discardBtn.style.display = 'none';
     }
+  }
+
+  function updateSectionSaveButtons(section) {
+    if (!section || !SECTION_SAVE_BUTTONS[section]) return;
+    var hasDirty = Object.prototype.hasOwnProperty.call(window.__adminDirtyState, section) && window.__adminDirtyState[section];
+    var btnIds = SECTION_SAVE_BUTTONS[section];
+    btnIds.forEach(function (btnId) {
+      var btn = document.getElementById(btnId);
+      if (btn) {
+        btn.disabled = !hasDirty;
+      }
+    });
+  }
+
+  window.markDirty = function (section) {
+    if (!section || !Object.prototype.hasOwnProperty.call(window.__adminDirtyState, section)) return;
+    window.__adminDirtyState[section] = true;
+    updateUnsavedUI();
+    updateSectionSaveButtons(section);
+  };
+
+  window.clearDirty = function (section) {
+    if (!section || !Object.prototype.hasOwnProperty.call(window.__adminDirtyState, section)) return;
+    window.__adminDirtyState[section] = false;
+    updateUnsavedUI();
+    updateSectionSaveButtons(section);
   };
 
   window.refreshUnsavedUIForSection = function () {
     updateUnsavedUI();
+    var current = getCurrentSection();
+    if (current) updateSectionSaveButtons(current);
   };
+
+  window.refreshAllSaveButtons = function () {
+    Object.keys(SECTION_SAVE_BUTTONS).forEach(function (section) {
+      updateSectionSaveButtons(section);
+    });
+  };
+
+  window.updateUnsavedUI = updateUnsavedUI;
+  window.updateSectionSaveButtons = updateSectionSaveButtons;
 
   async function saveAllPendingChanges() {
     var current = getCurrentSection();
-    if (!current || !window.__adminDirtyState[current]) {
+    if (!current || !Object.prototype.hasOwnProperty.call(window.__adminDirtyState, current) || !window.__adminDirtyState[current]) {
       window.showToast('ℹ️', 'No hay cambios pendientes en esta vista', 'info');
       return;
     }
@@ -137,7 +169,7 @@
 
   async function discardAllPendingChanges() {
     var current = getCurrentSection();
-    if (!current || !window.__adminDirtyState[current]) {
+    if (!current || !Object.prototype.hasOwnProperty.call(window.__adminDirtyState, current) || !window.__adminDirtyState[current]) {
       window.showToast('ℹ️', 'No hay cambios pendientes para descartar', 'info');
       return;
     }
@@ -221,6 +253,11 @@
   window.addEventListener('DOMContentLoaded', function () {
     initSyncControls();
     updateUnsavedUI();
+    setTimeout(function () {
+      if (typeof window.refreshAllSaveButtons === 'function') {
+        window.refreshAllSaveButtons();
+      }
+    }, 500);
   });
 
   window.addEventListener('hashchange', function () {

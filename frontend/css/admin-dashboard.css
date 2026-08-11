@@ -70,6 +70,20 @@
   display: none !important;
 }
 
+.loading-row td {
+  text-align: center;
+  padding: 2rem;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.error-row td {
+  text-align: center;
+  padding: 1.5rem;
+  color: #dc2626;
+  font-weight: 500;
+}
+
 .btn:disabled,
 .btn[disabled] {
   opacity: 0.6;

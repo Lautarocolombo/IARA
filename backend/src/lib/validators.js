@@ -1,17 +1,28 @@
 const { z } = require('zod');
 
+function toBoolean(val) {
+  if (typeof val === 'boolean') return val;
+  if (typeof val === 'string') {
+    if (val === 'false' || val === '0') return false;
+    if (val === 'true' || val === '1') return true;
+  }
+  if (val === 0) return false;
+  if (val === 1) return true;
+  return Boolean(val);
+}
+
 const productSchema = z.object({
   name: z.string().min(1, 'Nombre es requerido').max(200),
   slug: z.string().max(200).optional().default(''),
   category: z.string().default('pulseras'),
-  price: z.number().positive('Precio debe ser mayor a 0'),
+  price: z.coerce.number({ invalid_type_error: 'Precio debe ser un número' }).positive('Precio debe ser mayor a 0'),
   description: z.string().max(2000).optional().default(''),
   emoji: z.string().max(10).optional().default('📿'),
   image: z.string().url('URL de imagen inválida').optional().or(z.literal('')).default(''),
   badge: z.string().max(50).optional().default(''),
-  stock: z.number().int().nonnegative().optional().default(0),
-  featured: z.boolean().optional().default(false),
-  active: z.boolean().optional().default(true),
+  stock: z.coerce.number().int().nonnegative().optional().default(0),
+  featured: z.preprocess(toBoolean, z.boolean().optional().default(false)),
+  active: z.preprocess(toBoolean, z.boolean().optional().default(true)),
   sku: z.string().max(50).optional().default('')
 });
 

@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const { adminAuth } = require('../middleware/auth');
 const { getProductReviews, createReview } = require('../controllers/reviewsController');
 const { uploadSingle, handleUploadError } = require('../lib/upload');
 

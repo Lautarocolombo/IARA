@@ -40,34 +40,4 @@ const getSiteConfig = async (req, res) => {
   }
 };
 
-const updatePaymentConfig = async (req, res) => {
-  const { mpAlias, holderName, whatsapp, message, active } = req.body || {};
-  try {
-    const row = await query('SELECT * FROM payment_config LIMIT 1');
-    if (!row.rows[0]) {
-      await query(
-        `INSERT INTO payment_config (mp_alias, holder_name, whatsapp, message, active)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [mpAlias || '', holderName || '', whatsapp || '', message || '', active !== false]
-      );
-    } else {
-      await query(
-        'UPDATE payment_config SET mp_alias = $1, holder_name = $2, whatsapp = $3, message = $4, active = $5, updated_at = CURRENT_TIMESTAMP WHERE id = $6',
-        [mpAlias || '', holderName || '', whatsapp || '', message || '', active !== false, row.rows[0].id]
-      );
-    }
-    res.json({
-      ok: true,
-      mpAlias: mpAlias || '',
-      holderName: holderName || '',
-      whatsapp: whatsapp || '',
-      message: message || '',
-      active: active !== false
-    });
-  } catch (err) {
-    logger.error('Error guardando config de pago:', err);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-};
-
 module.exports = { getSiteConfig };

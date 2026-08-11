@@ -55,9 +55,8 @@ async function getAdminPaymentProofs(req, res) {
 async function uploadPaymentProof(req, res) {
   ensureComprobantesDir();
   try {
-    const { orderId } = req.params;
-    const { customerName } = req.body || {};
-    const orderIdNum = Number(orderId);
+    const orderId = Number(req.params.orderId || req.params.id);
+    const orderIdNum = orderId;
 
     if (!orderIdNum || orderIdNum <= 0) {
       return res.status(400).json({ error: 'ID de pedido inválido' });
@@ -76,7 +75,7 @@ async function uploadPaymentProof(req, res) {
     const filename = path.basename(req.file.path);
     const proofUrl = `/uploads/comprobantes/${filename}`;
     const amount = Number(order.total || 0);
-    const customerNameStr = (customerName || '').toString().trim() || (typeof order.customer === 'string' ? JSON.parse(order.customer).name : order.customer?.name) || '';
+    const customerNameStr = ((req.body && req.body.customerName) || '').toString().trim() || (typeof order.customer === 'string' ? JSON.parse(order.customer).name : order.customer?.name) || '';
 
     const insertResult = await query(
       'INSERT INTO payment_proofs (order_id, customer_name, amount, proof_url) VALUES ($1, $2, $3, $4) RETURNING *',

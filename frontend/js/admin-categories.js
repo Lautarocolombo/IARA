@@ -39,6 +39,7 @@
       categoriesCache = await res.json();
       renderCategories();
       populateParentSelect();
+      if (window.refreshAllSaveButtons) window.refreshAllSaveButtons();
     } catch (err) {
       console.error('[Categories] Error:', err);
       showToast('❌', err.message || 'Error al cargar categorías', 'error');
@@ -179,6 +180,17 @@
     var msg = document.getElementById('confirmModalMessage');
     var confirmBtn = document.getElementById('confirmModalAction');
     if (!overlay || !msg || !confirmBtn) return;
+
+    if ((cat.product_count || 0) > 0) {
+      msg.textContent = 'La categoría "' + cat.name + '" tiene ' + cat.product_count + ' productos asociados. Reasigná los productos antes de eliminar.';
+      confirmBtn.textContent = 'Entendido';
+      confirmBtn.className = 'btn btn-secondary';
+      confirmBtn.onclick = function () {
+        closeConfirmModal();
+      };
+      openConfirmModal();
+      return;
+    }
 
     msg.textContent = '¿Seguro que querés eliminar la categoría "' + cat.name + '"? Esta acción no se puede deshacer.';
     confirmBtn.textContent = 'Eliminar';
@@ -387,10 +399,6 @@
   }
 
   window.initCategoryManager = initCategoryManager;
-  window.editCategory = window.editCategory;
-  window.confirmDeleteCategory = window.confirmDeleteCategory;
-  window.moveCategory = window.moveCategory;
-  window.toggleCategory = window.toggleCategory;
   window.saveCategory = saveCategory;
   window.reloadCategories = loadCategories;
   window.saveAllCategoryChanges = async function () {

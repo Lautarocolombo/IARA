@@ -259,7 +259,7 @@ async function initDB() {
       sale_date DATE DEFAULT CURRENT_DATE,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
-    await query(`CREATE INDEX IF NOT EXISTS idx_sales_sale_date ON sales(sale_date)`);
+    await query('CREATE INDEX IF NOT EXISTS idx_sales_sale_date ON sales(sale_date)');
     await query(`CREATE TABLE IF NOT EXISTS reviews (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       product_id INTEGER NOT NULL,
@@ -319,9 +319,9 @@ async function initDB() {
       reviewed_at DATETIME,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
-    await query(`CREATE INDEX IF NOT EXISTS idx_payment_proofs_order_id ON payment_proofs(order_id)`);
-    await query(`CREATE INDEX IF NOT EXISTS idx_payment_proofs_status ON payment_proofs(status)`);
-    await query(`CREATE INDEX IF NOT EXISTS idx_payment_proofs_created_at ON payment_proofs(created_at)`);
+    await query('CREATE INDEX IF NOT EXISTS idx_payment_proofs_order_id ON payment_proofs(order_id)');
+    await query('CREATE INDEX IF NOT EXISTS idx_payment_proofs_status ON payment_proofs(status)');
+    await query('CREATE INDEX IF NOT EXISTS idx_payment_proofs_created_at ON payment_proofs(created_at)');
     await query(`CREATE TABLE IF NOT EXISTS site_settings (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       key TEXT UNIQUE NOT NULL,
@@ -794,12 +794,12 @@ async function initDB() {
       logger.warn({ err: err.message }, 'No se pudo asegurar usuario admin (PostgreSQL)');
     }
     try {
-      await query("UPDATE site_texts SET value = REPLACE(value, 'Cada pieza es �nica', 'Cada pieza es única') WHERE key = 'hero_subtitle' AND value LIKE '%�nica%'");
+      await query('UPDATE site_texts SET value = REPLACE(value, \'Cada pieza es �nica\', \'Cada pieza es única\') WHERE key = \'hero_subtitle\' AND value LIKE \'%�nica%\'');
     } catch (err) {
       logger.debug({ err: err.message }, 'No se pudo corregir hero_subtitle');
     }
     try {
-      await query("UPDATE site_texts SET value = REPLACE(value, 'Explorar Cat�logo', 'Explorar Catálogo') WHERE key = 'hero_cta_text' AND value LIKE '%Cat�logo%'");
+      await query('UPDATE site_texts SET value = REPLACE(value, \'Explorar Cat�logo\', \'Explorar Catálogo\') WHERE key = \'hero_cta_text\' AND value LIKE \'%Cat�logo%\'');
     } catch (err) {
       logger.debug({ err: err.message }, 'No se pudo corregir hero_cta_text');
     }

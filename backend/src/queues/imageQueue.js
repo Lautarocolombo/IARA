@@ -86,7 +86,7 @@ async function startImageWorker() {
 
   try {
     workerInstance = new Worker('image-processing', async (job) => {
-      const { type, filePath, productId, imageId, options = {} } = job.data;
+      const { type, filePath, options = {} } = job.data;
 
       try {
         switch (type) {

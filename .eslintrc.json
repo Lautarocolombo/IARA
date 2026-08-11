@@ -54,7 +54,13 @@
     "stopDataSync": "readonly",
     "onSyncMessage": "readonly",
     "initSSESync": "readonly",
-    "destroySSESync": "readonly"
+    "destroySSESync": "readonly",
+    "Quill": "readonly",
+    "Chart": "readonly",
+    "QRCode": "readonly",
+    "DOMPurify": "readonly",
+    "initRevealAnimation": "readonly",
+    "escapeHtml": "readonly"
   },
   "overrides": [
     {

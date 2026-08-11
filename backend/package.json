@@ -10,7 +10,7 @@
     "test": "jest --testEnvironment node",
     "lint": "eslint src --ext .js",
     "format": "prettier --write \"**/*.{js,json}\"",
-    "lint:fix": "eslint src/server.js --ext .js --fix"
+    "lint:fix": "eslint src --ext .js --fix"
   },
   "dependencies": {
     "@sentry/node": "^8.x",

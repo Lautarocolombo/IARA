@@ -5,7 +5,6 @@ const logger = require('./logger');
 
 const isVercel = process.env.VERCEL === 'true';
 const isRender = !!process.env.RENDER_EXTERNAL_HOSTNAME;
-const uploadsDir = isVercel || isRender ? '/tmp/uploads/products' : path.join(__dirname, '..', '..', 'uploads', 'products');
 const variantsDir = isVercel || isRender ? '/tmp/uploads/products/variants' : path.join(__dirname, '..', '..', 'uploads', 'products', 'variants');
 
 if (!fs.existsSync(variantsDir)) {

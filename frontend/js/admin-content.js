@@ -78,6 +78,7 @@
     renderProcessSteps();
     populateFields();
     await loadFeaturedCategories();
+    if (window.refreshAllSaveButtons) window.refreshAllSaveButtons();
   }
 
   function renderProcessSteps() {
@@ -173,9 +174,9 @@
         body: JSON.stringify({ featured_categories: JSON.stringify(selected) })
       });
       if (!res || !res.ok) {
-        var errMsg = 'Error al guardar.';
+        let errMsg = 'Error al guardar.';
         if (res) {
-          var errData = await res.json().catch(function () { return {}; });
+          let errData = await res.json().catch(function () { return {}; });
           errMsg = errData.error || errMsg;
         }
         throw new Error(errMsg);
@@ -229,11 +230,11 @@
       contact_facebook: 'facebook'
     };
     for (var elemId in settingMap) {
-      var el = document.getElementById(elemId);
-      if (!el) continue;
+      var settingEl = document.getElementById(elemId);
+      if (!settingEl) continue;
       var settingKey = settingMap[elemId];
-      var val = settingsCache[settingKey] !== undefined ? settingsCache[settingKey] : (DEFAULT_SETTINGS[settingKey] || '');
-      el.value = val || '';
+      var settingVal = settingsCache[settingKey] !== undefined ? settingsCache[settingKey] : (DEFAULT_SETTINGS[settingKey] || '');
+      settingEl.value = settingVal || '';
     }
   }
 
@@ -328,9 +329,9 @@
             body: formData
           });
           if (!uploadRes || !uploadRes.ok) {
-            var errMsg = 'Error al subir imagen.';
+            let errMsg = 'Error al subir imagen.';
             if (uploadRes) {
-              var errData = await uploadRes.json().catch(function () { return {}; });
+              let errData = await uploadRes.json().catch(function () { return {}; });
               errMsg = errData.error || errMsg;
             }
             throw new Error(errMsg);
@@ -351,9 +352,9 @@
       });
 
       if (!res || !res.ok) {
-        var errMsg = 'Error al guardar. Intentá de nuevo.';
+        let errMsg = 'Error al guardar. Intentá de nuevo.';
         if (res) {
-          var errData = await res.json().catch(function () { return {}; });
+          let errData = await res.json().catch(function () { return {}; });
           errMsg = errData.error || errMsg;
         }
         throw new Error(errMsg);
@@ -424,9 +425,9 @@
       });
 
       if (!res || !res.ok) {
-        var errMsg = 'Error al guardar configuración.';
+        let errMsg = 'Error al guardar configuración.';
         if (res) {
-          var errData = await res.json().catch(function () { return {}; });
+          let errData = await res.json().catch(function () { return {}; });
           errMsg = errData.error || errMsg;
         }
         throw new Error(errMsg);
@@ -553,7 +554,6 @@
 
   async function saveAllContentSections() {
     var scopes = ['hero', 'about', 'features', 'process', 'stats', 'contact-texts'];
-    var lastStatusId = null;
     for (var i = 0; i < scopes.length; i++) {
       var scope = scopes[i];
       if (scope === 'contact-texts') {

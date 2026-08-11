@@ -63,13 +63,6 @@
     return escapeHtml(customer.name || order.shipping_name || 'Sin nombre');
   }
 
-  function getShippingName(order) { return order.shipping_name || ''; }
-  function getShippingPhone(order) { return order.shipping_phone || ''; }
-  function getShippingEmail(order) { return order.shipping_email || ''; }
-  function getShippingAddress(order) { return order.shipping_address || ''; }
-  function getShippingCity(order) { return order.shipping_city || ''; }
-  function getShippingZip(order) { return order.shipping_zip || ''; }
-
   function isPaymentValidated(order) {
     var validStatuses = ['confirmed', 'preparing', 'shipped', 'delivered'];
     return validStatuses.includes(order.status);
@@ -368,7 +361,6 @@
     var content = document.getElementById('activityContent');
     if (!timeline) return;
 
-    var activities = [];
     var items = document.querySelectorAll('.activity-item');
     items.forEach(function (el) { el.remove(); });
 
@@ -430,7 +422,6 @@
       payload[key] = input ? input.value : '';
     });
 
-    var btn = document.getElementById('saveShippingBtn');
     setLoading('saveShippingBtn', 'saveShippingBtnLoading', true, 'Guardar', 'Guardando...');
 
     try {
@@ -638,7 +629,7 @@
         }
         var order = ordersList.find(function (o) { return o.id === selectedOrderId; }) || null;
         if (!order) return;
-        var detail = fetchOrderDetail(selectedOrderId).then(function (o) {
+        fetchOrderDetail(selectedOrderId).then(function (o) {
           if (!o) return;
           renderShippingInfo(o);
           renderWizard(o);
