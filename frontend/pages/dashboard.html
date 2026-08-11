@@ -17,7 +17,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode/1.5.3/qrcode.min.js"></script>
+  <script src="../js/vendor/qrcode.js"></script>
   <script src="../js/config.js"></script>
   <script src="../js/safeImage.js"></script>
   <script src="../js/theme.js"></script>
@@ -743,6 +743,33 @@
                         <span class="toggle-slider"></span>
                       </span>
                       <span style="font-size:0.85rem;font-weight:600;">Habilitar este método de pago</span>
+                    </label>
+                  </div>
+                  <div class="form-group">
+                    <label class="toggle-field">
+                      <span class="toggle">
+                        <input type="checkbox" id="pmNotifyAdmin" checked />
+                        <span class="toggle-slider"></span>
+                      </span>
+                      <span style="font-size:0.85rem;font-weight:600;">Notificar al admin cuando se sube un comprobante</span>
+                    </label>
+                  </div>
+                  <div class="form-group">
+                    <label class="toggle-field">
+                      <span class="toggle">
+                        <input type="checkbox" id="pmNotifyClientApproved" checked />
+                        <span class="toggle-slider"></span>
+                      </span>
+                      <span style="font-size:0.85rem;font-weight:600;">Notificar al cliente cuando se aprueba el pago</span>
+                    </label>
+                  </div>
+                  <div class="form-group">
+                    <label class="toggle-field">
+                      <span class="toggle">
+                        <input type="checkbox" id="pmNotifyClientRejected" checked />
+                        <span class="toggle-slider"></span>
+                      </span>
+                      <span style="font-size:0.85rem;font-weight:600;">Notificar al cliente cuando se rechaza el pago</span>
                     </label>
                   </div>
                   <div class="save-status" id="savePaymentStatus"></div>

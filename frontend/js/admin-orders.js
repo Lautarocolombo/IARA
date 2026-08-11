@@ -289,23 +289,27 @@
 
     var qrContainer = document.getElementById('qrCodeDisplay');
     qrContainer.innerHTML = '';
-    if (typeof QRCode !== 'undefined' && alias && alias !== '—') {
-      QRCode.toDataURL(alias, { width: 180, margin: 1 }, function (err, url) {
-        if (err) {
-          qrContainer.textContent = alias;
-          return;
-        }
-        var img = document.createElement('img');
-        img.src = url;
-        img.alt = 'QR Alias MP';
-        img.style.border = '1px solid var(--border)';
-        img.style.borderRadius = '8px';
-        qrContainer.appendChild(img);
-      });
-    } else if (alias && alias !== '—') {
-      qrContainer.textContent = alias;
-    } else {
-      qrContainer.textContent = 'Sin alias configurado';
+    try {
+      if (typeof QRCode !== 'undefined' && alias && alias !== '—') {
+        QRCode.toDataURL(alias, { width: 180, margin: 1 }, function (err, url) {
+          if (err) {
+            qrContainer.textContent = alias;
+            return;
+          }
+          var img = document.createElement('img');
+          img.src = url;
+          img.alt = 'QR Alias MP';
+          img.style.border = '1px solid var(--border)';
+          img.style.borderRadius = '8px';
+          qrContainer.appendChild(img);
+        });
+      } else if (alias && alias !== '—') {
+        qrContainer.textContent = alias;
+      } else {
+        qrContainer.textContent = 'Sin alias configurado';
+      }
+    } catch (e) {
+      qrContainer.textContent = alias && alias !== '—' ? alias : 'Sin alias configurado';
     }
 
     if (currentReceipt && currentReceipt.url) {
@@ -426,6 +430,9 @@
       payload[key] = input ? input.value : '';
     });
 
+    var btn = document.getElementById('saveShippingBtn');
+    setLoading('saveShippingBtn', 'saveShippingBtnLoading', true, 'Guardar', 'Guardando...');
+
     try {
       var res = await window.adminFetch('/api/admin/orders/' + selectedOrderId, {
         method: 'PUT',
@@ -441,6 +448,8 @@
       if (order) renderShippingInfo(order);
     } catch (err) {
       showToast('❌', err.message || 'Error guardando datos', 'error');
+    } finally {
+      setLoading('saveShippingBtn', 'saveShippingBtnLoading', false, 'Guardar', 'Guardando...');
     }
   }
 
@@ -475,6 +484,11 @@
   }
 
   async function processApprove(id) {
+    var approveBtn = document.getElementById('approvePaymentBtn');
+    var rejectBtn = document.getElementById('rejectPaymentBtn');
+    if (approveBtn) approveBtn.disabled = true;
+    if (rejectBtn) rejectBtn.disabled = true;
+
     try {
       var res = await window.adminFetch('/api/admin/orders/' + id + '/status', {
         method: 'PATCH',
@@ -496,6 +510,9 @@
       }
     } catch (err) {
       showToast('❌', err.message || 'Error aprobando pago', 'error');
+    } finally {
+      if (approveBtn) approveBtn.disabled = false;
+      if (rejectBtn) rejectBtn.disabled = false;
     }
   }
 
@@ -522,6 +539,11 @@
   }
 
   async function processReject(id, reason) {
+    var approveBtn = document.getElementById('approvePaymentBtn');
+    var rejectBtn = document.getElementById('rejectPaymentBtn');
+    if (approveBtn) approveBtn.disabled = true;
+    if (rejectBtn) rejectBtn.disabled = true;
+
     try {
       var res = await window.adminFetch('/api/admin/orders/' + id + '/status', {
         method: 'PATCH',
@@ -543,6 +565,9 @@
       }
     } catch (err) {
       showToast('❌', err.message || 'Error rechazando pago', 'error');
+    } finally {
+      if (approveBtn) approveBtn.disabled = false;
+      if (rejectBtn) rejectBtn.disabled = false;
     }
   }
 
@@ -596,10 +621,8 @@
 
     var shipInputs = document.querySelectorAll('#shipName, #shipPhone, #shipEmail, #shipAddress, #shipCity, #shipZip');
     shipInputs.forEach(function (input) {
-      input.addEventListener('blur', function () {
-        if (selectedOrderId && !whatsappChecked && document.activeElement === input) {
-          saveShippingInfo();
-        }
+      input.addEventListener('input', function () {
+        if (window.markDirty) window.markDirty('orders');
       });
     });
 

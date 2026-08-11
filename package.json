@@ -3,12 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "build:qrcode": "npx browserify -r qrcode -s QRCode -o frontend/js/vendor/qrcode.js",
     "test": "jest --config tests/unit/jest.config.js --testEnvironment jsdom --passWithNoTests",
     "lint": "eslint frontend/js/ tests/ --ext .js",
     "format": "prettier --write \"**/*.{js,json,css,html}\"",
     "lint:fix": "eslint frontend/js/ tests/ --ext .js --fix",
     "e2e": "playwright test --config=playwright.audit.config.js",
-    "build": "echo 'Build complete'",
+    "build": "npm run build:qrcode && echo 'Build complete'",
     "dev": "cd backend && npm start",
     "start": "cd backend && npm start"
   },
@@ -23,6 +24,7 @@
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
-    "@vercel/speed-insights": "^2.0.0"
+    "@vercel/speed-insights": "^2.0.0",
+    "qrcode": "^1.5.4"
   }
 }

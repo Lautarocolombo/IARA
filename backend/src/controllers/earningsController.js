@@ -2,12 +2,25 @@ const { query } = require('../lib/db');
 const { isLocal } = require('../lib/db');
 const logger = require('../lib/logger');
 
+const isValidDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value) && !isNaN(Date.parse(value));
+
 const getEarnings = async (req, res) => {
   try {
     const { start_date, end_date, page = 1, limit = 15 } = req.query;
-    const pageNum = Math.max(Number(page) || 1, 1);
-    const limitNum = Math.min(Math.max(Number(limit) || 15, 1), 50);
+
+    const pageNum = Math.max(parseInt(page, 10) || 1, 1);
+    const limitNum = Math.min(Math.max(parseInt(limit, 10) || 15, 1), 50);
     const offset = (pageNum - 1) * limitNum;
+
+    if (start_date && !isValidDate(start_date)) {
+      return res.status(400).json({ error: 'start_date debe ser una fecha válida en formato YYYY-MM-DD' });
+    }
+    if (end_date && !isValidDate(end_date)) {
+      return res.status(400).json({ error: 'end_date debe ser una fecha válida en formato YYYY-MM-DD' });
+    }
+    if (start_date && end_date && start_date > end_date) {
+      return res.status(400).json({ error: 'start_date no puede ser posterior a end_date' });
+    }
 
     const whereClauses = [];
     const whereParams = [];
@@ -67,7 +80,7 @@ const getEarnings = async (req, res) => {
 
     var monthExpr = 'substr(created_at, 1, 7)';
     if (!isLocal) {
-      monthExpr = "to_char(created_at, 'YYYY-MM')";
+      monthExpr = 'to_char(created_at, \'YYYY-MM\')';
     }
 
     const chartResult = await query(
@@ -97,6 +110,8 @@ const getEarnings = async (req, res) => {
         return categoryMap[key];
       }).sort(function (a, b) { return b.total - a.total; })
     };
+
+    const manualSalesCount = manualSalesResult.rows.length;
 
     res.json({
       kpis: {
@@ -133,12 +148,12 @@ const getEarnings = async (req, res) => {
       pagination: {
         page: pageNum,
         limit: limitNum,
-        total: totalOrders + manualSalesResult.length,
-        pages: Math.ceil((totalOrders + manualSalesResult.length) / limitNum)
+        total: totalOrders + manualSalesCount,
+        pages: Math.ceil((totalOrders + manualSalesCount) / limitNum)
       }
     });
   } catch (err) {
-    logger.error({ err: err.message }, 'Error obteniendo métricas de ganancias');
+    logger.error({ err: err.message, stack: err.stack, query: req.query }, 'Error obteniendo métricas de ganancias');
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
