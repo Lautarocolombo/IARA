@@ -27,7 +27,8 @@ router.get('/', (req, res) => {
     order_created: (data) => send('order_created', data),
     order_status_updated: (data) => send('order_status_updated', data),
     testimonials_updated: (data) => send('testimonials_updated', data),
-    reviews_updated: (data) => send('reviews_updated', data),
+    reviews_updated: (e) => send('reviews_updated', e.data),
+    sales_updated: (data) => send('sales_updated', data),
   };
 
   Object.entries(listeners).forEach(([event, handler]) => {

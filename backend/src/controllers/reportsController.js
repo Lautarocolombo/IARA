@@ -233,4 +233,143 @@ const getWeeklySummary = async (req, res) => {
   }
 };
 
-module.exports = { getSalesReport, getSalesTrend, resetMetrics, getWeeklySummary };
+const getSalesSummary = async (req, res) => {
+  const view = req.query.view === 'monthly' ? 'monthly' : 'weekly';
+
+  const now = new Date();
+  let startDate = new Date(now);
+  if (view === 'weekly') {
+    startDate.setDate(startDate.getDate() - 56);
+  } else {
+    startDate.setMonth(startDate.getMonth() - 12);
+  }
+  const startDateStr = startDate.toISOString().split('T')[0];
+
+  try {
+    const [ordersResult, salesResult] = await Promise.all([
+      query(
+        `SELECT created_at as date, total FROM orders WHERE status != 'cancelled' AND date(created_at) >= $1 ORDER BY date ASC`,
+        [startDateStr]
+      ),
+      (async () => {
+        try {
+          return await query(
+            `SELECT sale_date as date, total FROM sales WHERE date(sale_date) >= $1 ORDER BY date ASC`,
+            [startDateStr]
+          );
+        } catch (err) {
+          logger.debug({ err: err.message }, 'Tabla sales no disponible todavía');
+          return { rows: [] };
+        }
+      })()
+    ]);
+
+    const rawData = [
+      ...ordersResult.rows.map(r => ({ date: r.date, total: Number(r.total || 0) })),
+      ...salesResult.rows.map(r => ({ date: r.date, total: Number(r.total || 0) }))
+    ].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    let groups;
+    if (view === 'weekly') {
+      groups = groupByWeek(rawData, startDate);
+    } else {
+      groups = groupByMonth(rawData, startDate);
+    }
+
+    const total = groups.reduce((sum, g) => sum + g.total, 0);
+    const count = groups.reduce((sum, g) => sum + g.count, 0);
+
+    res.json({
+      view,
+      groups,
+      total: Math.round(total * 100) / 100,
+      count,
+      ticketPromedio: count > 0 ? Math.round((total / count) * 100) / 100 : 0
+    });
+  } catch (err) {
+    logger.error({ err: err.message }, 'Error obteniendo resumen de ventas');
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+function groupByWeek(rawData, startDate) {
+  const weeks = [];
+  const now = new Date();
+
+  for (let i = 7; i >= 0; i--) {
+    const weekEnd = new Date(now);
+    weekEnd.setDate(weekEnd.getDate() - i * 7);
+    weekEnd.setHours(23, 59, 59, 999);
+
+    const weekStart = new Date(weekEnd);
+    weekStart.setDate(weekEnd.getDate() - 6);
+    weekStart.setHours(0, 0, 0, 0);
+
+    const label = `${formatDate(weekStart)} — ${formatDate(weekEnd)}`;
+    weeks.push({ label, start: weekStart, end: weekEnd, total: 0, count: 0, date: formatDate(weekStart) });
+  }
+
+  rawData.forEach(row => {
+    const d = new Date(row.date);
+    if (isNaN(d.getTime())) return;
+    for (const w of weeks) {
+      if (d >= w.start && d <= w.end) {
+        w.total += row.total || 0;
+        w.count += 1;
+        break;
+      }
+    }
+  });
+
+  return weeks.map(w => ({
+    label: w.label,
+    date: w.date,
+    total: Math.round(w.total * 100) / 100,
+    count: w.count
+  }));
+}
+
+function groupByMonth(rawData, startDate) {
+  const months = [];
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(currentYear, currentMonth - i, 1);
+    const year = d.getFullYear();
+    const month = d.getMonth();
+    const monthStart = new Date(year, month, 1);
+    const monthEnd = new Date(year, month + 1, 0, 23, 59, 59, 999);
+    const label = `${monthStart.toLocaleString('es-AR', { month: 'short' })} ${year}`;
+    months.push({ label, start: monthStart, end: monthEnd, total: 0, count: 0, date: `${year}-${String(month + 1).padStart(2, '0')}` });
+  }
+
+  rawData.forEach(row => {
+    const d = new Date(row.date);
+    if (isNaN(d.getTime())) return;
+    for (const m of months) {
+      if (d >= m.start && d <= m.end) {
+        m.total += row.total || 0;
+        m.count += 1;
+        break;
+      }
+    }
+  });
+
+  return months.map(m => ({
+    label: m.label,
+    date: m.date,
+    total: Math.round(m.total * 100) / 100,
+    count: m.count
+  }));
+}
+
+function formatDate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+module.exports = { getSalesReport, getSalesTrend, resetMetrics, getWeeklySummary, getSalesSummary };

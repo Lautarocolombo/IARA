@@ -149,10 +149,16 @@ const corsOptions = allowedOrigins.length
        allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With', 'X-Request-ID'],
    }
   : {
-       origin: true,
-       credentials: true,
-       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With', 'X-Request-ID'],
+        origin: function(origin, callback) {
+          if (!origin || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
+            callback(null, true);
+          } else {
+            callback(null, false);
+          }
+        },
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With', 'X-Request-ID'],
     };
 
 app.use(cors(corsOptions));
@@ -257,6 +263,7 @@ app.use('/api', require('./routes/categories'));
 app.use('/api', require('./routes/reports'));
 app.use('/api', require('./routes/receipts'));
 app.use('/api', require('./routes/heroCards'));
+app.use('/api', require('./routes/sales'));
 app.use('/api/sync', require('./routes/sync'));
 
 app.get('/metrics', (req, res) => {
@@ -344,10 +351,7 @@ const isVercel = process.env.VERCEL === 'true';
 const isRender = !!process.env.RENDER_EXTERNAL_HOSTNAME;
 const uploadsStaticDir = isVercel || isRender ? '/tmp/uploads' : path.join(__dirname, '..', '..', 'uploads');
 
-app.use('/uploads', (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  next();
-}, express.static(uploadsStaticDir));
+app.use('/uploads', cors(corsOptions), express.static(uploadsStaticDir, { maxAge: '1h' }));
 const staticDir = path.join(__dirname, '..', '..', 'frontend');
 
 app.get('/', (req, res) => {
