@@ -526,7 +526,6 @@
       if (typeof renderWishlist === 'function') renderWishlist();
     });
   </script>
-  <script defer src="https://cdn.vercel-insights.com/v1/script.js"></script>
   <script>
     if (typeof CONFIG !== 'undefined' && CONFIG.ANALYTICS && CONFIG.ANALYTICS.SENTRY_DSN) {
       (function() {
@@ -546,7 +545,7 @@
   </script>
   <script>
     if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
-      navigator.serviceWorker.register('/sw.js').catch(function(err) {
+      navigator.serviceWorker.register('/sw-v4.js').catch(function(err) {
         console.warn('Service Worker registration failed:', err);
       });
     }
