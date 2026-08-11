@@ -40,10 +40,41 @@
     }
   }
 
-  function renderHeroCards(cards) {
+  function sanitizeHtml(str) {
+    if (!str) return '';
+    if (typeof DOMPurify !== 'undefined') {
+      return DOMPurify.sanitize(str, { ALLOWED_TAGS: ['em', 'strong', 'br'] });
+    }
+    const doc = new DOMParser().parseFromString('<div>' + str + '</div>', 'text/html');
+    const allowed = ['EM', 'STRONG', 'BR'];
+    const walk = (node) => {
+      const children = Array.from(node.childNodes);
+      children.forEach(child => {
+        if (child.nodeType === Node.ELEMENT_NODE) {
+          if (!allowed.includes(child.tagName)) {
+            child.replaceWith(...child.childNodes);
+          } else {
+            while (child.attributes.length > 0) {
+              child.removeAttribute(child.attributes[0].name);
+            }
+            walk(child);
+          }
+        }
+      });
+    };
+    walk(doc.body.firstChild);
+    return doc.body.firstChild.innerHTML;
+  }
+
+  async function renderHeroCards(_cards) {
     try {
-      const card1 = cards.find(c => c.slot === 0) || {};
-      const card2 = cards.find(c => c.slot === 1) || {};
+      let siteTexts = {};
+      try {
+        const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-texts`, {}, 2, 1000);
+        if (res && res.ok) siteTexts = await res.json();
+      } catch (err) {
+        console.error('[Hero] Error cargando site-texts:', err);
+      }
 
       const defaults = [
         {
@@ -55,17 +86,30 @@
         },
         {
           imagen: '',
-          titulo: 'Hecho con amor en Gualeguay',
-          subtitulo: 'Materiales premium y envíos a todo el país.',
-          cta_texto: 'Contactanos',
-          cta_url: '#contact'
+          titulo: 'Anillo Cerámica',
+          subtitulo: 'Artesanía con alma',
+          cta_texto: 'Ver producto',
+          cta_url: '#catalog'
         }
       ];
 
-      const data = [
-        Object.assign({}, defaults[0], card1),
-        Object.assign({}, defaults[1], card2)
-      ];
+      const block1 = {
+        imagen: siteTexts.hero_image_url || '',
+        titulo: siteTexts.hero_title || defaults[0].titulo,
+        subtitulo: siteTexts.hero_subtitle || defaults[0].subtitulo,
+        cta_texto: siteTexts.hero_cta_text || defaults[0].cta_texto,
+        cta_url: siteTexts.hero_cta_url || defaults[0].cta_url
+      };
+
+      const block2 = {
+        imagen: siteTexts.featured_product_image_url || '',
+        titulo: siteTexts.featured_product_name || defaults[1].titulo,
+        subtitulo: siteTexts.featured_product_description || defaults[1].subtitulo,
+        cta_texto: siteTexts.featured_product_cta_text || defaults[1].cta_texto,
+        cta_url: siteTexts.featured_product_cta_url || defaults[1].cta_url
+      };
+
+      const data = [block1, block2];
 
       const heroContent = document.querySelector('.hero-content');
       if (heroContent) {
@@ -73,7 +117,7 @@
         const subtitleEl = heroContent.querySelector('.hero-subtitle');
         const primaryBtn = heroContent.querySelector('.btn-primary');
 
-        if (titleEl && data[0].titulo) titleEl.innerHTML = data[0].titulo;
+        if (titleEl && data[0].titulo) titleEl.innerHTML = sanitizeHtml(data[0].titulo);
         if (subtitleEl && data[0].subtitulo) subtitleEl.textContent = data[0].subtitulo;
         if (primaryBtn && data[0].cta_texto) {
           primaryBtn.textContent = data[0].cta_texto;
@@ -87,12 +131,12 @@
           const imgSrc = card.imagen || '';
           const imgHtml = imgSrc
             ? `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(card.titulo || '')}" loading="lazy" />`
-            : '📿';
+            : (i === 0 ? '📿' : '📿');
 
           return `
             <div class="hero-card" data-hero-card="${i + 1}">
               <div class="hero-card-img" id="heroCard${i + 1}Img">${imgHtml}</div>
-              <div class="hero-card-title" id="heroCard${i + 1}Name">${escapeHtml(card.titulo || '')}</div>
+              <div class="hero-card-title" id="heroCard${i + 1}Name">${sanitizeHtml(card.titulo || '')}</div>
               <div class="hero-card-price" id="heroCard${i + 1}Price">${escapeHtml(card.subtitulo || '')}</div>
               <a href="${escapeHtml(card.cta_url || '#')}" class="hero-card-cta">${escapeHtml(card.cta_texto || 'Ver más')}</a>
             </div>

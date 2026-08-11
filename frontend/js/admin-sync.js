@@ -19,8 +19,8 @@
   };
 
   var SECTION_SAVE_BUTTONS = {
-    content: ['saveHeroBtn', 'saveAboutBtn', 'saveFeaturesBtn', 'saveProcessBtn', 'saveStatsBtn', 'saveContactBtn', 'saveFeaturedBtn'],
-    products: ['updateProductBtn', 'submitProductBtn'],
+    content: ['saveHomeBlocksBtn', 'saveAboutBtn', 'saveFeaturesBtn', 'saveProcessBtn', 'saveStatsBtn', 'saveContactBtn', 'saveFeaturedBtn'],
+    products: ['saveProductBtn'],
     categories: ['editCategoryBtn', 'saveCategoryBtn'],
     sales: ['saveSaleBtn']
   };

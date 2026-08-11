@@ -65,6 +65,7 @@
         </a>
       </nav>
       <div class="sidebar-footer">
+        <span id="lowStockIndicator" class="low-stock-indicator" style="display:none;"></span>
         <button class="btn btn-secondary btn-full" id="logoutBtn">
           <span>🚪</span>
           <span>Cerrar sesión</span>
@@ -103,55 +104,103 @@
           <div id="contentEditorRoot">
             <div class="card">
               <div class="card-header">
-                <h3 class="card-header-title">Hero / Portada</h3>
-                <button class="btn btn-primary btn-sm" id="saveHeroBtn" data-scope="hero">
-                  <span id="saveHeroBtnText">Guardar cambios</span>
-                  <span id="saveHeroBtnLoading" class="hidden">Guardando...</span>
+                <h3 class="card-header-title">Bloques del Home</h3>
+                <button class="btn btn-primary btn-sm" id="saveHomeBlocksBtn" data-scope="home-blocks">
+                  <span id="saveHomeBlocksBtnText">Guardar en Nube</span>
+                  <span id="saveHomeBlocksBtnLoading" class="hidden">Guardando...</span>
                 </button>
               </div>
               <div class="card-body">
-                <div class="form-grid-2">
-                  <div class="form-group">
-                    <label>Título principal <span class="required">*</span></label>
-                    <input type="text" id="hero_title" placeholder="Regalos artesanales que cuentan historias" />
+                <div class="admin-section-title">Bloque 1 - Hero Principal</div>
+                <div class="home-block">
+                  <div class="form-grid-2">
+                    <div class="form-group">
+                      <label>Título <span class="required">*</span></label>
+                      <input type="text" id="hero_title" placeholder="Regalos artesanales que cuentan historias" />
+                    </div>
+                    <div class="form-group">
+                      <label>Descripción</label>
+                      <input type="text" id="hero_subtitle" placeholder="Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es única." />
+                    </div>
+                    <div class="form-group">
+                      <label>Texto del botón</label>
+                      <input type="text" id="hero_cta_text" placeholder="Explorar Catálogo" />
+                    </div>
+                    <div class="form-group">
+                      <label>URL del botón</label>
+                      <input type="text" id="hero_cta_url" placeholder="#catalog" />
+                    </div>
                   </div>
-                  <div class="form-group">
-                    <label>Bajada / Slogan</label>
-                    <input type="text" id="hero_subtitle" placeholder="Pulseras, souvenirs y accesorios hechos a mano" />
-                  </div>
-                  <div class="form-group">
-                    <label>Texto CTA botón</label>
-                    <input type="text" id="hero_cta_text" placeholder="Explorar Catálogo" />
-                  </div>
-                  <div class="form-group">
-                    <label>URL CTA</label>
-                    <input type="text" id="hero_cta_url" placeholder="#catalog" />
-                  </div>
-                </div>
-                <div class="form-group" style="grid-column: 1 / -1; margin-top: 1rem;">
-                  <label>Imagen destacada del Hero</label>
-                  <div class="hero-image-editor">
-                    <div class="hero-image-preview-row">
-                      <div class="hero-image-preview">
-                        <img id="heroImagePreview" src="" alt="Preview imagen hero" style="display:none;" />
-                        <div id="heroImagePlaceholder" class="hero-image-placeholder">
-                          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                          <span>Sin imagen</span>
+                  <div class="home-block-image-card">
+                    <label>Imagen destacada</label>
+                    <div class="hero-image-editor">
+                      <div class="hero-image-preview-row">
+                        <div class="hero-image-preview">
+                          <img id="heroImagePreview" src="" alt="Preview imagen hero" style="display:none;" />
+                          <div id="heroImagePlaceholder" class="hero-image-placeholder">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                            <span>Sin imagen</span>
+                          </div>
+                        </div>
+                        <div class="hero-image-actions">
+                          <input type="file" id="heroImageInput" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                          <button type="button" class="btn btn-secondary btn-sm" id="heroImageChangeBtn">Cambiar imagen</button>
+                          <button type="button" class="btn btn-outline btn-sm" id="heroImageRemoveBtn">Quitar imagen</button>
                         </div>
                       </div>
-                      <div class="hero-image-actions">
-                        <input type="file" id="heroImageInput" accept="image/jpeg,image/png,image/webp" style="display:none;" />
-                        <button type="button" class="btn btn-secondary btn-sm" id="heroImageChangeBtn">Cambiar imagen</button>
-                        <button type="button" class="btn btn-outline btn-sm" id="heroImageRemoveBtn">Quitar imagen</button>
+                      <div class="hero-image-new-preview" id="heroImageNewPreview" style="display:none; margin-top: 1rem;">
+                        <p class="hero-image-new-label">Vista previa nueva imagen:</p>
+                        <img id="heroImageNewImg" src="" alt="Nueva imagen hero" style="max-width: 300px; max-height: 200px; border-radius: 8px; border: 1px solid #e5e7eb;" />
                       </div>
-                    </div>
-                    <div class="hero-image-new-preview" id="heroImageNewPreview" style="display:none; margin-top: 1rem;">
-                      <p class="hero-image-new-label">Vista previa nueva imagen:</p>
-                      <img id="heroImageNewImg" src="" alt="Nueva imagen hero" style="max-width: 300px; max-height: 200px; border-radius: 8px; border: 1px solid #e5e7eb;" />
                     </div>
                   </div>
                 </div>
-                <div class="save-status" id="saveHeroStatus"></div>
+
+                <div class="admin-section-title">Bloque 2 - Producto Destacado</div>
+                <div class="home-block">
+                  <div class="form-grid-2">
+                    <div class="form-group">
+                      <label>Nombre del producto <span class="required">*</span></label>
+                      <input type="text" id="fp_name" placeholder="Anillo Cerámica" />
+                    </div>
+                    <div class="form-group">
+                      <label>Descripción corta</label>
+                      <input type="text" id="fp_description" placeholder="Artesanía con alma" />
+                    </div>
+                    <div class="form-group">
+                      <label>Texto del botón</label>
+                      <input type="text" id="fp_cta_text" placeholder="Ver producto" />
+                    </div>
+                    <div class="form-group">
+                      <label>URL del botón</label>
+                      <input type="text" id="fp_cta_url" placeholder="#catalog" />
+                    </div>
+                  </div>
+                  <div class="home-block-image-card">
+                    <label>Imagen del producto</label>
+                    <div class="hero-image-editor">
+                      <div class="hero-image-preview-row">
+                        <div class="hero-image-preview">
+                          <img id="fpImagePreview" src="" alt="Preview imagen producto" style="display:none;" />
+                          <div id="fpImagePlaceholder" class="hero-image-placeholder">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                            <span>Sin imagen</span>
+                          </div>
+                        </div>
+                        <div class="hero-image-actions">
+                          <input type="file" id="fpImageInput" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                          <button type="button" class="btn btn-secondary btn-sm" id="fpImageChangeBtn">Cambiar imagen</button>
+                          <button type="button" class="btn btn-outline btn-sm" id="fpImageRemoveBtn">Quitar imagen</button>
+                        </div>
+                      </div>
+                      <div class="hero-image-new-preview" id="fpImageNewPreview" style="display:none; margin-top: 1rem;">
+                        <p class="hero-image-new-label">Vista previa nueva imagen:</p>
+                        <img id="fpImageNewImg" src="" alt="Nueva imagen producto" style="max-width: 300px; max-height: 200px; border-radius: 8px; border: 1px solid #e5e7eb;" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="save-status" id="saveHomeBlocksStatus"></div>
               </div>
             </div>
 
@@ -727,24 +776,35 @@
                     <span id="savePaymentConfigBtnLoading" class="hidden">Guardando...</span>
                   </button>
                 </div>
-                <div class="card-body">
+              <div class="card-body">
+                <div class="form-group">
+                  <label>Alias de Mercado Pago <span class="required">*</span></label>
+                  <input type="text" id="pmAlias" placeholder="Ej: arte.gualeguay.mp" />
+                </div>
+                <div class="form-group">
+                  <label>Nombre del Titular de Cuenta</label>
+                  <input type="text" id="pmHolderName" placeholder="Nombre completo del titular" />
+                </div>
+                <div class="form-grid-2">
                   <div class="form-group">
-                    <label>Alias de Mercado Pago <span class="required">*</span></label>
-                    <input type="text" id="pmAlias" placeholder="Ej: arte.gualeguay.mp" />
+                    <label>Costo de envío (ARS)</label>
+                    <input type="number" id="pmShippingCost" min="0" step="10" placeholder="200" />
                   </div>
                   <div class="form-group">
-                    <label>Nombre del Titular de Cuenta</label>
-                    <input type="text" id="pmHolderName" placeholder="Nombre completo del titular" />
+                    <label>Envío gratis desde (ARS)</label>
+                    <input type="number" id="pmFreeShippingFrom" min="0" step="100" placeholder="2000" />
+                    <small class="form-hint">0 = envío pago siempre</small>
                   </div>
-                  <div class="form-group">
-                    <label class="toggle-field">
-                      <span class="toggle">
-                        <input type="checkbox" id="pmActive" checked />
-                        <span class="toggle-slider"></span>
-                      </span>
-                      <span style="font-size:0.85rem;font-weight:600;">Habilitar este método de pago</span>
-                    </label>
-                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="toggle-field">
+                    <span class="toggle">
+                      <input type="checkbox" id="pmActive" checked />
+                      <span class="toggle-slider"></span>
+                    </span>
+                    <span style="font-size:0.85rem;font-weight:600;">Habilitar este método de pago</span>
+                  </label>
+                </div>
                   <div class="form-group">
                     <label class="toggle-field">
                       <span class="toggle">
@@ -1002,13 +1062,9 @@
             </label>
           </div>
           <div class="admin-section">
-            <button type="button" class="btn btn-primary" id="submitProductBtn">
-              <span id="createProductBtnText">Crear producto</span>
-              <span id="createProductBtnLoading" class="hidden">Guardando...</span>
-            </button>
-            <button type="button" class="btn btn-secondary" id="updateProductBtn" style="display:none;">
-              <span id="updateProductBtnText">Guardar cambios</span>
-              <span id="updateProductBtnLoading" class="hidden">Guardando...</span>
+            <button type="button" class="btn btn-primary" id="saveProductBtn">
+              <span id="saveProductBtnText">Crear producto</span>
+              <span id="saveProductBtnLoading" class="hidden">Guardando...</span>
             </button>
           </div>
         </form>

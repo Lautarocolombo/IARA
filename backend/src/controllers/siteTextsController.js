@@ -49,7 +49,7 @@ const syncTextsToNeon = async (req, res) => {
         const newValue = String(texts[key] || '');
         const oldValue = existingMap[key] || '';
 
-        if (key === 'hero_image_url' && oldValue && !newValue) {
+        if ((key === 'hero_image_url' || key === 'featured_product_image_url') && oldValue && !newValue) {
           try {
             if (oldValue.startsWith('http')) {
               await deleteFromBlob(oldValue);
@@ -58,7 +58,7 @@ const syncTextsToNeon = async (req, res) => {
               if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
             }
           } catch (imgErr) {
-            logger.warn({ err: imgErr.message }, 'Error eliminando imagen anterior del hero');
+            logger.warn({ err: imgErr.message }, 'Error eliminando imagen anterior de ' + key);
           }
         }
 

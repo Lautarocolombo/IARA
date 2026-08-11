@@ -36,3 +36,17 @@ COMMENT ON TABLE webhook_events IS 'Registro de eventos de webhook para idempote
 -- Categorías: soporte de jerarquía
 ALTER TABLE categories ADD COLUMN IF NOT EXISTS parent_id INTEGER REFERENCES categories(id) ON DELETE SET NULL;
 ALTER TABLE categories ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT '';
+
+-- Nuevas claves para los bloques del home
+INSERT INTO site_texts (key, value) VALUES
+  ('hero_title', 'Regalos <em>artesanales</em> que cuentan historias'),
+  ('hero_subtitle', 'Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es única.'),
+  ('hero_cta_text', 'Explorar Catálogo'),
+  ('hero_cta_url', '#catalog'),
+  ('hero_image_url', ''),
+  ('featured_product_name', 'Anillo Cerámica'),
+  ('featured_product_description', 'Artesanía con alma'),
+  ('featured_product_cta_text', 'Ver producto'),
+  ('featured_product_cta_url', '#catalog'),
+  ('featured_product_image_url', '')
+ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;

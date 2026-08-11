@@ -10,6 +10,11 @@
     hero_cta_text: 'Explorar Catálogo',
     hero_cta_url: '#catalog',
     hero_image_url: '',
+    featured_product_name: 'Anillo Cerámica',
+    featured_product_description: 'Artesanía con alma',
+    featured_product_cta_text: 'Ver producto',
+    featured_product_cta_url: '#catalog',
+    featured_product_image_url: '',
     about_text: 'En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.',
     process_subtitle: 'Cinco pasos simples para comprar tu artesanía',
     process_step_1_title: '1) Elegí productos',
@@ -194,9 +199,54 @@
   }
 
   function populateFields() {
-    for (var key in DEFAULT_TEXTS) {
+    var heroKeys = ['hero_title', 'hero_subtitle', 'hero_cta_text', 'hero_cta_url'];
+    heroKeys.forEach(function (key) {
       var el = document.getElementById(key);
-      if (!el) continue;
+      if (!el) return;
+      var val = textsCache[key] !== undefined ? textsCache[key] : DEFAULT_TEXTS[key];
+      el.value = val || '';
+    });
+
+    var fpKeys = ['featured_product_name', 'featured_product_description', 'featured_product_cta_text', 'featured_product_cta_url'];
+    fpKeys.forEach(function (key) {
+      var el = document.getElementById(key);
+      if (!el) return;
+      var val = textsCache[key] !== undefined ? textsCache[key] : DEFAULT_TEXTS[key];
+      el.value = val || '';
+    });
+
+    var heroImageUrl = textsCache['hero_image_url'] || '';
+    var heroPreviewImg = document.getElementById('heroImagePreview');
+    var heroPlaceholder = document.getElementById('heroImagePlaceholder');
+    if (heroPreviewImg && heroPlaceholder) {
+      if (heroImageUrl) {
+        heroPreviewImg.src = heroImageUrl;
+        heroPreviewImg.style.display = 'block';
+        heroPlaceholder.style.display = 'none';
+      } else {
+        heroPreviewImg.style.display = 'none';
+        heroPlaceholder.style.display = 'flex';
+      }
+    }
+
+    var fpImageUrl = textsCache['featured_product_image_url'] || '';
+    var fpPreviewImg = document.getElementById('fpImagePreview');
+    var fpPlaceholder = document.getElementById('fpImagePlaceholder');
+    if (fpPreviewImg && fpPlaceholder) {
+      if (fpImageUrl) {
+        fpPreviewImg.src = fpImageUrl;
+        fpPreviewImg.style.display = 'block';
+        fpPlaceholder.style.display = 'none';
+      } else {
+        fpPreviewImg.style.display = 'none';
+        fpPlaceholder.style.display = 'flex';
+      }
+    }
+
+    var aboutTextKeys = ['about_text'];
+    aboutTextKeys.forEach(function (key) {
+      var el = document.getElementById(key);
+      if (!el) return;
       var val = textsCache[key] !== undefined ? textsCache[key] : DEFAULT_TEXTS[key];
       if (key === 'about_text' && quillEditor) {
         quillEditor.root.innerHTML = val || '';
@@ -205,21 +255,35 @@
       } else {
         el.value = val || '';
       }
-    }
+    });
 
-    var heroImageUrl = textsCache['hero_image_url'] || '';
-    var previewImg = document.getElementById('heroImagePreview');
-    var placeholder = document.getElementById('heroImagePlaceholder');
-    if (previewImg && placeholder) {
-      if (heroImageUrl) {
-        previewImg.src = heroImageUrl;
-        previewImg.style.display = 'block';
-        placeholder.style.display = 'none';
-      } else {
-        previewImg.style.display = 'none';
-        placeholder.style.display = 'flex';
-      }
+    var featureKeys = ['feature_1_title', 'feature_1_desc', 'feature_2_title', 'feature_2_desc',
+                    'feature_3_title', 'feature_3_desc', 'feature_4_title', 'feature_4_desc'];
+    featureKeys.forEach(function (key) {
+      var el = document.getElementById(key);
+      if (!el) return;
+      var val = textsCache[key] !== undefined ? textsCache[key] : DEFAULT_TEXTS[key];
+      el.value = val || '';
+    });
+
+    var processKeys = ['process_subtitle'];
+    for (var i = 1; i <= 5; i++) {
+      processKeys.push('process_step_' + i + '_title', 'process_step_' + i + '_desc');
     }
+    processKeys.forEach(function (key) {
+      var el = document.getElementById(key);
+      if (!el) return;
+      var val = textsCache[key] !== undefined ? textsCache[key] : DEFAULT_TEXTS[key];
+      el.value = val || '';
+    });
+
+    var statKeys = ['stat_clients', 'stat_products_sold', 'stat_years', 'stat_artesanal'];
+    statKeys.forEach(function (key) {
+      var el = document.getElementById(key);
+      if (!el) return;
+      var val = textsCache[key] !== undefined ? textsCache[key] : DEFAULT_TEXTS[key];
+      el.value = val || '';
+    });
 
     var settingMap = {
       contact_email: 'email',
@@ -235,6 +299,12 @@
       var settingKey = settingMap[elemId];
       var settingVal = settingsCache[settingKey] !== undefined ? settingsCache[settingKey] : (DEFAULT_SETTINGS[settingKey] || '');
       settingEl.value = settingVal || '';
+    }
+
+    var horarioEl = document.getElementById('horario');
+    if (horarioEl) {
+      var horarioVal = textsCache['horario'] !== undefined ? textsCache['horario'] : DEFAULT_TEXTS['horario'];
+      horarioEl.value = horarioVal || '';
     }
   }
 
@@ -263,6 +333,167 @@
     setTimeout(function () {
       if (el) { el.className = 'save-status'; el.textContent = ''; }
     }, 4000);
+  }
+
+  async function saveHomeBlocks() {
+    var btnId = 'saveHomeBlocksBtn';
+    var loadingId = 'saveHomeBlocksBtnLoading';
+    var statusId = 'saveHomeBlocksStatus';
+
+    var heroTitle = document.getElementById('hero_title')?.value.trim() || '';
+    var heroSubtitle = document.getElementById('hero_subtitle')?.value.trim() || '';
+    var heroCtaText = document.getElementById('hero_cta_text')?.value.trim() || '';
+    var heroCtaUrl = document.getElementById('hero_cta_url')?.value.trim() || '';
+
+    var fpName = document.getElementById('fp_name')?.value.trim() || '';
+    var fpDesc = document.getElementById('fp_description')?.value.trim() || '';
+    var fpCtaText = document.getElementById('fp_cta_text')?.value.trim() || '';
+    var fpCtaUrl = document.getElementById('fp_cta_url')?.value.trim() || '';
+
+    if (!heroTitle) {
+      showSaveStatus(statusId, 'error', 'El título del Hero es obligatorio');
+      window.showToast('❌', 'El título del Hero es obligatorio', 'error');
+      return;
+    }
+    if (!fpName) {
+      showSaveStatus(statusId, 'error', 'El nombre del producto es obligatorio');
+      window.showToast('❌', 'El nombre del producto es obligatorio', 'error');
+      return;
+    }
+
+    setButtonState(btnId, loadingId, true, 'Guardar en Nube', 'Guardando...');
+    showSaveStatus(statusId, 'saving', 'Guardando cambios...');
+
+    try {
+      var heroImageFileInput = document.getElementById('heroImageInput');
+      var heroImageFile = heroImageFileInput ? heroImageFileInput.files[0] : null;
+      var heroImageRemoveBtn = document.getElementById('heroImageRemoveBtn');
+      var heroRemoveFlag = heroImageRemoveBtn ? heroImageRemoveBtn.dataset.remove === 'true' : false;
+
+      var fpImageFileInput = document.getElementById('fpImageInput');
+      var fpImageFile = fpImageFileInput ? fpImageFileInput.files[0] : null;
+      var fpImageRemoveBtn = document.getElementById('fpImageRemoveBtn');
+      var fpRemoveFlag = fpImageRemoveBtn ? fpImageRemoveBtn.dataset.remove === 'true' : false;
+
+      var heroImageUrl = textsCache['hero_image_url'] || '';
+      if (heroImageFile) {
+        var formData = new FormData();
+        formData.append('image', heroImageFile);
+        var uploadRes = await window.adminFetch('/api/admin/upload', {
+          method: 'POST',
+          body: formData
+        });
+        if (!uploadRes || !uploadRes.ok) {
+          let errMsg = 'Error al subir imagen del hero.';
+          if (uploadRes) {
+            let errData = await uploadRes.json().catch(function () { return {}; });
+            errMsg = errData.error || errMsg;
+          }
+          throw new Error(errMsg);
+        }
+        var uploadData = await uploadRes.json();
+        heroImageUrl = uploadData.url || '';
+      } else if (heroRemoveFlag) {
+        heroImageUrl = '';
+      }
+
+      var fpImageUrl = textsCache['featured_product_image_url'] || '';
+      if (fpImageFile) {
+        var formData2 = new FormData();
+        formData2.append('image', fpImageFile);
+        var uploadRes2 = await window.adminFetch('/api/admin/upload', {
+          method: 'POST',
+          body: formData2
+        });
+        if (!uploadRes2 || !uploadRes2.ok) {
+          let errMsg = 'Error al subir imagen del producto.';
+          if (uploadRes2) {
+            let errData = await uploadRes2.json().catch(function () { return {}; });
+            errMsg = errData.error || errMsg;
+          }
+          throw new Error(errMsg);
+        }
+        var uploadData2 = await uploadRes2.json();
+        fpImageUrl = uploadData2.url || '';
+      } else if (fpRemoveFlag) {
+        fpImageUrl = '';
+      }
+
+      var payload = {
+        hero_title: heroTitle,
+        hero_subtitle: heroSubtitle,
+        hero_cta_text: heroCtaText,
+        hero_cta_url: heroCtaUrl,
+        hero_image_url: heroImageUrl,
+        featured_product_name: fpName,
+        featured_product_description: fpDesc,
+        featured_product_cta_text: fpCtaText,
+        featured_product_cta_url: fpCtaUrl,
+        featured_product_image_url: fpImageUrl
+      };
+
+      var res = await window.adminFetch('/api/admin/sync-texts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res || !res.ok) {
+        let errMsg = 'Error al guardar. Intentá de nuevo.';
+        if (res) {
+          let errData = await res.json().catch(function () { return {}; });
+          errMsg = errData.error || errMsg;
+        }
+        throw new Error(errMsg);
+      }
+
+      var data = await res.json();
+      textsCache = Object.assign({}, textsCache, payload);
+
+      if (heroImageFileInput) heroImageFileInput.value = '';
+      if (heroImageRemoveBtn) delete heroImageRemoveBtn.dataset.remove;
+      var heroNewPreview = document.getElementById('heroImageNewPreview');
+      var heroNewImg = document.getElementById('heroImageNewImg');
+      if (heroNewPreview) heroNewPreview.style.display = 'none';
+      if (heroNewImg) heroNewImg.src = '';
+      var heroImgPreview = document.getElementById('heroImagePreview');
+      var heroPlaceholder = document.getElementById('heroImagePlaceholder');
+      if (heroImgPreview && heroPlaceholder && payload['hero_image_url']) {
+        heroImgPreview.src = payload['hero_image_url'];
+        heroImgPreview.style.display = 'block';
+        heroPlaceholder.style.display = 'none';
+      } else if (heroImgPreview && heroPlaceholder) {
+        heroImgPreview.style.display = 'none';
+        heroPlaceholder.style.display = 'flex';
+      }
+
+      if (fpImageFileInput) fpImageFileInput.value = '';
+      if (fpImageRemoveBtn) delete fpImageRemoveBtn.dataset.remove;
+      var fpNewPreview = document.getElementById('fpImageNewPreview');
+      var fpNewImg = document.getElementById('fpImageNewImg');
+      if (fpNewPreview) fpNewPreview.style.display = 'none';
+      if (fpNewImg) fpNewImg.src = '';
+      var fpImgPreview = document.getElementById('fpImagePreview');
+      var fpPlaceholder = document.getElementById('fpImagePlaceholder');
+      if (fpImgPreview && fpPlaceholder && payload['featured_product_image_url']) {
+        fpImgPreview.src = payload['featured_product_image_url'];
+        fpImgPreview.style.display = 'block';
+        fpPlaceholder.style.display = 'none';
+      } else if (fpImgPreview && fpPlaceholder) {
+        fpImgPreview.style.display = 'none';
+        fpPlaceholder.style.display = 'flex';
+      }
+
+      showSaveStatus(statusId, 'success', 'Cambios guardados correctamente (' + (data.results?.saved || Object.keys(payload).length) + ' campos)');
+      window.showToast('✅', 'Cambios guardados correctamente', 'success');
+      if (window.clearDirty) window.clearDirty('content');
+    } catch (err) {
+      console.error('[Content] Error guardando bloques del home:', err);
+      showSaveStatus(statusId, 'error', err.message || 'Error guardando cambios');
+      window.showToast('❌', err.message || 'Error al guardar los cambios', 'error');
+    } finally {
+      setButtonState(btnId, loadingId, false, 'Guardar en Nube', 'Guardando...');
+    }
   }
 
   function collectTextKeys(prefix) {
@@ -315,36 +546,6 @@
     }
 
     try {
-      if (scope === 'hero') {
-        var heroImageFileInput = document.getElementById('heroImageInput');
-        var heroImageFile = heroImageFileInput ? heroImageFileInput.files[0] : null;
-        var heroImageRemoveBtn = document.getElementById('heroImageRemoveBtn');
-        var removeFlag = heroImageRemoveBtn ? heroImageRemoveBtn.dataset.remove === 'true' : false;
-
-        if (heroImageFile) {
-          var formData = new FormData();
-          formData.append('image', heroImageFile);
-          var uploadRes = await window.adminFetch('/api/admin/upload', {
-            method: 'POST',
-            body: formData
-          });
-          if (!uploadRes || !uploadRes.ok) {
-            let errMsg = 'Error al subir imagen.';
-            if (uploadRes) {
-              let errData = await uploadRes.json().catch(function () { return {}; });
-              errMsg = errData.error || errMsg;
-            }
-            throw new Error(errMsg);
-          }
-          var uploadData = await uploadRes.json();
-          payload['hero_image_url'] = uploadData.url || '';
-        } else if (removeFlag) {
-          payload['hero_image_url'] = '';
-        } else {
-          payload['hero_image_url'] = textsCache['hero_image_url'] || '';
-        }
-      }
-
       var res = await window.adminFetch('/api/admin/sync-texts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -363,30 +564,8 @@
       var data = await res.json();
       textsCache = Object.assign({}, textsCache, payload);
 
-      if (scope === 'hero') {
-        var heroImageInput = document.getElementById('heroImageInput');
-        if (heroImageInput) heroImageInput.value = '';
-        var heroRemoveBtn = document.getElementById('heroImageRemoveBtn');
-        if (heroRemoveBtn) delete heroRemoveBtn.dataset.remove;
-        var newPreview = document.getElementById('heroImageNewPreview');
-        var newImg = document.getElementById('heroImageNewImg');
-        if (newPreview) newPreview.style.display = 'none';
-        if (newImg) newImg.src = '';
-        var heroImgPreview = document.getElementById('heroImagePreview');
-        var heroPlaceholder = document.getElementById('heroImagePlaceholder');
-        if (heroImgPreview && heroPlaceholder && payload['hero_image_url']) {
-          heroImgPreview.src = payload['hero_image_url'];
-          heroImgPreview.style.display = 'block';
-          heroPlaceholder.style.display = 'none';
-        } else if (heroImgPreview && heroPlaceholder) {
-          heroImgPreview.style.display = 'none';
-          heroPlaceholder.style.display = 'flex';
-        }
-      }
-
       showSaveStatus(statusId, 'success', 'Cambios guardados correctamente (' + (data.results?.saved || keys.length) + ' campos)');
       window.showToast('✅', 'Cambios guardados correctamente', 'success');
-      if (window.clearDirty) window.clearDirty('content');
       if (window.clearDirty) window.clearDirty('content');
     } catch (err) {
       console.error('[Content] Error guardando textos:', err);
@@ -464,7 +643,7 @@
       loadAllContent();
 
     var saveButtons = [
-      { id: 'saveHeroBtn', scope: 'hero' },
+      { id: 'saveHomeBlocksBtn', scope: 'home-blocks' },
       { id: 'saveAboutBtn', scope: 'about' },
       { id: 'saveFeaturesBtn', scope: 'features' },
       { id: 'saveProcessBtn', scope: 'process' },
@@ -474,7 +653,13 @@
     saveButtons.forEach(function (btn) {
       var el = document.getElementById(btn.id);
       if (el) {
-        el.addEventListener('click', function () { saveTexts(btn.scope); });
+        el.addEventListener('click', function () {
+          if (btn.scope === 'home-blocks') {
+            saveHomeBlocks();
+          } else {
+            saveTexts(btn.scope);
+          }
+        });
       }
     });
 
@@ -505,6 +690,26 @@
       });
     });
 
+    var heroInputs = document.querySelectorAll('#hero_title, #hero_subtitle, #hero_cta_text, #hero_cta_url');
+    heroInputs.forEach(function (input) {
+      input.addEventListener('input', function () {
+        if (window.markDirty) window.markDirty('content');
+      });
+      input.addEventListener('change', function () {
+        if (window.markDirty) window.markDirty('content');
+      });
+    });
+
+    var fpInputs = document.querySelectorAll('#fp_name, #fp_description, #fp_cta_text, #fp_cta_url');
+    fpInputs.forEach(function (input) {
+      input.addEventListener('input', function () {
+        if (window.markDirty) window.markDirty('content');
+      });
+      input.addEventListener('change', function () {
+        if (window.markDirty) window.markDirty('content');
+      });
+    });
+
     var heroImageChangeBtn = document.getElementById('heroImageChangeBtn');
     var heroImageInput = document.getElementById('heroImageInput');
     if (heroImageChangeBtn && heroImageInput) {
@@ -516,6 +721,11 @@
           var file = heroImageInput.files[0];
           if (file.size > 5 * 1024 * 1024) {
             window.showToast('❌', 'La imagen es muy grande (máximo 5MB)', 'error');
+            heroImageInput.value = '';
+            return;
+          }
+          if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+            window.showToast('❌', 'Formato no soportado. Usá JPG, PNG o WEBP.', 'error');
             heroImageInput.value = '';
             return;
           }
@@ -547,17 +757,67 @@
         if (window.markDirty) window.markDirty('content');
       });
     }
+
+    var fpImageChangeBtn = document.getElementById('fpImageChangeBtn');
+    var fpImageInput = document.getElementById('fpImageInput');
+    if (fpImageChangeBtn && fpImageInput) {
+      fpImageChangeBtn.addEventListener('click', function () {
+        fpImageInput.click();
+      });
+      fpImageInput.addEventListener('change', function () {
+        if (fpImageInput.files && fpImageInput.files[0]) {
+          var file = fpImageInput.files[0];
+          if (file.size > 5 * 1024 * 1024) {
+            window.showToast('❌', 'La imagen es muy grande (máximo 5MB)', 'error');
+            fpImageInput.value = '';
+            return;
+          }
+          if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+            window.showToast('❌', 'Formato no soportado. Usá JPG, PNG o WEBP.', 'error');
+            fpImageInput.value = '';
+            return;
+          }
+          var reader = new FileReader();
+          reader.onload = function (e) {
+            var newPreview = document.getElementById('fpImageNewPreview');
+            var newImg = document.getElementById('fpImageNewImg');
+            if (newPreview && newImg) {
+              newImg.src = e.target.result;
+              newPreview.style.display = 'block';
+            }
+            if (window.markDirty) window.markDirty('content');
+          };
+          reader.readAsDataURL(fpImageInput.files[0]);
+        }
+      });
+    }
+
+    var fpImageRemoveBtn = document.getElementById('fpImageRemoveBtn');
+    if (fpImageRemoveBtn) {
+      fpImageRemoveBtn.addEventListener('click', function () {
+        fpImageRemoveBtn.dataset.remove = 'true';
+        var fpImageInput = document.getElementById('fpImageInput');
+        if (fpImageInput) fpImageInput.value = '';
+        var newPreview = document.getElementById('fpImageNewPreview');
+        var newImg = document.getElementById('fpImageNewImg');
+        if (newPreview) newPreview.style.display = 'none';
+        if (newImg) newImg.src = '';
+        if (window.markDirty) window.markDirty('content');
+      });
+    }
   } catch (err) {
     console.error('[Content] Error inicializando editor:', err);
   }
   }
 
   async function saveAllContentSections() {
-    var scopes = ['hero', 'about', 'features', 'process', 'stats', 'contact-texts'];
+    var scopes = ['home-blocks', 'about', 'features', 'process', 'stats', 'contact-texts'];
     for (var i = 0; i < scopes.length; i++) {
       var scope = scopes[i];
       if (scope === 'contact-texts') {
         await saveContactSettings();
+      } else if (scope === 'home-blocks') {
+        await saveHomeBlocks();
       } else {
         await saveTexts(scope);
       }

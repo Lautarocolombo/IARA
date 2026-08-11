@@ -521,6 +521,7 @@
     });
 
     onSyncMessage('hero_updated', loadHeroCards);
+    onSyncMessage('site-texts', loadHeroCards);
     onSyncMessage('site-texts', loadHeroImage);
     onSyncMessage('wishlist_updated', () => {
       if (typeof renderWishlist === 'function') renderWishlist();
