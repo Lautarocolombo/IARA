@@ -1,5 +1,5 @@
 /* ==================== SERVICE WORKER ==================== */
-const CACHE_NAME = 'artesania-cache-v2';
+const CACHE_NAME = 'artesania-cache-v3';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
@@ -80,9 +80,13 @@ async function cacheFirst(request, cacheName) {
   if (cached) return cached;
   try {
     const response = await fetch(request);
-    if (response && response.status === 200) {
+    if (response && response instanceof Response && response.status === 200) {
       const cache = await caches.open(cacheName);
-      cache.put(request, response.clone());
+      try {
+        cache.put(request, response.clone());
+      } catch (e) {
+        console.warn('SW cache put failed:', e);
+      }
     }
     return response;
   } catch {
@@ -93,9 +97,13 @@ async function cacheFirst(request, cacheName) {
 async function networkFirst(request) {
   try {
     const response = await fetch(request);
-    if (response && response.status === 200) {
+    if (response && response instanceof Response && response.status === 200) {
       const cache = await caches.open(API_CACHE);
-      cache.put(request, response.clone());
+      try {
+        cache.put(request, response.clone());
+      } catch (e) {
+        console.warn('SW API cache put failed:', e);
+      }
     }
     return response;
   } catch {
@@ -110,12 +118,19 @@ async function networkFirst(request) {
 
 async function staleWhileRevalidate(request, cacheName) {
   const cached = await caches.match(request);
-  const fetchPromise = fetch(request).then((response) => {
-    if (response && response.status === 200) {
-      const cache = caches.open(cacheName);
-      cache.then((c) => c.put(request, response.clone()));
+  try {
+    const response = await fetch(request);
+    if (response && response instanceof Response && response.status === 200) {
+      const cache = await caches.open(cacheName);
+      try {
+        cache.put(request, response.clone());
+      } catch (e) {
+        console.warn('SW stale-while-revalidate cache put failed:', e);
+      }
+      return response;
     }
-    return response;
-  }).catch(() => cached);
-  return cached || fetchPromise;
+    return cached || response || new Response('Offline', { status: 503 });
+  } catch {
+    return cached || new Response('Offline', { status: 503 });
+  }
 }

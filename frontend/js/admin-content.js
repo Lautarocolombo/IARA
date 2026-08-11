@@ -458,8 +458,9 @@
   }
 
   function initContentEditor() {
-    initQuillEditor();
-    loadAllContent();
+    try {
+      initQuillEditor();
+      loadAllContent();
 
     var saveButtons = [
       { id: 'saveHeroBtn', scope: 'hero' },
@@ -545,6 +546,9 @@
         if (window.markDirty) window.markDirty('content');
       });
     }
+  } catch (err) {
+    console.error('[Content] Error inicializando editor:', err);
+  }
   }
 
   async function saveAllContentSections() {

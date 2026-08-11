@@ -202,3 +202,11 @@ window.showLoginError = showLoginError;
 window.clearLoginError = clearLoginError;
 window.getAuthToken = function() { return authToken; };
 window.adminFetch = adminFetch;
+
+window.addEventListener('error', function(event) {
+  console.error('[GlobalError]', event.message, 'at', event.filename + ':' + event.lineno + ':' + event.colno, event.error);
+});
+
+window.addEventListener('unhandledrejection', function(event) {
+  console.error('[UnhandledRejection]', event.reason);
+});
