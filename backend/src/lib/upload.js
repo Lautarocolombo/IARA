@@ -143,6 +143,36 @@ const upload = multer({
 const uploadSingle = upload.single('image');
 const uploadMultiple = upload.array('images', 10);
 
+const proofStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const proofDir = (isVercel || isRender || isEphemeralProd) ? '/tmp/uploads/comprobantes' : path.join(__dirname, '..', '..', 'uploads', 'comprobantes');
+    if (!fs.existsSync(proofDir)) fs.mkdirSync(proofDir, { recursive: true });
+    cb(null, proofDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const safe = file.originalname.replace(ext, '').replace(/[^a-zA-Z0-9._-]/g, '_');
+    cb(null, `${Date.now()}_${safe}${ext}`);
+  }
+});
+
+const proofFileFilter = (req, file, cb) => {
+  const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+  if (allowed.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Tipo de archivo no permitido. Usá JPG, PNG, WEBP o PDF.'), false);
+  }
+};
+
+const uploadProof = multer({
+  storage: proofStorage,
+  fileFilter: proofFileFilter,
+  limits: { fileSize: 20 * 1024 * 1024 }
+});
+
+const uploadSingleProof = uploadProof.single('image');
+
 function handleUploadError(err, req, res, next) {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
@@ -288,6 +318,7 @@ async function saveUploadedFile(file) {
 module.exports = {
   uploadSingle,
   uploadMultiple,
+  uploadSingleProof,
   handleUploadError,
   saveFile,
   processFile,

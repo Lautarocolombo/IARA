@@ -12,41 +12,52 @@ async function checkServerHealth() {
   const hint = document.getElementById('loginHint');
   const retryBtn = document.getElementById('retryHealthBtn');
   const indicator = document.getElementById('connectionIndicator');
-  let controller = new AbortController();
-  const timeoutMs = 20000;
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    if (btn) btn.textContent = 'Verificando...';
-    if (btn) btn.disabled = true;
-    const res = await fetch(getApiUrl('/api/health'), {
-      method: 'GET',
-      signal: controller.signal
-    });
-    clearTimeout(timeoutId);
-    if (!res.ok) throw new Error(`Servidor respondió con estado ${res.status}`);
-    if (hint) {
-      hint.textContent = '✅ Servidor conectado';
-      hint.style.color = '#10b981';
+  const timeoutMs = 30000;
+  const maxAttempts = 2;
+  let attempt = 0;
+
+  while (attempt < maxAttempts) {
+    attempt++;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      if (btn) btn.textContent = attempt > 1 ? 'Verificando...' : 'Verificando...';
+      if (btn) btn.disabled = true;
+      const res = await fetch(getApiUrl('/api/health'), {
+        method: 'GET',
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      if (!res.ok) throw new Error(`Servidor respondió con estado ${res.status}`);
+      if (hint) {
+        hint.textContent = '✅ Servidor conectado';
+        hint.style.color = '#10b981';
+      }
+      if (indicator) indicator.classList.add('connected');
+      if (retryBtn) retryBtn.style.display = 'none';
+      return;
+    } catch (err) {
+      clearTimeout(timeoutId);
+      if (attempt < maxAttempts) {
+        await new Promise(r => setTimeout(r, 3000));
+        continue;
+      }
+      let message = '⚠️ El servidor no responde. Podés intentar igualmente iniciar sesión.';
+      if (err.name === 'AbortError') {
+        message = '⚠️ La verificación tardó demasiado. Revisá tu conexión o probá de nuevo.';
+      }
+      if (hint) {
+        hint.textContent = message;
+        hint.style.color = '#f59e0b';
+      }
+      if (indicator) indicator.classList.remove('connected');
+      if (retryBtn) {
+        retryBtn.style.display = 'inline-block';
+        retryBtn.onclick = () => { checkServerHealth(); };
+      }
+    } finally {
+      if (btn) { btn.textContent = 'Ingresar'; btn.disabled = false; }
     }
-    if (indicator) indicator.classList.add('connected');
-    if (retryBtn) retryBtn.style.display = 'none';
-  } catch (err) {
-    clearTimeout(timeoutId);
-    let message = '⚠️ El servidor no responde. Podés intentar igualmente iniciar sesión.';
-    if (err.name === 'AbortError') {
-      message = '⚠️ La verificación tardó demasiado. Podés intentar igualmente iniciar sesión.';
-    }
-    if (hint) {
-      hint.textContent = message;
-      hint.style.color = '#f59e0b';
-    }
-    if (indicator) indicator.classList.remove('connected');
-    if (retryBtn) {
-      retryBtn.style.display = 'inline-block';
-      retryBtn.onclick = () => { checkServerHealth(); };
-    }
-  } finally {
-    if (btn) { btn.textContent = 'Ingresar'; btn.disabled = false; }
   }
 }
 

@@ -8,7 +8,9 @@
     content: { title: 'Contenido del sitio', breadcrumb: 'Editar textos visibles del frontend' },
     products: { title: 'Productos', breadcrumb: 'Crear, editar y gestionar productos' },
     categories: { title: 'Categorías', breadcrumb: 'Gestionar categorías de productos' },
-    sales: { title: 'Ganancias', breadcrumb: 'Reportes de ventas e ingresos' }
+    sales: { title: 'Ganancias', breadcrumb: 'Reportes de ventas e ingresos' },
+    payments: { title: 'Medio de pago', breadcrumb: 'Configuración de alias y gestión de comprobantes' },
+    orders: { title: 'Pedidos Individuales', breadcrumb: 'Detalle y verificación de pagos por pedido' }
   };
 
   var AUTH_CHECKED_KEY = 'ag_admin_token';
@@ -79,8 +81,21 @@
     if (titleEl) titleEl.textContent = info.title || '';
     if (breadcrumbEl) breadcrumbEl.textContent = info.breadcrumb || '';
 
+    var saveAllBtnText = document.getElementById('saveAllBtnText');
+    if (saveAllBtnText) {
+      if (section === 'sales') {
+        saveAllBtnText.textContent = 'Actualizar datos';
+      } else {
+        saveAllBtnText.textContent = 'Guardar en Nube';
+      }
+    }
+
     if (typeof window.onDashboardSectionChange === 'function') {
       window.onDashboardSectionChange(section);
+    }
+
+    if (typeof window.updateUnsavedUI === 'function') {
+      window.updateUnsavedUI();
     }
   }
 

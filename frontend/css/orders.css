@@ -247,3 +247,39 @@
     font-size: 1rem;
   }
 }
+
+.tracking-wrap {
+  padding-top: 100px;
+}
+
+.tracking-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 3rem 40px;
+}
+
+.tracking-block {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: #fdf6f8;
+}
+
+.tracking-block h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-dark);
+}
+
+.tracking-block p {
+  font-size: 0.9rem;
+  color: var(--text-mid);
+  margin-bottom: 0.25rem;
+}
+
+.text-muted {
+  color: var(--text-muted);
+  font-style: italic;
+}

@@ -22,6 +22,10 @@ function createPool(connectionString) {
     const separator = connectionString.includes('?') ? '&' : '?';
     finalConnectionString = connectionString + separator + 'sslmode=require';
   }
+  if (finalConnectionString && !finalConnectionString.includes('client_encoding=')) {
+    const separator = finalConnectionString.includes('?') ? '&' : '?';
+    finalConnectionString = finalConnectionString + separator + 'client_encoding=UTF8';
+  }
   return new Pool({
     connectionString: finalConnectionString,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
@@ -299,8 +303,25 @@ async function initDB() {
       cash_enabled BOOLEAN DEFAULT FALSE,
       shipping_cost REAL DEFAULT 0,
       free_shipping_from REAL DEFAULT 0,
+      notify_admin_new_proof BOOLEAN DEFAULT TRUE,
+      notify_client_approved BOOLEAN DEFAULT TRUE,
+      notify_client_rejected BOOLEAN DEFAULT TRUE,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
+    await query(`CREATE TABLE IF NOT EXISTS payment_proofs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id INTEGER NOT NULL,
+      customer_name TEXT DEFAULT '',
+      amount REAL DEFAULT 0,
+      proof_url TEXT DEFAULT '',
+      status TEXT DEFAULT 'pending',
+      rejection_reason TEXT DEFAULT '',
+      reviewed_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_payment_proofs_order_id ON payment_proofs(order_id)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_payment_proofs_status ON payment_proofs(status)`);
+    await query(`CREATE INDEX IF NOT EXISTS idx_payment_proofs_created_at ON payment_proofs(created_at)`);
     await query(`CREATE TABLE IF NOT EXISTS site_settings (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       key TEXT UNIQUE NOT NULL,
@@ -354,6 +375,8 @@ async function initDB() {
       orden INTEGER DEFAULT 0,
       emoji TEXT DEFAULT '',
       image TEXT DEFAULT '',
+      parent_id INTEGER DEFAULT NULL,
+      image_url TEXT DEFAULT '',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
@@ -365,6 +388,7 @@ async function initDB() {
       entity_id INTEGER DEFAULT 0,
       details TEXT DEFAULT '',
       ip TEXT DEFAULT '',
+      related_order_id INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
     await query(`CREATE TABLE IF NOT EXISTS customers (
@@ -528,11 +552,26 @@ async function initDB() {
     } catch (err) {
       logger.debug({ err: err.message }, 'Columna notes ya existe o no se pudo agregar (SQLite)');
     }
-     try {
-       await query('ALTER TABLE categories ADD COLUMN orden INTEGER DEFAULT 0');
-     } catch (err) {
-       logger.debug({ err: err.message }, 'Columna orden ya existe o no se pudo agregar (SQLite)');
-     }
+    try {
+      await query('ALTER TABLE activity_log ADD COLUMN related_order_id INTEGER DEFAULT 0');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna related_order_id ya existe o no se pudo agregar (SQLite)');
+    }
+      try {
+         await query('ALTER TABLE categories ADD COLUMN orden INTEGER DEFAULT 0');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna orden ya existe o no se pudo agregar (SQLite)');
+      }
+      try {
+         await query('ALTER TABLE categories ADD COLUMN parent_id INTEGER DEFAULT NULL');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna parent_id ya existe o no se pudo agregar (SQLite)');
+      }
+      try {
+         await query('ALTER TABLE categories ADD COLUMN image_url TEXT DEFAULT \'\'');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna image_url ya existe o no se pudo agregar (SQLite)');
+      }
      try {
        await query('ALTER TABLE hero_cards ADD COLUMN titulo TEXT DEFAULT \'\'');
      } catch (err) {
@@ -625,13 +664,14 @@ async function initDB() {
     'CREATE TABLE IF NOT EXISTS sales (id SERIAL PRIMARY KEY, product_id INTEGER NOT NULL, quantity INTEGER NOT NULL, unit_price REAL NOT NULL, total REAL NOT NULL, sale_date DATE DEFAULT CURRENT_DATE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS reviews (id SERIAL PRIMARY KEY, product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE, rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5), comment TEXT DEFAULT \'\', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS contacts (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL, message TEXT NOT NULL, status TEXT DEFAULT \'new\', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
-    'CREATE TABLE IF NOT EXISTS payment_config (id SERIAL PRIMARY KEY, mp_alias TEXT DEFAULT \'\', transfer_alias TEXT DEFAULT \'\', cbu_cvu TEXT DEFAULT \'\', holder_name TEXT DEFAULT \'\', whatsapp TEXT DEFAULT \'\', message TEXT DEFAULT \'\', active BOOLEAN DEFAULT TRUE, mp_enabled BOOLEAN DEFAULT FALSE, cash_enabled BOOLEAN DEFAULT FALSE, shipping_cost REAL DEFAULT 0, free_shipping_from REAL DEFAULT 0, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
+    'CREATE TABLE IF NOT EXISTS payment_config (id SERIAL PRIMARY KEY, mp_alias TEXT DEFAULT \'\', transfer_alias TEXT DEFAULT \'\', cbu_cvu TEXT DEFAULT \'\', holder_name TEXT DEFAULT \'\', whatsapp TEXT DEFAULT \'\', message TEXT DEFAULT \'\', active BOOLEAN DEFAULT TRUE, mp_enabled BOOLEAN DEFAULT FALSE, cash_enabled BOOLEAN DEFAULT FALSE, shipping_cost REAL DEFAULT 0, free_shipping_from REAL DEFAULT 0, notify_admin_new_proof BOOLEAN DEFAULT TRUE, notify_client_approved BOOLEAN DEFAULT TRUE, notify_client_rejected BOOLEAN DEFAULT TRUE, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
+    'CREATE TABLE IF NOT EXISTS payment_proofs (id SERIAL PRIMARY KEY, order_id INTEGER NOT NULL, customer_name TEXT DEFAULT \'\', amount REAL DEFAULT 0, proof_url TEXT DEFAULT \'\', status TEXT DEFAULT \'pending\', rejection_reason TEXT DEFAULT \'\', reviewed_at TIMESTAMP, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS site_settings (id SERIAL PRIMARY KEY, key TEXT UNIQUE NOT NULL, value TEXT DEFAULT \'\', updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS hero_cards (id SERIAL PRIMARY KEY, nombre TEXT DEFAULT \'\', precio TEXT DEFAULT \'\', imagen TEXT DEFAULT \'\', emoji TEXT DEFAULT \'📿\', orden INTEGER DEFAULT 0, activo BOOLEAN DEFAULT TRUE, titulo TEXT DEFAULT \'\', subtitulo TEXT DEFAULT \'\', cta_texto TEXT DEFAULT \'\', cta_url TEXT DEFAULT \'\', slot INTEGER DEFAULT 0, tipo TEXT DEFAULT \'hero\', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS product_images (id SERIAL PRIMARY KEY, product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE, url TEXT NOT NULL, alt TEXT DEFAULT \'\', filename TEXT DEFAULT \'\', cloudinary_public_id TEXT DEFAULT \'\', orden INTEGER DEFAULT 0, es_principal BOOLEAN DEFAULT FALSE, descripcion TEXT DEFAULT \'\', categoria TEXT DEFAULT \'\', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS webhook_events (id SERIAL PRIMARY KEY, event_id TEXT UNIQUE NOT NULL, source TEXT DEFAULT \'transfer\', payload JSONB NOT NULL, status TEXT DEFAULT \'pending\', processed_at TIMESTAMP, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
       'CREATE TABLE IF NOT EXISTS categories (id SERIAL PRIMARY KEY, name TEXT UNIQUE NOT NULL, slug TEXT UNIQUE NOT NULL, description TEXT DEFAULT \'\', active BOOLEAN DEFAULT TRUE, orden INTEGER DEFAULT 0, emoji TEXT DEFAULT \'\', image TEXT DEFAULT \'\', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
-    'CREATE TABLE IF NOT EXISTS activity_log (id SERIAL PRIMARY KEY, username TEXT DEFAULT \'admin\', action TEXT NOT NULL, entity_type TEXT DEFAULT \'\', entity_id INTEGER DEFAULT 0, details TEXT DEFAULT \'\', ip TEXT DEFAULT \'\', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
+    'CREATE TABLE IF NOT EXISTS activity_log (id SERIAL PRIMARY KEY, username TEXT DEFAULT \'admin\', action TEXT NOT NULL, entity_type TEXT DEFAULT \'\', entity_id INTEGER DEFAULT 0, details TEXT DEFAULT \'\', ip TEXT DEFAULT \'\', related_order_id INTEGER DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS customers (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT UNIQUE NOT NULL, phone TEXT DEFAULT \'\', address TEXT DEFAULT \'\', city TEXT DEFAULT \'\', zip TEXT DEFAULT \'\', active BOOLEAN DEFAULT TRUE, blocked BOOLEAN DEFAULT FALSE, notes TEXT DEFAULT \'\', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username TEXT UNIQUE NOT NULL, password_hash TEXT DEFAULT \'\', role TEXT DEFAULT \'admin\', permissions JSONB DEFAULT \'{}\', active BOOLEAN DEFAULT TRUE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS product_bulk_imports (id SERIAL PRIMARY KEY, filename TEXT DEFAULT \'\', status TEXT DEFAULT \'pending\', total_rows INTEGER DEFAULT 0, success_rows INTEGER DEFAULT 0, error_rows INTEGER DEFAULT 0, errors TEXT DEFAULT \'\', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
@@ -679,6 +719,8 @@ async function initDB() {
     'ALTER TABLE categories ADD COLUMN IF NOT EXISTS orden INTEGER DEFAULT 0',
     'ALTER TABLE categories ADD COLUMN IF NOT EXISTS emoji TEXT DEFAULT \'\'',
     'ALTER TABLE categories ADD COLUMN IF NOT EXISTS image TEXT DEFAULT \'\'',
+    'ALTER TABLE categories ADD COLUMN IF NOT EXISTS parent_id INTEGER DEFAULT NULL',
+    'ALTER TABLE categories ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT \'\'',
     'ALTER TABLE products ADD COLUMN IF NOT EXISTS sku TEXT DEFAULT \'\'',
     'ALTER TABLE hero_cards ADD COLUMN IF NOT EXISTS titulo TEXT DEFAULT \'\'',
     'ALTER TABLE hero_cards ADD COLUMN IF NOT EXISTS subtitulo TEXT DEFAULT \'\'',
@@ -696,6 +738,10 @@ async function initDB() {
     'ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS cash_enabled BOOLEAN DEFAULT FALSE',
     'ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS shipping_cost REAL DEFAULT 0',
     'ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS free_shipping_from REAL DEFAULT 0',
+    'ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS notify_admin_new_proof BOOLEAN DEFAULT TRUE',
+    'ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS notify_client_approved BOOLEAN DEFAULT TRUE',
+    'ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS notify_client_rejected BOOLEAN DEFAULT TRUE',
+    'ALTER TABLE activity_log ADD COLUMN IF NOT EXISTS related_order_id INTEGER DEFAULT 0',
     'CREATE UNIQUE INDEX IF NOT EXISTS idx_hero_cards_slot ON hero_cards(slot) WHERE slot > 0',
     'CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)',
     'CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at)',
@@ -734,20 +780,30 @@ async function initDB() {
   }
 
    logger.info('Tablas de base de datos inicializadas (PostgreSQL)');
-   try {
-     const seqTables = ['products', 'categories', 'orders', 'contacts', 'reviews', 'testimonials', 'product_images', 'subscribers', 'webhook_events', 'hero_cards'];
-     for (const table of seqTables) {
-       await query(`SELECT setval('${table}_id_seq', COALESCE((SELECT MAX(id) FROM ${table}), 1), true)`).catch(() => {});
-     }
-   } catch (err) {
-     logger.debug({ err: err.message }, 'Error reseteando sequences');
-   }
-   try {
-     await ensureAdminUser();
-   } catch (err) {
-     logger.warn({ err: err.message }, 'No se pudo asegurar usuario admin (PostgreSQL)');
-   }
- }
+    try {
+      const seqTables = ['products', 'categories', 'orders', 'contacts', 'reviews', 'testimonials', 'product_images', 'subscribers', 'webhook_events', 'hero_cards'];
+      for (const table of seqTables) {
+        await query(`SELECT setval('${table}_id_seq', COALESCE((SELECT MAX(id) FROM ${table}), 1), true)`).catch(() => {});
+      }
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Error reseteando sequences');
+    }
+    try {
+      await ensureAdminUser();
+    } catch (err) {
+      logger.warn({ err: err.message }, 'No se pudo asegurar usuario admin (PostgreSQL)');
+    }
+    try {
+      await query("UPDATE site_texts SET value = REPLACE(value, 'Cada pieza es �nica', 'Cada pieza es única') WHERE key = 'hero_subtitle' AND value LIKE '%�nica%'");
+    } catch (err) {
+      logger.debug({ err: err.message }, 'No se pudo corregir hero_subtitle');
+    }
+    try {
+      await query("UPDATE site_texts SET value = REPLACE(value, 'Explorar Cat�logo', 'Explorar Catálogo') WHERE key = 'hero_cta_text' AND value LIKE '%Cat�logo%'");
+    } catch (err) {
+      logger.debug({ err: err.message }, 'No se pudo corregir hero_cta_text');
+    }
+  }
 
     async function ensureAdminUser() {
       const ADMIN_USER = process.env.ADMIN_USER;
@@ -764,4 +820,4 @@ async function initDB() {
       }
     }
 
- module.exports = { query, initDB, pool, connectionString: !!connectionString, getClient, transaction };
+ module.exports = { query, initDB, pool, connectionString: !!connectionString, getClient, transaction, isLocal };

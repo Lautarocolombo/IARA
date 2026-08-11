@@ -6,11 +6,11 @@ const path = require('path');
 const fs = require('fs');
 const PDFDocument = require('pdfkit');
 
-async function logActivity(user, action, entityType = '', entityId = 0, details = '', ip = '') {
+async function logActivity(user, action, entityType = '', entityId = 0, details = '', ip = '', relatedOrderId = 0) {
   try {
     await query(
-      'INSERT INTO activity_log (username, action, entity_type, entity_id, details, ip) VALUES ($1, $2, $3, $4, $5, $6)',
-      [user, action, entityType, entityId, details, ip]
+      'INSERT INTO activity_log (username, action, entity_type, entity_id, details, ip, related_order_id) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      [user, action, entityType, entityId, details, ip, relatedOrderId]
     );
   } catch (err) {
     logger.warn({ err: err.message }, 'Error guardando activity_log');
@@ -21,13 +21,17 @@ const VALID_STATUSES = ['pending', 'confirmed', 'preparing', 'shipped', 'deliver
 
 const getOrders = async (req, res) => {
   try {
-    const { status, start_date, end_date, page, limit } = req.query;
+    const { status, start_date, end_date, page, limit, q } = req.query;
     let where = 'WHERE TRUE';
     const params = [];
 
     if (status) { params.push(status); where += ` AND status = $${params.length}`; }
     if (start_date) { params.push(start_date); where += ` AND date(created_at) >= $${params.length}`; }
     if (end_date) { params.push(end_date); where += ` AND date(created_at) <= $${params.length}`; }
+    if (q) {
+      params.push(`%${q}%`);
+      where += ` AND (customer->>'name' ILIKE $${params.length} OR CAST(id AS TEXT) LIKE $${params.length})`;
+    }
 
     const pageNum = Number(page) || 1;
     const limitNum = Number(limit) || 30;
@@ -200,7 +204,7 @@ const updateOrderStatus = async (req, res) => {
     const result = await query(`UPDATE orders SET ${setClause} WHERE id = $${values.length} RETURNING *`, values);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
     const user = req.user?.user || 'admin';
-    await logActivity(user, 'update', 'order', id, logMsgs.join('; '), req.ip || '');
+    await logActivity(user, 'update', 'order', id, logMsgs.join('; '), req.ip || '', id);
     res.json(result.rows[0]);
     try { syncBus.emit('order_status_updated', { id: Number(req.params.id), status: updates.status }); } catch (e) { /* noop */ }
   } catch (err) {
@@ -220,7 +224,7 @@ const deleteOrder = async (req, res) => {
       await restoreStockForOrder(items);
     }
     const user = req.user?.user || 'admin';
-    await logActivity(user, 'delete', 'order', id, `Pedido #${id} eliminado`, req.ip || '');
+    await logActivity(user, 'delete', 'order', id, `Pedido #${id} eliminado`, req.ip || '', id);
     await query('DELETE FROM orders WHERE id = $1', [id]);
     res.json({ ok: true });
   } catch (err) {
@@ -272,10 +276,22 @@ const updateOrderNotes = async (req, res) => {
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
     const user = req.user?.user || 'admin';
-    await logActivity(user, 'update_notes', 'order', id, 'Nota interna actualizada', req.ip || '');
+    await logActivity(user, 'update_notes', 'order', id, 'Nota interna actualizada', req.ip || '', id);
     res.json(result.rows[0]);
   } catch (err) {
     logger.error('Error actualizando nota del pedido:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+const getOrderReceipt = async (req, res) => {
+  const orderId = Number(req.params.id);
+  try {
+    const result = await query('SELECT * FROM receipts WHERE order_id = $1', [orderId]);
+    if (result.rows.length === 0) return res.json({});
+    res.json(result.rows[0]);
+  } catch (err) {
+    logger.error({ err: err.message }, 'Error obteniendo receipt');
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
@@ -288,6 +304,42 @@ const getOrderDetail = async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     logger.error({ err: err.message }, 'Error obteniendo detalle del pedido');
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+const getPaymentConfig = async (req, res) => {
+  try {
+    const result = await query('SELECT * FROM payment_config LIMIT 1');
+    if (result.rows.length === 0) return res.json({});
+    res.json(result.rows[0]);
+  } catch (err) {
+    logger.error({ err: err.message }, 'Error obteniendo configuracion de pago');
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+const addOrderActivity = async (req, res) => {
+  const orderId = Number(req.params.id);
+  const { action, details } = req.body || {};
+  if (!action) return res.status(400).json({ error: 'Acción requerida' });
+  try {
+    const user = req.user?.user || 'admin';
+    await logActivity(user, action, 'order', orderId, details || '', req.ip || '', orderId);
+    res.json({ ok: true });
+  } catch (err) {
+    logger.error({ err: err.message }, 'Error agregando actividad del pedido');
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+const getOrderActivities = async (req, res) => {
+  const orderId = Number(req.params.id);
+  try {
+    const result = await query('SELECT * FROM activity_log WHERE related_order_id = $1 ORDER BY created_at ASC', [orderId]);
+    res.json({ activities: result.rows });
+  } catch (err) {
+    logger.error({ err: err.message }, 'Error obteniendo actividad del pedido');
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
@@ -363,4 +415,18 @@ const exportOrders = async (req, res) => {
   }
 };
 
-module.exports = { getOrders, getUserOrders, createOrder, updateOrderStatus, deleteOrder, updateOrderNotes, getOrderDetail, exportOrders };
+const getPublicOrderTrack = async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID de pedido requerido' });
+    const result = await query('SELECT id, items, total, status, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, created_at FROM orders WHERE id = $1', [id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    res.json(result.rows[0]);
+  } catch (err) {
+    logger.error({ err: err.message }, 'Error obteniendo pedido público');
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+module.exports = { getOrders, getUserOrders, createOrder, updateOrderStatus, deleteOrder, updateOrderNotes, getOrderDetail, exportOrders, getPaymentConfig, addOrderActivity, getOrderReceipt, getOrderActivities, getPublicOrderTrack };

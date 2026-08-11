@@ -32,3 +32,7 @@ CREATE TABLE IF NOT EXISTS webhook_events (
 
 -- Comentarios
 COMMENT ON TABLE webhook_events IS 'Registro de eventos de webhook para idempotencia';
+
+-- Categorías: soporte de jerarquía
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS parent_id INTEGER REFERENCES categories(id) ON DELETE SET NULL;
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT '';

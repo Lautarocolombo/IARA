@@ -92,6 +92,7 @@
                 `).join('')}
               </div>
               <div class="order-total">Total: ${formatARS(order.total)}</div>
+              <a class="btn btn-outline btn-sm" href="../pages/tracking.html?orderId=${order.id}" style="margin-top:0.75rem;display:inline-flex;">Ver Estado del Pedido</a>
             </div>
           `;
         }).join('');

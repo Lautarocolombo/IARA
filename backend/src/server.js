@@ -244,11 +244,23 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use('/api', (req, res, next) => {
+  const originalJson = res.json.bind(res);
+  res.json = function(body) {
+    if (!res.headersSent) {
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    }
+    return originalJson(body);
+  };
+  next();
+});
+
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/admin', require('./routes/auth'));
 app.use('/api', require('./routes/products'));
 app.use('/api', require('./routes/orders'));
 app.use('/api', require('./routes/payments'));
+app.use('/api', require('./routes/paymentProofs'));
 app.use('/api', require('./routes/siteTexts'));
 app.use('/api', require('./routes/testimonials'));
 app.use('/api', require('./routes/newsletter'));
@@ -264,6 +276,7 @@ app.use('/api', require('./routes/reports'));
 app.use('/api', require('./routes/receipts'));
 app.use('/api', require('./routes/heroCards'));
 app.use('/api', require('./routes/sales'));
+app.use('/api', require('./routes/earnings'));
 app.use('/api/sync', require('./routes/sync'));
 
 app.get('/metrics', (req, res) => {

@@ -234,6 +234,9 @@
         waNumber,
         waMsg,
         shippingName: shipping.name,
+        shippingAddress: shipping.address,
+        shippingCity: shipping.city,
+        shippingPhone: shipping.phone,
         shippingEmail: shipping.email
       }));
 

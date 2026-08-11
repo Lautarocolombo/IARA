@@ -38,56 +38,81 @@
       if (!res || !res.ok) throw new Error('Error cargando categorías');
       categoriesCache = await res.json();
       renderCategories();
+      populateParentSelect();
     } catch (err) {
       console.error('[Categories] Error:', err);
       showToast('❌', err.message || 'Error al cargar categorías', 'error');
     }
   }
 
+  function populateParentSelect() {
+    var select = document.getElementById('cat_parent_id');
+    if (!select) return;
+    var html = '<option value="">Ninguna (categoría principal)</option>';
+    categoriesCache.forEach(function (c) {
+      html += '<option value="' + c.id + '">' + escapeHtml(c.name) + '</option>';
+    });
+    select.innerHTML = html;
+  }
+
   function renderCategories() {
-    var tbody = document.getElementById('categoriesTableBody');
+    var container = document.getElementById('categoriesTree');
     var empty = document.getElementById('categoriesEmptyState');
-    if (!tbody) return;
+    if (!container) return;
 
     if (!categoriesCache.length) {
-      tbody.innerHTML = '';
+      container.innerHTML = '';
       if (empty) empty.style.display = 'block';
       return;
     }
     if (empty) empty.style.display = 'none';
 
-    var html = '';
-    categoriesCache.forEach(function (cat, idx) {
-      html += '<tr data-id="' + cat.id + '">' +
-        '<td>' +
-          '<div class="product-cell">' +
-            '<div class="thumb" style="width:36px;height:36px;font-size:1rem;">' + (cat.emoji || '📁') + '</div>' +
+    var parents = categoriesCache.filter(function (c) { return !c.parent_id; });
+    var childrenByParent = {};
+    categoriesCache.forEach(function (c) {
+      if (c.parent_id) {
+        if (!childrenByParent[c.parent_id]) childrenByParent[c.parent_id] = [];
+        childrenByParent[c.parent_id].push(c);
+      }
+    });
+
+    function renderCategoryItem(cat, depth) {
+      var children = childrenByParent[cat.id] || [];
+      var padding = Math.min(depth * 20, 60);
+      var html = '<div class="category-tree-item" style="margin-left:' + padding + 'px;" data-id="' + cat.id + '">' +
+        '<div class="category-tree-header">' +
+          '<div style="display:flex;align-items:center;gap:0.5rem;">' +
+            '<span style="font-size:1.1rem;">' + (cat.emoji || '📁') + '</span>' +
             '<div>' +
               '<div class="product-name">' + escapeHtml(cat.name) + '</div>' +
-              '<div class="product-desc">' + escapeHtml(cat.slug || '') + '</div>' +
+              '<div class="product-desc">' + escapeHtml(cat.slug || '') + ' · ' + (cat.product_count || 0) + ' productos</div>' +
             '</div>' +
           '</div>' +
-        '</td>' +
-        '<td><span class="badge">' + (cat.product_count || 0) + ' productos</span></td>' +
-        '<td style="text-align:center;">' +
-          '<button class="btn btn-secondary btn-sm" onclick="window.moveCategory(' + cat.id + ', -1)" title="Subir" ' + (idx === 0 ? 'disabled' : '') + '>↑</button>' +
-          '<button class="btn btn-secondary btn-sm" onclick="window.moveCategory(' + cat.id + ', 1)" title="Bajar" ' + (idx === categoriesCache.length - 1 ? 'disabled' : '') + '>↓</button>' +
-        '</td>' +
-        '<td style="text-align:center;">' +
-          '<label class="testimonial-active-toggle">' +
-            '<input type="checkbox" ' + (cat.active ? 'checked' : '') + ' onchange="window.toggleCategory(' + cat.id + ', ' + (cat.active ? 'false' : 'true') + ')" />' +
-            '<span class="slider"></span>' +
-          '</label>' +
-        '</td>' +
-        '<td style="text-align:center;">' +
-          '<div class="actions">' +
+          '<div style="display:flex;align-items:center;gap:0.4rem;">' +
+            '<label class="testimonial-active-toggle" style="transform:scale(0.9);">' +
+              '<input type="checkbox" ' + (cat.active ? 'checked' : '') + ' onchange="window.toggleCategory(' + cat.id + ', ' + (cat.active ? 'false' : 'true') + ')" />' +
+              '<span class="slider"></span>' +
+            '</label>' +
             '<button class="btn btn-secondary btn-sm" onclick="window.editCategory(' + cat.id + ')">✏️</button>' +
             '<button class="btn btn-danger btn-sm" onclick="window.confirmDeleteCategory(' + cat.id + ')" ' + ((cat.product_count || 0) > 0 ? 'disabled title="Tiene productos asociados"' : '') + '>🗑️</button>' +
           '</div>' +
-        '</td>' +
-      '</tr>';
+        '</div>';
+      if (children.length) {
+        html += '<div class="category-tree-children">';
+        children.forEach(function (child) {
+          html += renderCategoryItem(child, depth + 1);
+        });
+        html += '</div>';
+      }
+      html += '</div>';
+      return html;
+    }
+
+    var html = '';
+    parents.forEach(function (parent) {
+      html += renderCategoryItem(parent, 0);
     });
-    tbody.innerHTML = html;
+    container.innerHTML = html;
   }
 
   function escapeHtml(text) {
@@ -187,12 +212,49 @@
 
     if (title) title.textContent = category ? 'Editar categoría' : 'Nueva categoría';
     form.dataset.editId = category ? category.id : '';
+    form.dataset.imageUrl = category ? (category.image_url || '') : '';
     document.getElementById('cat_name').value = category ? category.name : '';
     document.getElementById('cat_slug').value = category ? category.slug : '';
     document.getElementById('cat_description').value = category ? (category.description || '') : '';
     document.getElementById('cat_emoji').value = category ? (category.emoji || '') : '';
     document.getElementById('cat_active').checked = category ? !!category.active : true;
+
+    var parentSelect = document.getElementById('cat_parent_id');
+    if (parentSelect) {
+      parentSelect.value = category && category.parent_id ? String(category.parent_id) : '';
+      var options = parentSelect.querySelectorAll('option');
+      options.forEach(function (opt) {
+        if (category && opt.value === String(category.id)) {
+          opt.disabled = true;
+        } else {
+          opt.disabled = false;
+        }
+      });
+    }
+
+    var preview = document.getElementById('cat_image_preview');
+    if (preview) {
+      if (category && category.image_url) {
+        preview.innerHTML = '<img src="' + escapeHtml(category.image_url) + '" style="max-height:120px;border-radius:8px;" />';
+      } else {
+        preview.innerHTML = '';
+      }
+    }
+
+    var fileInput = document.getElementById('cat_image_file');
+    if (fileInput) fileInput.value = '';
+
     modal.classList.add('active');
+
+    var catInputs = form.querySelectorAll('input, textarea, select');
+    catInputs.forEach(function (input) {
+      input.addEventListener('input', function () {
+        if (window.markDirty) window.markDirty('categories');
+      });
+      input.addEventListener('change', function () {
+        if (window.markDirty) window.markDirty('categories');
+      });
+    });
   }
 
   function closeCategoryModal() {
@@ -213,8 +275,11 @@
       slug: document.getElementById('cat_slug').value.trim(),
       description: document.getElementById('cat_description').value.trim(),
       emoji: document.getElementById('cat_emoji').value.trim(),
-      active: document.getElementById('cat_active').checked
+      active: document.getElementById('cat_active').checked,
+      parent_id: document.getElementById('cat_parent_id') ? document.getElementById('cat_parent_id').value || null : null
     };
+
+    if (payload.parent_id === '') payload.parent_id = null;
 
     if (!payload.name || !payload.slug) {
       showToast('❌', 'Nombre y slug son requeridos', 'error');
@@ -223,20 +288,40 @@
       return;
     }
 
+    var fileInput = document.getElementById('cat_image_file');
+    var formData = null;
+    if (fileInput && fileInput.files && fileInput.files.length > 0) {
+      formData = new FormData();
+      formData.append('image', fileInput.files[0]);
+    }
+
     try {
       var url = editId ? '/api/admin/categories/' + editId : '/api/admin/categories';
       var method = editId ? 'PUT' : 'POST';
-      var res = await window.adminFetch(url, {
-        method: method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      var res;
+      if (formData) {
+        res = await window.adminFetch(url, {
+          method: method,
+          body: formData
+        });
+      } else {
+        res = await window.adminFetch(url, {
+          method: method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
       if (!res || !res.ok) {
         var data = await res.json().catch(function () { return {}; });
         throw new Error(data.error || 'Error guardando categoría');
       }
+      var saved = await res.json().catch(function () { return null; });
+      if (saved && saved.image_url) {
+        payload.image_url = saved.image_url;
+      }
       closeCategoryModal();
       await loadCategories();
+      if (window.clearDirty) window.clearDirty('categories');
       showToast('✅', editId ? 'Categoría actualizada' : 'Categoría creada', 'success');
     } catch (err) {
       showToast('❌', err.message || 'Error al guardar', 'error');
@@ -271,6 +356,21 @@
     var cancelConfirm = document.getElementById('cancelConfirmBtn');
     if (cancelConfirm) cancelConfirm.addEventListener('click', closeConfirmModal);
 
+    var imageInput = document.getElementById('cat_image_file');
+    if (imageInput) {
+      imageInput.addEventListener('change', function () {
+        var file = this.files[0];
+        var preview = document.getElementById('cat_image_preview');
+        if (file && preview) {
+          var reader = new FileReader();
+          reader.onload = function (e) {
+            preview.innerHTML = '<img src="' + e.target.result + '" style="max-height:120px;border-radius:8px;" />';
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+
     var overlay = document.getElementById('categoryModalOverlay');
     if (overlay) {
       overlay.addEventListener('click', function (e) {
@@ -291,4 +391,12 @@
   window.confirmDeleteCategory = window.confirmDeleteCategory;
   window.moveCategory = window.moveCategory;
   window.toggleCategory = window.toggleCategory;
+  window.saveCategory = saveCategory;
+  window.reloadCategories = loadCategories;
+  window.saveAllCategoryChanges = async function () {
+    if (window.__adminDirtyState && window.__adminDirtyState.categories && typeof window.saveCategory === 'function') {
+      await window.saveCategory();
+    }
+  };
+  window.discardAllCategoryChanges = loadCategories;
 })();

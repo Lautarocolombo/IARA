@@ -2,12 +2,12 @@ const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const { saveUploadedFile } = require('../lib/upload');
 
-const ALLOWED_CATEGORY_COLUMNS = ['name', 'slug', 'description', 'active', 'orden', 'emoji', 'image'];
+const ALLOWED_CATEGORY_COLUMNS = ['name', 'slug', 'description', 'active', 'orden', 'emoji', 'image', 'parent_id', 'image_url'];
 
 const getCategories = async (req, res) => {
   try {
     const result = await query(
-      `SELECT c.id, c.name, c.slug, c.description, c.active, c.orden, c.emoji, c.image, c.created_at, c.updated_at, COUNT(p.id) as product_count
+      `SELECT c.id, c.name, c.slug, c.description, c.active, c.orden, c.emoji, c.image, c.parent_id, c.image_url, c.created_at, c.updated_at, COUNT(p.id) as product_count
        FROM categories c
        LEFT JOIN products p ON p.category = c.slug AND p.deleted = FALSE
        GROUP BY c.id
@@ -39,16 +39,17 @@ const getPublicCategories = async (req, res) => {
 };
 
 const createCategory = async (req, res) => {
-  let { name, slug, description = '', active = true, orden = 0, emoji = '', image = '' } = req.body || {};
+  let { name, slug, description = '', active = true, orden = 0, emoji = '', image = '', parent_id = null, image_url = '' } = req.body || {};
   if (req.file) {
-    image = await saveUploadedFile(req.file);
+    image_url = await saveUploadedFile(req.file);
   }
   if (typeof active === 'string') active = active !== 'false';
+  if (parent_id !== null && parent_id !== undefined) parent_id = Number(parent_id) || null;
   if (!name || !slug) return res.status(400).json({ error: 'Nombre y slug son requeridos' });
   try {
     const result = await query(
-      'INSERT INTO categories (name, slug, description, active, orden, emoji, image) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-      [name, slug, description, active !== false, Number(orden) || 0, emoji || '', image]
+      'INSERT INTO categories (name, slug, description, active, orden, emoji, image, parent_id, image_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+      [name, slug, description, active !== false, Number(orden) || 0, emoji || '', image, parent_id, image_url]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -64,9 +65,14 @@ const updateCategory = async (req, res) => {
   const id = Number(req.params.id);
   const updates = req.body || {};
   if (req.file) {
-    updates.image = await saveUploadedFile(req.file);
+    updates.image_url = await saveUploadedFile(req.file);
   }
   if (typeof updates.active === 'string') updates.active = updates.active !== 'false';
+  if (updates.parent_id !== undefined && updates.parent_id !== null && updates.parent_id !== '') {
+    updates.parent_id = Number(updates.parent_id);
+  } else if (updates.parent_id === '' || updates.parent_id === null) {
+    updates.parent_id = null;
+  }
   const fields = Object.keys(updates).filter(k => k !== 'id' && ALLOWED_CATEGORY_COLUMNS.includes(k));
   if (!fields.length) return res.status(400).json({ error: 'Sin datos para actualizar' });
   const values = [];
@@ -111,9 +117,16 @@ const updateCategoryOrder = async (req, res) => {
 const deleteCategory = async (req, res) => {
   const id = Number(req.params.id);
   try {
-    const catResult = await query('SELECT slug FROM categories WHERE id = $1', [id]);
+    const catResult = await query('SELECT slug, name FROM categories WHERE id = $1', [id]);
     if (catResult.rows.length === 0) return res.status(404).json({ error: 'Categoría no encontrada' });
     const slug = catResult.rows[0].slug;
+    const name = catResult.rows[0].name;
+
+    const childCountResult = await query('SELECT COUNT(*) as count FROM categories WHERE parent_id = $1', [id]);
+    const childCount = Number(childCountResult.rows[0]?.count || 0);
+    if (childCount > 0) {
+      return res.status(400).json({ error: 'Reasigná las subcategorías antes de eliminar esta categoría.' });
+    }
 
     const countResult = await query('SELECT COUNT(*) as count FROM products WHERE category = $1 AND deleted = FALSE', [slug]);
     const productCount = Number(countResult.rows[0]?.count || 0);

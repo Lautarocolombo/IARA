@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Seguimiento de Pedido | Artesanía Gualeguay</title>
+  <link rel="canonical" href="https://artesaniagualeguay.com/pages/tracking.html" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/variables.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/pill-buttons.css" />
+  <link rel="stylesheet" href="../css/animations.css" />
+  <link rel="stylesheet" href="../css/pages.css" />
+  <link rel="stylesheet" href="../css/orders.css" />
+</head>
+<body>
+  <a href="#content" class="skip-link">Saltar al contenido</a>
+
+  <script src="../js/config.js"></script>
+  <script src="../js/safeImage.js"></script>
+  <script src="../js/header.js"></script>
+  <script>
+    initSiteHeader({ showBackButton: true });
+  </script>
+  <script src="../js/theme.js"></script>
+  <main id="content" class="tracking-wrap">
+    <div class="tracking-container">
+      <nav aria-label="Breadcrumb" class="breadcrumb">
+        <a href="../index.html">Inicio</a> <span aria-hidden="true">/</span> <span>Seguimiento</span>
+      </nav>
+      <a href="../index.html" class="back-link">← Volver al sitio</a>
+      <div class="section-header">
+        <span class="section-tag">Seguimiento</span>
+        <h1 class="section-title">Estado del Pedido</h1>
+        <p class="section-subtitle">Ingresá el número de pedido para consultar su estado.</p>
+      </div>
+
+      <div id="trackingLookup">
+        <form id="trackingLookupForm" class="orders-form">
+          <input type="text" id="trackingOrderId" placeholder="Ej: 1234" required />
+          <button type="submit" class="btn-primary">Buscar pedido</button>
+        </form>
+      </div>
+
+      <div id="trackingContainer" style="display:none;"></div>
+
+      <div id="trackingFallback" style="display:none;">
+        <div class="empty-orders">
+          <h2>Pedido no encontrado</h2>
+          <p>Verificá el número e intentá nuevamente.</p>
+          <a href="../index.html#catalog" class="btn-primary" style="margin-top:1rem;">Ver catálogo</a>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script src="../js/ui.js"></script>
+  <script>
+    if (typeof initNavbarScroll === 'function') initNavbarScroll();
+    if (typeof initMobileNavbar === 'function') initMobileNavbar();
+  </script>
+  <script src="../js/tracking.js"></script>
+</body>
+</html>

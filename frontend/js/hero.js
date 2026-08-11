@@ -20,6 +20,26 @@
     }
   }
 
+  async function loadHeroImage() {
+    try {
+      const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-texts`, {}, 2, 1000);
+      if (!res || !res.ok) return;
+      const texts = await res.json();
+      const imageUrl = texts.hero_image_url || '';
+      const imgEl = document.getElementById('heroMainImage');
+      if (!imgEl) return;
+      if (imageUrl) {
+        imgEl.src = imageUrl;
+        imgEl.alt = texts.hero_title || 'Imagen destacada';
+        imgEl.style.display = 'block';
+      } else {
+        imgEl.style.display = 'none';
+      }
+    } catch (err) {
+      console.error('[loadHeroImage] Error:', err);
+    }
+  }
+
   function renderHeroCards(cards) {
     const card1 = cards.find(c => c.slot === 0) || {};
     const card2 = cards.find(c => c.slot === 1) || {};
@@ -92,4 +112,5 @@
 
   window.loadHeroCards = loadHeroCards;
   window.renderHeroCards = renderHeroCards;
+  window.loadHeroImage = loadHeroImage;
 })();

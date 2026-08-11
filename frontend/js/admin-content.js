@@ -9,6 +9,7 @@
     hero_subtitle: 'Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es única.',
     hero_cta_text: 'Explorar Catálogo',
     hero_cta_url: '#catalog',
+    hero_image_url: '',
     about_text: 'En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.',
     process_subtitle: 'Cinco pasos simples para comprar tu artesanía',
     process_step_1_title: '1) Elegí productos',
@@ -76,6 +77,7 @@
 
     renderProcessSteps();
     populateFields();
+    await loadFeaturedCategories();
   }
 
   function renderProcessSteps() {
@@ -98,15 +100,123 @@
     container.innerHTML = html;
   }
 
+  var quillEditor = null;
+
+  function initQuillEditor() {
+    var container = document.getElementById('about_text_editor');
+    if (!container || typeof Quill === 'undefined') return;
+    quillEditor = new Quill(container, {
+      theme: 'snow',
+      placeholder: 'En cada pieza dejamos un pedacito de Gualeguay...',
+      modules: {
+        toolbar: [
+          ['bold', 'italic', 'underline'],
+          [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+          ['link'],
+          ['clean']
+        ]
+      }
+    });
+    quillEditor.on('text-change', function () {
+      if (window.markDirty) window.markDirty('content');
+    });
+  }
+
+  async function loadFeaturedCategories() {
+    try {
+      var res = await window.adminFetch('/api/admin/categories', { method: 'GET' });
+      if (!res || !res.ok) return;
+      var data = await res.json();
+      var select = document.getElementById('featured_categories');
+      if (!select) return;
+      var html = '';
+      data.forEach(function (c) {
+        html += '<option value="' + c.id + '">' + (c.emoji ? c.emoji + ' ' : '') + escapeHtml(c.name) + '</option>';
+      });
+      select.innerHTML = html;
+
+      var saved = textsCache['featured_categories'];
+      if (saved) {
+        var ids = [];
+        try { ids = JSON.parse(saved); } catch (e) { ids = []; }
+        if (Array.isArray(ids)) {
+          var opts = select.querySelectorAll('option');
+          opts.forEach(function (opt) {
+            opt.selected = ids.indexOf(Number(opt.value)) !== -1;
+          });
+        }
+      }
+    } catch (err) {
+      console.error('[Content] Error cargando categorías destacadas:', err);
+    }
+  }
+
+  async function saveFeaturedCategories() {
+    var btnId = 'saveFeaturedBtn';
+    var loadingId = 'saveFeaturedBtnLoading';
+    var statusId = 'saveFeaturedStatus';
+    setButtonState(btnId, loadingId, true, 'Guardar cambios', 'Guardando...');
+    showSaveStatus(statusId, 'saving', 'Guardando cambios...');
+
+    var select = document.getElementById('featured_categories');
+    var selected = [];
+    if (select) {
+      Array.from(select.selectedOptions).forEach(function (opt) {
+        selected.push(Number(opt.value));
+      });
+    }
+
+    try {
+      var res = await window.adminFetch('/api/admin/sync-texts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ featured_categories: JSON.stringify(selected) })
+      });
+      if (!res || !res.ok) {
+        var errMsg = 'Error al guardar.';
+        if (res) {
+          var errData = await res.json().catch(function () { return {}; });
+          errMsg = errData.error || errMsg;
+        }
+        throw new Error(errMsg);
+      }
+      textsCache.featured_categories = JSON.stringify(selected);
+      showSaveStatus(statusId, 'success', 'Categorías destacadas guardadas');
+      window.showToast('✅', 'Categorías destacadas guardadas', 'success');
+      if (window.clearDirty) window.clearDirty('content');
+    } catch (err) {
+      showSaveStatus(statusId, 'error', err.message || 'Error guardando cambios');
+      window.showToast('❌', err.message || 'Error al guardar', 'error');
+    } finally {
+      setButtonState(btnId, loadingId, false, 'Guardar cambios', 'Guardando...');
+    }
+  }
+
   function populateFields() {
     for (var key in DEFAULT_TEXTS) {
       var el = document.getElementById(key);
       if (!el) continue;
       var val = textsCache[key] !== undefined ? textsCache[key] : DEFAULT_TEXTS[key];
-      if (el.tagName === 'TEXTAREA') {
+      if (key === 'about_text' && quillEditor) {
+        quillEditor.root.innerHTML = val || '';
+      } else if (el.tagName === 'TEXTAREA') {
         el.value = val || '';
       } else {
         el.value = val || '';
+      }
+    }
+
+    var heroImageUrl = textsCache['hero_image_url'] || '';
+    var previewImg = document.getElementById('heroImagePreview');
+    var placeholder = document.getElementById('heroImagePlaceholder');
+    if (previewImg && placeholder) {
+      if (heroImageUrl) {
+        previewImg.src = heroImageUrl;
+        previewImg.style.display = 'block';
+        placeholder.style.display = 'none';
+      } else {
+        previewImg.style.display = 'none';
+        placeholder.style.display = 'flex';
       }
     }
 
@@ -157,7 +267,7 @@
   function collectTextKeys(prefix) {
     switch (prefix) {
       case 'hero':
-        return ['hero_title', 'hero_subtitle', 'hero_cta_text', 'hero_cta_url'];
+        return ['hero_title', 'hero_subtitle', 'hero_cta_text', 'hero_cta_url', 'hero_image_url'];
       case 'about':
         return ['about_text'];
       case 'features':
@@ -191,11 +301,49 @@
 
     var payload = {};
     for (var i = 0; i < keys.length; i++) {
-      var el = document.getElementById(keys[i]);
-      payload[keys[i]] = el ? el.value.trim() : '';
+      var key = keys[i];
+      if (key === 'about_text' && quillEditor) {
+        var raw = quillEditor.root.innerHTML;
+        payload[key] = (typeof DOMPurify !== 'undefined') ? DOMPurify.sanitize(raw) : raw;
+      } else if (key === 'hero_image_url') {
+        continue;
+      } else {
+        var el = document.getElementById(key);
+        payload[key] = el ? el.value.trim() : '';
+      }
     }
 
     try {
+      if (scope === 'hero') {
+        var heroImageFileInput = document.getElementById('heroImageInput');
+        var heroImageFile = heroImageFileInput ? heroImageFileInput.files[0] : null;
+        var heroImageRemoveBtn = document.getElementById('heroImageRemoveBtn');
+        var removeFlag = heroImageRemoveBtn ? heroImageRemoveBtn.dataset.remove === 'true' : false;
+
+        if (heroImageFile) {
+          var formData = new FormData();
+          formData.append('image', heroImageFile);
+          var uploadRes = await window.adminFetch('/api/admin/upload', {
+            method: 'POST',
+            body: formData
+          });
+          if (!uploadRes || !uploadRes.ok) {
+            var errMsg = 'Error al subir imagen.';
+            if (uploadRes) {
+              var errData = await uploadRes.json().catch(function () { return {}; });
+              errMsg = errData.error || errMsg;
+            }
+            throw new Error(errMsg);
+          }
+          var uploadData = await uploadRes.json();
+          payload['hero_image_url'] = uploadData.url || '';
+        } else if (removeFlag) {
+          payload['hero_image_url'] = '';
+        } else {
+          payload['hero_image_url'] = textsCache['hero_image_url'] || '';
+        }
+      }
+
       var res = await window.adminFetch('/api/admin/sync-texts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -214,8 +362,31 @@
       var data = await res.json();
       textsCache = Object.assign({}, textsCache, payload);
 
+      if (scope === 'hero') {
+        var heroImageInput = document.getElementById('heroImageInput');
+        if (heroImageInput) heroImageInput.value = '';
+        var heroRemoveBtn = document.getElementById('heroImageRemoveBtn');
+        if (heroRemoveBtn) delete heroRemoveBtn.dataset.remove;
+        var newPreview = document.getElementById('heroImageNewPreview');
+        var newImg = document.getElementById('heroImageNewImg');
+        if (newPreview) newPreview.style.display = 'none';
+        if (newImg) newImg.src = '';
+        var heroImgPreview = document.getElementById('heroImagePreview');
+        var heroPlaceholder = document.getElementById('heroImagePlaceholder');
+        if (heroImgPreview && heroPlaceholder && payload['hero_image_url']) {
+          heroImgPreview.src = payload['hero_image_url'];
+          heroImgPreview.style.display = 'block';
+          heroPlaceholder.style.display = 'none';
+        } else if (heroImgPreview && heroPlaceholder) {
+          heroImgPreview.style.display = 'none';
+          heroPlaceholder.style.display = 'flex';
+        }
+      }
+
       showSaveStatus(statusId, 'success', 'Cambios guardados correctamente (' + (data.results?.saved || keys.length) + ' campos)');
       window.showToast('✅', 'Cambios guardados correctamente', 'success');
+      if (window.clearDirty) window.clearDirty('content');
+      if (window.clearDirty) window.clearDirty('content');
     } catch (err) {
       console.error('[Content] Error guardando textos:', err);
       showSaveStatus(statusId, 'error', err.message || 'Error guardando cambios');
@@ -276,6 +447,7 @@
 
       showSaveStatus(statusId, 'success', 'Cambios guardados correctamente');
       window.showToast('✅', 'Datos de contacto guardados correctamente', 'success');
+      if (window.clearDirty) window.clearDirty('content');
     } catch (err) {
       console.error('[Content] Error guardando settings:', err);
       showSaveStatus(statusId, 'error', err.message || 'Error guardando cambios');
@@ -286,6 +458,7 @@
   }
 
   function initContentEditor() {
+    initQuillEditor();
     loadAllContent();
 
     var saveButtons = [
@@ -307,8 +480,88 @@
     if (contactBtn) {
       contactBtn.addEventListener('click', saveContactSettings);
     }
+
+    var featuredBtn = document.getElementById('saveFeaturedBtn');
+    if (featuredBtn) {
+      featuredBtn.addEventListener('click', saveFeaturedCategories);
+    }
+
+    var featuredSelect = document.getElementById('featured_categories');
+    if (featuredSelect) {
+      featuredSelect.addEventListener('change', function () {
+        if (window.markDirty) window.markDirty('content');
+      });
+    }
+
+    var contactInputs = document.querySelectorAll('#contact_email, #contact_phone, #contact_whatsapp, #contact_address, #contact_instagram, #contact_facebook, #contact_horario');
+    contactInputs.forEach(function (input) {
+      input.addEventListener('input', function () {
+        if (window.markDirty) window.markDirty('content');
+      });
+      input.addEventListener('change', function () {
+        if (window.markDirty) window.markDirty('content');
+      });
+    });
+
+    var heroImageChangeBtn = document.getElementById('heroImageChangeBtn');
+    var heroImageInput = document.getElementById('heroImageInput');
+    if (heroImageChangeBtn && heroImageInput) {
+      heroImageChangeBtn.addEventListener('click', function () {
+        heroImageInput.click();
+      });
+      heroImageInput.addEventListener('change', function () {
+        if (heroImageInput.files && heroImageInput.files[0]) {
+          var file = heroImageInput.files[0];
+          if (file.size > 5 * 1024 * 1024) {
+            window.showToast('❌', 'La imagen es muy grande (máximo 5MB)', 'error');
+            heroImageInput.value = '';
+            return;
+          }
+          var reader = new FileReader();
+          reader.onload = function (e) {
+            var newPreview = document.getElementById('heroImageNewPreview');
+            var newImg = document.getElementById('heroImageNewImg');
+            if (newPreview && newImg) {
+              newImg.src = e.target.result;
+              newPreview.style.display = 'block';
+            }
+            if (window.markDirty) window.markDirty('content');
+          };
+          reader.readAsDataURL(heroImageInput.files[0]);
+        }
+      });
+    }
+
+    var heroImageRemoveBtn = document.getElementById('heroImageRemoveBtn');
+    if (heroImageRemoveBtn) {
+      heroImageRemoveBtn.addEventListener('click', function () {
+        heroImageRemoveBtn.dataset.remove = 'true';
+        var heroImageInput = document.getElementById('heroImageInput');
+        if (heroImageInput) heroImageInput.value = '';
+        var newPreview = document.getElementById('heroImageNewPreview');
+        var newImg = document.getElementById('heroImageNewImg');
+        if (newPreview) newPreview.style.display = 'none';
+        if (newImg) newImg.src = '';
+        if (window.markDirty) window.markDirty('content');
+      });
+    }
+  }
+
+  async function saveAllContentSections() {
+    var scopes = ['hero', 'about', 'features', 'process', 'stats', 'contact-texts'];
+    var lastStatusId = null;
+    for (var i = 0; i < scopes.length; i++) {
+      var scope = scopes[i];
+      if (scope === 'contact-texts') {
+        await saveContactSettings();
+      } else {
+        await saveTexts(scope);
+      }
+    }
   }
 
   window.initContentEditor = initContentEditor;
   window.reloadContent = loadAllContent;
+  window.saveAllContentSections = saveAllContentSections;
+  window.discardAllContentChanges = loadAllContent;
 })();

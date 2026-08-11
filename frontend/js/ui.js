@@ -583,7 +583,8 @@ async function loadSiteTexts() {
     const data = await res.json();
 
     if (data.about_text && document.getElementById('aboutText')) {
-      document.getElementById('aboutText').innerHTML = `<p>${data.about_text}</p>`;
+      const clean = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(data.about_text) : data.about_text;
+      document.getElementById('aboutText').innerHTML = `<p>${clean}</p>`;
     } else {
       applyAboutFallback();
     }
