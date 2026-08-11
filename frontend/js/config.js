@@ -131,24 +131,7 @@ function formatARS(amount) {
   }
 }
 
-function formatARSDateTime(date) {
-  try {
-    const d = new Date(date);
-    if (isNaN(d.getTime())) return '';
-    return new Intl.DateTimeFormat('es-AR', {
-      timeZone: 'America/Argentina/Buenos_Aires',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(d);
-  } catch {
-    return '';
-  }
-}
-
 // Exportar para uso en Node.js (si aplica)
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { CONFIG, getWhatsAppLink, getMailtoLink, getGoogleWriteReviewLink, formatARS, formatARSDateTime };
+  module.exports = { CONFIG, getWhatsAppLink, getMailtoLink, getGoogleWriteReviewLink, formatARS };
 }

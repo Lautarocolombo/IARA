@@ -74,29 +74,15 @@
         container.innerHTML = orders.map(order => {
           const statusClass = 'status-' + (order.status || 'pending');
           const items = (() => { try { return JSON.parse(order.items || '[]'); } catch (e) { return []; } })();
-          const customer = (() => { try { return JSON.parse(order.customer || '{}'); } catch (e) { return {}; } })();
-          let statusLabel = order.status || 'pending';
-          let statusDetail = '';
-          if (order.status === 'awaiting_verification') {
-            statusLabel = 'En revisión';
-            statusDetail = 'Esperando confirmación del pago';
-          } else if (order.status === 'expired') {
-            statusLabel = 'Expirado';
-            statusDetail = 'La reserva venció sin comprobante';
-          } else if (order.status === 'rejected') {
-            statusLabel = 'Rechazado';
-            statusDetail = order.transfer_rejection_reason || 'Pago rechazado';
-          }
           return `
             <div class="order-card">
               <div class="order-header">
                 <div>
                   <span class="order-id">Pedido #${order.id}</span>
-                   <span class="order-date">${formatARSDateTime(order.created_at)}</span>
+                  <span class="order-date">${new Date(order.created_at).toLocaleDateString('es-AR')}</span>
                 </div>
-                <span class="order-status ${statusClass}">${statusLabel}</span>
+                <span class="order-status ${statusClass}">${order.status || 'pending'}</span>
               </div>
-              ${statusDetail ? `<p class="order-status-detail">${statusDetail}</p>` : ''}
               <div class="order-items">
                 ${items.map(item => `
                   <div class="order-item">
@@ -106,7 +92,6 @@
                 `).join('')}
               </div>
               <div class="order-total">Total: ${formatARS(order.total)}</div>
-              ${order.payment_method === 'transfer' && order.status === 'awaiting_verification' ? `<a href="../pages/success.html" class="btn btn-secondary btn-sm" style="margin-top:0.5rem;">Subir comprobante</a>` : ''}
             </div>
           `;
         }).join('');

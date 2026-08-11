@@ -22,24 +22,20 @@ router.get(['/', '/health'], async (req, res) => {
       dbStatus = 'sqlite-fallback';
     }
 
-    const isProd = process.env.NODE_ENV === 'production';
+    const uptime = process.uptime();
+    const memory = process.memoryUsage();
     const response = {
       status: dbStatus === 'connected' || dbStatus === 'sqlite-fallback' ? 'ok' : 'degraded',
-      uptime: Math.floor(process.uptime()),
+      uptime: Math.floor(uptime),
       database: dbStatus,
+      dbError: dbError || null,
+      memory: {
+        rss: Math.round(memory.rss / 1024 / 1024) + 'MB',
+        heapUsed: Math.round(memory.heapUsed / 1024 / 1024) + 'MB'
+      },
+      responseTime: Date.now() - start + 'ms',
       timestamp: new Date().toISOString()
     };
-
-    if (!isProd) {
-      response.memory = {
-        rss: Math.round(process.memoryUsage().rss / 1024 / 1024) + 'MB',
-        heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024) + 'MB'
-      };
-      response.responseTime = Date.now() - start + 'ms';
-      response.nodeVersion = process.version;
-      response.platform = process.platform;
-      if (dbError) response.dbError = dbError;
-    }
 
     const statusCode = response.status === 'ok' ? 200 : 503;
     res.status(statusCode).json(response);

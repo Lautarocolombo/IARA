@@ -1,7 +1,5 @@
-/* ==================== ADMIN AUTH ==================== */
-
 const API_BASE = CONFIG.API.BASE;
-let authToken = '';
+let authToken = localStorage.getItem('ag_admin_token') || '';
 window.__getAdminToken = () => authToken;
 
 function getApiUrl(path) {
@@ -15,7 +13,7 @@ async function checkServerHealth() {
   const retryBtn = document.getElementById('retryHealthBtn');
   const indicator = document.getElementById('connectionIndicator');
   let controller = new AbortController();
-  const timeoutMs = 8000;
+  const timeoutMs = 20000;
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
   try {
     if (btn) btn.textContent = 'Verificando...';
@@ -98,10 +96,11 @@ async function doLogin() {
       else if (res.status === 500) errorMsg = 'Error en el servidor. Recargá la página e intentá nuevamente.';
       throw new Error(errorMsg);
     }
-    authToken = data.token;
+     authToken = data.token;
+    localStorage.setItem('ag_admin_token', authToken);
     const userNameEl = document.getElementById('adminUserName');
     if (userNameEl && data.user) userNameEl.textContent = data.user;
-    window.location.href = '../index.html';
+    window.location.href = '../pages/dashboard.html';
   } catch (err) {
     let userMessage = 'Error inesperado. Por favor, recargá la página.';
     if (err.name === 'AbortError') userMessage = 'El servidor tardó demasiado en responder. Recargá la página e intentá nuevamente.';
@@ -121,6 +120,7 @@ async function doLogout() {
     console.warn('[doLogout] Error cerrando sesión:', e);
   }
   authToken = '';
+  localStorage.removeItem('ag_admin_token');
   window.location.href = '../index.html';
 }
 
@@ -134,6 +134,7 @@ async function adminFetch(url, opts = {}, isRetry = false) {
     const isFormData = opts.body instanceof FormData;
     let finalHeaders = headers;
     if (isFormData) {
+      /* eslint-disable-next-line no-unused-vars */
       const { 'Content-Type': _ct, ...rest } = headers;
       finalHeaders = rest;
     }

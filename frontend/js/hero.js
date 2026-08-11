@@ -52,7 +52,7 @@
       const subtitleEl = heroContent.querySelector('.hero-subtitle');
       const primaryBtn = heroContent.querySelector('.btn-primary');
 
-      if (titleEl && data[0].titulo) titleEl.textContent = data[0].titulo;
+      if (titleEl && data[0].titulo) titleEl.innerHTML = data[0].titulo;
       if (subtitleEl && data[0].subtitulo) subtitleEl.textContent = data[0].subtitulo;
       if (primaryBtn && data[0].cta_texto) {
         primaryBtn.textContent = data[0].cta_texto;

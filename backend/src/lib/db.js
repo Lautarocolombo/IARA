@@ -84,70 +84,16 @@ function toSqlite(sql) {
     .replace(/ON CONFLICT \((.+?)\) DO UPDATE SET/gi, (match, col) => `ON CONFLICT(${col}) DO UPDATE SET`);
 }
 
-function extractIdFromUpdate(sql, values) {
-  const idMatch = sql.match(/WHERE\s+id\s*=\s*\?/i);
-  if (idMatch) {
-    const valuesArray = Array.isArray(values) ? values : [];
-    const lastValue = valuesArray[valuesArray.length - 1];
-    if (lastValue !== undefined && lastValue !== null) {
-      return Number(lastValue);
-    }
-  }
-  const idMatchIndexed = sql.match(/WHERE\s+id\s*=\s*\$(\d+)/i);
-  if (idMatchIndexed) {
-    const index = parseInt(idMatchIndexed[1], 10) - 1;
-    const valuesArray = Array.isArray(values) ? values : [];
-    if (index >= 0 && index < valuesArray.length) {
-      return Number(valuesArray[index]);
-    }
-  }
-  return null;
-}
-
 async function query(text, params, transactionClient = null) {
   const client = transactionClient || pool;
   if (!client && isLocal) {
     return new Promise((resolve, reject) => {
       const sql = toSqlite(text);
       const values = params || [];
-      const trimmed = sql.trim().toUpperCase();
-      const hasReturning = /RETURNING/i.test(sql);
-      if (trimmed.startsWith('SELECT') || trimmed.startsWith('WITH') || trimmed.startsWith('PRAGMA')) {
-        db.all(sql, values, (err, rows) => {
-          if (err) return reject(err);
-          resolve({ rows, rowCount: rows.length });
-        });
-      } else if (hasReturning) {
-        const strippedSql = sql.replace(/\s*RETURNING\s+.*$/i, '');
-        db.run(strippedSql, values, function (err) {
-          if (err) return reject(err);
-          const intoMatch = strippedSql.match(/INTO\s+(\w+)/i);
-          const updateMatch = strippedSql.match(/UPDATE\s+(\w+)/i);
-          const table = intoMatch ? intoMatch[1] : (updateMatch ? updateMatch[1] : null);
-          if (!table) {
-            resolve({ rows: [], rowCount: this.changes, lastID: this.lastID });
-            return;
-          }
-          let idValue = this.lastID;
-          if (updateMatch) {
-            const extracted = extractIdFromUpdate(strippedSql, values);
-            if (extracted !== null && extracted !== undefined) idValue = extracted;
-          }
-          if (!idValue) {
-            resolve({ rows: [], rowCount: this.changes, lastID: this.lastID });
-            return;
-          }
-          db.all(`SELECT * FROM ${table} WHERE id = ?`, [idValue], (err2, rows) => {
-            if (err2) return reject(err2);
-            resolve({ rows, rowCount: rows.length, lastID: this.lastID });
-          });
-        });
-      } else {
-        db.run(sql, values, function (err) {
-          if (err) return reject(err);
-          resolve({ rows: [], rowCount: this.changes, lastID: this.lastID });
-        });
-      }
+      db.all(sql, values, (err, rows) => {
+        if (err) return reject(err);
+        resolve({ rows, rowCount: rows.length });
+      });
     });
   }
 
@@ -251,7 +197,7 @@ async function initDB() {
       emoji TEXT DEFAULT '📿',
       image TEXT DEFAULT '',
       badge TEXT DEFAULT '',
-      stock INTEGER DEFAULT 0 CHECK (stock >= 0),
+      stock INTEGER DEFAULT 0,
       featured BOOLEAN DEFAULT FALSE,
       active BOOLEAN DEFAULT TRUE,
       sku TEXT DEFAULT '',
@@ -380,7 +326,6 @@ async function initDB() {
       categoria TEXT DEFAULT '',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
-    await query(`CREATE INDEX IF NOT EXISTS idx_product_images_product_id_orden ON product_images(product_id, orden)`);
     await query(`CREATE TABLE IF NOT EXISTS webhook_events (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       event_id TEXT UNIQUE NOT NULL,
@@ -446,35 +391,14 @@ async function initDB() {
       errors TEXT DEFAULT '',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
-    await query(`CREATE TABLE IF NOT EXISTS payment_receipts (
-      id SERIAL PRIMARY KEY,
-      order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-      filename TEXT DEFAULT '',
-      url TEXT DEFAULT '',
-      file_hash TEXT DEFAULT '',
-      mime_type TEXT DEFAULT '',
-      file_size INTEGER DEFAULT 0,
-      amount_paid REAL DEFAULT 0,
-      status TEXT DEFAULT 'pending',
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      verified_at TIMESTAMP,
-      verified_by TEXT DEFAULT ''
-    )`);
     await query(`CREATE TABLE IF NOT EXISTS receipts (
-      id SERIAL PRIMARY KEY,
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       order_id INTEGER NOT NULL,
       filename TEXT DEFAULT '',
       url TEXT DEFAULT '',
       sent_whatsapp BOOLEAN DEFAULT FALSE,
       sent_email BOOLEAN DEFAULT FALSE,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )`);
-    await query(`CREATE TABLE IF NOT EXISTS cart_sessions (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      session_token TEXT UNIQUE NOT NULL,
-      items TEXT DEFAULT '{}',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
     logger.info('Tablas de base de datos inicializadas (SQLite)');
    try {
@@ -517,16 +441,11 @@ async function initDB() {
     } catch (err) {
       logger.debug({ err: err.message }, 'Columna shipping_city ya existe o no se pudo agregar (SQLite)');
     }
-      try {
-        await query('ALTER TABLE orders ADD COLUMN shipping_email TEXT DEFAULT \'\'');
-      } catch (err) {
-        logger.debug({ err: err.message }, 'Columna shipping_email ya existe o no se pudo agregar (SQLite)');
-      }
-      try {
-        await query('ALTER TABLE orders ADD COLUMN shipping_province TEXT DEFAULT \'\'');
-      } catch (err) {
-        logger.debug({ err: err.message }, 'Columna shipping_province ya existe o no se pudo agregar (SQLite)');
-      }
+    try {
+      await query('ALTER TABLE orders ADD COLUMN shipping_email TEXT DEFAULT \'\'');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna shipping_email ya existe o no se pudo agregar (SQLite)');
+    }
     try {
       await query('ALTER TABLE orders ADD COLUMN subtotal REAL DEFAULT 0');
     } catch (err) {
@@ -634,16 +553,11 @@ async function initDB() {
      } catch (err) {
        logger.debug({ err: err.message }, 'Columna tipo ya existe o no se pudo agregar (SQLite)');
      }
-     try {
-       await query('CREATE UNIQUE INDEX IF NOT EXISTS idx_hero_cards_slot ON hero_cards(slot) WHERE slot > 0');
-     } catch (err) {
-       logger.debug({ err: err.message }, 'Índice unique slot ya existe o no se pudo agregar (SQLite)');
-     }
-     try {
-       await query('CREATE UNIQUE INDEX IF NOT EXISTS idx_payment_receipts_file_hash ON payment_receipts(file_hash)');
-     } catch (err) {
-       logger.debug({ err: err.message }, 'Índice unique file_hash ya existe o no se pudo agregar (SQLite)');
-     }
+    try {
+      await query('CREATE UNIQUE INDEX IF NOT EXISTS idx_hero_cards_slot ON hero_cards(slot) WHERE slot > 0');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Índice unique slot ya existe o no se pudo agregar (SQLite)');
+    }
        try {
         await query('ALTER TABLE products ADD COLUMN sku TEXT DEFAULT \'\'');
       } catch (err) {
@@ -684,44 +598,19 @@ async function initDB() {
      } catch (err) {
        logger.debug({ err: err.message }, 'Columna shipping_cost ya existe o no se pudo agregar (SQLite)');
      }
-       try {
-         await query('ALTER TABLE payment_config ADD COLUMN free_shipping_from REAL DEFAULT 0');
-       } catch (err) {
-         logger.debug({ err: err.message }, 'Columna free_shipping_from ya existe o no se pudo agregar (SQLite)');
-       }
-       try {
-         await query('ALTER TABLE orders ADD COLUMN payment_status TEXT DEFAULT \'pending\'');
-       } catch (err) {
-         logger.debug({ err: err.message }, 'Columna payment_status ya existe o no se pudo agregar (SQLite)');
-       }
-       try {
-         await query('ALTER TABLE orders ADD COLUMN reserved_until DATETIME');
-       } catch (err) {
-         logger.debug({ err: err.message }, 'Columna reserved_until ya existe o no se pudo agregar (SQLite)');
-       }
-       try {
-         await query('ALTER TABLE orders ADD COLUMN transfer_amount_paid REAL DEFAULT 0');
-       } catch (err) {
-         logger.debug({ err: err.message }, 'Columna transfer_amount_paid ya existe o no se pudo agregar (SQLite)');
-       }
-       try {
-         await query('ALTER TABLE orders ADD COLUMN transfer_rejection_reason TEXT DEFAULT \'\'');
-       } catch (err) {
-         logger.debug({ err: err.message }, 'Columna transfer_rejection_reason ya existe o no se pudo agregar (SQLite)');
-       }
-       try {
-         await query('CREATE TABLE IF NOT EXISTS payment_receipts (id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER NOT NULL, filename TEXT DEFAULT \'\', url TEXT DEFAULT \'\', file_hash TEXT DEFAULT \'\', mime_type TEXT DEFAULT \'\', file_size INTEGER DEFAULT 0, amount_paid REAL DEFAULT 0, status TEXT DEFAULT \'pending\', created_at DATETIME DEFAULT CURRENT_TIMESTAMP, verified_at DATETIME, verified_by TEXT DEFAULT \'\')');
-       } catch (err) {
-         logger.debug({ err: err.message }, 'Tabla payment_receipts ya existe o no se pudo crear (SQLite)');
-       }
-      return;
+     try {
+       await query('ALTER TABLE payment_config ADD COLUMN free_shipping_from REAL DEFAULT 0');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Columna free_shipping_from ya existe o no se pudo agregar (SQLite)');
+     }
+     return;
   }
 
   const statements = [
-      'CREATE TABLE IF NOT EXISTS products (id SERIAL PRIMARY KEY, name TEXT NOT NULL, slug TEXT DEFAULT \'\', category TEXT DEFAULT \'pulseras\', price REAL NOT NULL, description TEXT DEFAULT \'\', emoji TEXT DEFAULT \'📿\', image TEXT DEFAULT \'\', badge TEXT DEFAULT \'\', stock INTEGER DEFAULT 0 CHECK (stock >= 0), featured BOOLEAN DEFAULT FALSE, active BOOLEAN DEFAULT TRUE, sku TEXT DEFAULT \'\', deleted BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
+      'CREATE TABLE IF NOT EXISTS products (id SERIAL PRIMARY KEY, name TEXT NOT NULL, slug TEXT DEFAULT \'\', category TEXT DEFAULT \'pulseras\', price REAL NOT NULL, description TEXT DEFAULT \'\', emoji TEXT DEFAULT \'📿\', image TEXT DEFAULT \'\', badge TEXT DEFAULT \'\', stock INTEGER DEFAULT 0, featured BOOLEAN DEFAULT FALSE, active BOOLEAN DEFAULT TRUE, sku TEXT DEFAULT \'\', deleted BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS site_texts (id SERIAL PRIMARY KEY, key TEXT UNIQUE NOT NULL, value TEXT DEFAULT \'\', updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS testimonials (id SERIAL PRIMARY KEY, name TEXT NOT NULL, comment TEXT NOT NULL, rating INTEGER DEFAULT 5 CHECK (rating >= 1 AND rating <= 5), image TEXT DEFAULT \'\', avatar TEXT DEFAULT \'\', role TEXT DEFAULT \'\', active BOOLEAN DEFAULT TRUE, featured BOOLEAN DEFAULT FALSE, orden INTEGER DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
-    'CREATE TABLE IF NOT EXISTS orders (id SERIAL PRIMARY KEY, items JSONB NOT NULL, total REAL NOT NULL, customer JSONB, status TEXT DEFAULT \'pending\', notes TEXT DEFAULT \'\', shipping_name TEXT DEFAULT \'\', shipping_address TEXT DEFAULT \'\', shipping_phone TEXT DEFAULT \'\', shipping_zip TEXT DEFAULT \'\', shipping_city TEXT DEFAULT \'\', shipping_province TEXT DEFAULT \'\', shipping_email TEXT DEFAULT \'\', subtotal REAL DEFAULT 0, shipping_cost REAL DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
+    'CREATE TABLE IF NOT EXISTS orders (id SERIAL PRIMARY KEY, items JSONB NOT NULL, total REAL NOT NULL, customer JSONB, status TEXT DEFAULT \'pending\', notes TEXT DEFAULT \'\', shipping_name TEXT DEFAULT \'\', shipping_address TEXT DEFAULT \'\', shipping_phone TEXT DEFAULT \'\', shipping_zip TEXT DEFAULT \'\', shipping_city TEXT DEFAULT \'\', shipping_email TEXT DEFAULT \'\', subtotal REAL DEFAULT 0, shipping_cost REAL DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS subscribers (id SERIAL PRIMARY KEY, email TEXT UNIQUE NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS reviews (id SERIAL PRIMARY KEY, product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE, rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5), comment TEXT DEFAULT \'\', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS contacts (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT NOT NULL, message TEXT NOT NULL, status TEXT DEFAULT \'new\', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
@@ -735,9 +624,7 @@ async function initDB() {
     'CREATE TABLE IF NOT EXISTS customers (id SERIAL PRIMARY KEY, name TEXT NOT NULL, email TEXT UNIQUE NOT NULL, phone TEXT DEFAULT \'\', address TEXT DEFAULT \'\', city TEXT DEFAULT \'\', zip TEXT DEFAULT \'\', active BOOLEAN DEFAULT TRUE, blocked BOOLEAN DEFAULT FALSE, notes TEXT DEFAULT \'\', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, username TEXT UNIQUE NOT NULL, password_hash TEXT DEFAULT \'\', role TEXT DEFAULT \'admin\', permissions JSONB DEFAULT \'{}\', active BOOLEAN DEFAULT TRUE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
     'CREATE TABLE IF NOT EXISTS product_bulk_imports (id SERIAL PRIMARY KEY, filename TEXT DEFAULT \'\', status TEXT DEFAULT \'pending\', total_rows INTEGER DEFAULT 0, success_rows INTEGER DEFAULT 0, error_rows INTEGER DEFAULT 0, errors TEXT DEFAULT \'\', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
-    'CREATE TABLE IF NOT EXISTS receipts (id SERIAL PRIMARY KEY, order_id INTEGER NOT NULL, filename TEXT DEFAULT \'\', url TEXT DEFAULT \'\', sent_whatsapp BOOLEAN DEFAULT FALSE, sent_email BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)',
-    'CREATE TABLE IF NOT EXISTS payment_receipts (id SERIAL PRIMARY KEY, order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE, filename TEXT DEFAULT \'\', url TEXT DEFAULT \'\', file_hash TEXT DEFAULT \'\', mime_type TEXT DEFAULT \'\', file_size INTEGER DEFAULT 0, amount_paid REAL DEFAULT 0, status TEXT DEFAULT \'pending\', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, verified_at TIMESTAMP, verified_by TEXT DEFAULT \'\')',
-    'CREATE TABLE IF NOT EXISTS cart_sessions (id SERIAL PRIMARY KEY, session_token TEXT UNIQUE NOT NULL, items JSONB NOT NULL DEFAULT \'{}\', created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)'
+    'CREATE TABLE IF NOT EXISTS receipts (id SERIAL PRIMARY KEY, order_id INTEGER NOT NULL, filename TEXT DEFAULT \'\', url TEXT DEFAULT \'\', sent_whatsapp BOOLEAN DEFAULT FALSE, sent_email BOOLEAN DEFAULT FALSE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)'
   ];
 
   for (const sql of statements) {
@@ -767,7 +654,6 @@ async function initDB() {
     'ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_zip TEXT DEFAULT \'\'',
     'ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_city TEXT DEFAULT \'\'',
     'ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_email TEXT DEFAULT \'\'',
-    'ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_province TEXT DEFAULT \'\'',
     'ALTER TABLE orders ADD COLUMN IF NOT EXISTS subtotal REAL DEFAULT 0',
     'ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_cost REAL DEFAULT 0',
     'ALTER TABLE orders ADD COLUMN IF NOT EXISTS notes TEXT DEFAULT \'\'',
@@ -799,18 +685,12 @@ async function initDB() {
     'ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS cash_enabled BOOLEAN DEFAULT FALSE',
     'ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS shipping_cost REAL DEFAULT 0',
     'ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS free_shipping_from REAL DEFAULT 0',
-    'ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT \'pending\'',
-    'ALTER TABLE orders ADD COLUMN IF NOT EXISTS reserved_until TIMESTAMP',
-    'ALTER TABLE orders ADD COLUMN IF NOT EXISTS transfer_amount_paid REAL DEFAULT 0',
-    'ALTER TABLE orders ADD COLUMN IF NOT EXISTS transfer_rejection_reason TEXT DEFAULT \'\'',
     'CREATE UNIQUE INDEX IF NOT EXISTS idx_hero_cards_slot ON hero_cards(slot) WHERE slot > 0',
     'CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)',
     'CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at)',
     'CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at)',
     'CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)',
-    'CREATE INDEX IF NOT EXISTS idx_webhook_events_event_id ON webhook_events(event_id)',
-    'CREATE UNIQUE INDEX IF NOT EXISTS idx_payment_receipts_file_hash ON payment_receipts(file_hash)',
-    'CREATE INDEX IF NOT EXISTS idx_product_images_product_id_orden ON product_images(product_id, orden)'
+    'CREATE INDEX IF NOT EXISTS idx_webhook_events_event_id ON webhook_events(event_id)'
   ];
 
   for (const sql of alterStatements) {

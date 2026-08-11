@@ -186,7 +186,7 @@ function renderProducts(productsToRender) {
       ? window.renderProductImage(imgUrl, product.name, { className: 'product-card-img', placeholder: product.emoji || '📿' })
       : window.renderProductImage('', product.name, { className: 'product-card-img', placeholder: product.emoji || '📿' });
     const catClass = product.category ? `cat-${product.category}` : '';
-    const badgeHtml = product.badge ? `<span class="product-badge">${escapeHtml(product.badge)}</span>` : '';
+    const badgeHtml = product.badge ? `<span class="product-badge">${product.badge}</span>` : '';
     const waMessage = encodeURIComponent(`Hola! Me interesa el producto: ${product.name} - ${formatARS(product.price)}`);
     const waLink = `https://wa.me/${CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g, '')}?text=${waMessage}`;
 return `
@@ -195,9 +195,9 @@ return `
           <div class="product-image ${catClass}" aria-hidden="true">${imageHtml}</div>
           ${badgeHtml}
           <div class="product-info">
-            <span class="product-category">${escapeHtml(product.category)}</span>
-            <h3 class="product-name">${escapeHtml(product.name)}</h3>
-            <p class="product-description">${escapeHtml(product.description)}</p>
+            <span class="product-category">${product.category}</span>
+            <h3 class="product-name">${product.name}</h3>
+            <p class="product-description">${product.description}</p>
             <div class="product-footer">
               <span class="product-price">${formatARS(product.price)}</span>
             </div>

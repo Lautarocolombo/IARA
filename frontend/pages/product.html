@@ -6,17 +6,13 @@
   <title>Producto — Artesanía Gualeguay</title>
   <meta name="description" content="Detalle de producto artesanal de Artesanía Gualeguay. Pulseras, souvenirs y accesorios únicos hechos a mano en Gualeguay." />
   <link rel="canonical" href="https://artesaniagualeguay.com/pages/product.html" />
-  <meta property="og:title" content="Producto — Artesanía Gualeguay" />
-  <meta property="og:description" content="Detalle de producto artesanal de Artesanía Gualeguay." />
-  <meta property="og:image" content="https://artesaniagualeguay.com/assets/placeholder-product.svg" />
-  <meta property="og:type" content="website" />
-  <meta name="twitter:card" content="summary_large_image" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/variables.css" />
   <link rel="stylesheet" href="../css/base.css" />
   <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/pill-buttons.css" />
   <link rel="stylesheet" href="../css/animations.css" />
   <link rel="stylesheet" href="../css/pages.css" />
 </head>
@@ -76,59 +72,45 @@
           container.innerHTML = '<p>Producto no encontrado.</p>';
           return;
         }
-
-        document.title = `${product.name} — Artesanía Gualeguay`;
-        const metaDesc = document.querySelector('meta[name="description"]');
-        if (metaDesc) metaDesc.setAttribute('content', `${product.name} — ${product.description || 'Pulseras, souvenirs y accesorios hechos a mano'}`);
-        const ogTitle = document.querySelector('meta[property="og:title"]');
-        if (ogTitle) ogTitle.setAttribute('content', product.name);
-        const ogDesc = document.querySelector('meta[property="og:description"]');
-        if (ogDesc) ogDesc.setAttribute('content', product.description || 'Artesanía Gualeguay — Pieza única hecha a mano');
-        const ogImage = document.querySelector('meta[property="og:image"]');
-        if (ogImage) {
-          const imgUrl = window.getProductImageUrl(product) || '';
-          if (imgUrl) ogImage.setAttribute('content', imgUrl);
-        }
-
          const images = Array.isArray(product.images) && product.images.length
-  	             ? product.images
-  	             : [{ url: window.getProductImageUrl(product) || '../assets/placeholder-product.svg', es_principal: true }];
-           const principalImage = images.find(i => i.es_principal) || images[0];
-            const thumbsHtml = images.map((img, i) =>
-              `${window.renderProductImage(img.url, img.descripcion || img.alt || product.name, { placeholder: '📿' })}`
-            ).join('');
-           const imageHtml = images.length
-             ? `<div class="product-image-gallery"><div class="product-image-main">${window.renderProductImage(principalImage ? principalImage.url : '', product.name, { id: 'productMainImage', lazy: false, placeholder: '📿' })}</div><div class="product-image-thumbs" id="productThumbs">${thumbsHtml}</div></div>`
-              : `${window.renderProductImage('', product.name, { style: 'width:100%;aspect-ratio:1;object-fit:contain;object-position:center;', placeholder: '📿' })}`;
-         container.innerHTML = `
-           <div class="product-detail-grid">
-             <div class="product-image-large" aria-hidden="true">${imageHtml}</div>
-             <div>
-               <span class="product-category">${product.category || ''}</span>
-               <h1 class="product-detail-title">${product.name}</h1>
-               <p class="product-detail-desc">${product.description || ''}</p>
-               <p class="product-detail-price">${formatARS(product.price)}</p>
-               <div class="product-detail-actions">
-                 <button class="btn-primary btn-add-cart" data-product-id="${product.id}" data-product-name="${product.name.replace(/"/g, '&quot;')}" data-product-price="${product.price}" data-product-emoji="${(product.emoji||'📿').replace(/"/g, '&quot;')}" data-product-image="${(product.image||'').replace(/"/g, '&quot;')}" data-product-stock="${product.stock||0}">Agregar al carrito</button>
-                 <button class="btn-outline btn-wishlist-detail" data-product-id="${product.id}" data-product-name="${product.name.replace(/"/g, '&quot;')}" data-product-price="${product.price}" data-product-emoji="${(product.emoji||'📿').replace(/"/g, '&quot;')}" data-product-image="${(product.image||'').replace(/"/g, '&quot;')}" aria-label="Favoritos">${window.isInWishlist(product.id) ? '❤️' : '🤍'}</button>
-                 <a href="https://wa.me/${CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g,'')}?text=${encodeURIComponent('Hola! Me interesa el producto: ' + product.name)}" target="_blank" class="btn-outline" rel="noopener">Consultar por WhatsApp</a>
-               </div>
-             </div>
-           </div>
-           <div class="reviews-section">
-             <h2>Reseñas</h2>
-             <div id="reviewsList">
-                ${reviewsData.length ? reviewsData.map(r => `
-                  <div class="review-card">
-                    <div class="review-header">
-                      ${r.avatar ? `<img src="${escapeHtml(r.avatar)}" class="review-avatar" alt="${escapeHtml(r.name || '')}" loading="lazy" />` : ''}
-                      <span class="review-name">${escapeHtml(r.name || 'Anónimo')}</span>
-                      <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
-                    </div>
-                    <p class="review-comment">${escapeHtml(r.comment)}</p>
-                  </div>
-                `).join('') : '<p>Aún no hay reseñas para este producto.</p>'}
-             </div>
+ 	             ? product.images
+ 	             : [{ url: window.getProductImageUrl(product) || '../assets/placeholder-product.svg', es_principal: true }];
+          const principalImage = images.find(i => i.es_principal) || images[0];
+          const thumbsHtml = images.map((img, i) =>
+            `${window.renderProductImage(img.url, product.name + ' - imagen ' + (i + 1), { placeholder: '📿' })}`
+          ).join('');
+          const imageHtml = images.length
+            ? `<div class="product-image-gallery"><div class="product-image-main">${window.renderProductImage(principalImage ? principalImage.url : '', product.name, { id: 'productMainImage', lazy: false, placeholder: '📿' })}</div><div class="product-image-thumbs" id="productThumbs">${thumbsHtml}</div></div>`
+             : `${window.renderProductImage('', product.name, { style: 'width:100%;aspect-ratio:1;object-fit:contain;object-position:center;', placeholder: '📿' })}`;
+        container.innerHTML = `
+          <div class="product-detail-grid">
+            <div class="product-image-large" aria-hidden="true">${imageHtml}</div>
+            <div>
+              <span class="product-category">${product.category || ''}</span>
+              <h1 class="product-detail-title">${product.name}</h1>
+              <p class="product-detail-desc">${product.description || ''}</p>
+              <p class="product-detail-price">${formatARS(product.price)}</p>
+              <div class="product-detail-actions">
+                <button class="btn-primary btn-add-cart" data-product-id="${product.id}" data-product-name="${product.name.replace(/"/g, '&quot;')}" data-product-price="${product.price}" data-product-emoji="${product.emoji||'📿'}" data-product-image="${(product.image||'').replace(/"/g, '&quot;')}" data-product-stock="${product.stock||0}">Agregar al carrito</button>
+                <button class="btn-outline btn-wishlist-detail" data-product-id="${product.id}" data-product-name="${product.name.replace(/"/g, '&quot;')}" data-product-price="${product.price}" data-product-emoji="${product.emoji||'📿'}" data-product-image="${(product.image||'').replace(/"/g, '&quot;')}" aria-label="Favoritos">${window.isInWishlist(product.id) ? '❤️' : '🤍'}</button>
+                <a href="https://wa.me/${CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g,'')}?text=Hola! Me interesa el producto: ${product.name}" target="_blank" class="btn-outline" rel="noopener">Consultar por WhatsApp</a>
+              </div>
+            </div>
+          </div>
+          <div class="reviews-section">
+            <h2>Reseñas</h2>
+            <div id="reviewsList">
+               ${reviewsData.length ? reviewsData.map(r => `
+                 <div class="review-card">
+                   <div class="review-header">
+                     ${r.avatar ? `<img src="${escapeHtml(r.avatar)}" class="review-avatar" alt="${escapeHtml(r.name || '')}" loading="lazy" />` : ''}
+                     <span class="review-name">${r.name || 'Anónimo'}</span>
+                     <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
+                   </div>
+                   <p class="review-comment">${r.comment}</p>
+                 </div>
+               `).join('') : '<p>Aún no hay reseñas para este producto.</p>'}
+            </div>
              <div class="review-form">
                <h3>Dejá tu reseña</h3>
                <div class="form-group">

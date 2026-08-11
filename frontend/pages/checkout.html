@@ -45,59 +45,39 @@
 
     <div id="checkoutContent" class="checkout-grid">
       <div class="checkout-card reveal">
-      <h2>📦 Datos de envío</h2>
-      <form id="shippingForm">
-        <div class="form-group">
-          <label for="shipName">Nombre completo *</label>
-          <input type="text" id="shipName" required placeholder="Tu nombre" />
-          <div class="field-error" id="error-name"></div>
-        </div>
-        <div class="form-group">
-          <label for="shipAddress">Dirección *</label>
-          <input type="text" id="shipAddress" required placeholder="Calle, número, piso, depto" />
-          <div class="field-error" id="error-address"></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;" class="form-grid-2">
+        <h2>📦 Datos de envío</h2>
+        <form id="shippingForm">
           <div class="form-group">
-            <label for="shipZip">Código postal *</label>
-            <input type="text" id="shipZip" required placeholder="3200" />
-            <div class="field-error" id="error-zip"></div>
+            <label>Nombre completo *</label>
+            <input type="text" id="shipName" required placeholder="Tu nombre" />
+            <div class="field-error" id="error-name"></div>
           </div>
           <div class="form-group">
-            <label for="shipCity">Localidad / Ciudad *</label>
-            <input type="text" id="shipCity" required placeholder="Gualeguay" />
-            <div class="field-error" id="error-city"></div>
+            <label>Dirección *</label>
+            <input type="text" id="shipAddress" required placeholder="Calle, número, piso, depto" />
+            <div class="field-error" id="error-address"></div>
           </div>
-        </div>
-        <div class="form-group">
-          <label for="shipProvince">Provincia *</label>
-          <input type="text" id="shipProvince" required placeholder="Entre Ríos" />
-          <div class="field-error" id="error-province"></div>
-        </div>
-        <div class="form-group">
-          <label for="shipPhone">Teléfono / Celular *</label>
-          <input type="tel" id="shipPhone" required placeholder="+54 3444 123456" />
-          <div class="field-error" id="error-phone"></div>
-        </div>
-        <div class="form-group">
-          <label for="shipEmail">Email *</label>
-          <input type="email" id="shipEmail" required placeholder="tu@email.com" />
-          <div class="field-error" id="error-email"></div>
-        </div>
-          <div class="form-group">
-            <label>Método de pago *</label>
-            <div class="payment-method-options">
-              <label class="payment-method-option selected">
-                <input type="radio" name="paymentMethod" value="transfer" checked />
-                <span class="payment-method-icon">🏦</span>
-                <span class="payment-method-label">Transferencia bancaria</span>
-              </label>
-              <label class="payment-method-option" style="display:none;" id="mpPaymentOption">
-                <input type="radio" name="paymentMethod" value="mercadopago" />
-                <span class="payment-method-icon">💳</span>
-                <span class="payment-method-label">MercadoPago</span>
-              </label>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;" class="form-grid-2">
+            <div class="form-group">
+              <label>Código postal *</label>
+              <input type="text" id="shipZip" required placeholder="3200" />
+              <div class="field-error" id="error-zip"></div>
             </div>
+            <div class="form-group">
+              <label>Localidad / Ciudad *</label>
+              <input type="text" id="shipCity" required placeholder="Gualeguay" />
+              <div class="field-error" id="error-city"></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Teléfono / Celular *</label>
+            <input type="tel" id="shipPhone" required placeholder="+54 3444 123456" />
+            <div class="field-error" id="error-phone"></div>
+          </div>
+          <div class="form-group">
+            <label>Email *</label>
+            <input type="email" id="shipEmail" required placeholder="tu@email.com" />
+            <div class="field-error" id="error-email"></div>
           </div>
           <button type="submit" class="btn-primary btn-full btn-block" id="checkoutSubmitBtn">Continuar al pago</button>
         </form>
@@ -127,7 +107,7 @@
           <p class="payment-note" id="paymentInstructionsText">Transferí el total exacto y envianos el comprobante por WhatsApp para confirmar tu pedido.</p>
           <a id="whatsappComprobanteBtn" href="javascript:void(0)" target="_blank" class="btn btn-primary btn-full">Enviar comprobante por WhatsApp</a>
 
-          <a href="cart.html" class="btn btn-secondary btn-full" style="margin-top:0.5rem;" onclick="if(typeof loadCart==='function') loadCart();">Volver al carrito
+          <a href="cart.html" class="btn btn-secondary btn-full" style="margin-top:0.5rem;">Volver al carrito
        </div>
 
         <div class="checkout-card reveal" id="orderSummaryCard">
@@ -209,8 +189,8 @@
   </script>
   <script src="../js/wishlist.js"></script>
   <script src="../js/cart.js"></script>
-  <script src="../js/shared/payment.js"></script>
-   <script src="../js/checkout.js"></script>
+  <script src="../js/payment.js"></script>
+  <script src="../js/checkout.js"></script>
 
   <script>
     if (typeof initSSESync === 'function') initSSESync();

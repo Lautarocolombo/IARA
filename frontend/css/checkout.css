@@ -121,65 +121,6 @@
   margin-bottom: 1.5rem;
 }
 
-.payment-method-options {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 0.5rem;
-}
-
-.payment-method-option {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1rem 1.25rem;
-  border: 2px solid var(--border);
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  background: var(--white);
-}
-
-.payment-method-option:hover {
-  border-color: var(--rose-light);
-  background: var(--blush);
-}
-
-.payment-method-option input[type="radio"] {
-  accent-color: var(--rose-dark);
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
-
-.payment-method-option.selected {
-  border-color: var(--rose-dark);
-  background: var(--blush);
-}
-
-.payment-method-icon {
-  font-size: 1.5rem;
-  flex-shrink: 0;
-}
-
-.payment-method-label {
-  font-weight: 600;
-  color: var(--text-dark);
-  font-size: 0.95rem;
-}
-
-.transfer-countdown {
-  text-align: center;
-  padding: 0.75rem;
-  background: #fef3c7;
-  border: 1px solid #f59e0b;
-  border-radius: var(--radius-md);
-  color: #92400e;
-  font-weight: 600;
-  font-size: 0.9rem;
-  margin-top: 1rem;
-}
-
 .field-error {
   color: #dc2626;
   font-size: 0.8rem;

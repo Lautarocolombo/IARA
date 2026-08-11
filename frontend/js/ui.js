@@ -7,7 +7,7 @@ function showToast(icon, message, type = 'default') {
 
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
-  toast.innerHTML = `<span>${window.escapeHtml(icon)}</span><span>${window.escapeHtml(message)}</span>`;
+  toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
   toast.setAttribute('role', 'status');
   toast.setAttribute('aria-live', 'polite');
   container.appendChild(toast);
@@ -243,8 +243,7 @@ let sseReconnectMs = 2000;
 function initSSESync() {
   if (sseSource) return;
   try {
-    const authToken = typeof window !== 'undefined' && window.__getAdminToken ? window.__getAdminToken() : '';
-    const url = `${CONFIG.API.BASE}/api/sync${authToken ? '?token=' + encodeURIComponent(authToken) : ''}`;
+    const url = `${CONFIG.API.BASE}/api/sync`;
     sseSource = new EventSource(url);
 
     sseSource.addEventListener('products_updated', () => {
@@ -526,13 +525,7 @@ async function safeFetch(url, opts = {}, timeoutMs = 0) {
 async function fetchWithRetry(url, opts = {}, retries = 2, backoffMs = 1000, timeoutMs = 0) {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const method = (opts.method || 'GET').toUpperCase();
-      const shouldAddCsrfHeader = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
-      let finalHeaders = opts.headers || {};
-      if (shouldAddCsrfHeader && !finalHeaders['X-Requested-With']) {
-        finalHeaders = { ...finalHeaders, 'X-Requested-With': 'XMLHttpRequest' };
-      }
-      const fetchPromise = fetch(url, { ...opts, headers: finalHeaders });
+      const fetchPromise = fetch(url, opts);
       const res = timeoutMs > 0
         ? await Promise.race([
             fetchPromise,
@@ -590,8 +583,7 @@ async function loadSiteTexts() {
     const data = await res.json();
 
     if (data.about_text && document.getElementById('aboutText')) {
-      const aboutEl = document.getElementById('aboutText');
-      aboutEl.textContent = data.about_text;
+      document.getElementById('aboutText').innerHTML = `<p>${data.about_text}</p>`;
     } else {
       applyAboutFallback();
     }
@@ -707,12 +699,7 @@ function updateContactFromSettings(settings) {
     emailEl.href = `mailto:${settings.email}`;
   }
   if (addressEl && settings.address && addressEl.textContent.includes('San Antonio')) {
-    const parts = settings.address.split(', ');
-    addressEl.textContent = parts[0] || '';
-    for (let i = 1; i < parts.length; i++) {
-      addressEl.appendChild(document.createElement('br'));
-      addressEl.appendChild(document.createTextNode(parts[i]));
-    }
+    addressEl.innerHTML = settings.address.replace(/, /g, '<br>');
   }
 }
 
@@ -739,14 +726,14 @@ function renderTestimonials(testimonials) {
   grid.innerHTML = testimonials.map(t => `
     <div class="testimonial-card reveal">
       <div class="testimonial-header">
-        <div class="testimonial-avatar">${window.escapeHtml(t.avatar || '😊')}</div>
+        <div class="testimonial-avatar">${t.avatar || '😊'}</div>
         <div>
-          <div class="testimonial-name">${window.escapeHtml(t.name)}</div>
-          ${t.role ? `<div style="font-size:0.8rem;color:var(--text-muted);">${window.escapeHtml(t.role)}</div>` : ''}
+          <div class="testimonial-name">${t.name}</div>
+          ${t.role ? `<div style="font-size:0.8rem;color:var(--text-muted);">${t.role}</div>` : ''}
         </div>
-        <div class="testimonial-rating">${'⭐'.repeat(Number(t.rating) || 5)}</div>
+        <div class="testimonial-rating">${'⭐'.repeat(t.rating)}</div>
       </div>
-      <p class="testimonial-comment">${window.escapeHtml(t.comment)}</p>
+      <p class="testimonial-comment">${t.comment}</p>
     </div>
   `).join('');
 

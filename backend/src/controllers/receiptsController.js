@@ -2,11 +2,7 @@ const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const path = require('path');
 const fs = require('fs');
-const crypto = require('crypto');
 const PDFDocument = require('pdfkit');
-
-const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 const generateReceiptPDF = async (req, res) => {
   const orderId = Number(req.params.id);
@@ -109,33 +105,11 @@ const uploadReceipt = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ error: 'No se recibió ninguna imagen' });
     }
-
-    if (!ALLOWED_MIME_TYPES.includes(req.file.mimetype)) {
-      return res.status(400).json({ error: 'Tipo de archivo no permitido. Usá JPG, PNG, WEBP o PDF.' });
-    }
-
-    if (req.file.size > MAX_FILE_SIZE) {
-      return res.status(400).json({ error: 'El archivo es muy grande (máximo 5MB).' });
-    }
-
-    const fileBuffer = fs.readFileSync(req.file.path);
-    const fileHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
-
-    const existingHash = await query('SELECT id FROM payment_receipts WHERE file_hash = $1 AND order_id != $2', [fileHash, orderId]);
-    if (existingHash.rows.length > 0) {
-      return res.status(400).json({ error: 'Este comprobante ya fue utilizado en otro pedido.' });
-    }
-
     const result = await query('SELECT * FROM orders WHERE id = $1', [orderId]);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Pedido no encontrado' });
     }
-    const order = result.rows[0];
-    if (order.status === 'cancelled' || order.status === 'rejected' || order.status === 'expired') {
-      return res.status(400).json({ error: 'No se puede enviar comprobante de un pedido cancelado, rechazado o expirado' });
-    }
-
-    const filename = `comprobante-pedido-${orderId}-${Date.now()}${path.extname(req.file.originalname)}`;
+    const filename = `comprobante-pedido-${orderId}-${Date.now()}.jpg`;
     const filepath = path.join(__dirname, '..', '..', 'uploads', 'receipts', filename);
     if (!fs.existsSync(path.dirname(filepath))) {
       fs.mkdirSync(path.dirname(filepath), { recursive: true });
@@ -143,22 +117,10 @@ const uploadReceipt = async (req, res) => {
     fs.copyFileSync(req.file.path, filepath);
     fs.unlinkSync(req.file.path);
     const url = `/uploads/receipts/${filename}`;
-
-    const amountPaidRaw = req.body.amount_paid;
-    const amountPaid = amountPaidRaw !== undefined && amountPaidRaw !== '' ? Number(amountPaidRaw) : 0;
-    if (isNaN(amountPaid) || amountPaid < 0) {
-      return res.status(400).json({ error: 'El monto transferido debe ser un número mayor o igual a 0' });
-    }
-
     await query(
-      'INSERT INTO payment_receipts (order_id, filename, url, file_hash, mime_type, file_size, amount_paid, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-      [orderId, filename, url, fileHash, req.file.mimetype, req.file.size, amountPaid, 'pending']
+      'INSERT INTO receipts (order_id, filename, url) VALUES ($1, $2, $3) ON CONFLICT (order_id) DO UPDATE SET filename = $4, url = $5',
+      [orderId, filename, url, filename, url]
     );
-
-    if (order.payment_method === 'transfer' && order.status === 'pending') {
-      await query("UPDATE orders SET status = 'awaiting_verification', payment_status = 'awaiting_verification' WHERE id = $1", [orderId]);
-    }
-
     res.json({ ok: true, url, filename });
   } catch (err) {
     logger.error('Error subiendo comprobante:', err);

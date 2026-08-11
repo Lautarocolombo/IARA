@@ -219,7 +219,11 @@ async function replaceProductImage(req, res) {
 async function syncProductImages(req, res) {
   try {
     const productId = Number(req.params.id);
-    const { orden } = req.body;
+    let { orden } = req.body;
+
+    if (typeof orden === 'string') {
+      try { orden = JSON.parse(orden); } catch (e) { /* noop */ }
+    }
 
     if (!Array.isArray(orden)) {
       return res.status(400).json({ error: 'Se requiere un array de órdenes' });

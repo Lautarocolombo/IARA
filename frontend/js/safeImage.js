@@ -107,7 +107,7 @@
       var symbol = opts.placeholder || DEFAULT_SYMBOL;
       var attrs = ['<img'];
       attrs.push(' src="' + (hasSrc ? escapeAttr(src) : getPlaceholderDataUri(symbol, isDark)) + '"');
-      attrs.push(' alt="' + escapeAttr(alt == null || alt === '' ? (symbol || 'Imagen de producto') : alt) + '"');
+     attrs.push(' alt="' + escapeAttr(alt == null ? '' : alt) + '"');
      if (opts.id) attrs.push(' id="' + escapeAttr(opts.id) + '"');
      if (opts.className) attrs.push(' class="' + escapeAttr(opts.className) + '"');
      if (opts.style) attrs.push(' style="' + escapeAttr(opts.style) + '"');

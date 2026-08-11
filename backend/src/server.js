@@ -56,69 +56,30 @@ async function gracefulShutdown(signal) {
   process.exit(0);
 }
 
-const requiredEnvVars = [
-  { key: 'JWT_SECRET', hint: 'Generar con: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"' },
-  { key: 'ADMIN_USER', hint: 'Ejemplo: Iara' },
-  { key: 'ADMIN_PASS_HASH', hint: 'Generar con: node -e "const bcrypt=require(\'bcrypt\'); bcrypt.hash(\'tu-clave\',10).then(h=>console.log(h))"' },
-  { key: 'CSRF_SECRET', hint: 'Generar con: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"' }
-];
-const requiredProductionEnvVars = [
-  { key: 'DATABASE_URL', hint: 'Connection string de PostgreSQL (Render la provee automáticamente)' },
-  { key: 'ALLOWED_ORIGINS', hint: 'Orígenes permitidos separados por coma (ej: https://tudominio.com,http://localhost:3000)' }
-];
-const optionalEnvVars = [
-  { key: 'LOG_LEVEL', default: 'info' },
-  { key: 'SENTRY_DSN', default: '' },
-  { key: 'BACKEND_URL', default: '' },
-  { key: 'SITE_URL', default: '' },
-  { key: 'WHATSAPP', default: '+5493444634444' },
-  { key: 'EMAIL_FROM', default: '' },
-  { key: 'ADMIN_NOTIFICATION_EMAIL', default: '' },
-  { key: 'RESEND_API_KEY', default: '' },
-  { key: 'TRANSFER_RESERVATION_MINUTES', default: '45' },
-  { key: 'GOOGLE_ANALYTICS_ID', default: '' },
-  { key: 'FACEBOOK_PIXEL_ID', default: '' },
-  { key: 'METRICS_ALLOWED_IPS', default: '' },
-  { key: 'METRICS_TOKEN', default: '' },
-  { key: 'BLOB_READ_WRITE_TOKEN', default: '' },
-  { key: 'CLOUDINARY_CLOUD_NAME', default: '' },
-  { key: 'CLOUDINARY_API_KEY', default: '' },
-  { key: 'CLOUDINARY_API_SECRET', default: '' },
-  { key: 'REDIS_URL', default: '' }
-];
+const requiredEnvVars = ['JWT_SECRET', 'ADMIN_USER', 'ADMIN_PASS_HASH'];
+const missingEnvVars = requiredEnvVars.filter(key => !process.env[key]);
 
 const isProduction = process.env.NODE_ENV === 'production';
-const missingRequired = requiredEnvVars.filter(({ key }) => !process.env[key]);
-const missingProduction = isProduction ? requiredProductionEnvVars.filter(({ key }) => !process.env[key]) : [];
-const missingOptional = optionalEnvVars.filter(({ key }) => !process.env[key]);
+if (isProduction) {
+  if (!process.env.DATABASE_URL) missingEnvVars.push('DATABASE_URL');
+  if (!process.env.ALLOWED_ORIGINS) missingEnvVars.push('ALLOWED_ORIGINS');
+}
 
-if (missingRequired.length > 0 || missingProduction.length > 0) {
+if (missingEnvVars.length > 0) {
   console.error('='.repeat(60));
   console.error('FALTAN VARIABLES DE ENTORNO REQUERIDAS');
   console.error('='.repeat(60));
-  if (missingRequired.length > 0) {
-    console.error('Obligatorias (siempre):');
-    missingRequired.forEach(({ key, hint }) => console.error(`  ${key} → ${hint}`));
-  }
-  if (missingProduction.length > 0) {
-    console.error('Obligatorias en producción:');
-    missingProduction.forEach(({ key, hint }) => console.error(`  ${key} → ${hint}`));
-  }
-  console.error('='.repeat(60));
-  console.error('Completá estas variables en el dashboard de Render o en tu archivo .env');
+  missingEnvVars.forEach(key => {
+    let hint = '';
+    if (key === 'JWT_SECRET') hint = ' (generar con: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"';
+    else if (key === 'ADMIN_USER') hint = ' (ej: Iara)';
+    else if (key === 'ADMIN_PASS_HASH') hint = ' (generar con: npx bcrypt-cli hash)';
+    else if (key === 'DATABASE_URL') hint = ' (connection string de PostgreSQL)';
+    else if (key === 'ALLOWED_ORIGINS') hint = ' (ej: https://tudominio.com,http://localhost:3000)';
+    console.error(`  ${key} → requerido${hint}`);
+  });
   console.error('='.repeat(60));
   process.exit(1);
-}
-
-if (missingOptional.length > 0) {
-  console.warn('='.repeat(60));
-  console.warn('VARIABLES DE ENTORNO OPCIONALES NO CONFIGURADAS');
-  console.warn('='.repeat(60));
-  missingOptional.forEach(({ key, default: defaultValue }) => {
-    console.warn(`  ${key} → faltante${defaultValue ? ` (usará default: ${defaultValue})` : ''}`);
-  });
-  console.warn('El servidor arrancará igual, pero algunas funcionalidades pueden estar limitadas.');
-  console.warn('='.repeat(60));
 }
 
 const app = express();
@@ -188,7 +149,7 @@ const corsOptions = allowedOrigins.length
        allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With', 'X-Request-ID'],
    }
   : {
-       origin: false,
+       origin: true,
        credentials: true,
        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With', 'X-Request-ID'],
@@ -282,7 +243,6 @@ app.use('/api/admin', require('./routes/auth'));
 app.use('/api', require('./routes/products'));
 app.use('/api', require('./routes/orders'));
 app.use('/api', require('./routes/payments'));
-app.use('/api/cart', require('./routes/cart'));
 app.use('/api', require('./routes/siteTexts'));
 app.use('/api', require('./routes/testimonials'));
 app.use('/api', require('./routes/newsletter'));
@@ -296,7 +256,6 @@ app.use('/api', require('./routes/health'));
 app.use('/api', require('./routes/categories'));
 app.use('/api', require('./routes/reports'));
 app.use('/api', require('./routes/receipts'));
-app.use('/api', require('./routes/transferPayments'));
 app.use('/api', require('./routes/heroCards'));
 app.use('/api/sync', require('./routes/sync'));
 
@@ -386,9 +345,6 @@ const isRender = !!process.env.RENDER_EXTERNAL_HOSTNAME;
 const uploadsStaticDir = isVercel || isRender ? '/tmp/uploads' : path.join(__dirname, '..', '..', 'uploads');
 
 app.use('/uploads', (req, res, next) => {
-  if (req.path.startsWith('/receipts/')) {
-    return res.status(403).json({ error: 'Forbidden' });
-  }
   res.header('Access-Control-Allow-Origin', '*');
   next();
 }, express.static(uploadsStaticDir));
@@ -453,15 +409,6 @@ if (require.main === module) {
   const server = app.listen(PORT, '0.0.0.0', () => logger.info(`Backend escuchando en puerto ${PORT}`));
 
   dbReady.catch(() => {});
-
-  setInterval(async () => {
-    try {
-      const { expireTransferReservations } = require('./controllers/ordersController');
-      await expireTransferReservations();
-    } catch (err) {
-      logger.warn({ err: err.message }, 'Error en cron de expiración de reservas');
-    }
-  }, 5 * 60 * 1000);
 
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {

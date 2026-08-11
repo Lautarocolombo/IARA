@@ -46,12 +46,8 @@ async function attachImagesToProducts(products, baseUrl) {
 
   const resolvedBaseUrl = baseUrl || process.env.BACKEND_URL || process.env.SITE_URL || '';
   const byProduct = {};
-  imageRows.forEach((img, idx) => {
-    const resolved = { 
-      ...img, 
-      url: getPublicUrl(img.url, resolvedBaseUrl),
-      alt: img.alt || `Imagen de ${products.find(p => p.id === img.product_id)?.name || 'producto'} ${idx + 1}`
-    };
+  imageRows.forEach(img => {
+    const resolved = { ...img, url: getPublicUrl(img.url, resolvedBaseUrl) };
     if (!byProduct[img.product_id]) byProduct[img.product_id] = [];
     byProduct[img.product_id].push(resolved);
   });

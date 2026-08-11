@@ -33,45 +33,43 @@
       <div class="ok" aria-hidden="true">✅</div>
       <h1>Pedido recibido</h1>
       <p>Te mostramos los datos para transferir y confirmar tu pago.</p>
-        <div id="orderInfo" style="display:none;">
-          <p class="success-order-number">Pedido <strong id="successOrderNumber">--</strong></p>
-          <div class="transfer-alias-section">
-            <h2>🏦 Datos para transferencia</h2>
-            <div class="transfer-summary" id="successTransferSummary"></div>
-            <div class="transfer-total-highlight">
-              <span>Total a transferir</span>
-              <span class="transfer-total-highlight-amount" id="successTransferTotal">ARS 0,00</span>
-            </div>
-            <div class="transfer-details" id="successShippingDetails" style="margin-top:1rem;"></div>
-            <div class="transfer-alias-row">
-              <div>
-                <span class="transfer-label">Alias</span>
-                <code id="successTransferAlias">iara-salgueiro</code>
-              </div>
-              <button id="copySuccessAliasBtn" class="btn btn-secondary btn-sm">📋 Copiar</button>
-            </div>
-            <div class="transfer-alias-row" id="successCbuRow" style="display:none; margin-top: 0.75rem;">
-              <div>
-                <span class="transfer-label">CBU / CVU</span>
-                <code id="successTransferCbu">--</code>
-              </div>
-              <button id="copySuccessCbuBtn" class="btn btn-secondary btn-sm">📋 Copiar</button>
-            </div>
-            <div class="transfer-alias-row" id="successHolderRow" style="display:none; margin-top: 0.75rem;">
-              <div>
-                <span class="transfer-label">Titular</span>
-                <span id="successTransferHolder">--</span>
-              </div>
-            </div>
-            <p id="successTransferNote" class="success-note"></p>
-          </div>
-          <div class="actions">
-             <a id="successWhatsappBtn" href="javascript:void(0)" target="_blank" class="btn btn-primary">Enviar comprobante por WhatsApp</a>
-             <button id="successReceiptBtn" class="btn btn-secondary">Ya transferí, enviar comprobante</button>
-             <a class="btn btn-outline" href="../index.html" onclick="if(typeof loadCart==='function') loadCart();">Volver al inicio</a>
+       <div id="orderInfo" style="display:none;">
+         <p class="success-order-number">Pedido <strong id="successOrderNumber">--</strong></p>
+         <div id="transferAliasSection" class="transfer-alias-section">
+           <h2>🏦 Datos para transferencia</h2>
+           <div class="transfer-summary" id="successTransferSummary"></div>
+           <div class="transfer-total-highlight">
+             <span>Total a transferir</span>
+             <span class="transfer-total-highlight-amount" id="successTransferTotal">ARS 0,00</span>
            </div>
-           <p id="transferCountdown" class="transfer-countdown" style="display:none;"></p>
-        </div>
+           <div class="transfer-alias-row">
+             <div>
+               <span class="transfer-label">Alias</span>
+               <code id="successTransferAlias">iara-salgueiro</code>
+             </div>
+             <button id="copySuccessAliasBtn" class="btn btn-secondary btn-sm">📋 Copiar</button>
+           </div>
+           <div class="transfer-alias-row" id="successCbuRow" style="display:none; margin-top: 0.75rem;">
+             <div>
+               <span class="transfer-label">CBU / CVU</span>
+               <code id="successTransferCbu">--</code>
+             </div>
+             <button id="copySuccessCbuBtn" class="btn btn-secondary btn-sm">📋 Copiar</button>
+           </div>
+           <div class="transfer-alias-row" id="successHolderRow" style="display:none; margin-top: 0.75rem;">
+             <div>
+               <span class="transfer-label">Titular</span>
+               <span id="successTransferHolder">--</span>
+             </div>
+           </div>
+           <p id="successTransferNote" class="success-note"></p>
+         </div>
+         <div class="actions">
+           <a id="successWhatsappBtn" href="javascript:void(0)" target="_blank" class="btn btn-primary">Enviar comprobante por WhatsApp</a>
+           <button id="successReceiptBtn" class="btn btn-secondary">Ya transferí, enviar comprobante</button>
+           <a class="btn btn-outline" href="../index.html">Volver al inicio</a>
+         </div>
+       </div>
 
        <div id="successFallback" style="display:none;">
          <p>No se encontró información del pedido.</p>
@@ -83,14 +81,14 @@
         <div class="modal-card">
           <h3>Subir comprobante de transferencia</h3>
           <p>Pedido <strong id="receiptModalOrderNumber">--</strong></p>
-          <p class="success-note">Monto transferido (opcional):</p>
-          <div class="form-group">
-            <input type="number" id="receiptAmountPaid" placeholder="$ 0,00" step="0.01" min="0" />
-          </div>
           <form id="receiptForm">
             <div class="form-group">
-              <label>Comprobante (imagen o PDF)</label>
-              <input type="file" id="receiptFile" accept="image/*,.pdf" required />
+              <label>Nombre del titular</label>
+              <input type="text" id="receiptHolderName" required />
+            </div>
+            <div class="form-group">
+              <label>Comprobante (imagen)</label>
+              <input type="file" id="receiptFile" accept="image/*" required />
             </div>
             <button type="submit" class="btn btn-primary btn-full">Enviar comprobante</button>
             <button type="button" class="btn btn-secondary btn-full" onclick="closeReceiptModal()">Cancelar</button>
@@ -101,7 +99,6 @@
   </div>
 
   <script src="../js/ui.js"></script>
-  <script src="../js/shared/payment.js"></script>
   <script>
     if (typeof initNavbarScroll === 'function') initNavbarScroll();
     if (typeof initMobileNavbar === 'function') initMobileNavbar();
@@ -146,35 +143,10 @@
           if (waBtn) waBtn.href = `https://wa.me/${order.waNumber}?text=${order.waMsg}`;
         }
 
-        const shippingDetails = document.getElementById('successShippingDetails');
-        if (shippingDetails && (order.shippingProvince || order.shippingCity || order.shippingZip || order.shippingAddress)) {
-          const shippingCost = order.shippingCost || 0;
-          const shippingLines = [];
-          if (order.shippingAddress) shippingLines.push(`Dirección: ${order.shippingAddress}`);
-          if (order.shippingCity) shippingLines.push(`Localidad: ${order.shippingCity}`);
-          if (order.shippingProvince) shippingLines.push(`Provincia: ${order.shippingProvince}`);
-          if (order.shippingZip) shippingLines.push(`Código postal: ${order.shippingZip}`);
-          shippingLines.push(`Costo de envío: ${shippingCost === 0 ? 'GRATIS' : formatARS(shippingCost)}`);
-          shippingDetails.innerHTML = `
-            <div class="transfer-summary" style="margin-top:0.5rem;">
-              <p style="font-weight:600;margin-bottom:0.25rem;">📍 Datos de envío</p>
-              ${shippingLines.map(l => `<p style="margin:0.15rem 0;font-size:0.95rem;">${l}</p>`).join('')}
-            </div>
-          `;
-        }
-
         const receiptBtn = document.getElementById('successReceiptBtn');
         if (receiptBtn) {
           receiptBtn.dataset.orderId = order.id || '';
           receiptBtn.dataset.orderNumber = order.number || '';
-          const isTransfer = order.paymentMethod === 'transfer';
-          const needsReceipt = isTransfer && (order.status === 'pending' || order.status === 'awaiting_verification');
-          receiptBtn.style.display = needsReceipt ? 'inline-flex' : 'none';
-        }
-
-        const waBtn = document.getElementById('successWhatsappBtn');
-        if (waBtn && order.paymentMethod !== 'transfer') {
-          waBtn.style.display = 'none';
         }
 
         loadSuccessPaymentConfig(order);
@@ -188,14 +160,15 @@
       }
     });
 
-      async function loadSuccessPaymentConfig(order) {
-        const data = await SharedPayment.loadPaymentConfig();
-        if (!data) return;
-        const alias = SharedPayment.getTransferAlias(data);
+    async function loadSuccessPaymentConfig(order) {
+      try {
+        const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/payment-config`, {}, 2, 1000);
+        if (!res) return;
+        const data = await res.json();
+        const alias = data.transferAlias || CONFIG.CONTACT.WHATSAPP_ALIAS || '';
         const cbuCvu = data.cbuCvu || '';
         const holderName = data.holderName || '';
-        const message = SharedPayment.getTransferMessage(data);
-        const waNumber = SharedPayment.getWhatsAppNumber(data);
+        const message = data.message || '';
 
         const aliasEl = document.getElementById('successTransferAlias');
         const noteEl = document.getElementById('successTransferNote');
@@ -215,15 +188,10 @@
           holderEl.textContent = holderName;
           holderRow.style.display = 'flex';
         }
-
-        if (!order.waMsg && order.id) {
-          if (cleanWa) {
-            const msg = SharedPayment.buildTransferWhatsAppMessage(order, order.items || [], alias);
-            const waBtn = document.getElementById('successWhatsappBtn');
-            if (waBtn) waBtn.href = `https://wa.me/${cleanWa}?text=${msg}`;
-          }
-        }
+      } catch (e) {
+        console.error('Error cargando config de pago en success:', e);
       }
+    }
 
     function openReceiptModal() {
       const modal = document.getElementById('receiptModal');
@@ -257,16 +225,14 @@
         const orderId = btn ? (btn.dataset.orderId || '') : '';
         const orderNumber = btn ? (btn.dataset.orderNumber || '') : '';
         const fileInput = document.getElementById('receiptFile');
-        const amountInput = document.getElementById('receiptAmountPaid');
+        const holderInput = document.getElementById('receiptHolderName');
         if (!orderId || !fileInput.files.length) {
-          showToast('', 'Seleccioná el comprobante', 'error');
+          showToast('', 'Completá todos los campos', 'error');
           return;
         }
         const formData = new FormData();
         formData.append('image', fileInput.files[0]);
-        if (amountInput && amountInput.value) {
-          formData.append('amount_paid', amountInput.value);
-        }
+        formData.append('holderName', holderInput.value.trim());
         try {
           const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/orders/${orderId}/receipt`, {
             method: 'POST',
@@ -275,7 +241,7 @@
           if (!res) throw new Error('Error de conexión');
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || 'Error al subir el comprobante');
-          showToast('', 'Comprobante enviado correctamente. Te confirmamos en las próximas horas.', 'success');
+          showToast('', 'Comprobante enviado correctamente', 'success');
           closeReceiptModal();
           receiptForm.reset();
         } catch (err) {
@@ -284,39 +250,22 @@
       });
     }
 
-    function updateTransferCountdown() {
-      const raw = sessionStorage.getItem('ag_last_order');
-      if (!raw) return;
-      try {
-        const order = JSON.parse(raw);
-        if (!order.reservedUntil || order.paymentMethod !== 'transfer') return;
-        const expiresAt = new Date(order.reservedUntil);
-        const now = new Date();
-        const diff = expiresAt - now;
-        const countdownEl = document.getElementById('transferCountdown');
-        if (!countdownEl) return;
-        if (diff <= 0) {
-          countdownEl.textContent = 'Tu reserva ha vencido. Contactanos si ya transferiste.';
-          countdownEl.style.display = 'block';
-          return;
-        }
-        const minutes = Math.floor(diff / 60000);
-        const seconds = Math.floor((diff % 60000) / 1000);
-        countdownEl.textContent = `Tu reserva vence en ${minutes}:${String(seconds).padStart(2, '0')}`;
-        countdownEl.style.display = 'block';
-      } catch (e) { /* noop */ }
-    }
-
-    setInterval(updateTransferCountdown, 1000);
-
     document.addEventListener('click', function(e) {
       if (e.target && e.target.id === 'copySuccessAliasBtn') {
         const alias = document.getElementById('successTransferAlias')?.textContent;
-        SharedPayment.copyText(alias, e.target);
+        if (!alias) return;
+        navigator.clipboard.writeText(alias).then(() => {
+          e.target.textContent = '✅ Copiado';
+          setTimeout(() => { e.target.textContent = '📋 Copiar'; }, 2000);
+        }).catch(() => {});
       }
       if (e.target && e.target.id === 'copySuccessCbuBtn') {
         const cbu = document.getElementById('successTransferCbu')?.textContent;
-        SharedPayment.copyText(cbu, e.target);
+        if (!cbu) return;
+        navigator.clipboard.writeText(cbu).then(() => {
+          e.target.textContent = '✅ Copiado';
+          setTimeout(() => { e.target.textContent = '📋 Copiar'; }, 2000);
+        }).catch(() => {});
       }
     });
 

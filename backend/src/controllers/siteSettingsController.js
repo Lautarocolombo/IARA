@@ -1,56 +1,6 @@
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const { syncBus } = require('../routes/sync');
-const { calculateShipping, DEFAULT_ZONES } = require('../lib/shipping');
-
-async function fetchShippingZonesFromDb() {
-  try {
-    const result = await query("SELECT value FROM site_settings WHERE key = 'shipping_zones'");
-    if (result.rows[0] && result.rows[0].value) {
-      return JSON.parse(result.rows[0].value);
-    }
-  } catch (e) {
-    logger.debug({ err: e.message }, 'Error obteniendo shipping_zones');
-  }
-  return DEFAULT_ZONES;
-}
-
-async function saveShippingZones(zones) {
-  const current = await fetchShippingZonesFromDb();
-  await query(
-    'INSERT INTO site_settings (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP',
-    ['shipping_zones', JSON.stringify(zones)]
-  );
-  return zones;
-}
-
-const getAdminShippingZones = async (req, res) => {
-  try {
-    const zones = await fetchShippingZonesFromDb();
-    res.json(zones);
-  } catch (err) {
-    logger.error('Error obteniendo zonas de envío:', err);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-};
-
-const updateAdminShippingZones = async (req, res) => {
-  try {
-    const zones = Array.isArray(req.body) ? req.body : [];
-    const validated = zones.map(z => ({
-      province: String(z.province || '').trim(),
-      zipPatterns: Array.isArray(z.zipPatterns) ? z.zipPatterns.map(String) : [],
-      cost: Number(z.cost || 0),
-      freeFrom: Number(z.freeFrom || 0)
-    }));
-    await saveShippingZones(validated);
-    res.json({ ok: true, zones: validated });
-    try { syncBus.emit('settings_updated', {}); } catch (e) { /* noop */ }
-  } catch (err) {
-    logger.error('Error guardando zonas de envío:', err);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-};
 
 const getSiteSettings = async (req, res) => {
   try {
@@ -293,36 +243,10 @@ const getPublicPaymentConfig = async (req, res) => {
   }
 };
 
-const calculateShippingCost = async (req, res) => {
-  try {
-    const { province, zip, subtotal } = req.query;
-    const result = calculateShipping(province, zip, Number(subtotal || 0));
-    res.json(result);
-  } catch (err) {
-    logger.error('Error calculando envío:', err);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-};
-
-const getShippingZones = async (req, res) => {
-  try {
-    const zones = await fetchShippingZonesFromDb();
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-    res.json(zones);
-  } catch (err) {
-    logger.error('Error obteniendo zonas de envío:', err);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-};
-
 module.exports = {
   getSiteSettings,
   updateSiteSettings,
   getAdminPaymentConfig,
   updateAdminPaymentConfig,
-  getPublicPaymentConfig,
-  getShippingZones,
-  calculateShippingCost,
-  getAdminShippingZones,
-  updateAdminShippingZones
+  getPublicPaymentConfig
 };

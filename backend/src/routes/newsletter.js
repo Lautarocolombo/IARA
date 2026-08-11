@@ -3,9 +3,8 @@ const router = express.Router();
 const { query } = require('../lib/db');
 const { newsletterSchema } = require('../lib/validators');
 const logger = require('../lib/logger');
-const { requireCustomHeader } = require('../middleware/csrf');
 
-router.post('/subscribe', requireCustomHeader, async (req, res) => {
+router.post('/subscribe', async (req, res) => {
   const parsed = newsletterSchema.safeParse(req.body || {});
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.issues[0]?.message || 'Datos inválidos' });
