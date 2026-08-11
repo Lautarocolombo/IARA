@@ -136,13 +136,22 @@
       }
     });
 
-    document.getElementById('metricTotal').textContent = formatCurrency(total);
-    document.getElementById('metricCount').textContent = count;
-    document.getElementById('metricAvg').textContent = formatCurrency(avg);
-    document.getElementById('metricTopProduct').textContent = topProduct ? topProduct.name : '-';
-    document.getElementById('metricVariation').textContent = (variation >= 0 ? '+' : '') + variation.toFixed(1) + '%';
-    document.getElementById('metricVariation').style.color = variation >= 0 ? '#16a34a' : '#dc2626';
-    document.getElementById('metricVariationIcon').textContent = variation >= 0 ? '↑' : '↓';
+    var elTotal = document.getElementById('metricTotal');
+    var elCount = document.getElementById('metricCount');
+    var elAvg = document.getElementById('metricAvg');
+    var elTop = document.getElementById('metricTopProduct');
+    var elVariation = document.getElementById('metricVariation');
+    var elVariationIcon = document.getElementById('metricVariationIcon');
+
+    if (elTotal) elTotal.textContent = formatCurrency(total);
+    if (elCount) elCount.textContent = count;
+    if (elAvg) elAvg.textContent = formatCurrency(avg);
+    if (elTop) elTop.textContent = topProduct ? topProduct.name : '-';
+    if (elVariation) {
+      elVariation.textContent = (variation >= 0 ? '+' : '') + variation.toFixed(1) + '%';
+      elVariation.style.color = variation >= 0 ? '#16a34a' : '#dc2626';
+    }
+    if (elVariationIcon) elVariationIcon.textContent = variation >= 0 ? '↑' : '↓';
   }
 
   function renderChart(sales, dates) {
