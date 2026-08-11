@@ -638,11 +638,11 @@
     var formData = new FormData();
     formData.append('file', file);
     try {
-      var res = await fetch('/orders/' + selectedOrderId + '/receipt', {
+      var res = await window.adminFetch('/api/admin/orders/' + selectedOrderId + '/receipt', {
         method: 'POST',
         body: formData
       });
-      if (!res.ok) {
+      if (!res || !res.ok) {
         var data = await res.json().catch(function () { return {}; });
         throw new Error(data.error || 'Error subiendo comprobante');
       }

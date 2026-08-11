@@ -282,7 +282,7 @@
       case 'stats':
         return ['stat_clients', 'stat_products_sold', 'stat_years', 'stat_artesanal'];
       case 'contact-texts':
-        return ['horario'];
+        return ['contact_horario'];
       default:
         return [];
     }
@@ -413,7 +413,7 @@
       facebook: document.getElementById('contact_facebook')?.value.trim() || ''
     };
 
-    var horario = document.getElementById('contact_horario')?.value.trim() || '';
+    var horario = document.getElementById('horario')?.value.trim() || '';
     var textPayload = { horario: horario };
 
     try {
@@ -494,7 +494,7 @@
       });
     }
 
-    var contactInputs = document.querySelectorAll('#contact_email, #contact_phone, #contact_whatsapp, #contact_address, #contact_instagram, #contact_facebook, #contact_horario');
+    var contactInputs = document.querySelectorAll('#contact_email, #contact_phone, #contact_whatsapp, #contact_address, #contact_instagram, #contact_facebook, #horario');
     contactInputs.forEach(function (input) {
       input.addEventListener('input', function () {
         if (window.markDirty) window.markDirty('content');

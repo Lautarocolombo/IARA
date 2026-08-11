@@ -335,9 +335,10 @@
       html += '<div class="product-image-item" data-idx="' + idx + '">' +
         '<div class="product-image-item-preview" style="height:100px;position:relative;">' +
           '<img src="' + escapeHtml(img.url) + '" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" />' +
-          '<div style="position:absolute;top:4px;right:4px;display:flex;gap:2px;">' +
+          '<div style="position:absolute;top:4px;right:4px;display:flex;gap:2px;flex-wrap:wrap;justify-content:flex-end;">' +
             '<button type="button" class="btn btn-secondary btn-sm" onclick="window.moveModalImage(' + idx + ',-1)" style="padding:0.2rem 0.4rem;font-size:0.7rem;" ' + (idx === 0 ? 'disabled' : '') + '>↑</button>' +
             '<button type="button" class="btn btn-secondary btn-sm" onclick="window.moveModalImage(' + idx + ',1)" style="padding:0.2rem 0.4rem;font-size:0.7rem;" ' + (idx === images.length - 1 ? 'disabled' : '') + '>↓</button>' +
+            '<button type="button" class="btn btn-primary btn-sm" onclick="window.replaceProductImage(' + idx + ')" style="padding:0.2rem 0.4rem;font-size:0.7rem;">R</button>' +
             '<button type="button" class="btn btn-danger btn-sm" onclick="window.removeModalImage(' + idx + ')" style="padding:0.2rem 0.4rem;font-size:0.7rem;">×</button>' +
           '</div>' +
         '</div>' +
@@ -362,9 +363,106 @@
   window.removeModalImage = function (idx) {
     var form = document.getElementById('productEditForm');
     var images = JSON.parse(form.dataset.existingImages || '[]');
-    images.splice(idx, 1);
-    form.dataset.existingImages = JSON.stringify(images);
-    renderModalImageGallery(images);
+    var img = images[idx];
+    if (!img || !img.id) {
+      images.splice(idx, 1);
+      form.dataset.existingImages = JSON.stringify(images);
+      renderModalImageGallery(images);
+      return;
+    }
+
+    if (!confirm('¿Eliminar esta imagen?')) return;
+
+    var editId = form.dataset.editId;
+    if (!editId) {
+      images.splice(idx, 1);
+      form.dataset.existingImages = JSON.stringify(images);
+      renderModalImageGallery(images);
+      return;
+    }
+
+    var token = (window.getAuthToken ? window.getAuthToken() : '') || '';
+    window.adminFetch('/api/admin/products/' + editId + '/images/' + img.id, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + token }
+    }).then(function (res) {
+      if (!res || !res.ok) {
+        res.json ? res.json().then(function (data) {
+          throw new Error(data && data.error ? data.error : 'Error eliminando imagen');
+        }).catch(function (e) { throw e; }) : Promise.reject(new Error('Error eliminando imagen'));
+      }
+      images.splice(idx, 1);
+      form.dataset.existingImages = JSON.stringify(images);
+      renderModalImageGallery(images);
+      showToast('✅', 'Imagen eliminada', 'success');
+    }).catch(function (err) {
+      showToast('❌', err.message || 'Error al eliminar imagen', 'error');
+    });
+  };
+
+  window.replaceProductImage = function (idx) {
+    var form = document.getElementById('productEditForm');
+    var images = JSON.parse(form.dataset.existingImages || '[]');
+    var img = images[idx];
+    if (!img || !img.id) return;
+
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/jpeg,image/png,image/webp';
+    input.onchange = function () {
+      var file = input.files[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('❌', 'Imagen muy grande. Máx 5MB.', 'error');
+        return;
+      }
+
+      var editId = form.dataset.editId;
+      if (!editId) {
+        showToast('❌', 'Guardá el producto primero antes de reemplazar imágenes', 'error');
+        return;
+      }
+
+      var fd = new FormData();
+      fd.append('image', file);
+      var token = (window.getAuthToken ? window.getAuthToken() : '') || '';
+
+      showToast('⏳', 'Subiendo imagen...', 'info');
+      window.adminFetch('/api/admin/upload', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token },
+        body: fd
+      }).then(function (res) {
+        if (!res || !res.ok) {
+          res.json ? res.json().then(function (data) {
+            throw new Error(data && data.error ? data.error : 'Error subiendo imagen');
+          }).catch(function (e) { throw e; }) : Promise.reject(new Error('Error subiendo imagen'));
+        }
+        return res.json();
+      }).then(function (data) {
+        return window.fetch('/api/admin/products/' + editId + '/images/' + img.id + '/replace', {
+          method: 'PUT',
+          headers: { 'Authorization': 'Bearer ' + token },
+          body: fd
+        });
+      }).then(function (res) {
+        if (!res || !res.ok) {
+          res.json ? res.json().then(function (data) {
+            throw new Error(data && data.error ? data.error : 'Error reemplazando imagen');
+          }).catch(function (e) { throw e; }) : Promise.reject(new Error('Error reemplazando imagen'));
+        }
+        return res.json();
+      }).then(function (updated) {
+        images[idx].url = updated.url || images[idx].url;
+        images[idx].filename = updated.filename || images[idx].filename;
+        form.dataset.existingImages = JSON.stringify(images);
+        renderModalImageGallery(images);
+        showToast('✅', 'Imagen reemplazada correctamente', 'success');
+      }).catch(function (err) {
+        showToast('❌', err.message || 'Error al reemplazar imagen', 'error');
+      });
+    };
+    input.click();
   };
 
   async function saveProduct() {
