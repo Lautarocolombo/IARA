@@ -290,6 +290,7 @@ app.use('/api', require('./routes/sales'));
 app.use('/api', require('./routes/earnings'));
 app.use('/api/sync', require('./routes/sync'));
 
+app.use('/api', tenantContext);
 app.use('/api', csrfProtection);
 app.use('/api', limiter);
 
