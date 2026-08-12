@@ -5,13 +5,47 @@ const path = require('path');
 const fs = require('fs');
 const { syncBus } = require('../routes/sync');
 
+function sanitizeText(text) {
+  if (typeof text !== 'string') return text;
+  if (!text.includes('�')) return text;
+  const fixes = [
+    [/Cada pieza es .nica\./g, 'Cada pieza es única.'],
+    [/Explorar Cat.logo/g, 'Explorar Catálogo'],
+    [/Hecho a mano/g, 'Hecho a mano'],
+    [/Env.o gratis/g, 'Envío gratis'],
+    [/Materiales premium/g, 'Materiales premium'],
+    [/Para regalar/g, 'Para regalar'],
+    [/Artesan.a con alma/g, 'Artesanía con alma'],
+    [/Regalos artesanales/g, 'Regalos artesanales'],
+    [/Pulseras, souvenirs/g, 'Pulseras, souvenirs'],
+    [/hechos a mano/g, 'hechos a mano'],
+    [/Cada pieza/.nica/g, 'Cada pieza única'],
+    [/Compra mayor a ARS/g, 'Compra mayor a ARS'],
+    [/Lunes a domingo/g, 'Lunes a domingo'],
+    [/9:00 a 20:00/g, '9:00 a 20:00'],
+    [/San Antonio Norte/g, 'San Antonio Norte'],
+    [/Gualeguay, Entre R.g, 'Gualeguay, Entre Ríos'],
+    [/chicafittargentina@gmail.com/g, 'chicafittargentina@gmail.com'],
+    [/\+54 \(3444\) 634-4444/g, '+54 (3444) 634-4444'],
+    [/\+5493444634444/g, '+5493444634444']
+  ];
+  let result = text;
+  fixes.forEach(([pattern, replacement]) => {
+    result = result.replace(pattern, replacement);
+  });
+  if (result.includes('�')) {
+    result = result.replace(/�/g, '');
+  }
+  return result;
+}
+
 const getSiteTexts = async (req, res) => {
   try {
     const result = await query('SELECT key, value, updated_at FROM site_texts WHERE tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')');
     const map = {};
     let maxUpdated = null;
     result.rows.forEach(r => {
-      map[r.key] = r.value;
+      map[r.key] = sanitizeText(r.value);
       if (!maxUpdated || new Date(r.updated_at) > new Date(maxUpdated)) {
         maxUpdated = r.updated_at;
       }
@@ -19,14 +53,6 @@ const getSiteTexts = async (req, res) => {
     if (maxUpdated) {
       map.__updatedAt = maxUpdated;
     }
-
-    if (map.hero_subtitle && map.hero_subtitle.includes('�')) {
-      map.hero_subtitle = map.hero_subtitle.replace(/Cada pieza es .nica\./g, 'Cada pieza es única.');
-    }
-    if (map.hero_cta_text && map.hero_cta_text.includes('�')) {
-      map.hero_cta_text = map.hero_cta_text.replace(/Explorar Cat.logo/g, 'Explorar Catálogo');
-    }
-
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json(map);
   } catch (err) {
