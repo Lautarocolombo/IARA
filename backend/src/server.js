@@ -289,7 +289,6 @@ app.use('/api', require('./routes/heroCards'));
 app.use('/api', require('./routes/sales'));
 app.use('/api', require('./routes/earnings'));
 app.use('/api/sync', require('./routes/sync'));
-app.use('/api/debug', require('./routes/fixSchema'));
 
 app.use('/api', tenantContext);
 app.use('/api', csrfProtection);
