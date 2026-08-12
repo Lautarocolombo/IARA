@@ -115,6 +115,7 @@ const envOrigins = (process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN ||
 const defaultOrigins = [
   'https://iara-wz9o.vercel.app',
   'https://iara-lovat-orcin.vercel.app',
+  'https://artesaniagualeguay.vercel.app',
   'https://artesaniagualeguay.com',
   'http://localhost:3000',
   'http://localhost:3001',
