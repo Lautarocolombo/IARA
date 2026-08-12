@@ -57,8 +57,7 @@ const getSiteSettings = async (req, res) => {
     });
   } catch (err) {
     logger.error('Error obteniendo settings:', err);
-    const debug = process.env.DEBUG_API_ERROR;
-    res.status(500).json({ error: debug ? err.message : 'Error interno del servidor' });
+    res.status(500).json({ error: err.message || 'Error interno del servidor' });
   }
 };
 
