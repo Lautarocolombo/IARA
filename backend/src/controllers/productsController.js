@@ -171,7 +171,7 @@ const bulkImportProducts = async (req, res) => {
         );
       } else {
         await query(
-          'INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)',
+          'INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\'))',
           [data.name, data.slug, data.category, Number(data.price), data.description, data.emoji, data.image, data.badge, Number(data.stock), data.featured, data.active, data.sku || '']
         );
       }
@@ -423,14 +423,14 @@ const duplicateProduct = async (req, res) => {
     }
 
     const result = await query(
-      'INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, FALSE) RETURNING *',
+      'INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, FALSE, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) RETURNING *',
       [newName, finalSlug, p.category, Number(p.price), p.description, p.emoji, p.image, p.badge, Number(p.stock), false, false, p.sku]
     );
 
     const images = await query('SELECT url, filename, cloudinary_public_id, orden, es_principal, descripcion, categoria FROM product_images WHERE product_id = $1 ORDER BY orden ASC', [id]);
     for (const img of images.rows) {
       await query(
-        'INSERT INTO product_images (product_id, url, filename, cloudinary_public_id, orden, es_principal, descripcion, categoria) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
+        'INSERT INTO product_images (product_id, url, filename, cloudinary_public_id, orden, es_principal, descripcion, categoria, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\'))',
         [result.rows[0].id, img.url, img.filename, img.cloudinary_public_id, img.orden, img.es_principal, img.descripcion, img.categoria]
       );
     }
@@ -463,7 +463,7 @@ const syncToNeon = async (req, res) => {
           results.updated += 1;
         } else {
           await query(
-            'INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, FALSE)',
+            'INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, FALSE, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\'))',
             [p.name, p.slug || slugify(p.name), p.category, Number(p.price), p.description || '', p.emoji || '📿', p.image || '', p.badge || '', Number(p.stock), p.featured || false, p.active !== false, p.sku || '']
           );
           results.created += 1;
@@ -475,7 +475,7 @@ const syncToNeon = async (req, res) => {
               if (imgExists.rows.length > 0) {
                 await query('UPDATE product_images SET url = $1, filename = $2, orden = $3, es_principal = $4, descripcion = $5, categoria = $6 WHERE id = $7', [img.url, img.filename || '', Number(img.orden) || 0, img.es_principal || false, img.descripcion || '', img.categoria || '', imgExists.rows[0].id]);
               } else {
-                await query('INSERT INTO product_images (product_id, url, filename, orden, es_principal, descripcion, categoria) VALUES ($1, $2, $3, $4, $5, $6, $7)', [Number(p.id), img.url, img.filename || '', Number(img.orden) || 0, img.es_principal || false, img.descripcion || '', img.categoria || '']);
+                await query('INSERT INTO product_images (product_id, url, filename, orden, es_principal, descripcion, categoria, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\'))', [Number(p.id), img.url, img.filename || '', Number(img.orden) || 0, img.es_principal || false, img.descripcion || '', img.categoria || '']);
               }
               results.images += 1;
             } catch (imgErr) {

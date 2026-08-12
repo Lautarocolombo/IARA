@@ -52,7 +52,7 @@ async function processWebhookSync(payload) {
   const { orderId, amount, reference } = payload;
   await transaction(async (client) => {
     await query(
-      'INSERT INTO webhook_events (event_id, source, payload, status) VALUES ($1, $2, $3, $4) ON CONFLICT (event_id) DO NOTHING RETURNING status',
+      'INSERT INTO webhook_events (event_id, source, payload, status, tenant_id) VALUES ($1, $2, $3, $4, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) ON CONFLICT (event_id) DO NOTHING RETURNING status',
       [reference, 'transfer', JSON.stringify({ orderId, amount, reference }), 'processing'],
       client
     );

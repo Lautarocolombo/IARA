@@ -38,6 +38,9 @@ const getEarnings = async (req, res) => {
     const countResult = await query('SELECT COUNT(*) as total FROM orders ' + whereSql, whereParams);
     const totalOrders = Number(countResult.rows[0]?.total || 0);
 
+    const ordersTotalResult = await query('SELECT COALESCE(SUM(total),0) as total FROM orders ' + whereSql, whereParams);
+    const ordersTotal = Number(ordersTotalResult.rows[0]?.total || 0);
+
     const limitIdx = whereParams.length + 1;
     const offsetIdx = whereParams.length + 2;
     const ordersResult = await query(
@@ -57,13 +60,13 @@ const getEarnings = async (req, res) => {
     }
     const salesWhereSql = salesWhereClauses.length ? 'WHERE ' + salesWhereClauses.join(' AND ') : '';
 
-    const manualSalesResult = await query(
-      'SELECT s.id, s.total, s.quantity, s.sale_date, s.created_at, p.name as product_name, \'manual\' as source FROM sales s LEFT JOIN products p ON p.id = s.product_id ' + salesWhereSql + ' ORDER BY s.created_at DESC',
-      salesParams
-    );
+    const manualSalesTotalResult = await query('SELECT COALESCE(SUM(total),0) as total FROM sales ' + salesWhereSql, salesParams);
+    const manualSalesTotal = Number(manualSalesTotalResult.rows[0]?.total || 0);
 
-    const ordersTotal = ordersResult.rows.reduce((sum, o) => sum + Number(o.total || 0), 0);
-    const manualSalesTotal = manualSalesResult.rows.reduce((sum, s) => sum + Number(s.total || 0), 0);
+    const manualSalesResult = await query(
+      'SELECT s.id, s.total, s.quantity, s.sale_date, s.created_at, p.name as product_name, \'manual\' as source FROM sales s LEFT JOIN products p ON p.id = s.product_id ' + salesWhereSql + ' ORDER BY s.created_at DESC LIMIT $' + (salesParams.length + 1) + ' OFFSET $' + (salesParams.length + 2),
+      [...salesParams, limitNum, offset]
+    );
     const totalRevenue = ordersTotal + manualSalesTotal;
     const avgOrderValue = totalOrders > 0 ? ordersTotal / totalOrders : 0;
 
@@ -107,7 +110,8 @@ const getEarnings = async (req, res) => {
       }).sort(function (a, b) { return b.total - a.total; })
     };
 
-    const manualSalesCount = manualSalesResult.rows.length;
+    const manualSalesCountResult = await query('SELECT COUNT(*) as total FROM sales ' + salesWhereSql, salesParams);
+    const manualSalesCount = Number(manualSalesCountResult.rows[0]?.total || 0);
 
     res.json({
       kpis: {

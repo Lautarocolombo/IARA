@@ -51,7 +51,7 @@ async function uploadProductImages(req, res) {
     for (let i = 0; i < imageUrls.length; i++) {
       const url = imageUrls[i];
       const result = await query(
-        'INSERT INTO product_images (product_id, url, filename, cloudinary_public_id, orden, es_principal, descripcion, categoria) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+        'INSERT INTO product_images (product_id, url, filename, cloudinary_public_id, orden, es_principal, descripcion, categoria, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) RETURNING *',
         [productId, url, '', '', startOrden + i, false, req.body.descripcion || '', req.body.categoria || '']
       );
       uploaded.push({
@@ -66,7 +66,7 @@ async function uploadProductImages(req, res) {
         const file = req.files[i];
         const processed = await processFile(file, baseUrl);
         const result = await query(
-          'INSERT INTO product_images (product_id, url, filename, cloudinary_public_id, orden, es_principal, descripcion, categoria) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
+          'INSERT INTO product_images (product_id, url, filename, cloudinary_public_id, orden, es_principal, descripcion, categoria, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) RETURNING *',
           [productId, processed.url, processed.filename, processed.cloudinary_public_id || '', startOrden + imageUrls.length + i, false, req.body.descripcion || '', req.body.categoria || '']
         );
         uploaded.push({

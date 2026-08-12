@@ -80,7 +80,7 @@ async function uploadPaymentProof(req, res) {
     const customerNameStr = ((req.body && req.body.customerName) || '').toString().trim() || (customerData.name || '');
 
     const insertResult = await query(
-      'INSERT INTO payment_proofs (order_id, customer_name, amount, proof_url) VALUES ($1, $2, $3, $4) RETURNING *',
+      'INSERT INTO payment_proofs (order_id, customer_name, amount, proof_url, tenant_id) VALUES ($1, $2, $3, $4, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) RETURNING *',
       [orderIdNum, customerNameStr, amount, proofUrl]
     );
 

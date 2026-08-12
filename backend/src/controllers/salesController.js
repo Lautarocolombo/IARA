@@ -72,8 +72,8 @@ const createManualSale = async (req, res) => {
     const total = unitPrice * qty;
 
     const insertResult = await query(
-      `INSERT INTO sales (product_id, quantity, unit_price, total, sale_date, created_at)
-       VALUES ($1, $2, $3, $4, CURRENT_DATE, CURRENT_TIMESTAMP) RETURNING *`,
+      `INSERT INTO sales (product_id, quantity, unit_price, total, sale_date, created_at, tenant_id)
+       VALUES ($1, $2, $3, $4, CURRENT_DATE, CURRENT_TIMESTAMP, COALESCE(current_setting('app.current_tenant', TRUE), 'default')) RETURNING *`,
       [Number(product_id), qty, unitPrice, total]
     );
 

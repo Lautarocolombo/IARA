@@ -59,7 +59,7 @@ const generateReceiptPDF = async (req, res) => {
 
     stream.on('finish', () => {
       const url = `/uploads/receipts/${filename}`;
-      query('INSERT INTO receipts (order_id, filename, url) VALUES ($1, $2, $3) ON CONFLICT (order_id) DO UPDATE SET filename = $4, url = $5', [orderId, filename, url, filename, url])
+      query('INSERT INTO receipts (order_id, filename, url, tenant_id) VALUES ($1, $2, $3, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) ON CONFLICT (order_id) DO UPDATE SET filename = $4, url = $5', [orderId, filename, url, filename, url])
         .then(() => {
           res.download(filepath, filename);
         })
@@ -119,7 +119,7 @@ const uploadReceipt = async (req, res) => {
     fs.unlinkSync(req.file.path);
     const url = `/uploads/receipts/${filename}`;
     await query(
-      'INSERT INTO receipts (order_id, filename, url) VALUES ($1, $2, $3) ON CONFLICT (order_id) DO UPDATE SET filename = $4, url = $5',
+      'INSERT INTO receipts (order_id, filename, url, tenant_id) VALUES ($1, $2, $3, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) ON CONFLICT (order_id) DO UPDATE SET filename = $4, url = $5',
       [orderId, filename, url, filename, url]
     );
     res.json({ ok: true, url, filename });
