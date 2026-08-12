@@ -5,7 +5,7 @@ const logger = require('./logger');
 let runMigrations = null;
 if (process.env.DATABASE_URL) {
   try {
-    runMigrations = require('../scripts/run-migrations').runMigrations;
+    runMigrations = require('../../scripts/run-migrations').runMigrations;
   } catch (err) {
     logger.warn({ err: err.message }, 'Runner de migraciones no disponible');
   }
@@ -506,6 +506,11 @@ async function initDB() {
       await query('ALTER TABLE orders ADD COLUMN shipping_email TEXT DEFAULT \'\'');
     } catch (err) {
       logger.debug({ err: err.message }, 'Columna shipping_email ya existe o no se pudo agregar (SQLite)');
+    }
+    try {
+      await query('ALTER TABLE orders ADD COLUMN order_token TEXT DEFAULT \'\'');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna order_token ya existe o no se pudo agregar (SQLite)');
     }
     try {
       await query('ALTER TABLE orders ADD COLUMN subtotal REAL DEFAULT 0');

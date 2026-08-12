@@ -2,7 +2,7 @@ const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 
 async function requireOrderToken(req, res, next) {
-  const orderId = Number(req.params.orderId || req.params.id);
+  const orderId = Number(req.params.orderId || req.params.id || (req.body && req.body.orderId));
   if (!orderId || orderId <= 0) {
     return res.status(400).json({ error: 'ID de pedido inválido' });
   }

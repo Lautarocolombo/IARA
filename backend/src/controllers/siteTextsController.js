@@ -9,22 +9,22 @@ function sanitizeText(text) {
   if (typeof text !== 'string') return text;
   if (!text.includes('�')) return text;
   const fixes = [
-    [/Cada pieza es .nica\./g, 'Cada pieza es única.'],
-    [/Explorar Cat.logo/g, 'Explorar Catálogo'],
+    [/Cada pieza es única\./g, 'Cada pieza es única.'],
+    [/Explorar Catálogo/g, 'Explorar Catálogo'],
     [/Hecho a mano/g, 'Hecho a mano'],
-    [/Env.o gratis/g, 'Envío gratis'],
+    [/Envío gratis/g, 'Envío gratis'],
     [/Materiales premium/g, 'Materiales premium'],
     [/Para regalar/g, 'Para regalar'],
-    [/Artesan.a con alma/g, 'Artesanía con alma'],
+    [/Artesanía con alma/g, 'Artesanía con alma'],
     [/Regalos artesanales/g, 'Regalos artesanales'],
     [/Pulseras, souvenirs/g, 'Pulseras, souvenirs'],
     [/hechos a mano/g, 'hechos a mano'],
-    [/Cada pieza/.nica/g, 'Cada pieza única'],
+    [/Cada pieza única/g, 'Cada pieza única'],
     [/Compra mayor a ARS/g, 'Compra mayor a ARS'],
     [/Lunes a domingo/g, 'Lunes a domingo'],
     [/9:00 a 20:00/g, '9:00 a 20:00'],
     [/San Antonio Norte/g, 'San Antonio Norte'],
-    [/Gualeguay, Entre R.g, 'Gualeguay, Entre Ríos'],
+    [/Gualeguay, Entre Ríos/g, 'Gualeguay, Entre Ríos'],
     [/chicafittargentina@gmail.com/g, 'chicafittargentina@gmail.com'],
     [/\+54 \(3444\) 634-4444/g, '+54 (3444) 634-4444'],
     [/\+5493444634444/g, '+5493444634444']

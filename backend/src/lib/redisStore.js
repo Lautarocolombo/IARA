@@ -3,11 +3,22 @@ const Redis = require('ioredis');
 class RedisStore {
   constructor(options = {}) {
     this.prefix = options.prefix || 'rl:';
-    this.redis = new Redis({
-      host: options.host || process.env.REDIS_HOST || 'localhost',
-      port: options.port || parseInt(process.env.REDIS_PORT || '6379', 10),
-      password: options.password || process.env.REDIS_PASSWORD || undefined,
-      db: options.db || parseInt(process.env.REDIS_DB || '0', 10),
+    const redisUrl = options.url || process.env.REDIS_URL;
+    if (!redisUrl) {
+      throw new Error('REDIS_URL no configurada. Configurá la variable de entorno REDIS_URL en Render para habilitar rate limiting con Redis.');
+    }
+
+    this.redis = new Redis(redisUrl, {
+      maxRetriesPerRequest: null,
+      retryStrategy: (times) => {
+        const delay = Math.min(1000 * Math.pow(2, times), 30000);
+        console.warn(`[rate-limit] Reintentando conexión a Redis (intento ${times}, delay ${delay}ms)`);
+        if (times >= 10) {
+          console.error('[rate-limit] Se agotaron los reintentos de conexión a Redis');
+          return null;
+        }
+        return delay;
+      },
       lazyConnect: true,
       enableReadyCheck: false,
     });

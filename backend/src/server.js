@@ -271,6 +271,9 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
+app.use('/api', csrfProtection);
+app.use('/api', limiter);
+
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/admin', require('./routes/auth'));
 app.use('/api', require('./routes/products'));
@@ -395,9 +398,6 @@ app.use((req, res, next) => {
   }
   next();
 });
-
-app.use('/api', csrfProtection);
-app.use('/api', limiter);
 
 app.get('/sitemap.xml', require('./routes/sitemap'));
 

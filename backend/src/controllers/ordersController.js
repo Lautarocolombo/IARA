@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const { query, transaction } = require('../lib/db');
 const logger = require('../lib/logger');
 const { orderSchema } = require('../lib/validators');
