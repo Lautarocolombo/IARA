@@ -786,12 +786,12 @@ async function initDB() {
       logger.warn({ err: err.message }, 'No se pudo asegurar usuario admin (PostgreSQL)');
     }
     try {
-      await query('UPDATE site_texts SET value = REPLACE(value, \'Cada pieza es �nica\', \'Cada pieza es única\') WHERE key = \'hero_subtitle\' AND value LIKE \'%�nica%\'');
+      await query('UPDATE site_texts SET value = REPLACE(value, \'Cada pieza es única\', \'Cada pieza es única\') WHERE key = \'hero_subtitle\' AND value LIKE \'%única%\'');
     } catch (err) {
       logger.debug({ err: err.message }, 'No se pudo corregir hero_subtitle');
     }
     try {
-      await query('UPDATE site_texts SET value = REPLACE(value, \'Explorar Cat�logo\', \'Explorar Catálogo\') WHERE key = \'hero_cta_text\' AND value LIKE \'%Cat�logo%\'');
+      await query('UPDATE site_texts SET value = REPLACE(value, \'Explorar Catálogo\', \'Explorar Catálogo\') WHERE key = \'hero_cta_text\' AND value LIKE \'%Catálogo%\'');
     } catch (err) {
       logger.debug({ err: err.message }, 'No se pudo corregir hero_cta_text');
     }

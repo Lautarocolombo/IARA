@@ -21,7 +21,7 @@ async function checkServerHealth() {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      if (btn) btn.textContent = attempt > 1 ? 'Verificando...' : 'Verificando...';
+      if (btn) btn.textContent = 'Verificando...';
       if (btn) btn.disabled = true;
       const res = await fetch(getApiUrl('/api/health'), {
         method: 'GET',
