@@ -41,7 +41,8 @@ const getPublicHeroCards = async (req, res) => {
     res.json(result.rows.map(r => mapRow(r, baseUrl)));
   } catch (err) {
     logger.error('Error obteniendo hero cards públicos:', err);
-    res.status(500).json({ error: err.message || 'Error interno del servidor' });
+    const debug = process.env.DEBUG_API_ERROR;
+    res.status(500).json({ error: debug ? err.message : 'Error interno del servidor' });
   }
 };
 

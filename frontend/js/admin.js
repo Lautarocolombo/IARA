@@ -8,55 +8,52 @@ function getApiUrl(path) {
 }
 
 async function checkServerHealth() {
-  const btn = document.getElementById('loginBtn');
   const hint = document.getElementById('loginHint');
   const retryBtn = document.getElementById('retryHealthBtn');
   const indicator = document.getElementById('connectionIndicator');
-  const timeoutMs = 30000;
-  const maxAttempts = 2;
-  let attempt = 0;
+  const timeoutMs = 8000;
 
-  while (attempt < maxAttempts) {
-    attempt++;
+  let timeoutId;
+  try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      if (btn) btn.textContent = 'Verificando...';
-      if (btn) btn.disabled = true;
-      const res = await fetch(getApiUrl('/api/health'), {
-        method: 'GET',
-        signal: controller.signal
-      });
-      clearTimeout(timeoutId);
-      if (!res.ok) throw new Error(`Servidor respondió con estado ${res.status}`);
+    timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    const res = await fetch(getApiUrl('/api/health'), {
+      method: 'GET',
+      signal: controller.signal,
+      headers: { 'Accept': 'application/json' }
+    });
+    clearTimeout(timeoutId);
+
+    const data = await res.json().catch(() => ({}));
+
+    if (data.status === 'ok' || data.status === 'degraded' || data.status === 'sqlite-fallback') {
       if (hint) {
-        hint.textContent = '✅ Servidor conectado';
+        hint.textContent = data.status === 'ok'
+          ? '✅ Servidor conectado'
+          : '✅ Conectado (funciona con base local)';
         hint.style.color = '#10b981';
       }
       if (indicator) indicator.classList.add('connected');
       if (retryBtn) retryBtn.style.display = 'none';
       return;
-    } catch (err) {
-      clearTimeout(timeoutId);
-      if (attempt < maxAttempts) {
-        await new Promise(r => setTimeout(r, 3000));
-        continue;
-      }
-      let message = '⚠️ El servidor no responde. Podés intentar igualmente iniciar sesión.';
-      if (err.name === 'AbortError') {
-        message = '⚠️ La verificación tardó demasiado. Revisá tu conexión o probá de nuevo.';
-      }
-      if (hint) {
-        hint.textContent = message;
-        hint.style.color = '#f59e0b';
-      }
-      if (indicator) indicator.classList.remove('connected');
-      if (retryBtn) {
-        retryBtn.style.display = 'inline-block';
-        retryBtn.addEventListener('click', () => { checkServerHealth(); });
-      }
-    } finally {
-      if (btn) { btn.textContent = 'Ingresar'; btn.disabled = false; }
+    }
+
+    throw new Error(`Servidor respondió con estado ${res.status}`);
+  } catch (err) {
+    clearTimeout(timeoutId);
+    let message = '⚠️ El servidor no responde. Podés intentar iniciar sesión.';
+    if (err.name === 'AbortError') {
+      message = '⚠️ La verificación tardó demasiado. Podés iniciar sesión.';
+    }
+    if (hint) {
+      hint.textContent = message;
+      hint.style.color = '#f59e0b';
+    }
+    if (indicator) indicator.classList.remove('connected');
+    if (retryBtn) {
+      retryBtn.style.display = 'inline-block';
+      retryBtn.addEventListener('click', () => { checkServerHealth(); });
     }
   }
 }
@@ -121,6 +118,21 @@ async function doLogin() {
   } finally {
     btn.textContent = 'Ingresar';
     btn.disabled = false;
+  }
+}
+
+let showPassword = false;
+
+function togglePasswordVisibility() {
+  showPassword = !showPassword;
+  const passwordInput = document.getElementById('loginPass');
+  const toggleBtn = document.getElementById('passwordToggle');
+  if (passwordInput) {
+    passwordInput.type = showPassword ? 'text' : 'password';
+  }
+  if (toggleBtn) {
+    toggleBtn.classList.toggle('showing', showPassword);
+    toggleBtn.setAttribute('aria-label', showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña');
   }
 }
 
@@ -197,6 +209,7 @@ async function adminFetch(url, opts = {}, isRetry = false) {
 
 window.doLogin = doLogin;
 window.doLogout = doLogout;
+window.togglePasswordVisibility = togglePasswordVisibility;
 window.checkServerHealth = checkServerHealth;
 window.showLoginError = showLoginError;
 window.clearLoginError = clearLoginError;
@@ -228,6 +241,22 @@ if (window.SENTRY_DSN) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  const passwordToggle = document.getElementById('passwordToggle');
+  if (passwordToggle) {
+    passwordToggle.addEventListener('click', togglePasswordVisibility);
+  }
+
+  const loginForm = document.getElementById('loginForm');
+  const loginBtn = document.getElementById('loginBtn');
+  if (loginForm) {
+    loginForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      doLogin();
+    });
+  } else if (loginBtn) {
+    loginBtn.addEventListener('click', doLogin);
+  }
+
   if (window.location.protocol === 'file:') {
     const fields = ['loginUser', 'loginPass', 'passwordToggle', 'loginBtn'];
     fields.forEach(id => {
@@ -239,7 +268,7 @@ document.addEventListener('DOMContentLoaded', () => {
       hint.textContent = '⚠️ Abrí este panel desde el servidor.';
       hint.style.color = '#ef4444';
     }
-  } else {
+  } else if (document.getElementById('loginHint')) {
     checkServerHealth();
   }
 });

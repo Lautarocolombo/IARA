@@ -20,13 +20,14 @@
   <script src="../js/theme.js"></script>
   <script src="../js/ui.js"></script>
   <script src="../js/connection.js?v=2026080614"></script>
-  <script src="../js/admin.js?v=2026081004"></script>
+  <script src="../js/admin.js?v=2026081220"></script>
 </head>
 <body>
   <div class="login-overlay" id="loginOverlay">
     <div class="login-card">
       <h2>🌸 Artesanía Admin</h2>
       <p id="loginMessage">Iniciá sesión para continuar</p>
+      <form id="loginForm" autocomplete="on">
       <div class="form-group">
         <label>Usuario</label>
         <input type="text" id="loginUser" placeholder="Usuario" autocomplete="username" />
@@ -41,7 +42,8 @@
           </button>
         </div>
       </div>
-      <button class="btn btn-primary btn-full" id="loginBtn">Ingresar</button>
+      <button type="submit" class="btn btn-primary btn-full" id="loginBtn">Ingresar</button>
+      </form>
       <p class="login-hint" id="loginHint">Verificando...</p>
       <button class="btn btn-secondary btn-sm hidden retry-health-btn" id="retryHealthBtn">Reintentar conexión</button>
       <p id="loginError" class="login-error login-error-muted"></p>
