@@ -10,6 +10,18 @@
   --accent-hover: #bf5e78;
 }
 
+.login-error-muted {
+  display: none;
+  color: var(--accent, #d47090);
+  text-align: center;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.login-back-link {
+  margin-top: 0.75rem;
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -501,6 +513,7 @@ tr:last-child td {
 .badge-stock { font-size: 0.7rem; padding: 0.15rem 0.5rem; }
 .badge-stock--ok { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
 .badge-stock--out { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
+.badge-stock--low { background: #fef9c3; color: #a16207; border-color: #fde68a; }
 
 .modal-overlay {
   position: fixed;
@@ -1979,6 +1992,26 @@ textarea.hero-slot-input {
 .admin-sidebar .sidebar-footer {
   padding: 1rem 0.75rem;
   border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.low-stock-indicator {
+  display: none;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+  background: rgba(254, 249, 195, 0.15);
+  border: 1px solid rgba(254, 249, 195, 0.3);
+  border-radius: 8px;
+  color: #fde047;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.low-stock-indicator:hover {
+  background: rgba(254, 249, 195, 0.25);
 }
 
 .admin-main {

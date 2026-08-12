@@ -191,14 +191,6 @@
   margin-top: 2rem;
 }
 
-.btn-outline {
-  width: 100%;
-  display: inline-block;
-  text-align: center;
-  padding: 14px;
-  margin-top: 1rem;
-}
-
 .cart-help-text {
   color: var(--text-muted);
   margin-bottom: 0.5rem;
@@ -209,6 +201,32 @@
   display: none;
   color: #10b981;
   font-weight: 600;
+}
+
+.free-shipping-progress {
+  margin-top: 0.75rem;
+}
+
+.free-shipping-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.free-shipping-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--rose), var(--mint));
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.free-shipping-progress-text {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0;
 }
 
 .summary-card {

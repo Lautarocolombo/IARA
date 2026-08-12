@@ -750,6 +750,11 @@ html, body { overflow-x: hidden; }
   align-items: center;
 }
 
+.product-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .product-price {
   font-size: 15px;
   font-weight: 700;

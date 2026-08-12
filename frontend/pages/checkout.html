@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Finalizar compra | Artesanía Gualeguay</title>
   <meta name="description" content="Finalizá tu compra en Artesanía Gualeguay. Completá tus datos de envío y pagá por transferencia bancaria." />
+  <meta name="theme-color" content="#d47090" />
   <link rel="canonical" href="https://artesaniagualeguay.com/pages/checkout.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,7 +28,7 @@
     initSiteHeader({ showBackButton: true });
   </script>
   <script src="../js/theme.js"></script>
-  <div class="checkout-wrap">
+   <main>
     <nav aria-label="Breadcrumb" class="breadcrumb">
       <a href="../index.html">Inicio</a> <span aria-hidden="true">/</span> <a href="cart.html">Carrito</a> <span aria-hidden="true">/</span> <span>Checkout</span>
     </nav>
@@ -37,10 +38,10 @@
       <p class="section-subtitle reveal">Completá tus datos de envío antes de pagar</p>
     </div>
 
-    <div id="emptyCart" class="empty-cart reveal" style="display:none;">
+    <div id="emptyCart" class="empty-cart-container reveal" style="display:none;">
       <h2>Tu carrito está vacío</h2>
       <p>Agregá productos antes de continuar.</p>
-      <a href="../index.html#catalog" class="btn-primary btn-block" style="margin-top:1rem;">Ver catálogo</a>
+      <a href="../index.html#catalog" class="btn-primary btn-full" style="margin-top:1rem;">Ver catálogo</a>
     </div>
 
     <div id="checkoutContent" class="checkout-grid">
@@ -79,7 +80,11 @@
             <input type="email" id="shipEmail" required placeholder="tu@email.com" />
             <div class="field-error" id="error-email"></div>
           </div>
-          <button type="submit" class="btn-primary btn-full btn-block" id="checkoutSubmitBtn">Continuar al pago</button>
+          <div class="form-group" style="display:flex;align-items:center;gap:0.5rem;">
+            <input type="checkbox" id="checkoutConsent" style="width:auto;" />
+            <label for="checkoutConsent" style="margin:0;font-weight:normal;">Acepto la <a href="../pages/privacy.html" target="_blank" rel="noopener">Política de Privacidad</a> y <a href="../pages/cookies.html" target="_blank" rel="noopener">Cookies</a></label>
+          </div>
+          <button type="submit" class="btn-primary btn-full" id="checkoutSubmitBtn">Continuar al pago</button>
         </form>
       </div>
 
@@ -93,7 +98,7 @@
             <p class="payment-label">Alias de transferencia</p>
            <div class="payment-alias-row">
              <span class="payment-alias-value" id="mpAliasValue">Cargando...</span>
-             <button class="btn btn-secondary btn-sm" id="copyAliasBtn" onclick="copyMpAlias()">📋 Copiar</button>
+              <button class="btn btn-secondary btn-sm" id="copyAliasBtn" data-copy-target="alias">📋 Copiar</button>
            </div>
          </div>
           <div class="payment-total-box">
@@ -104,18 +109,24 @@
             <span>Total a pagar</span>
             <span class="payment-total-amount" id="paymentTotalAmount">ARS 0,00</span>
           </div>
-          <p class="payment-note" id="paymentInstructionsText">Transferí el total exacto y envianos el comprobante por WhatsApp para confirmar tu pedido.</p>
+          <p class="payment-note" id="paymentInstructionsText">Transferí el total exacto y envíanos el comprobante por WhatsApp para confirmar tu pedido.</p>
           <a id="whatsappComprobanteBtn" href="javascript:void(0)" target="_blank" class="btn btn-primary btn-full">Enviar comprobante por WhatsApp</a>
 
-          <a href="cart.html" class="btn btn-secondary btn-full" style="margin-top:0.5rem;">Volver al carrito
+          <a href="cart.html" class="btn btn-secondary btn-full" style="margin-top:0.5rem;">Volver al carrito</a>
        </div>
 
-        <div class="checkout-card reveal" id="orderSummaryCard">
-          <h2>🧾 Resumen</h2>
-         <div id="summaryItems"></div>
-         <div id="summaryTotals" class="summary-spaced"></div>
-         <p class="checkout-note">Al confirmar, vas a ver las instrucciones de transferencia y WhatsApp para completar tu pedido.</p>
-       </div>
+         <div class="checkout-card reveal" id="orderSummaryCard">
+           <h2>🧾 Resumen</h2>
+           <div id="freeShippingProgressCheckout" class="free-shipping-progress" style="display:none;">
+             <div class="free-shipping-progress-bar">
+               <div class="free-shipping-progress-fill" id="freeShippingFillCheckout"></div>
+             </div>
+             <p class="free-shipping-progress-text" id="freeShippingTextCheckout">Te faltan $0 para envío gratis</p>
+           </div>
+          <div id="summaryItems"></div>
+          <div id="summaryTotals" class="summary-spaced"></div>
+          <p class="checkout-note">Al confirmar, vas a ver las instrucciones de transferencia y WhatsApp para completar tu pedido.</p>
+        </div>
 
         <div class="checkout-card reveal" id="transferDataCard" style="display:none;">
          <div class="transfer-header">
@@ -137,21 +148,21 @@
              <span class="transfer-label">Alias</span>
              <div class="transfer-value-row">
                <span class="transfer-value" id="transferAlias">Cargando...</span>
-                <button class="btn btn-secondary btn-sm" id="copyTransferAliasBtn" onclick="copyTransferField('alias')">📋 Copiar</button>
+                <button class="btn btn-secondary btn-sm" id="copyTransferAliasBtn" data-copy-target="alias">📋 Copiar</button>
              </div>
            </div>
            <div class="transfer-field" id="cbuCvuField" style="display:none;">
              <span class="transfer-label">CBU / CVU</span>
              <div class="transfer-value-row">
                <span class="transfer-value" id="transferCbuCvu"></span>
-               <button class="btn btn-secondary btn-sm" id="copyCbuBtn" onclick="copyTransferField('cbuCvu')">📋 Copiar</button>
+                <button class="btn btn-secondary btn-sm" id="copyCbuBtn" data-copy-target="cbuCvu">📋 Copiar</button>
              </div>
            </div>
            <div class="transfer-field" id="holderField" style="display:none;">
              <span class="transfer-label">Titular</span>
              <div class="transfer-value-row">
                <span class="transfer-value" id="transferHolder"></span>
-               <button class="btn btn-secondary btn-sm" id="copyHolderBtn" onclick="copyTransferField('holderName')">📋 Copiar</button>
+                <button class="btn btn-secondary btn-sm" id="copyHolderBtn" data-copy-target="holderName">📋 Copiar</button>
              </div>
            </div>
           <p class="transfer-note" id="transferNote">Una vez realizada la transferencia, enviá el comprobante por WhatsApp para confirmar tu pedido.</p>
@@ -178,55 +189,61 @@
             </div>
           </div>
           -->
-        </div>
-     </div>
-  </div>
+         </div>
+      </div>
+   </main>
 
   <script src="../js/ui.js"></script>
-  <script>
-    if (typeof initNavbarScroll === 'function') initNavbarScroll();
-    if (typeof initMobileNavbar === 'function') initMobileNavbar();
-  </script>
+  <script src="../js/navbar-init.js"></script>
   <script src="../js/wishlist.js"></script>
   <script src="../js/cart.js"></script>
   <script src="../js/payment.js"></script>
   <script src="../js/checkout.js"></script>
-
-  <script>
-    if (typeof initSSESync === 'function') initSSESync();
-    startDataSync('payment-config', async () => {
-      if (document.getElementById('paymentInstructions') && document.getElementById('paymentInstructions').style.display !== 'none') {
-        await loadMpAlias();
-      }
-    });
-
-    onSyncMessage('settings_updated', async () => {
-      await loadMpAlias();
-    });
-
-    onSyncMessage('hero_updated', () => {
-      if (typeof loadHeroCards === 'function') loadHeroCards();
-    });
-
-    onSyncMessage('products_updated', () => {
-      if (typeof fetchProducts === 'function') {
-        fetchProducts().then(() => {
-          if (typeof renderProducts === 'function') renderProducts(getProducts());
-        });
-      }
-    });
-  </script>
+  <script src="../js/pages/checkout.js"></script>
 
   <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h4>Artesanía Gualeguay</h4>
+        <p>Creando pulseras y souvenirs únicos desde el corazón de Gualeguay, Entre Ríos.</p>
+        <div class="social-links">
+          <a href="https://wa.me/5493444634444" title="WhatsApp" class="social-icon" aria-label="WhatsApp">💬</a>
+          <a href="javascript:void(0)" id="instagramLink" title="Instagram" class="social-icon" aria-label="Instagram">📷</a>
+          <a href="javascript:void(0)" id="facebookLink" title="Facebook" class="social-icon" aria-label="Facebook">👍</a>
+          <a href="javascript:void(0)" id="twitterLink" title="Twitter" class="social-icon" aria-label="Twitter">🐦</a>
+        </div>
+      </div>
+      <div class="footer-section">
+        <h4>Enlaces</h4>
+        <ul>
+          <li><a href="../index.html#home">Inicio</a></li>
+          <li><a href="../index.html#catalog">Catálogo</a></li>
+          <li><a href="../index.html#about">Sobre Nosotros</a></li>
+          <li><a href="../index.html#contact">Contacto</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Información</h4>
+        <ul>
+          <li><a href="../pages/privacy.html">Política de Privacidad</a></li>
+          <li><a href="../pages/terms.html">Términos de Servicio</a></li>
+          <li><a href="../pages/devoluciones.html">Envíos y Devoluciones</a></li>
+          <li><a href="../pages/faq.html">Preguntas Frecuentes</a></li>
+        </ul>
+      </div>
+    </div>
     <div class="footer-bottom">
       <p>&copy; 2026 Artesanía Gualeguay. Todos los derechos reservados.</p>
       <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #64748b;">
         <a href="../pages/terms.html" style="margin-right: 1rem;">Términos y Condiciones</a>
         <a href="../pages/privacy.html" style="margin-right: 1rem;">Política de Privacidad</a>
         <a href="../pages/devoluciones.html" style="margin-right: 1rem;">Cambios y Devoluciones</a>
-        <a href="../pages/orders.html">Mis Pedidos</a>
+        <a href="../pages/orders.html" style="margin-right: 1rem;">Mis Pedidos</a>
+        <a href="../pages/wishlist.html">Favoritos</a>
       </div>
     </div>
   </footer>
+  <div id="toastContainer" class="toast-container"></div>
 </body>
 </html>
+

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Pedido recibido | Artesanía Gualeguay</title>
   <meta name="description" content="Tu pedido fue recibido en Artesanía Gualeguay. Te mostramos los datos para el pago por transferencia." />
+  <meta name="theme-color" content="#d47090" />
   <link rel="canonical" href="https://artesaniagualeguay.com/pages/success.html" />
 
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -21,11 +22,8 @@
   <script src="../js/config.js"></script>
   <script src="../js/safeImage.js"></script>
   <script src="../js/header.js"></script>
-  <script>
-    initSiteHeader({ showBackButton: true });
-  </script>
   <script src="../js/theme.js"></script>
-  <div class="wrap">
+   <main id="content" class="wrap">
     <nav aria-label="Breadcrumb" class="breadcrumb">
       <a href="../index.html">Inicio</a> <span aria-hidden="true">/</span> <span>Pedido recibido</span>
     </nav>
@@ -86,7 +84,7 @@
                  <input type="file" id="receiptFile" accept="image/jpeg,image/png,image/webp,application/pdf" required />
                </div>
                <button type="submit" class="btn btn-primary btn-full">Enviar comprobante</button>
-               <button type="button" class="btn btn-secondary btn-full" onclick="closeReceiptModal()">Cancelar</button>
+                <button type="button" class="btn btn-secondary btn-full" data-action="close-receipt-modal">Cancelar</button>
              </form>
            </div>
          </div>
@@ -96,203 +94,45 @@
          <p>No se encontró información del pedido.</p>
          <a href="../index.html#catalog" class="btn-primary">Ver catálogo</a>
          <a href="../pages/cart.html" class="btn btn-outline" style="margin-top:0.5rem;">Volver al carrito</a>
-       </div>
-     </div>
-  </div>
+        </div>
+      </div>
+   </main>
 
   <script src="../js/ui.js"></script>
-  <script>
-    if (typeof initNavbarScroll === 'function') initNavbarScroll();
-    if (typeof initMobileNavbar === 'function') initMobileNavbar();
-  </script>
   <script src="../js/wishlist.js"></script>
   <script src="../js/cart.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      document.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
-
-      const raw = sessionStorage.getItem('ag_last_order');
-      const orderInfo = document.getElementById('orderInfo');
-      const fallback = document.getElementById('successFallback');
-
-      if (!raw) {
-        if (orderInfo) orderInfo.style.display = 'none';
-        if (fallback) fallback.style.display = 'block';
-        return;
-      }
-
-      try {
-        const order = JSON.parse(raw);
-        sessionStorage.removeItem('ag_last_order');
-        if (order.number) {
-          document.getElementById('successOrderNumber').textContent = order.number;
-        }
-        if (order.total) {
-          document.getElementById('successTransferTotal').textContent = formatARS(order.total);
-        }
-        if (Array.isArray(order.items) && order.items.length) {
-          const summaryHtml = order.items.map(i => `
-            <div class="summary-item-row">
-              <div class="summary-item-meta">
-                <span class="summary-item-name">${i.name}</span>
-                <span class="summary-item-qty">Cant: ${i.qty}</span>
-              </div>
-              <div class="summary-item-price">${formatARS(i.price * i.qty)}</div>
-            </div>
-          `).join('');
-          const summaryContainer = document.getElementById('successSummaryItems');
-          if (summaryContainer) summaryContainer.innerHTML = summaryHtml;
-        }
-
-        const statusBadge = document.getElementById('successStatusBadge');
-        if (statusBadge) statusBadge.textContent = 'Esperando Comprobante';
-
-        const trackingBtn = document.getElementById('trackingBtn');
-        if (trackingBtn && order.id) {
-          trackingBtn.href = `../pages/tracking.html?orderId=${order.id}`;
-        }
-
-        const shippingInfo = document.getElementById('successShippingInfo');
-        if (shippingInfo) {
-          const hasShipping = order.shippingName || order.shippingAddress || order.shippingCity || order.shippingPhone;
-          if (hasShipping) {
-            const parts = [order.shippingName, order.shippingAddress, order.shippingCity, order.shippingPhone].filter(Boolean);
-            shippingInfo.textContent = parts.join(' · ');
-            shippingInfo.style.fontStyle = 'normal';
-          } else {
-            shippingInfo.textContent = 'Serán solicitados por WhatsApp';
-            shippingInfo.style.fontStyle = 'italic';
-          }
-        }
-
-        if (order.waNumber && order.waMsg) {
-          const waBtn = document.getElementById('successWhatsappBtn');
-          if (waBtn) waBtn.href = `https://wa.me/${order.waNumber}?text=${order.waMsg}`;
-        }
-
-        const receiptBtn = document.getElementById('successReceiptBtn');
-        if (receiptBtn) {
-          receiptBtn.dataset.orderId = order.id || '';
-          receiptBtn.dataset.orderNumber = order.number || '';
-        }
-
-        loadSuccessPaymentConfig(order);
-
-        if (orderInfo) orderInfo.style.display = 'block';
-        if (fallback) fallback.style.display = 'none';
-      } catch (e) {
-        console.error('Error leyendo pedido para success:', e);
-        if (orderInfo) orderInfo.style.display = 'none';
-        if (fallback) fallback.style.display = 'block';
-      }
-    });
-
-    async function loadSuccessPaymentConfig(order) {
-      try {
-        const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/payment-config`, {}, 2, 1000);
-        if (!res) return;
-        const data = await res.json();
-        const alias = data.transferAlias || CONFIG.CONTACT.WHATSAPP_ALIAS || '';
-        const holderName = data.holderName || '';
-        const message = data.message || '';
-
-        const aliasEl = document.getElementById('successTransferAlias');
-        const noteEl = document.getElementById('successTransferNote');
-        if (aliasEl) aliasEl.textContent = alias;
-        if (noteEl && message) noteEl.textContent = message;
-
-        const holderRow = document.getElementById('successHolderRow');
-        const holderEl = document.getElementById('successTransferHolder');
-        if (holderRow && holderEl && holderName) {
-          holderEl.textContent = holderName;
-          holderRow.style.display = '';
-        }
-      } catch (e) {
-        console.error('Error cargando config de pago en success:', e);
-      }
-    }
-
-    function openReceiptModal() {
-      const modal = document.getElementById('receiptModal');
-      if (!modal) return;
-      const btn = document.getElementById('successReceiptBtn');
-      if (btn) {
-        document.getElementById('receiptModalOrderNumber').textContent = btn.dataset.orderNumber || '--';
-      }
-      openModalScrollLock(modal, closeReceiptModal);
-    }
-
-    function closeReceiptModal() {
-      const modal = document.getElementById('receiptModal');
-      if (modal) modal.style.display = 'none';
-      unlockModalScroll();
-    }
-
-    const receiptBtn = document.getElementById('successReceiptBtn');
-    if (receiptBtn) {
-      receiptBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        openReceiptModal();
-      });
-    }
-
-    const receiptForm = document.getElementById('receiptForm');
-    if (receiptForm) {
-      receiptForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById('successReceiptBtn');
-        const orderId = btn ? (btn.dataset.orderId || '') : '';
-        const orderNumber = btn ? (btn.dataset.orderNumber || '') : '';
-        const fileInput = document.getElementById('receiptFile');
-        const holderInput = document.getElementById('receiptHolderName');
-        if (!orderId || !fileInput.files.length) {
-          showToast('', 'Completá todos los campos', 'error');
-          return;
-        }
-        const formData = new FormData();
-        formData.append('customerName', holderInput.value.trim());
-        formData.append('image', fileInput.files[0]);
-        try {
-          const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/payments/proofs/${orderId}`, {
-            method: 'POST',
-            body: formData
-          });
-          if (!res) throw new Error('Error de conexión');
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || 'Error al subir el comprobante');
-          showToast('', 'Comprobante enviado correctamente. Te avisaremos cuando sea verificado.', 'success');
-          closeReceiptModal();
-          receiptForm.reset();
-        } catch (err) {
-          showToast('', window.getFetchErrorMessage(err) || 'Error al enviar el comprobante', 'error');
-        }
-      });
-    }
-
-    document.addEventListener('click', function(e) {
-      if (e.target && e.target.id === 'copySuccessAliasBtn') {
-        const alias = document.getElementById('successTransferAlias')?.textContent;
-        if (!alias) return;
-        navigator.clipboard.writeText(alias).then(() => {
-          e.target.textContent = '✅ Copiado';
-          setTimeout(() => { e.target.textContent = '📋 Copiar'; }, 2000);
-        }).catch(() => {});
-      }
-    });
-
-    if (typeof initSSESync === 'function') initSSESync();
-    startDataSync('success-payment', loadSuccessPaymentConfig);
-    onSyncMessage('settings_updated', () => {
-      const raw = sessionStorage.getItem('ag_last_order');
-      if (raw) {
-        try {
-          const order = JSON.parse(raw);
-          loadSuccessPaymentConfig(order);
-        } catch (e) { /* noop */ }
-      }
-    });
-  </script>
+  <script src="../js/pages/success.js"></script>
   <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h4>Artesanía Gualeguay</h4>
+        <p>Creando pulseras y souvenirs únicos desde el corazón de Gualeguay, Entre Ríos.</p>
+        <div class="social-links">
+          <a href="https://wa.me/5493444634444" title="WhatsApp" class="social-icon" aria-label="WhatsApp">💬</a>
+          <a href="javascript:void(0)" id="instagramLink" title="Instagram" class="social-icon" aria-label="Instagram">📷</a>
+          <a href="javascript:void(0)" id="facebookLink" title="Facebook" class="social-icon" aria-label="Facebook">👍</a>
+          <a href="javascript:void(0)" id="twitterLink" title="Twitter" class="social-icon" aria-label="Twitter">🐦</a>
+        </div>
+      </div>
+      <div class="footer-section">
+        <h4>Enlaces</h4>
+        <ul>
+          <li><a href="../index.html#home">Inicio</a></li>
+          <li><a href="../index.html#catalog">Catálogo</a></li>
+          <li><a href="../index.html#about">Sobre Nosotros</a></li>
+          <li><a href="../index.html#contact">Contacto</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Información</h4>
+        <ul>
+          <li><a href="../pages/privacy.html">Política de Privacidad</a></li>
+          <li><a href="../pages/terms.html">Términos de Servicio</a></li>
+          <li><a href="../pages/devoluciones.html">Envíos y Devoluciones</a></li>
+          <li><a href="../pages/faq.html">Preguntas Frecuentes</a></li>
+        </ul>
+      </div>
+    </div>
     <div class="footer-bottom">
       <p>&copy; 2026 Artesanía Gualeguay. Todos los derechos reservados.</p>
       <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #64748b;">
@@ -304,5 +144,7 @@
       </div>
     </div>
   </footer>
+  <div id="toastContainer" class="toast-container"></div>
  </body>
 </html>
+

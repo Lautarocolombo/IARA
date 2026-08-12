@@ -97,3 +97,17 @@ function initSiteHeader(options) {
     document.body.prepend(nav);
   }
 }
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', autoInitSiteHeader);
+} else {
+  autoInitSiteHeader();
+}
+
+function autoInitSiteHeader() {
+  if (window.__siteHeaderInitialized) return;
+  var path = window.location.pathname;
+  var isHome = path === '/' || path.endsWith('/index.html') || path === '';
+  window.__siteHeaderInitialized = true;
+  initSiteHeader({ showBackButton: !isHome });
+}

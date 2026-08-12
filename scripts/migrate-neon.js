@@ -56,13 +56,26 @@ async function migrate() {
     'ALTER TABLE hero_cards ADD COLUMN IF NOT EXISTS subtitulo TEXT DEFAULT \'\'',
     'ALTER TABLE hero_cards ADD COLUMN IF NOT EXISTS cta_texto TEXT DEFAULT \'\'',
     'ALTER TABLE hero_cards ADD COLUMN IF NOT EXISTS cta_url TEXT DEFAULT \'\'',
+    'ALTER TABLE hero_cards ADD COLUMN IF NOT EXISTS descripcion TEXT DEFAULT \'\'',
     'ALTER TABLE hero_cards ADD COLUMN IF NOT EXISTS slot INTEGER DEFAULT 0',
     'ALTER TABLE hero_cards ADD COLUMN IF NOT EXISTS tipo TEXT DEFAULT \'hero\'',
     'CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)',
     'CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at)',
     'CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at)',
     'CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)',
-    'CREATE INDEX IF NOT EXISTS idx_webhook_events_event_id ON webhook_events(event_id)'
+    'CREATE INDEX IF NOT EXISTS idx_webhook_events_event_id ON webhook_events(event_id)',
+    `INSERT INTO site_texts (key, value) VALUES
+      ('hero_title', 'Regalos <em>artesanales</em> que cuentan historias'),
+      ('hero_subtitle', 'Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es única.'),
+      ('hero_cta_text', 'Explorar Catálogo'),
+      ('hero_cta_url', '#catalog'),
+      ('hero_image_url', ''),
+      ('featured_product_name', 'Anillo Cerámica'),
+      ('featured_product_description', 'Artesanía con alma'),
+      ('featured_product_cta_text', 'Ver producto'),
+      ('featured_product_cta_url', '#catalog'),
+      ('featured_product_image_url', '')
+    ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`
   ];
 
   let applied = 0;

@@ -1,0 +1,236 @@
+(function() {
+  initSiteHeader({ showBackButton: true });
+
+  async function loadProduct() {
+    const container = document.getElementById('productContent');
+    if (!container) return;
+    const params = new URLSearchParams(window.location.search);
+    const productId = params.get('id');
+    if (!productId) {
+      container.innerHTML = '<p>Producto no encontrado.</p>';
+      return;
+    }
+    try {
+      const [productRes, reviewsRes] = await Promise.all([
+        window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}`, {}, 2, 1000),
+        window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}/reviews`, {}, 2, 1000)
+      ]);
+      const reviewsData = reviewsRes ? await reviewsRes.json() : [];
+      let product = null;
+      if (productRes && productRes.ok) {
+        product = await productRes.json();
+      } else {
+        const fallbackRes = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products`, {}, 2, 1000);
+        const productData = fallbackRes ? await fallbackRes.json() : [];
+        const products = Array.isArray(productData) && productData.length ? productData : (typeof defaultProducts !== 'undefined' ? defaultProducts : []);
+        product = products.find(p => p.id === Number(productId));
+      }
+      if (!product) {
+        container.innerHTML = '<p>Producto no encontrado.</p>';
+        return;
+      }
+       const images = Array.isArray(product.images) && product.images.length
+             ? product.images
+             : [{ url: window.getProductImageUrl(product) || '../assets/placeholder-product.svg', es_principal: true }];
+        const principalImage = images.find(i => i.es_principal) || images[0];
+        const thumbsHtml = images.map((img, i) =>
+          `${window.renderProductImage(img.url, product.name + ' - imagen ' + (i + 1), { placeholder: '📿' })}`
+        ).join('');
+        const imageHtml = images.length
+          ? `<div class="product-image-gallery"><div class="product-image-main">${window.renderProductImage(principalImage ? principalImage.url : '', product.name, { id: 'productMainImage', lazy: false, placeholder: '📿' })}</div><div class="product-image-thumbs" id="productThumbs">${thumbsHtml}</div></div>`
+           : `${window.renderProductImage('', product.name, { style: 'width:100%;aspect-ratio:1;object-fit:contain;object-position:center;', placeholder: '📿' })}`;
+      container.innerHTML = `
+        <div class="product-detail-grid">
+          <div class="product-image-large" aria-hidden="true">${imageHtml}</div>
+          <div>
+            <span class="product-category">${product.category || ''}</span>
+            <h1 class="product-detail-title">${product.name}</h1>
+            <p class="product-detail-desc">${product.description || ''}</p>
+            <p class="product-detail-price">${formatARS(product.price)}</p>
+            <div class="product-detail-actions">
+              <button class="btn-primary btn-add-cart" data-product-id="${product.id}" data-product-name="${product.name.replace(/"/g, '&quot;')}" data-product-price="${product.price}" data-product-emoji="${product.emoji||'📿'}" data-product-image="${(product.image||'').replace(/"/g, '&quot;')}" data-product-stock="${product.stock||0}">Agregar al carrito</button>
+              <button class="btn-outline btn-wishlist-detail" data-product-id="${product.id}" data-product-name="${product.name.replace(/"/g, '&quot;')}" data-product-price="${product.price}" data-product-emoji="${product.emoji||'📿'}" data-product-image="${(product.image||'').replace(/"/g, '&quot;')}" aria-label="Favoritos">${window.isInWishlist(product.id) ? '❤️' : '🤍'}</button>
+              <a href="https://wa.me/${CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g,'')}?text=Hola! Me interesa el producto: ${product.name}" target="_blank" class="btn-outline" rel="noopener">Consultar por WhatsApp</a>
+            </div>
+          </div>
+        </div>
+        <div class="reviews-section">
+          <h2>Reseñas</h2>
+          <div id="reviewsList">
+             ${reviewsData.length ? reviewsData.map(r => `
+               <div class="review-card">
+                 <div class="review-header">
+                   ${r.avatar ? `<img src="${escapeHtml(r.avatar)}" class="review-avatar" alt="${escapeHtml(r.name || '')}" loading="lazy" />` : ''}
+                   <span class="review-name">${r.name || 'Anónimo'}</span>
+                   <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
+                 </div>
+                 <p class="review-comment">${r.comment}</p>
+               </div>
+             `).join('') : '<p>Aún no hay reseñas para este producto.</p>'}
+          </div>
+           <div class="review-form">
+             <h3>Dejá tu reseña</h3>
+             <div class="form-group">
+               <label for="reviewName">Nombre</label>
+               <input type="text" id="reviewName" placeholder="Tu nombre" rows="3" />
+             </div>
+             <div class="form-group">
+               <label for="reviewAvatar">Avatar (opcional)</label>
+               <input type="file" id="reviewAvatar" accept="image/jpeg,image/png,image/webp,image/gif" />
+             </div>
+             <div class="rating-input" id="ratingInput">
+               ${[1,2,3,4,5].map(i => `<button type="button" data-rating="${i}" aria-label="Calificación ${i} estrellas">★</button>`).join('')}
+             </div>
+             <textarea id="reviewComment" placeholder="Tu opinión..." rows="3"></textarea>
+               <button class="btn-primary btn-sm" data-action="submit-review">Enviar reseña</button>
+           </div>
+         </div>
+        `;
+        let selectedRating = 0;
+        const thumbs = document.querySelectorAll('#productThumbs img');
+        if (thumbs.length) {
+          thumbs.forEach((t, i) => {
+            if (i === 0) t.classList.add('active');
+            t.addEventListener('click', () => {
+              const main = document.getElementById('productMainImage');
+              if (!main) return;
+              main.src = t.src;
+              thumbs.forEach(tb => tb.classList.remove('active'));
+              t.classList.add('active');
+            });
+          });
+        }
+       document.querySelectorAll('#ratingInput button').forEach(btn => {
+         btn.addEventListener('click', () => {
+           selectedRating = Number(btn.dataset.rating);
+           document.querySelectorAll('#ratingInput button').forEach(b => {
+             b.classList.toggle('active', Number(b.dataset.rating) <= selectedRating);
+           });
+         });
+       });
+       window.submitReview = async (id) => {
+         const name = document.getElementById('reviewName').value.trim();
+         const comment = document.getElementById('reviewComment').value.trim();
+         if (!selectedRating || !comment) {
+           showToast('', 'Completá la calificación y el comentario', 'error');
+           return;
+         }
+         const avatarInput = document.getElementById('reviewAvatar');
+         const formData = new FormData();
+         formData.append('name', name);
+         formData.append('comment', comment);
+         formData.append('rating', String(selectedRating));
+         if (avatarInput && avatarInput.files && avatarInput.files[0]) {
+           formData.append('avatar', avatarInput.files[0]);
+         }
+         try {
+           const res = await fetch(`${CONFIG.API.BASE}/api/products/${id}/reviews`, {
+             method: 'POST',
+             body: formData
+           });
+           if (!res.ok) {
+             const data = await res.json().catch(() => ({}));
+             throw new Error(data.error || 'Error al enviar la reseña');
+           }
+           showToast('', '¡Reseña enviada! Gracias.', 'success');
+           document.getElementById('reviewName').value = '';
+           document.getElementById('reviewComment').value = '';
+           document.getElementById('reviewAvatar').value = '';
+           selectedRating = 0;
+           document.querySelectorAll('#ratingInput button').forEach(b => b.classList.remove('active'));
+           loadProduct();
+         } catch (error) {
+           console.error(error);
+           showToast('', window.getFetchErrorMessage(error) || 'Error de conexión. Intentá nuevamente.', 'error');
+         }
+       };
+     } catch (err) {
+       container.innerHTML = '<div class="empty-state"><h3>Error al cargar el producto</h3><p>Intentá recargar la página o volvé al <a href="../index.html#catalog">catálogo</a>.</p></div>';
+     }
+   }
+
+  function init() {
+    document.addEventListener('DOMContentLoaded', loadProduct);
+
+    document.getElementById('productContent')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-add-cart');
+      if (!btn) return;
+      e.preventDefault();
+      const product = {
+        id: Number(btn.dataset.productId),
+        name: btn.dataset.productName,
+        price: Number(btn.dataset.productPrice),
+        emoji: btn.dataset.productEmoji || '📿',
+        image: btn.dataset.productImage || '',
+        stock: Number(btn.dataset.productStock || 0),
+        unit: 'u',
+        qty: 1
+      };
+      if (typeof addToCart === 'function') addToCart(product);
+    });
+
+    document.getElementById('productContent')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-wishlist-detail');
+      if (!btn) return;
+      e.preventDefault();
+      const product = {
+        id: Number(btn.dataset.productId),
+        name: btn.dataset.productName,
+        price: Number(btn.dataset.productPrice),
+        emoji: btn.dataset.productEmoji || '📿',
+        image: btn.dataset.productImage || ''
+      };
+      if (window.isInWishlist(product.id)) {
+        window.removeFromWishlist(product.id);
+        btn.textContent = '🤍';
+        btn.setAttribute('aria-label', 'Agregar a favoritos');
+      } else {
+        window.addToWishlist(product);
+        btn.textContent = '❤️';
+        btn.setAttribute('aria-label', 'Quitar de favoritos');
+      }
+    });
+
+    document.getElementById('productContent')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-action="submit-review"]');
+      if (!btn) return;
+      const params = new URLSearchParams(window.location.search);
+      const productId = params.get('id');
+      if (productId && typeof submitReview === 'function') {
+        submitReview(Number(productId));
+      }
+    });
+
+    if (typeof initSSESync === 'function') initSSESync();
+    startDataSync('product-detail', loadProduct);
+    onSyncMessage('products_updated', () => {
+      const params = new URLSearchParams(window.location.search);
+      const productId = params.get('id');
+      if (productId) {
+        loadProduct();
+      }
+    });
+
+    onSyncMessage('hero_updated', () => {
+      if (typeof loadHeroCards === 'function') loadHeroCards();
+    });
+
+    onSyncMessage('wishlist_updated', () => {
+      if (typeof renderWishlist === 'function') renderWishlist();
+    });
+
+    onSyncMessage('reviews_updated', () => {
+      const params = new URLSearchParams(window.location.search);
+      const productId = params.get('id');
+      if (productId) {
+        loadProduct();
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();

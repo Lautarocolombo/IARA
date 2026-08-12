@@ -23,6 +23,7 @@ router.get('/', (req, res) => {
   const listeners = {
     products_updated: (data) => send('products_updated', data),
     hero_updated: (data) => send('hero_updated', data),
+    site_texts_updated: (data) => send('site_texts_updated', data),
     settings_updated: (data) => send('settings_updated', data),
     order_created: (data) => send('order_created', data),
     order_status_updated: (data) => send('order_status_updated', data),

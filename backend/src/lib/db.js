@@ -2,6 +2,15 @@ const fs = require('fs');
 const path = require('path');
 const logger = require('./logger');
 
+let runMigrations = null;
+if (process.env.DATABASE_URL) {
+  try {
+    runMigrations = require('../scripts/run-migrations').runMigrations;
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Runner de migraciones no disponible');
+  }
+}
+
 let sqlite3;
 try {
   sqlite3 = require('sqlite3').verbose();
@@ -92,9 +101,13 @@ async function query(text, params, transactionClient = null) {
   const client = transactionClient || pool;
   if (!client && isLocal) {
     return new Promise((resolve, reject) => {
-      const sql = toSqlite(text);
+      let sql = text;
+      if (isLocal) {
+        sql = sql.replace(/current_setting\('app\.current_tenant',\s*TRUE\)/gi, "'default'");
+      }
+      const sqliteSql = toSqlite(sql);
       const values = params || [];
-      db.all(sql, values, (err, rows) => {
+      db.all(sqliteSql, values, (err, rows) => {
         if (err) return reject(err);
         resolve({ rows, rowCount: rows.length });
       });
@@ -206,6 +219,7 @@ async function initDB() {
       active BOOLEAN DEFAULT TRUE,
       sku TEXT DEFAULT '',
       deleted BOOLEAN DEFAULT FALSE,
+      tenant_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
@@ -213,7 +227,8 @@ async function initDB() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       key TEXT UNIQUE NOT NULL,
       value TEXT DEFAULT '',
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      tenant_id TEXT DEFAULT 'default'
     )`);
     await query(`CREATE TABLE IF NOT EXISTS testimonials (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -226,6 +241,7 @@ async function initDB() {
       active BOOLEAN DEFAULT TRUE,
       featured BOOLEAN DEFAULT FALSE,
       orden INTEGER DEFAULT 0,
+      tenant_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
     await query(`CREATE TABLE IF NOT EXISTS orders (
@@ -243,11 +259,13 @@ async function initDB() {
       shipping_email TEXT DEFAULT '',
       subtotal REAL DEFAULT 0,
       shipping_cost REAL DEFAULT 0,
+      tenant_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
     await query(`CREATE TABLE IF NOT EXISTS subscribers (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       email TEXT UNIQUE NOT NULL,
+      tenant_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
     await query(`CREATE TABLE IF NOT EXISTS sales (
@@ -266,6 +284,7 @@ async function initDB() {
       rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
       comment TEXT DEFAULT '',
       name TEXT DEFAULT '',
+      tenant_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
      try {
@@ -288,6 +307,7 @@ async function initDB() {
       email TEXT NOT NULL,
       message TEXT NOT NULL,
       status TEXT DEFAULT 'new',
+      tenant_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
     await query(`CREATE TABLE IF NOT EXISTS payment_config (
@@ -317,6 +337,7 @@ async function initDB() {
       status TEXT DEFAULT 'pending',
       rejection_reason TEXT DEFAULT '',
       reviewed_at DATETIME,
+      tenant_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
     await query('CREATE INDEX IF NOT EXISTS idx_payment_proofs_order_id ON payment_proofs(order_id)');
@@ -326,7 +347,8 @@ async function initDB() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       key TEXT UNIQUE NOT NULL,
       value TEXT DEFAULT '',
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      tenant_id TEXT DEFAULT 'default'
     )`);
     await query(`CREATE TABLE IF NOT EXISTS hero_cards (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -342,6 +364,7 @@ async function initDB() {
       cta_url TEXT DEFAULT '',
       slot INTEGER DEFAULT 0,
       tipo TEXT DEFAULT 'hero',
+      tenant_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
     await query(`CREATE TABLE IF NOT EXISTS product_images (
@@ -355,6 +378,7 @@ async function initDB() {
       es_principal BOOLEAN DEFAULT FALSE,
       descripcion TEXT DEFAULT '',
       categoria TEXT DEFAULT '',
+      tenant_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
     await query(`CREATE TABLE IF NOT EXISTS webhook_events (
@@ -364,6 +388,7 @@ async function initDB() {
       payload TEXT NOT NULL,
       status TEXT DEFAULT 'pending',
       processed_at DATETIME,
+      tenant_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
     await query(`CREATE TABLE IF NOT EXISTS categories (
@@ -377,6 +402,7 @@ async function initDB() {
       image TEXT DEFAULT '',
       parent_id INTEGER DEFAULT NULL,
       image_url TEXT DEFAULT '',
+      tenant_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
@@ -389,6 +415,7 @@ async function initDB() {
       details TEXT DEFAULT '',
       ip TEXT DEFAULT '',
       related_order_id INTEGER DEFAULT 0,
+      tenant_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
     await query(`CREATE TABLE IF NOT EXISTS customers (
@@ -557,6 +584,11 @@ async function initDB() {
     } catch (err) {
       logger.debug({ err: err.message }, 'Columna related_order_id ya existe o no se pudo agregar (SQLite)');
     }
+    try {
+      await query('ALTER TABLE activity_log ADD COLUMN tenant_id TEXT DEFAULT \'default\'');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna tenant_id ya existe o no se pudo agregar (SQLite)');
+    }
       try {
          await query('ALTER TABLE categories ADD COLUMN orden INTEGER DEFAULT 0');
       } catch (err) {
@@ -647,12 +679,37 @@ async function initDB() {
      } catch (err) {
        logger.debug({ err: err.message }, 'Columna shipping_cost ya existe o no se pudo agregar (SQLite)');
      }
-     try {
-       await query('ALTER TABLE payment_config ADD COLUMN free_shipping_from REAL DEFAULT 0');
-     } catch (err) {
-       logger.debug({ err: err.message }, 'Columna free_shipping_from ya existe o no se pudo agregar (SQLite)');
-     }
-     return;
+      try {
+        await query('ALTER TABLE payment_config ADD COLUMN notify_client_rejected BOOLEAN DEFAULT TRUE');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna notify_client_rejected ya existe o no se pudo agregar (SQLite)');
+      }
+      const tenantIdMigrations = [
+        'products',
+        'categories',
+        'orders',
+        'contacts',
+        'reviews',
+        'testimonials',
+        'product_images',
+        'subscribers',
+        'webhook_events',
+        'hero_cards',
+        'payment_config',
+        'payment_proofs',
+        'site_settings',
+        'site_texts'
+      ];
+      for (const table of tenantIdMigrations) {
+        try {
+          await query(`ALTER TABLE ${table} ADD COLUMN tenant_id TEXT DEFAULT 'default'`);
+        } catch (err) {
+          if (!err.message.includes('duplicate column name')) {
+            logger.debug({ err: err.message }, `Columna tenant_id ya existe o no se pudo agregar en ${table} (SQLite)`);
+          }
+        }
+      }
+      return;
   }
 
   const statements = [
@@ -686,76 +743,11 @@ async function initDB() {
     }
   }
 
-  try {
-    await query('ALTER TABLE product_images ADD COLUMN IF NOT EXISTS cloudinary_public_id TEXT DEFAULT \'\'');
-  } catch (err) {
-    logger.debug({ err: err.message }, 'Columna cloudinary_public_id ya existe o no se pudo agregar (PostgreSQL)');
-  }
-
-  try {
-    await query('ALTER TABLE product_images ADD COLUMN IF NOT EXISTS alt TEXT DEFAULT \'\'');
-  } catch (err) {
-    logger.debug({ err: err.message }, 'Columna alt ya existe o no se pudo agregar (PostgreSQL)');
-  }
-
-  const alterStatements = [
-    'ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_name TEXT DEFAULT \'\'',
-    'ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_address TEXT DEFAULT \'\'',
-    'ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_phone TEXT DEFAULT \'\'',
-    'ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_zip TEXT DEFAULT \'\'',
-    'ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_city TEXT DEFAULT \'\'',
-    'ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_email TEXT DEFAULT \'\'',
-    'ALTER TABLE orders ADD COLUMN IF NOT EXISTS subtotal REAL DEFAULT 0',
-    'ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_cost REAL DEFAULT 0',
-    'ALTER TABLE orders ADD COLUMN IF NOT EXISTS notes TEXT DEFAULT \'\'',
-    'ALTER TABLE product_images ADD COLUMN IF NOT EXISTS descripcion TEXT DEFAULT \'\'',
-    'ALTER TABLE product_images ADD COLUMN IF NOT EXISTS categoria TEXT DEFAULT \'\'',
-    'ALTER TABLE products ADD COLUMN IF NOT EXISTS featured BOOLEAN DEFAULT FALSE',
-    'ALTER TABLE products ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT TRUE',
-    'ALTER TABLE product_images ADD COLUMN IF NOT EXISTS filename TEXT DEFAULT \'\'',
-    'ALTER TABLE categories ADD COLUMN IF NOT EXISTS image TEXT DEFAULT \'\'',
-    'ALTER TABLE products ADD COLUMN IF NOT EXISTS slug TEXT DEFAULT \'\'',
-    'ALTER TABLE products ADD COLUMN IF NOT EXISTS deleted BOOLEAN DEFAULT FALSE',
-    'ALTER TABLE categories ADD COLUMN IF NOT EXISTS orden INTEGER DEFAULT 0',
-    'ALTER TABLE categories ADD COLUMN IF NOT EXISTS emoji TEXT DEFAULT \'\'',
-    'ALTER TABLE categories ADD COLUMN IF NOT EXISTS image TEXT DEFAULT \'\'',
-    'ALTER TABLE categories ADD COLUMN IF NOT EXISTS parent_id INTEGER DEFAULT NULL',
-    'ALTER TABLE categories ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT \'\'',
-    'ALTER TABLE products ADD COLUMN IF NOT EXISTS sku TEXT DEFAULT \'\'',
-    'ALTER TABLE hero_cards ADD COLUMN IF NOT EXISTS titulo TEXT DEFAULT \'\'',
-    'ALTER TABLE hero_cards ADD COLUMN IF NOT EXISTS subtitulo TEXT DEFAULT \'\'',
-    'ALTER TABLE hero_cards ADD COLUMN IF NOT EXISTS cta_texto TEXT DEFAULT \'\'',
-    'ALTER TABLE hero_cards ADD COLUMN IF NOT EXISTS cta_url TEXT DEFAULT \'\'',
-    'ALTER TABLE hero_cards ADD COLUMN IF NOT EXISTS slot INTEGER DEFAULT 0',
-    'ALTER TABLE hero_cards ADD COLUMN IF NOT EXISTS tipo TEXT DEFAULT \'hero\'',
-    'ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS orden INTEGER DEFAULT 0',
-    'ALTER TABLE reviews ADD COLUMN IF NOT EXISTS name TEXT DEFAULT \'\'',
-    'ALTER TABLE reviews ADD COLUMN IF NOT EXISTS avatar TEXT DEFAULT \'\'',
-    'ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT \'\'',
-    'ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS transfer_alias TEXT DEFAULT \'\'',
-    'ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS cbu_cvu TEXT DEFAULT \'\'',
-    'ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS mp_enabled BOOLEAN DEFAULT FALSE',
-    'ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS cash_enabled BOOLEAN DEFAULT FALSE',
-    'ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS shipping_cost REAL DEFAULT 0',
-    'ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS free_shipping_from REAL DEFAULT 0',
-    'ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS notify_admin_new_proof BOOLEAN DEFAULT TRUE',
-    'ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS notify_client_approved BOOLEAN DEFAULT TRUE',
-    'ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS notify_client_rejected BOOLEAN DEFAULT TRUE',
-    'ALTER TABLE activity_log ADD COLUMN IF NOT EXISTS related_order_id INTEGER DEFAULT 0',
-    'CREATE UNIQUE INDEX IF NOT EXISTS idx_hero_cards_slot ON hero_cards(slot) WHERE slot > 0',
-    'CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)',
-    'CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at)',
-    'CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at)',
-    'CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)',
-    'CREATE INDEX IF NOT EXISTS idx_sales_sale_date ON sales(sale_date)',
-    'CREATE INDEX IF NOT EXISTS idx_webhook_events_event_id ON webhook_events(event_id)'
-  ];
-
-  for (const sql of alterStatements) {
+  if (runMigrations) {
     try {
-      await query(sql);
+      await runMigrations('up');
     } catch (err) {
-      logger.debug({ err: err.message }, 'Migración de esquema');
+      logger.warn({ err: err.message }, 'No se pudieron aplicar migraciones versionadas');
     }
   }
 
@@ -811,7 +803,25 @@ async function initDB() {
       if (!ADMIN_USER || !ADMIN_PASS_HASH) return;
       const existing = await query('SELECT id, password_hash, permissions FROM users WHERE username = $1', [ADMIN_USER]);
       if (existing.rows.length === 0) {
-        await query('INSERT INTO users (username, password_hash, role, active, permissions) VALUES ($1, $2, $3, $4, $5)', [ADMIN_USER, ADMIN_PASS_HASH, 'admin', true, JSON.stringify({ all: true })]);
+        try {
+          if (isLocal) {
+            await query('INSERT OR IGNORE INTO users (username, password_hash, role, active, permissions) VALUES ($1, $2, $3, $4, $5)', [ADMIN_USER, ADMIN_PASS_HASH, 'admin', true, JSON.stringify({ all: true })]);
+          } else {
+            await query('INSERT INTO users (username, password_hash, role, active, permissions) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (username) DO NOTHING', [ADMIN_USER, ADMIN_PASS_HASH, 'admin', true, JSON.stringify({ all: true })]);
+          }
+        } catch (err) {
+          if (!err.message.includes('UNIQUE constraint failed') && !err.message.includes('duplicate key')) {
+            throw err;
+          }
+        }
+        const after = await query('SELECT id, password_hash, permissions FROM users WHERE username = $1', [ADMIN_USER]);
+        if (after.rows.length === 0) {
+          return;
+        }
+        const needsUpdate = after.rows[0].password_hash !== ADMIN_PASS_HASH || after.rows[0].permissions !== JSON.stringify({ all: true });
+        if (needsUpdate) {
+          await query('UPDATE users SET password_hash = $1, permissions = $2, updated_at = CURRENT_TIMESTAMP WHERE username = $3', [ADMIN_PASS_HASH, JSON.stringify({ all: true }), ADMIN_USER]);
+        }
       } else {
         const needsUpdate = existing.rows[0].password_hash !== ADMIN_PASS_HASH || existing.rows[0].permissions !== JSON.stringify({ all: true });
         if (needsUpdate) {
@@ -820,4 +830,14 @@ async function initDB() {
       }
     }
 
- module.exports = { query, initDB, pool, connectionString: !!connectionString, getClient, transaction, isLocal };
+ async function setTenant(tenantId) {
+   if (!tenantId || typeof tenantId !== 'string') return;
+   if (isLocal) return;
+   try {
+     await query('SELECT set_config($1, $2, false)', ['app.current_tenant', tenantId]);
+   } catch (e) {
+     // no-op si la BD no soporta set_config
+   }
+ }
+
+ module.exports = { query, initDB, pool, connectionString: !!connectionString, getClient, transaction, isLocal, setTenant };

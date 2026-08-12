@@ -22,6 +22,8 @@ const PRECACHE_URLS = [
 
 const IMAGE_CACHE = 'artesania-images-v1';
 const API_CACHE = 'artesania-api-v1';
+const API_CACHE_MAX_ENTRIES = 50;
+const API_CACHE_MAX_AGE = 5 * 60 * 1000;
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -107,6 +109,7 @@ async function networkFirst(request) {
       const cache = await caches.open(API_CACHE);
       try {
         cache.put(request, response.clone());
+        await pruneCache(cache, API_CACHE_MAX_ENTRIES, API_CACHE_MAX_AGE);
       } catch (e) {
         console.warn('SW API cache put failed:', e);
       }
@@ -119,6 +122,30 @@ async function networkFirst(request) {
       status: 503,
       headers: { 'Content-Type': 'application/json' }
     });
+  }
+}
+
+async function pruneCache(cache, maxEntries, maxAge) {
+  try {
+    const keys = await cache.keys();
+    if (keys.length <= maxEntries) return;
+    const entries = await Promise.all(keys.map(async (key) => {
+      try {
+        const res = await cache.match(key);
+        const dateHeader = res.headers.get('date');
+        const age = dateHeader ? Date.now() - new Date(dateHeader).getTime() : Infinity;
+        return { key, age };
+      } catch {
+        return { key, age: Infinity };
+      }
+    }));
+    entries.sort((a, b) => b.age - a.age);
+    const toDelete = entries.slice(maxEntries);
+    for (const item of toDelete) {
+      await cache.delete(item.key);
+    }
+  } catch (e) {
+    console.warn('SW pruneCache failed:', e);
   }
 }
 

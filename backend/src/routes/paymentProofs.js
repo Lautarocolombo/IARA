@@ -10,6 +10,7 @@ const {
   getAdminActivityLog
 } = require('../controllers/paymentProofsController');
 const { uploadSingleProof, handleUploadError } = require('../lib/upload');
+const { requireOrderToken } = require('../middleware/requireOrderToken');
 
 router.get('/admin/payment-proofs', adminAuth, getAdminPaymentProofs);
 router.get('/admin/payment-stats', adminAuth, getPaymentStats);
@@ -17,6 +18,6 @@ router.get('/admin/activity-log', adminAuth, getAdminActivityLog);
 router.post('/admin/payment-proofs/:id/approve', adminAuth, approvePaymentProof);
 router.post('/admin/payment-proofs/:id/reject', adminAuth, rejectPaymentProof);
 
-router.post('/payments/proofs/:orderId', handleUploadError, uploadSingleProof, uploadPaymentProof);
+router.post('/payments/proofs/:orderId', requireOrderToken, handleUploadError, uploadSingleProof, uploadPaymentProof);
 
 module.exports = router;

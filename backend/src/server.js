@@ -9,10 +9,15 @@ const pino = require('pino');
 
 dotenv.config({ override: false });
 
-const { initDB } = require('./lib/db');
+const { initDB, setTenant } = require('./lib/db');
 const { handleUploadError, processFile, uploadSingle, getPublicUrl } = require('./lib/upload');
 const { errorHandler } = require('./middleware/errorHandler');
 const { notFound } = require('./middleware/errorHandler');
+const { tenantContext } = require('./middleware/tenant');
+const { csrfProtection } = require('./middleware/csrf');
+const { sanitizeBody } = require('./middleware/xssClean');
+const { nonceMiddleware } = require('./middleware/nonce');
+const { cspMiddleware } = require('./middleware/csp');
 
 let Sentry = null;
 if (process.env.SENTRY_DSN) {
@@ -86,22 +91,6 @@ const app = express();
 app.set('trust proxy', 1);
 
 app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ['\'self\''],
-      scriptSrc: ['\'self\'', 'https://cdn.jsdelivr.net', 'https://cdn.vercel-insights.com', 'https://www.googletagmanager.com', '\'unsafe-inline\''],
-      scriptSrcAttr: ['\'unsafe-inline\''],
-      styleSrc: ['\'self\'', 'https://fonts.googleapis.com', '\'unsafe-inline\''],
-      styleSrcAttr: ['\'unsafe-inline\''],
-      fontSrc: ['\'self\'', 'https://fonts.gstatic.com'],
-      imgSrc: ['\'self\'', 'data:', 'https:', 'blob:'],
-      connectSrc: ['\'self\'', 'https://api.resend.com', 'https://vitals.vercel-insights.com', 'https://*.googleanalytics.com', 'https://*.google-analytics.com', 'https://stats.g.doubleclick.net'],
-      frameSrc: ['\'self\'', 'https://maps.google.com', 'https://www.google.com'],
-      objectSrc: ['\'none\''],
-      baseUri: ['\'self\''],
-      formAction: ['\'self\'']
-    }
-  },
   crossOriginEmbedderPolicy: false,
   hsts: {
     maxAge: 31536000,
@@ -110,12 +99,17 @@ app.use(helmet({
   }
 }));
 
+app.use(nonceMiddleware);
+app.use(cspMiddleware);
+
 if (Sentry) {
   app.use(Sentry.Handlers.requestHandler());
 }
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(sanitizeBody);
+app.use(require('compression')());
 
 const envOrigins = (process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || '').split(',').filter(Boolean);
 const defaultOrigins = [
@@ -163,13 +157,25 @@ const corsOptions = allowedOrigins.length
 
 app.use(cors(corsOptions));
 app.use(require('cookie-parser')());
+app.use(tenantContext);
 app.options('*', cors(corsOptions));
+
+let rateLimitStore = undefined;
+if (process.env.REDIS_URL) {
+  try {
+    const RedisStore = require('./lib/redisStore');
+    rateLimitStore = new RedisStore();
+  } catch (err) {
+    console.warn('Redis store no disponible, usando memoria:', err.message);
+  }
+}
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
+  store: rateLimitStore,
   message: { error: 'Demasiadas solicitudes, intentá de nuevo en unos minutos' }
 });
 const authLimiter = rateLimit({
@@ -177,6 +183,7 @@ const authLimiter = rateLimit({
   max: 20,
   standardHeaders: true,
   legacyHeaders: false,
+  store: rateLimitStore,
   message: { error: 'Demasiados intentos de inicio de sesión, intentá de nuevo en 15 minutos' }
 });
 const contactLimiter = rateLimit({
@@ -184,6 +191,7 @@ const contactLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
+  store: rateLimitStore,
   message: { error: 'Demasiados envíos de formulario, intentá de nuevo en una hora' }
 });
 
@@ -192,6 +200,7 @@ const ordersLimiter = rateLimit({
   max: 60,
   standardHeaders: true,
   legacyHeaders: false,
+  store: rateLimitStore,
   message: { error: 'Demasiadas solicitudes de pedidos, intentá de nuevo en unos minutos' }
 });
 
@@ -255,6 +264,12 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
+app.use('/api', (req, res, next) => {
+  const tenantId = req.headers['x-tenant-id'] || req.user?.tenant_id || 'default';
+  setTenant(tenantId).catch(() => {});
+  next();
+});
+
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/admin', require('./routes/auth'));
 app.use('/api', require('./routes/products'));
@@ -287,7 +302,7 @@ app.get('/metrics', (req, res) => {
   if (allowedIps.length && !allowedIps.some(ip => clientIp.startsWith(ip))) {
     return res.status(403).json({ error: 'Forbidden' });
   }
-  if (metricsToken && req.headers['x-metrics-token'] !== metricsToken) {
+  if (!metricsToken || req.headers['x-metrics-token'] !== metricsToken) {
     return res.status(403).json({ error: 'Forbidden' });
   }
 
@@ -347,9 +362,9 @@ app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUplo
     if (!req.file) {
       return res.status(400).json({ error: 'No se recibió imagen' });
     }
-    const processed = await processFile(req.file);
+    const processed = await processFile(req.file, `${req.protocol}://${req.get('host')}`);
     res.json({
-      url: getPublicUrl(processed.url),
+      url: processed.url,
       filename: processed.filename,
       size: req.file.size,
       isCloudinary: processed.isCloudinary
@@ -373,6 +388,7 @@ app.get('/', (req, res) => {
 
 app.use(express.static(staticDir));
 
+app.use('/api', csrfProtection);
 app.use('/api', limiter);
 
 app.get('/sitemap.xml', require('./routes/sitemap'));
@@ -398,10 +414,16 @@ const dbReady = initDB().then(async () => {
     const { query } = require('./lib/db');
     const result = await query('SELECT COUNT(*) FROM users');
     if ((result.rows[0]?.count || 0) === 0 && process.env.ADMIN_USER && process.env.ADMIN_PASS_HASH) {
-      await query(
-        'INSERT INTO users (username, password_hash, role, permissions, active) VALUES ($1, $2, $3, $4, $5)',
-        [process.env.ADMIN_USER, process.env.ADMIN_PASS_HASH, 'admin', JSON.stringify({ all: true }), true]
-      );
+      try {
+        await query(
+          'INSERT INTO users (username, password_hash, role, permissions, active) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (username) DO NOTHING',
+          [process.env.ADMIN_USER, process.env.ADMIN_PASS_HASH, 'admin', JSON.stringify({ all: true }), true]
+        );
+      } catch (err) {
+        if (!err.message.includes('UNIQUE constraint failed') && !err.message.includes('duplicate key')) {
+          throw err;
+        }
+      }
       logger.info(`Usuario admin inicial creado: ${process.env.ADMIN_USER}`);
     } else if (process.env.ADMIN_USER && process.env.ADMIN_PASS_HASH) {
       const existing = await query('SELECT password_hash, permissions FROM users WHERE username = $1', [process.env.ADMIN_USER]);
@@ -420,6 +442,19 @@ const dbReady = initDB().then(async () => {
   logger.error({ err: err.message, stack: err.stack }, 'Error inicializando DB');
   console.error('Error inicializando DB:', err);
 });
+
+if (process.env.REDIS_URL) {
+  try {
+    const { startWebhookWorker } = require('./queues/webhookQueue');
+    const { processWebhookSync } = require('./controllers/paymentController');
+    startWebhookWorker(async (job) => {
+      await processWebhookSync(job.data);
+    });
+    logger.info('Webhook worker iniciado');
+  } catch (err) {
+    logger.warn({ err: err.message }, 'No se pudo iniciar webhook worker');
+  }
+}
 
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;

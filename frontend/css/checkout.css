@@ -105,20 +105,50 @@
   font-size: 0.9rem;
 }
 
-.empty-cart {
+.empty-cart-container {
   text-align: center;
-  padding: 3rem 1rem;
-  color: var(--text-muted);
+  padding: 4rem 2rem;
 }
 
-.empty-cart h2 {
+.empty-cart-container h2 {
   font-family: 'Playfair Display', serif;
   color: var(--text-dark);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.empty-cart-container p {
+  color: var(--text-muted);
+  margin-bottom: 2rem;
 }
 
 .section-header-spaced {
   margin-bottom: 1.5rem;
+}
+
+.free-shipping-progress {
+  margin-bottom: 1rem;
+}
+
+.free-shipping-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.free-shipping-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--rose), var(--mint));
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.free-shipping-progress-text {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin: 0;
 }
 
 .field-error {
@@ -318,109 +348,13 @@
   font-size: 1.1rem;
 }
 
-.transfer-summary {
-  background: var(--white);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  padding: 1rem;
-  margin-bottom: 1rem;
-}
-
 .transfer-summary-empty {
   color: var(--text-muted);
   font-size: 0.9rem;
   margin: 0;
 }
 
-.transfer-item-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 0;
-  border-bottom: 1px solid var(--border);
-  font-size: 0.95rem;
-}
-
-.transfer-item-row:last-child {
-  border-bottom: none;
-}
-
-.transfer-item-name {
-  color: var(--text-dark);
-  font-weight: 500;
-}
-
-.transfer-item-price {
-  color: var(--rose-dark);
-  font-weight: 600;
-}
-
-.transfer-total-highlight {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: var(--rose-mid);
-  color: var(--white);
-  border-radius: var(--radius-md);
-  padding: 1rem 1.25rem;
-  margin-bottom: 1rem;
-  font-weight: 600;
-  font-size: 1rem;
-}
-
-.transfer-total-highlight-amount {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.6rem;
-  font-weight: 700;
-}
-
-.transfer-note {
-  font-size: 0.85rem;
-  color: var(--text-mid);
-  line-height: 1.6;
-  margin-top: 1rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border);
-}
-
-.transfer-data-box .btn-primary {
-  margin-top: 1rem;
-}
-
-/* FASE 2 — Modal (preparado) */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 1rem;
-}
-
-.modal-card {
-  background: var(--white);
-  border-radius: var(--radius-md);
-  padding: 2rem;
-  max-width: 480px;
-  width: 100%;
-  box-shadow: var(--shadow-lg);
-}
-
-.modal-card h3 {
-  font-family: 'Playfair Display', serif;
-  margin-bottom: 1rem;
-}
-
-.btn-block {
-  display: inline-block;
-  text-align: center;
-  padding: 14px;
-  margin-top: 1rem;
-}
-
-.checkout-note {
+.transfer-field {
   font-size: 0.8rem;
   color: var(--text-muted);
   margin-top: 1rem;

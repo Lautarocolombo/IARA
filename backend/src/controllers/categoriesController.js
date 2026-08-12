@@ -48,7 +48,7 @@ const createCategory = async (req, res) => {
   if (!name || !slug) return res.status(400).json({ error: 'Nombre y slug son requeridos' });
   try {
     const result = await query(
-      'INSERT INTO categories (name, slug, description, active, orden, emoji, image, parent_id, image_url) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+      'INSERT INTO categories (name, slug, description, active, orden, emoji, image, parent_id, image_url, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) RETURNING *',
       [name, slug, description, active !== false, Number(orden) || 0, emoji || '', image, parent_id, image_url]
     );
     res.status(201).json(result.rows[0]);
@@ -83,7 +83,7 @@ const updateCategory = async (req, res) => {
   });
   values.push(id);
   try {
-    const result = await query(`UPDATE categories SET ${setParts.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = $${values.length} RETURNING *`, values);
+    const result = await query(`UPDATE categories SET ${setParts.join(', ')}, updated_at = CURRENT_TIMESTAMP, tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\') WHERE id = $${values.length} RETURNING *`, values);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Categoría no encontrada' });
     res.json(result.rows[0]);
   } catch (err) {

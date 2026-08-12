@@ -8,7 +8,7 @@ const getProductReviews = async (req, res) => {
   try {
     const productId = Number(req.params.productId);
     const result = await query(
-      'SELECT * FROM reviews WHERE product_id = $1 ORDER BY created_at DESC',
+      'SELECT * FROM reviews WHERE product_id = $1 AND tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\') ORDER BY created_at DESC',
       [productId]
     );
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
@@ -32,7 +32,7 @@ const createReview = async (req, res) => {
       }
     }
     const result = await query(
-      'INSERT INTO reviews (product_id, rating, comment, name, avatar) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      'INSERT INTO reviews (product_id, rating, comment, name, avatar, tenant_id) VALUES ($1, $2, $3, $4, $5, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) RETURNING *',
       [productId, Number(data.rating), data.comment, data.name || '', avatar]
     );
     res.status(201).json(result.rows[0]);

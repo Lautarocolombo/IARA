@@ -53,7 +53,7 @@ async function checkServerHealth() {
       if (indicator) indicator.classList.remove('connected');
       if (retryBtn) {
         retryBtn.style.display = 'inline-block';
-        retryBtn.onclick = () => { checkServerHealth(); };
+        retryBtn.addEventListener('click', () => { checkServerHealth(); });
       }
     } finally {
       if (btn) { btn.textContent = 'Ingresar'; btn.disabled = false; }
@@ -209,4 +209,37 @@ window.addEventListener('error', function(event) {
 
 window.addEventListener('unhandledrejection', function(event) {
   console.error('[UnhandledRejection]', event.reason);
+});
+
+if (window.SENTRY_DSN) {
+  (function() {
+    var script = document.createElement('script');
+    script.src = 'https://browser.sentry-cdn.com/8.x.x/bundle.min.js';
+    script.crossOrigin = 'anonymous';
+    script.onload = function() {
+      Sentry.init({
+        dsn: window.SENTRY_DSN,
+        environment: 'production',
+        tracesSampleRate: 0.1,
+      });
+    };
+    document.head.appendChild(script);
+  })();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.location.protocol === 'file:') {
+    const fields = ['loginUser', 'loginPass', 'passwordToggle', 'loginBtn'];
+    fields.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.disabled = true;
+    });
+    const hint = document.getElementById('loginHint');
+    if (hint) {
+      hint.textContent = '⚠️ Abrí este panel desde el servidor.';
+      hint.style.color = '#ef4444';
+    }
+  } else {
+    checkServerHealth();
+  }
 });

@@ -128,12 +128,15 @@ CREATE TABLE IF NOT EXISTS hero_cards (
   activo BOOLEAN DEFAULT TRUE,
   titulo TEXT DEFAULT '',
   subtitulo TEXT DEFAULT '',
+  descripcion TEXT DEFAULT '',
   cta_texto TEXT DEFAULT '',
   cta_url TEXT DEFAULT '',
   slot INTEGER DEFAULT 0,
   tipo TEXT DEFAULT 'hero',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE hero_cards ADD COLUMN IF NOT EXISTS descripcion TEXT DEFAULT '';
 
 CREATE TABLE IF NOT EXISTS webhook_events (
   id SERIAL PRIMARY KEY,

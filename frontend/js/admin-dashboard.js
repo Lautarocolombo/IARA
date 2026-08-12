@@ -101,10 +101,38 @@
           if (tokenEl) tokenEl.textContent = 'Iara';
         }
       });
+      updateLowStockIndicator();
     } else {
       redirectToLogin();
     }
   }
+
+  async function updateLowStockIndicator() {
+    try {
+      var res = await window.adminFetch('/api/admin/products', { method: 'GET' });
+      if (!res || !res.ok) return;
+      var data = await res.json();
+      var products = (data.products || []).filter(function (p) { return !p.deleted; });
+      var lowStock = products.filter(function (p) { return Number(p.stock || 0) <= 5; });
+      var indicator = document.getElementById('lowStockIndicator');
+      if (indicator) {
+        if (lowStock.length > 0) {
+          indicator.textContent = '⚠️ ' + lowStock.length + ' producto' + (lowStock.length > 1 ? 's' : '') + ' con stock bajo';
+          indicator.style.display = 'inline-flex';
+          indicator.onclick = function () {
+            switchSection('products');
+          };
+        } else {
+          indicator.style.display = 'none';
+          indicator.onclick = null;
+        }
+      }
+    } catch (err) {
+      console.error('[Dashboard] Error cargando indicator de stock bajo:', err);
+    }
+  }
+
+  window.updateLowStockIndicator = updateLowStockIndicator;
 
   window.initAdminDashboard = initAdminDashboard;
   window.switchSection = switchSection;

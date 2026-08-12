@@ -3,15 +3,26 @@ const logger = require('../lib/logger');
 const { deleteFromBlob } = require('../lib/upload');
 const path = require('path');
 const fs = require('fs');
+const { syncBus } = require('../routes/sync');
 
 const getSiteTexts = async (req, res) => {
   try {
-    const result = await query('SELECT key, value FROM site_texts');
+    const result = await query('SELECT key, value, updated_at FROM site_texts WHERE tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')');
     const map = {};
-    result.rows.forEach(r => { map[r.key] = r.value; });
+    let maxUpdated = null;
+    result.rows.forEach(r => {
+      map[r.key] = r.value;
+      if (!maxUpdated || new Date(r.updated_at) > new Date(maxUpdated)) {
+        maxUpdated = r.updated_at;
+      }
+    });
+    if (maxUpdated) {
+      map.__updatedAt = maxUpdated;
+    }
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json(map);
   } catch (err) {
+    console.error('siteTexts error', err);
     logger.error('Error obteniendo textos:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
@@ -22,7 +33,7 @@ const upsertSiteText = async (req, res) => {
   const resolvedKey = key || req.params.key;
   if (!resolvedKey || value === undefined) return res.status(400).json({ error: 'key y value son requeridos' });
   try {
-    await query('INSERT INTO site_texts (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = CURRENT_TIMESTAMP', [resolvedKey, value]);
+    await query('INSERT INTO site_texts (key, value, tenant_id) VALUES ($1, $2, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = CURRENT_TIMESTAMP', [resolvedKey, value]);
     res.json({ ok: true });
   } catch (err) {
     logger.error('Error guardando texto:', err);
@@ -38,7 +49,7 @@ const syncTextsToNeon = async (req, res) => {
 
     let existingMap = {};
     try {
-      const existing = await query('SELECT key, value FROM site_texts');
+      const existing = await query('SELECT key, value FROM site_texts WHERE tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')');
       existing.rows.forEach(function(r) { existingMap[r.key] = r.value; });
     } catch (err) {
       logger.warn({ err: err.message }, 'Error obteniendo textos existentes para limpieza de imágenes');
@@ -62,14 +73,23 @@ const syncTextsToNeon = async (req, res) => {
           }
         }
 
-        await query('INSERT INTO site_texts (key, value) VALUES ($1, $2) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = CURRENT_TIMESTAMP', [key, newValue]);
+        await query('INSERT INTO site_texts (key, value, tenant_id) VALUES ($1, $2, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = CURRENT_TIMESTAMP', [key, newValue]);
         results.saved += 1;
       } catch (err) {
         results.errors += 1;
       }
     }
 
-    res.json({ ok: true, results });
+    try {
+      const maxResult = await query('SELECT MAX(updated_at) as max_updated FROM site_texts WHERE tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')');
+      const maxUpdated = maxResult.rows[0]?.max_updated || null;
+      try { syncBus.emit('site_texts_updated', { updatedAt: maxUpdated }); } catch (e) { /* noop */ }
+      res.json({ ok: true, results, updatedAt: maxUpdated });
+    } catch (err) {
+      logger.error('Error obteniendo updatedAt tras sync:', err);
+      try { syncBus.emit('site_texts_updated', {}); } catch (e) { /* noop */ }
+      res.json({ ok: true, results });
+    }
   } catch (err) {
     logger.error('Error sincronizando textos:', err);
     res.status(500).json({ error: 'Error interno del servidor' });

@@ -312,7 +312,7 @@ const createProduct = async (req, res) => {
     }
 
     const result = await query(
-      'INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, FALSE) RETURNING *',
+      `INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, FALSE, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) RETURNING *`,
       [data.name, slug, data.category, Number(data.price), data.description || '', data.emoji || '📿', data.image || '', data.badge || '', Number(data.stock), data.featured || false, data.active !== false, data.sku || '']
     );
     res.status(201).json(result.rows[0]);

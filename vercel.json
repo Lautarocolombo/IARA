@@ -1,4 +1,8 @@
 {
+  // IMPORTANTE: La URL del backend (https://iara-uxcu.onrender.com) está hardcodeada.
+  // Si el deployment de Render cambia de URL, actualizá las líneas 7 y 11 manualmente.
+  // Para evitar hardcodear, considerá usar un dominio personalizado para Render
+  // o migrar el proxy a Vercel Edge Functions leyendo BACKEND_URL de env vars.
   "version": 2,
   "outputDirectory": "frontend",
   "rewrites": [
@@ -21,6 +25,28 @@
   ],
   "headers": [
     {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Permissions-Policy", "value": "geolocation=(), microphone=(), camera=()" }
+      ]
+    },
+    {
+      "source": "/(.*).html",
+      "headers": [
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains; preload"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        }
+      ]
+    },
+    {
       "source": "/uploads/(.*)",
       "headers": [
         { "key": "Access-Control-Allow-Methods", "value": "GET, OPTIONS" },
@@ -28,7 +54,16 @@
       ]
     },
     {
-      "source": "/(.*).(js|css|png|jpg|jpeg|webp|gif|svg|woff|woff2|ico)",
+      "source": "/(.*).(js|css)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/(.*).(png|jpg|jpeg|webp|gif|svg|woff|woff2|ico)",
       "headers": [
         {
           "key": "Cache-Control",
@@ -37,11 +72,11 @@
       ]
     },
     {
-      "source": "/(.*).html",
+      "source": "/(sw-v4.js|sw.js)",
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "no-cache, must-revalidate"
+          "value": "no-cache, no-store, must-revalidate"
         }
       ]
     }

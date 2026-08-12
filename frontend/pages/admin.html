@@ -34,18 +34,18 @@
       <div class="form-group password-group">
         <label>Contraseña</label>
         <div class="password-input-wrapper">
-          <input type="password" id="loginPass" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter') doLogin()" />
+          <input type="password" id="loginPass" placeholder="Contraseña" autocomplete="current-password" />
           <button type="button" class="password-toggle" id="passwordToggle" aria-label="Mostrar contraseña">
             <svg class="eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
             <svg class="eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
           </button>
         </div>
       </div>
-      <button class="btn btn-primary btn-full" id="loginBtn" onclick="doLogin()">Ingresar</button>
+      <button class="btn btn-primary btn-full" id="loginBtn">Ingresar</button>
       <p class="login-hint" id="loginHint">Verificando conexión con el servidor...</p>
-      <button class="btn btn-secondary btn-sm hidden" id="retryHealthBtn" style="margin-top:0.5rem;" onclick="checkServerHealth()">Reintentar conexión</button>
-      <p id="loginError" class="login-error" style="display:none;color:var(--accent, #d47090);text-align:center;font-size:0.85rem;margin-top:0.5rem;"></p>
-      <a href="../index.html" class="btn btn-secondary btn-full" style="margin-top:0.75rem;">← Volver al sitio</a>
+      <button class="btn btn-secondary btn-sm hidden" id="retryHealthBtn" class="retry-health-btn">Reintentar conexión</button>
+      <p id="loginError" class="login-error login-error-muted"></p>
+      <a href="../index.html" class="btn btn-secondary btn-full login-back-link">← Volver al sitio</a>
     </div>
   </div>
 
@@ -55,36 +55,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script>
-    if (window.SENTRY_DSN) {
-      (function() {
-        var script = document.createElement('script');
-        script.src = 'https://browser.sentry-cdn.com/8.x.x/bundle.min.js';
-        script.crossOrigin = 'anonymous';
-        script.onload = function() {
-          Sentry.init({
-            dsn: window.SENTRY_DSN,
-            environment: 'production',
-            tracesSampleRate: 0.1,
-          });
-        };
-        document.head.appendChild(script);
-      })();
-    }
-  </script>
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      if (window.location.protocol === 'file:') {
-        document.getElementById('loginUser').disabled = true;
-        document.getElementById('loginPass').disabled = true;
-        document.getElementById('passwordToggle').disabled = true;
-        document.getElementById('loginBtn').disabled = true;
-        document.getElementById('loginHint').textContent = '⚠️ Abrí este panel desde el servidor.';
-        document.getElementById('loginHint').style.color = '#ef4444';
-      } else {
-        checkServerHealth();
-      }
-    });
-  </script>
 </body>
 </html>
+

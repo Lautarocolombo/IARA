@@ -10,21 +10,6 @@
   margin: 0 auto;
 }
 
-.order-card {
-  background: var(--white);
-  border-radius: var(--radius-md);
-  border: 1px solid #f4d0da;
-  box-shadow: var(--shadow-sm);
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  transition: var(--transition);
-}
-
-.order-card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-}
-
 .order-header {
   display: flex;
   justify-content: space-between;
@@ -176,29 +161,6 @@
 .empty-orders p {
   color: var(--text-muted);
   margin-bottom: 1.5rem;
-}
-
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 0.9rem;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 0.85rem;
-  color: var(--text-mid);
-  background: var(--white);
-  border: 1.5px solid var(--rose-light);
-  text-decoration: none;
-  transition: all 0.2s ease;
-  margin-bottom: 1.5rem;
-}
-
-.back-link:hover {
-  background: var(--blush);
-  border-color: var(--rose-mid);
-  color: var(--rose-dark);
-  transform: translateY(-1px);
 }
 
 .orders-form {

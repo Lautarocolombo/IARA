@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Producto — Artesanía Gualeguay</title>
   <meta name="description" content="Detalle de producto artesanal de Artesanía Gualeguay. Pulseras, souvenirs y accesorios únicos hechos a mano en Gualeguay." />
+  <meta name="theme-color" content="#d47090" />
   <link rel="canonical" href="https://artesaniagualeguay.com/pages/product.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,9 +23,6 @@
   <script src="../js/config.js"></script>
   <script src="../js/safeImage.js"></script>
   <script src="../js/header.js"></script>
-  <script>
-    initSiteHeader({ showBackButton: true });
-  </script>
   <script src="../js/theme.js"></script>
   <main id="content" class="product-detail">
     <nav aria-label="Breadcrumb" class="breadcrumb">
@@ -35,223 +33,49 @@
       <div class="loading-skeleton loading-skeleton-tall"></div>
     </div>
   </main>
-   <script src="../js/ui.js"></script>
-   <script>
-     if (typeof initNavbarScroll === 'function') initNavbarScroll();
-     if (typeof initMobileNavbar === 'function') initMobileNavbar();
-   </script>
-   <script src="../js/products.js"></script>
-  <script src="../js/wishlist.js"></script>
-  <script src="../js/cart.js"></script>
-  <script>
-    async function loadProduct() {
-      const container = document.getElementById('productContent');
-      if (!container) return;
-      const params = new URLSearchParams(window.location.search);
-      const productId = params.get('id');
-      if (!productId) {
-        container.innerHTML = '<p>Producto no encontrado.</p>';
-        return;
-      }
-      try {
-        const [productRes, reviewsRes] = await Promise.all([
-          window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}`, {}, 2, 1000),
-          window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}/reviews`, {}, 2, 1000)
-        ]);
-        const reviewsData = reviewsRes ? await reviewsRes.json() : [];
-        let product = null;
-        if (productRes && productRes.ok) {
-          product = await productRes.json();
-        } else {
-          const fallbackRes = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products`, {}, 2, 1000);
-          const productData = fallbackRes ? await fallbackRes.json() : [];
-          const products = Array.isArray(productData) && productData.length ? productData : (typeof defaultProducts !== 'undefined' ? defaultProducts : []);
-          product = products.find(p => p.id === Number(productId));
-        }
-        if (!product) {
-          container.innerHTML = '<p>Producto no encontrado.</p>';
-          return;
-        }
-         const images = Array.isArray(product.images) && product.images.length
- 	             ? product.images
- 	             : [{ url: window.getProductImageUrl(product) || '../assets/placeholder-product.svg', es_principal: true }];
-          const principalImage = images.find(i => i.es_principal) || images[0];
-          const thumbsHtml = images.map((img, i) =>
-            `${window.renderProductImage(img.url, product.name + ' - imagen ' + (i + 1), { placeholder: '📿' })}`
-          ).join('');
-          const imageHtml = images.length
-            ? `<div class="product-image-gallery"><div class="product-image-main">${window.renderProductImage(principalImage ? principalImage.url : '', product.name, { id: 'productMainImage', lazy: false, placeholder: '📿' })}</div><div class="product-image-thumbs" id="productThumbs">${thumbsHtml}</div></div>`
-             : `${window.renderProductImage('', product.name, { style: 'width:100%;aspect-ratio:1;object-fit:contain;object-position:center;', placeholder: '📿' })}`;
-        container.innerHTML = `
-          <div class="product-detail-grid">
-            <div class="product-image-large" aria-hidden="true">${imageHtml}</div>
-            <div>
-              <span class="product-category">${product.category || ''}</span>
-              <h1 class="product-detail-title">${product.name}</h1>
-              <p class="product-detail-desc">${product.description || ''}</p>
-              <p class="product-detail-price">${formatARS(product.price)}</p>
-              <div class="product-detail-actions">
-                <button class="btn-primary btn-add-cart" data-product-id="${product.id}" data-product-name="${product.name.replace(/"/g, '&quot;')}" data-product-price="${product.price}" data-product-emoji="${product.emoji||'📿'}" data-product-image="${(product.image||'').replace(/"/g, '&quot;')}" data-product-stock="${product.stock||0}">Agregar al carrito</button>
-                <button class="btn-outline btn-wishlist-detail" data-product-id="${product.id}" data-product-name="${product.name.replace(/"/g, '&quot;')}" data-product-price="${product.price}" data-product-emoji="${product.emoji||'📿'}" data-product-image="${(product.image||'').replace(/"/g, '&quot;')}" aria-label="Favoritos">${window.isInWishlist(product.id) ? '❤️' : '🤍'}</button>
-                <a href="https://wa.me/${CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g,'')}?text=Hola! Me interesa el producto: ${product.name}" target="_blank" class="btn-outline" rel="noopener">Consultar por WhatsApp</a>
-              </div>
-            </div>
-          </div>
-          <div class="reviews-section">
-            <h2>Reseñas</h2>
-            <div id="reviewsList">
-               ${reviewsData.length ? reviewsData.map(r => `
-                 <div class="review-card">
-                   <div class="review-header">
-                     ${r.avatar ? `<img src="${escapeHtml(r.avatar)}" class="review-avatar" alt="${escapeHtml(r.name || '')}" loading="lazy" />` : ''}
-                     <span class="review-name">${r.name || 'Anónimo'}</span>
-                     <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
-                   </div>
-                   <p class="review-comment">${r.comment}</p>
-                 </div>
-               `).join('') : '<p>Aún no hay reseñas para este producto.</p>'}
-            </div>
-             <div class="review-form">
-               <h3>Dejá tu reseña</h3>
-               <div class="form-group">
-                 <label for="reviewName">Nombre</label>
-                 <input type="text" id="reviewName" placeholder="Tu nombre" rows="3" />
-               </div>
-               <div class="form-group">
-                 <label for="reviewAvatar">Avatar (opcional)</label>
-                 <input type="file" id="reviewAvatar" accept="image/jpeg,image/png,image/webp,image/gif" />
-               </div>
-               <div class="rating-input" id="ratingInput">
-                 ${[1,2,3,4,5].map(i => `<button type="button" data-rating="${i}" aria-label="Calificación ${i} estrellas">★</button>`).join('')}
-               </div>
-               <textarea id="reviewComment" placeholder="Tu opinión..." rows="3"></textarea>
-                 <button class="btn-primary btn-sm" onclick="submitReview(${productId})">Enviar reseña</button>
-             </div>
-          </div>
-         `;
-         let selectedRating = 0;
-         const thumbs = document.querySelectorAll('#productThumbs img');
-         if (thumbs.length) {
-           thumbs.forEach((t, i) => {
-             if (i === 0) t.classList.add('active');
-             t.addEventListener('click', () => {
-               const main = document.getElementById('productMainImage');
-               if (!main) return;
-               main.src = t.src;
-               thumbs.forEach(tb => tb.classList.remove('active'));
-               t.classList.add('active');
-             });
-           });
-         }
-        document.querySelectorAll('#ratingInput button').forEach(btn => {
-          btn.addEventListener('click', () => {
-            selectedRating = Number(btn.dataset.rating);
-            document.querySelectorAll('#ratingInput button').forEach(b => {
-              b.classList.toggle('active', Number(b.dataset.rating) <= selectedRating);
-            });
-          });
-        });
-        window.submitReview = async (id) => {
-          const name = document.getElementById('reviewName').value.trim();
-          const comment = document.getElementById('reviewComment').value.trim();
-          if (!selectedRating || !comment) {
-            showToast('', 'Completá la calificación y el comentario', 'error');
-            return;
-          }
-          const avatarInput = document.getElementById('reviewAvatar');
-          const formData = new FormData();
-          formData.append('name', name);
-          formData.append('comment', comment);
-          formData.append('rating', String(selectedRating));
-          if (avatarInput && avatarInput.files && avatarInput.files[0]) {
-            formData.append('avatar', avatarInput.files[0]);
-          }
-          try {
-            const res = await fetch(`${CONFIG.API.BASE}/api/products/${id}/reviews`, {
-              method: 'POST',
-              body: formData
-            });
-            if (!res.ok) {
-              const data = await res.json().catch(() => ({}));
-              throw new Error(data.error || 'Error al enviar la reseña');
-            }
-            showToast('', '¡Reseña enviada! Gracias.', 'success');
-            location.reload();
-          } catch (error) {
-            console.error(error);
-            showToast('', window.getFetchErrorMessage(error) || 'Error de conexión. Intentá nuevamente.', 'error');
-          }
-        };
-      } catch (err) {
-        container.innerHTML = '<div class="empty-state"><h3>Error al cargar el producto</h3><p>Intentá recargar la página o volvé al <a href="../index.html#catalog">catálogo</a>.</p></div>';
-      }
-    }
-    document.addEventListener('DOMContentLoaded', loadProduct);
-
-    document.getElementById('productContent')?.addEventListener('click', (e) => {
-      const btn = e.target.closest('.btn-add-cart');
-      if (!btn) return;
-      e.preventDefault();
-      const product = {
-        id: Number(btn.dataset.productId),
-        name: btn.dataset.productName,
-        price: Number(btn.dataset.productPrice),
-        emoji: btn.dataset.productEmoji || '📿',
-        image: btn.dataset.productImage || '',
-        stock: Number(btn.dataset.productStock || 0),
-        unit: 'u',
-        qty: 1
-      };
-      if (typeof addToCart === 'function') addToCart(product);
-    });
-
-    document.getElementById('productContent')?.addEventListener('click', (e) => {
-      const btn = e.target.closest('.btn-wishlist-detail');
-      if (!btn) return;
-      e.preventDefault();
-      const product = {
-        id: Number(btn.dataset.productId),
-        name: btn.dataset.productName,
-        price: Number(btn.dataset.productPrice),
-        emoji: btn.dataset.productEmoji || '📿',
-        image: btn.dataset.productImage || ''
-      };
-      if (window.isInWishlist(product.id)) {
-        window.removeFromWishlist(product.id);
-        btn.textContent = '🤍';
-        btn.setAttribute('aria-label', 'Agregar a favoritos');
-      } else {
-        window.addToWishlist(product);
-        btn.textContent = '❤️';
-        btn.setAttribute('aria-label', 'Quitar de favoritos');
-      }
-    });
-
-    if (typeof initSSESync === 'function') initSSESync();
-    startDataSync('product-detail', loadProduct);
-    onSyncMessage('products_updated', () => {
-      const params = new URLSearchParams(window.location.search);
-      const productId = params.get('id');
-      if (productId) {
-        loadProduct();
-      }
-    });
-
-    onSyncMessage('hero_updated', () => {
-      if (typeof loadHeroCards === 'function') loadHeroCards();
-    });
-
-    onSyncMessage('wishlist_updated', () => {
-      if (typeof renderWishlist === 'function') renderWishlist();
-    });
-
-    onSyncMessage('reviews_updated', () => {
-      const params = new URLSearchParams(window.location.search);
-      const productId = params.get('id');
-      if (productId) {
-        loadProduct();
-      }
-    });
-  </script>
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-section">
+        <h4>Artesanía Gualeguay</h4>
+        <p>Creando pulseras y souvenirs únicos desde el corazón de Gualeguay, Entre Ríos.</p>
+        <div class="social-links">
+          <a href="https://wa.me/5493444634444" title="WhatsApp" class="social-icon" aria-label="WhatsApp">💬</a>
+          <a href="javascript:void(0)" id="instagramLink" title="Instagram" class="social-icon" aria-label="Instagram">📷</a>
+          <a href="javascript:void(0)" id="facebookLink" title="Facebook" class="social-icon" aria-label="Facebook">👍</a>
+          <a href="javascript:void(0)" id="twitterLink" title="Twitter" class="social-icon" aria-label="Twitter">🐦</a>
+        </div>
+      </div>
+      <div class="footer-section">
+        <h4>Enlaces</h4>
+        <ul>
+          <li><a href="../index.html#home">Inicio</a></li>
+          <li><a href="../index.html#catalog">Catálogo</a></li>
+          <li><a href="../index.html#about">Sobre Nosotros</a></li>
+          <li><a href="../index.html#contact">Contacto</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Información</h4>
+        <ul>
+          <li><a href="../pages/privacy.html">Política de Privacidad</a></li>
+          <li><a href="../pages/terms.html">Términos de Servicio</a></li>
+          <li><a href="../pages/devoluciones.html">Envíos y Devoluciones</a></li>
+          <li><a href="../pages/faq.html">Preguntas Frecuentes</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2026 Artesanía Gualeguay. Todos los derechos reservados.</p>
+      <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #64748b;">
+        <a href="../pages/terms.html" style="margin-right: 1rem;">Términos y Condiciones</a>
+        <a href="../pages/privacy.html" style="margin-right: 1rem;">Política de Privacidad</a>
+        <a href="../pages/devoluciones.html" style="margin-right: 1rem;">Cambios y Devoluciones</a>
+        <a href="../pages/orders.html" style="margin-right: 1rem;">Mis Pedidos</a>
+        <a href="../pages/wishlist.html">Favoritos</a>
+      </div>
+    </div>
+  </footer>
+  <div id="toastContainer" class="toast-container"></div>
+  <script src="../js/pages/product.js"></script>
 </body>
 </html>

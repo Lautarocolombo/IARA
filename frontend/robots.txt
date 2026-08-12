@@ -3,4 +3,6 @@ Allow: /
 Disallow: /backend/
 Disallow: /uploads/
 Disallow: /api/
+Disallow: /pages/admin
+Disallow: /pages/dashboard
 Sitemap: /sitemap.xml

@@ -159,9 +159,15 @@ function initNewsletterForm() {
    form.addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = form.querySelector('input[type="email"]').value;
+      const consent = document.getElementById('newsletterConsent');
 
       if (!email) {
         showToast('', 'Por favor ingresa tu email', 'error');
+        return;
+      }
+
+      if (!consent?.checked) {
+        showToast('', 'Aceptá la política de privacidad para suscribirte', 'error');
         return;
       }
 
@@ -356,7 +362,7 @@ function onSyncMessage(eventType, handler) {
   if (ch) {
     ch.addEventListener('message', (ev) => {
       if (ev.data && ev.data.type === eventType) {
-        try { handler(); } catch (e) { /* noop */ }
+        try { handler(ev.data.data); } catch (e) { /* noop */ }
       }
     });
   }
@@ -582,6 +588,11 @@ async function loadSiteTexts() {
     }
     const data = await res.json();
 
+    if (data.__updatedAt) {
+      window.__siteTextsUpdatedAt = data.__updatedAt;
+      delete data.__updatedAt;
+    }
+
     if (data.about_text && document.getElementById('aboutText')) {
       const clean = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(data.about_text) : data.about_text;
       document.getElementById('aboutText').innerHTML = `<p>${clean}</p>`;
@@ -751,10 +762,26 @@ window.loadSiteSettings = loadSiteSettings;
 window.loadSiteTexts = loadSiteTexts;
 window.loadTestimonials = loadTestimonials;
 
+async function loadPaymentConfig() {
+  try {
+    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/payment-config`, {}, 2, 1000);
+    if (!res || !res.ok) return;
+    const data = await res.json();
+    if (data.shippingCost !== undefined) CONFIG.CART.SHIPPING_COST = Number(data.shippingCost);
+    if (data.freeShippingFrom !== undefined) CONFIG.CART.SHIPPING_THRESHOLD = Number(data.freeShippingFrom);
+  } catch (err) {
+    console.error('[Config] Error cargando payment-config:', err);
+  }
+}
+window.loadPaymentConfig = loadPaymentConfig;
+
 if (typeof document !== 'undefined') {
   document.addEventListener('DOMContentLoaded', () => {
     if (typeof loadSiteSettings === 'function') {
       loadSiteSettings();
+    }
+    if (typeof loadPaymentConfig === 'function') {
+      loadPaymentConfig();
     }
   });
 }

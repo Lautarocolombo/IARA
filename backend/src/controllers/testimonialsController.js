@@ -34,7 +34,7 @@ const createTestimonial = async (req, res) => {
   if (!name || !comment) return res.status(400).json({ error: 'Nombre y comentario son requeridos' });
   try {
     const result = await query(
-      'INSERT INTO testimonials (name, comment, rating, image, avatar, active, orden) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      'INSERT INTO testimonials (name, comment, rating, image, avatar, active, orden, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) RETURNING *',
       [name, comment, Number(rating), image, image, active !== false, Number(orden)]
     );
     res.status(201).json(result.rows[0]);
@@ -50,7 +50,7 @@ const toggleTestimonialActive = async (req, res) => {
   const { active } = req.body || {};
   try {
     const result = await query(
-      'UPDATE testimonials SET active = $1 WHERE id = $2 RETURNING *',
+      'UPDATE testimonials SET active = $1, tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\') WHERE id = $2 RETURNING *',
       [active !== false, id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Testimonio no encontrado' });
@@ -68,7 +68,7 @@ const updateTestimonialOrder = async (req, res) => {
   try {
     for (const item of orden) {
       if (item.id !== undefined && item.orden !== undefined) {
-        await query('UPDATE testimonials SET orden = $1 WHERE id = $2', [Number(item.orden), Number(item.id)]);
+        await query('UPDATE testimonials SET orden = $1, tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\') WHERE id = $2', [Number(item.orden), Number(item.id)]);
       }
     }
     res.json({ ok: true });

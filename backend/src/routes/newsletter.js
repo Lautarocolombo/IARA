@@ -11,7 +11,7 @@ router.post('/subscribe', async (req, res) => {
   }
   const { email } = parsed.data;
   try {
-    await query('INSERT INTO subscribers (email) VALUES ($1) ON CONFLICT (email) DO NOTHING', [email]);
+    await query('INSERT INTO subscribers (email, tenant_id) VALUES ($1, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) ON CONFLICT (email) DO NOTHING', [email]);
     res.status(201).json({ ok: true });
   } catch (err) {
     logger.error('Error suscribiendo:', err);

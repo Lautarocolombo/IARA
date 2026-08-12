@@ -376,47 +376,61 @@
       var fpRemoveFlag = fpImageRemoveBtn ? fpImageRemoveBtn.dataset.remove === 'true' : false;
 
       var heroImageUrl = textsCache['hero_image_url'] || '';
+      var fpImageUrl = textsCache['featured_product_image_url'] || '';
+
+      var uploadPromises = [];
+      var uploadMap = {};
+
       if (heroImageFile) {
-        var formData = new FormData();
-        formData.append('image', heroImageFile);
-        var uploadRes = await window.adminFetch('/api/admin/upload', {
+        var formDataHero = new FormData();
+        formDataHero.append('image', heroImageFile);
+        var heroPromise = window.adminFetch('/api/admin/upload', {
           method: 'POST',
-          body: formData
-        });
-        if (!uploadRes || !uploadRes.ok) {
-          let errMsg = 'Error al subir imagen del hero.';
-          if (uploadRes) {
-            let errData = await uploadRes.json().catch(function () { return {}; });
-            errMsg = errData.error || errMsg;
+          body: formDataHero
+        }).then(async function (res) {
+          if (!res || !res.ok) {
+            let errMsg = 'Error al subir imagen del hero.';
+            if (res) {
+              let errData = await res.json().catch(function () { return {}; });
+              errMsg = errData.error || errMsg;
+            }
+            throw new Error(errMsg);
           }
-          throw new Error(errMsg);
-        }
-        var uploadData = await uploadRes.json();
-        heroImageUrl = uploadData.url || '';
+          var data = await res.json();
+          heroImageUrl = data.url || '';
+          uploadMap.hero = heroImageUrl;
+        });
+        uploadPromises.push(heroPromise);
       } else if (heroRemoveFlag) {
         heroImageUrl = '';
       }
 
-      var fpImageUrl = textsCache['featured_product_image_url'] || '';
       if (fpImageFile) {
-        var formData2 = new FormData();
-        formData2.append('image', fpImageFile);
-        var uploadRes2 = await window.adminFetch('/api/admin/upload', {
+        var formDataFp = new FormData();
+        formDataFp.append('image', fpImageFile);
+        var fpPromise = window.adminFetch('/api/admin/upload', {
           method: 'POST',
-          body: formData2
-        });
-        if (!uploadRes2 || !uploadRes2.ok) {
-          let errMsg = 'Error al subir imagen del producto.';
-          if (uploadRes2) {
-            let errData = await uploadRes2.json().catch(function () { return {}; });
-            errMsg = errData.error || errMsg;
+          body: formDataFp
+        }).then(async function (res) {
+          if (!res || !res.ok) {
+            let errMsg = 'Error al subir imagen del producto.';
+            if (res) {
+              let errData = await res.json().catch(function () { return {}; });
+              errMsg = errData.error || errMsg;
+            }
+            throw new Error(errMsg);
           }
-          throw new Error(errMsg);
-        }
-        var uploadData2 = await uploadRes2.json();
-        fpImageUrl = uploadData2.url || '';
+          var data = await res.json();
+          fpImageUrl = data.url || '';
+          uploadMap.fp = fpImageUrl;
+        });
+        uploadPromises.push(fpPromise);
       } else if (fpRemoveFlag) {
         fpImageUrl = '';
+      }
+
+      if (uploadPromises.length > 0) {
+        await Promise.all(uploadPromises);
       }
 
       var payload = {

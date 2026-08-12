@@ -1,6 +1,7 @@
-const { query } = require('../lib/db');
+const { query, transaction } = require('../lib/db');
 const logger = require('../lib/logger');
 const crypto = require('crypto');
+const { enqueueWebhook } = require('../queues/webhookQueue');
 
 async function confirmTransferPayment(req, res) {
   try {
@@ -31,27 +32,51 @@ async function confirmTransferPayment(req, res) {
 
     const eventId = reference || crypto.randomUUID();
 
-    await query(
-      'INSERT INTO webhook_events (event_id, source, payload, status) VALUES ($1, $2, $3, $4) ON CONFLICT (event_id) DO UPDATE SET payload = $3, status = $4',
-      [eventId, 'transfer', JSON.stringify({ orderId, amount, reference }), 'processing']
-    );
+    const webhookPayload = { orderId, amount, reference: eventId, source: 'transfer' };
 
-    await query(
-      'UPDATE orders SET status = $1 WHERE id = $2',
-      ['confirmed', order.id]
-    );
+    try {
+      await enqueueWebhook(webhookPayload);
+    } catch (queueErr) {
+      logger.error({ err: queueErr.message }, 'Error encolando webhook, fallback a procesamiento síncrono');
+      await processWebhookSync(webhookPayload);
+    }
 
-    await query(
-      'UPDATE webhook_events SET status = $1, processed_at = CURRENT_TIMESTAMP WHERE event_id = $2',
-      ['processed', eventId]
-    );
-
-    logger.info({ orderId: order.id, amount, reference }, 'Pago por transferencia confirmado');
-    res.status(200).json({ received: true, orderId: order.id, status: 'confirmed' });
+    res.status(202).json({ accepted: true, orderId: order.id, status: 'queued' });
   } catch (err) {
     logger.error({ err: err.message }, 'Error confirmando pago por transferencia');
     res.status(500).json({ error: 'Error interno del servidor' });
   }
+}
+
+async function processWebhookSync(payload) {
+  const { orderId, amount, reference } = payload;
+  await transaction(async (client) => {
+    await query(
+      'INSERT INTO webhook_events (event_id, source, payload, status) VALUES ($1, $2, $3, $4) ON CONFLICT (event_id) DO NOTHING RETURNING status',
+      [reference, 'transfer', JSON.stringify({ orderId, amount, reference }), 'processing'],
+      client
+    );
+
+    const updateResult = await query(
+      'UPDATE orders SET status = $1 WHERE id = $2 AND status != $1 RETURNING id',
+      ['confirmed', Number(orderId)],
+      client
+    );
+
+    if (updateResult.rowCount > 0) {
+      await query(
+        'UPDATE webhook_events SET status = $1, processed_at = CURRENT_TIMESTAMP WHERE event_id = $2',
+        ['processed', reference],
+        client
+      );
+    } else {
+      await query(
+        'UPDATE webhook_events SET status = $1 WHERE event_id = $2',
+        ['already_confirmed', reference],
+        client
+      );
+    }
+  });
 }
 
 async function getPaymentStatus(req, res) {
@@ -66,4 +91,4 @@ async function getPaymentStatus(req, res) {
   }
 }
 
-module.exports = { confirmTransferPayment, getPaymentStatus };
+module.exports = { confirmTransferPayment, getPaymentStatus, processWebhookSync };

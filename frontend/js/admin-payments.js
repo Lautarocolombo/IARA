@@ -56,6 +56,11 @@
       if (holderEl) holderEl.value = data.holderName || '';
       if (activeEl) activeEl.checked = data.active !== false;
 
+      var shippingCostEl = document.getElementById('pmShippingCost');
+      var freeShippingFromEl = document.getElementById('pmFreeShippingFrom');
+      if (shippingCostEl) shippingCostEl.value = data.shippingCost || 0;
+      if (freeShippingFromEl) freeShippingFromEl.value = data.freeShippingFrom || 0;
+
       var notifyAdminEl = document.getElementById('pmNotifyAdmin');
       var notifyClientApprovedEl = document.getElementById('pmNotifyClientApproved');
       var notifyClientRejectedEl = document.getElementById('pmNotifyClientRejected');
@@ -84,6 +89,8 @@
       var alias = (document.getElementById('pmAlias')?.value || '').trim();
       var holder = (document.getElementById('pmHolderName')?.value || '').trim();
       var active = document.getElementById('pmActive')?.checked !== false;
+      var shippingCost = Number(document.getElementById('pmShippingCost')?.value || 0);
+      var freeShippingFrom = Number(document.getElementById('pmFreeShippingFrom')?.value || 0);
 
       var res = await window.adminFetch('/api/admin/payment-config', {
         method: 'PUT',
@@ -93,6 +100,8 @@
           transferAlias: alias,
           holderName: holder,
           active: active,
+          shippingCost: shippingCost,
+          freeShippingFrom: freeShippingFrom,
           notifyAdminNewProof: document.getElementById('pmNotifyAdmin')?.checked !== false,
           notifyClientApproved: document.getElementById('pmNotifyClientApproved')?.checked !== false,
           notifyClientRejected: document.getElementById('pmNotifyClientRejected')?.checked !== false

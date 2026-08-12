@@ -66,14 +66,16 @@
     return doc.body.firstChild.innerHTML;
   }
 
-  async function renderHeroCards(_cards) {
+  async function renderHeroCards(cards) {
     try {
       let siteTexts = {};
-      try {
-        const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-texts`, {}, 2, 1000);
-        if (res && res.ok) siteTexts = await res.json();
-      } catch (err) {
-        console.error('[Hero] Error cargando site-texts:', err);
+      if (!Array.isArray(cards) || cards.length === 0) {
+        try {
+          const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-texts`, {}, 2, 1000);
+          if (res && res.ok) siteTexts = await res.json();
+        } catch (err) {
+          console.error('[Hero] Error cargando site-texts:', err);
+        }
       }
 
       const defaults = [
@@ -93,20 +95,23 @@
         }
       ];
 
+      const card1 = Array.isArray(cards) && cards.length > 0 ? cards[0] : {};
+      const card2 = Array.isArray(cards) && cards.length > 1 ? cards[1] : {};
+
       const block1 = {
-        imagen: siteTexts.hero_image_url || '',
-        titulo: siteTexts.hero_title || defaults[0].titulo,
-        subtitulo: siteTexts.hero_subtitle || defaults[0].subtitulo,
-        cta_texto: siteTexts.hero_cta_text || defaults[0].cta_texto,
-        cta_url: siteTexts.hero_cta_url || defaults[0].cta_url
+        imagen: siteTexts.hero_image_url || card1.imagen || '',
+        titulo: siteTexts.hero_title || card1.titulo || defaults[0].titulo,
+        subtitulo: siteTexts.hero_subtitle || card1.subtitulo || defaults[0].subtitulo,
+        cta_texto: siteTexts.hero_cta_text || card1.cta_texto || defaults[0].cta_texto,
+        cta_url: siteTexts.hero_cta_url || card1.cta_url || defaults[0].cta_url
       };
 
       const block2 = {
-        imagen: siteTexts.featured_product_image_url || '',
-        titulo: siteTexts.featured_product_name || defaults[1].titulo,
-        subtitulo: siteTexts.featured_product_description || defaults[1].subtitulo,
-        cta_texto: siteTexts.featured_product_cta_text || defaults[1].cta_texto,
-        cta_url: siteTexts.featured_product_cta_url || defaults[1].cta_url
+        imagen: siteTexts.featured_product_image_url || card2.imagen || '',
+        titulo: siteTexts.featured_product_name || card2.titulo || defaults[1].titulo,
+        subtitulo: siteTexts.featured_product_description || card2.subtitulo || defaults[1].subtitulo,
+        cta_texto: siteTexts.featured_product_cta_text || card2.cta_texto || defaults[1].cta_texto,
+        cta_url: siteTexts.featured_product_cta_url || card2.cta_url || defaults[1].cta_url
       };
 
       const data = [block1, block2];

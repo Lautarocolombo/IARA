@@ -5,9 +5,9 @@ const { getPublicUrl, deleteImageAsset, processFile } = require('../lib/upload')
 async function getProductImages(req, res) {
   try {
     const productId = Number(req.params.id);
-    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = resolveBaseUrl(req);
     const result = await query(
-      'SELECT * FROM product_images WHERE product_id = $1 ORDER BY orden ASC, id ASC',
+      'SELECT * FROM product_images WHERE product_id =$1 ORDER BY orden ASC, id ASC',
       [productId]
     );
     const images = result.rows.map(img => ({

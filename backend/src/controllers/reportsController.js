@@ -1,5 +1,6 @@
 const { query, transaction } = require('../lib/db');
 const logger = require('../lib/logger');
+const { safeJsonParse } = require('../lib/parser');
 
 const WEEKLY_BAJA_THRESHOLD = 300;
 const WEEKLY_MEDIA_THRESHOLD = 800;
@@ -43,19 +44,24 @@ const getSalesReport = async (req, res) => {
       byStatus[status].count += 1;
       byStatus[status].total += Number(o.total || 0);
 
-      const items = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
+      const items = safeJsonParse(o.items, []);
+      const categorySeen = new Set();
       for (const it of items) {
         const p = productsMap[it.id];
         const name = p ? p.name : 'Producto #' + it.id;
         const cat = p ? p.category : 'Sin categoría';
         const qty = it.quantity || 1;
+        const itemTotal = Number(it.price || 0) * qty;
 
         if (!byProduct[name]) byProduct[name] = { name, qty: 0, total: 0 };
         byProduct[name].qty += qty;
-        byProduct[name].total += Number(o.total || 0);
+        byProduct[name].total += itemTotal;
 
         if (!byCategory[cat]) byCategory[cat] = { category: cat, total: 0, orders: 0 };
-        byCategory[cat].total += Number(o.total || 0);
+        byCategory[cat].total += itemTotal;
+        categorySeen.add(cat);
+      }
+      for (const cat of categorySeen) {
         byCategory[cat].orders += 1;
       }
     }

@@ -92,6 +92,11 @@
         ? '<img src="' + escapeAttr(imgUrl) + '" alt="' + escapeAttr(p.name) + '" style="width:44px;height:44px;border-radius:8px;object-fit:cover;" onerror="window.imgError(this)" />'
         : '<div style="width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,#fce8ee,#d4ede3);display:flex;align-items:center;justify-content:center;font-size:1.3rem;">' + (p.emoji || '📿') + '</div>';
 
+      var stock = Number(p.stock || 0);
+      var stockBadge = stock <= 5
+        ? '<span class="badge badge-stock--low" title="Stock bajo">' + stock + ' ⚠️</span>'
+        : '<span>' + stock + '</span>';
+
       return '<tr data-product-id="' + p.id + '">' +
         '<td><div class="product-cell">' + thumbnail +
           '<div><div class="product-name">' + escapeHtml(p.name || '') + '</div>' +
@@ -99,7 +104,7 @@
         '</div></td>' +
         '<td>' + escapeHtml(p.category || 'Sin categoría') + '</td>' +
         '<td class="price-cell">$' + Number(p.price || 0).toLocaleString('es-AR') + '</td>' +
-        '<td style="text-align:center;">' + (p.stock || 0) + '</td>' +
+        '<td style="text-align:center;">' + stockBadge + '</td>' +
         '<td style="text-align:center;"><span class="badge ' + (p.active ? 'badge-stock--ok' : 'badge-stock--out') + '">' +
           (p.active ? 'Activo' : 'Inactivo') + '</span></td>' +
         '<td style="text-align:center;"><div class="actions">' +
@@ -153,7 +158,7 @@
     if (!validateForm()) return;
 
     var form = document.getElementById('productEditForm');
-    var btn = editingProductId ? document.getElementById('updateProductBtn') : document.getElementById('submitProductBtn');
+    var btn = document.getElementById('saveProductBtn');
     var btnText = btn?.querySelector('span') || btn;
 
     if (btn) btn.disabled = true;
@@ -260,11 +265,11 @@
     var featured = document.getElementById('prod_featured');
     if (featured) featured.checked = false;
 
-    var updateBtn = document.getElementById('updateProductBtn');
-    if (updateBtn) updateBtn.style.display = 'none';
+    var btn = document.getElementById('saveProductBtn');
+    if (btn) btn.style.display = 'block';
 
-    var submitBtn = document.getElementById('submitProductBtn');
-    if (submitBtn) submitBtn.style.display = 'block';
+    var btnText = btn?.querySelector('span') || btn;
+    if (btnText) btnText.textContent = 'Crear producto';
 
     var gallery = document.getElementById('modalImageGallery');
     if (gallery) gallery.innerHTML = '';
@@ -290,10 +295,11 @@
     var active = document.getElementById('prod_active');
     if (active) active.checked = product.active !== false;
 
-    var updateBtn = document.getElementById('updateProductBtn');
-    var submitBtn = document.getElementById('submitProductBtn');
-    if (updateBtn) updateBtn.style.display = 'block';
-    if (submitBtn) submitBtn.style.display = 'none';
+    var btn = document.getElementById('saveProductBtn');
+    if (btn) btn.style.display = 'block';
+
+    var btnText = btn?.querySelector('span') || btn;
+    if (btnText) btnText.textContent = 'Guardar cambios';
 
     selectedFiles = [];
     renderImagePreviews();
@@ -376,21 +382,13 @@
       });
     }
 
-     var submitBtn = document.getElementById('submitProductBtn');
-    if (submitBtn) {
-      submitBtn.addEventListener('click', function (e) {
-        e.preventDefault();
-        handleProductSubmit(e);
-      });
-    }
-
-    var updateBtn = document.getElementById('updateProductBtn');
-    if (updateBtn) {
-      updateBtn.addEventListener('click', function (e) {
-        e.preventDefault();
-        handleProductSubmit(e);
-      });
-    }
+     var saveBtn = document.getElementById('saveProductBtn');
+     if (saveBtn) {
+       saveBtn.addEventListener('click', function (e) {
+         e.preventDefault();
+         handleProductSubmit(e);
+       });
+     }
 
     var imageInput = document.getElementById('prod_images');
     if (imageInput) {

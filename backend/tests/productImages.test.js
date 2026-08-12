@@ -99,6 +99,7 @@ describe('Product images on public API', () => {
     expect(img2).toBeTruthy();
 
     const token = await loginToken();
+    console.log('Test token:', token ? 'present' : 'missing');
     const patchRes = await request(app)
       .patch(`/api/products/${productId}/images/${img2.id}`)
       .set('Authorization', `Bearer ${token}`)

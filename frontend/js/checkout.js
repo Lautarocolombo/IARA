@@ -31,6 +31,22 @@
       <div class="summary-row total"><span>Total</span><span>${formatARS(total)}</span></div>
     `;
 
+    const progressWrap = document.getElementById('freeShippingProgressCheckout');
+    const progressFill = document.getElementById('freeShippingFillCheckout');
+    const progressText = document.getElementById('freeShippingTextCheckout');
+    if (progressWrap && progressFill && progressText) {
+      if (shipping === 0) {
+        progressWrap.style.display = 'none';
+      } else {
+        progressWrap.style.display = 'block';
+        const threshold = Number(CONFIG.CART.SHIPPING_THRESHOLD) || 0;
+        const remaining = threshold - subtotal;
+        const pct = threshold > 0 ? Math.min(100, Math.max(0, (subtotal / threshold) * 100)) : 100;
+        progressFill.style.width = pct + '%';
+        progressText.textContent = 'Te faltan ' + formatARS(remaining) + ' para envío gratis';
+      }
+    }
+
     updateCartBadge();
   }
 
@@ -48,6 +64,8 @@
          return { alias: CONFIG.CONTACT.WHATSAPP_ALIAS || '', whatsapp: (CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, ''), message: '', active: false, mpEnabled: false };
         }
        const data = await res.json();
+       if (data.shippingCost !== undefined) CONFIG.CART.SHIPPING_COST = Number(data.shippingCost);
+       if (data.freeShippingFrom !== undefined) CONFIG.CART.SHIPPING_THRESHOLD = Number(data.freeShippingFrom);
        const alias = data.transferAlias || '';
        const cbuCvu = data.cbuCvu || '';
        const holderName = data.holderName || '';
@@ -64,18 +82,18 @@
          if (cbuRow) cbuRow.style.display = '';
        }
         if (holderName) {
-          const holderField = document.getElementById('transferHolder');
-          const holderRow = document.getElementById('holderField');
-          if (holderField) holderField.textContent = holderName;
-          if (holderRow) holderRow.style.display = '';
-        }
-        return { alias, whatsapp, message, active, mpEnabled };
-       } catch (err) {
+         const holderField = document.getElementById('transferHolder');
+         const holderRow = document.getElementById('holderField');
+         if (holderField) holderField.textContent = holderName;
+         if (holderRow) holderRow.style.display = '';
+       }
+       return { alias, whatsapp, message, active, mpEnabled };
+      } catch (err) {
        if (aliasEl) aliasEl.textContent = 'Error al cargar';
        if (transferAliasEl) transferAliasEl.textContent = 'Error al cargar';
         return { alias: CONFIG.CONTACT.WHATSAPP_ALIAS || '', whatsapp: (CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, ''), message: '', active: false };
      }
-   }
+  }
 
   function copyMpAlias() {
     const alias = document.getElementById('mpAliasValue').textContent;
@@ -159,6 +177,13 @@
       if (group) group.classList.toggle('has-error', !!errors[key]);
     });
 
+    const consentEl = document.getElementById('checkoutConsent');
+    if (!consentEl?.checked) {
+      showToast('', 'Aceptá la política de privacidad y cookies para continuar', 'error');
+      consentEl?.focus();
+      return;
+    }
+
     if (hasErrors) {
       const firstError = Object.keys(errors).find(k => errors[k]);
       if (firstError && fields[firstError]) {
@@ -211,7 +236,7 @@
       if (!paymentConfig.active) {
         document.getElementById('paymentInstructions').style.display = 'none';
         document.getElementById('checkoutContent').style.display = 'grid';
-        showToast('', 'El pago está temporalmente deshabilitado. Contactanos por WhatsApp.', 'error');
+        showToast('', 'El pago está temporalmente deshabilitado. Contáctanos por WhatsApp.', 'error');
         if (submitBtn) {
           submitBtn.disabled = false;
           submitBtn.textContent = 'Continuar al pago';
@@ -237,7 +262,8 @@
         shippingAddress: shipping.address,
         shippingCity: shipping.city,
         shippingPhone: shipping.phone,
-        shippingEmail: shipping.email
+        shippingEmail: shipping.email,
+        orderToken: orderData.order_token || ''
       }));
 
       document.getElementById('paymentOrderId').textContent = orderNumber;
@@ -259,9 +285,13 @@
       document.getElementById('transferReceiptBtn').dataset.orderId = orderId;
 
       try {
+        const orderToken = (sessionStorage.getItem('ag_last_order') || '').includes('"orderToken"') ? JSON.parse(sessionStorage.getItem('ag_last_order')).orderToken : '';
         await window.fetchWithRetry(`${CONFIG.API.BASE}/api/payments/transfer`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Order-Token': orderToken || ''
+          },
           body: JSON.stringify({ orderId, amount: total, reference: `web-${Date.now()}` })
         });
       } catch (e) {
@@ -322,74 +352,23 @@
     }
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      updateSummary();
-      restoreOrderFromSession();
-    });
-  } else {
-    updateSummary();
-    restoreOrderFromSession();
-  }
-
-  // FASE 2 — Modal para subir comprobante (movido a success.html)
-  /*
-  function openReceiptModal() {
-    const modal = document.getElementById('receiptModal');
-    if (!modal) return;
-    const btn = document.getElementById('transferReceiptBtn');
-    if (btn) {
-      document.getElementById('receiptModalOrderNumber').textContent = btn.dataset.orderNumber || '--';
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', async () => {
+        if (typeof window.loadPaymentConfig === 'function') {
+          await window.loadPaymentConfig();
+        }
+        updateSummary();
+        restoreOrderFromSession();
+      });
+    } else {
+      (async () => {
+        if (typeof window.loadPaymentConfig === 'function') {
+          await window.loadPaymentConfig();
+        }
+        updateSummary();
+        restoreOrderFromSession();
+      })();
     }
-    modal.style.display = 'flex';
-  }
-
-  function closeReceiptModal() {
-    const modal = document.getElementById('receiptModal');
-    if (modal) modal.style.display = 'none';
-  }
-
-  const receiptBtn = document.getElementById('transferReceiptBtn');
-  if (receiptBtn) {
-    receiptBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      openReceiptModal();
-    });
-  }
-
-  const receiptForm = document.getElementById('receiptForm');
-  if (receiptForm) {
-    receiptForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById('transferReceiptBtn');
-      const orderId = btn ? (btn.dataset.orderId || '') : '';
-      const orderNumber = btn ? (btn.dataset.orderNumber || '') : '';
-      const fileInput = document.getElementById('receiptFile');
-      const holderInput = document.getElementById('receiptHolderName');
-      if (!orderId || !fileInput.files.length) {
-        showToast('', 'Completá todos los campos', 'error');
-        return;
-      }
-      const formData = new FormData();
-      formData.append('image', fileInput.files[0]);
-      formData.append('holderName', holderInput.value.trim());
-      try {
-        const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/orders/${orderId}/receipt`, {
-          method: 'POST',
-          body: formData
-        });
-        if (!res) throw new Error('Error de conexión');
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Error al subir el comprobante');
-        showToast('', 'Comprobante enviado correctamente', 'success');
-        closeReceiptModal();
-        receiptForm.reset();
-      } catch (err) {
-        showToast('', window.getFetchErrorMessage(err) || 'Error al enviar el comprobante', 'error');
-      }
-    });
-  }
-  */
 
   // Sincronización: refrescar payment-config periódicamente y ante cambios del admin
   startDataSync('payment-config', async () => {

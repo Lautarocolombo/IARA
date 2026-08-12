@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
+const tokenBlacklist = require('../lib/tokenBlacklist');
 
 async function hashPassword(password) {
   return bcrypt.hash(password, 10);
@@ -108,6 +109,11 @@ const refresh = async (req, res) => {
 };
 
 const logout = (req, res) => {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  if (token) {
+    tokenBlacklist.add(token);
+  }
   res.clearCookie('refreshToken', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
@@ -126,7 +132,7 @@ const changePassword = async (req, res) => {
   if (!user) return res.status(401).json({ error: 'No autorizado' });
 
   const dbUser = await query('SELECT * FROM users WHERE username = $1 AND active = TRUE', [user.user]);
-  if (!dbUser.rows.length) {
+  if (dbUser.rows.length === 0) {
     return res.status(404).json({ error: 'Usuario no encontrado' });
   }
 
@@ -139,6 +145,13 @@ const changePassword = async (req, res) => {
   const newHash = await bcrypt.hash(newPassword, 10);
   await query('UPDATE users SET password_hash = $1 WHERE username = $2', [newHash, u.username]);
   process.env.ADMIN_PASS_HASH = newHash;
+
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  if (token) {
+    tokenBlacklist.add(token);
+  }
+
   res.json({ ok: true, message: 'Contraseña actualizada correctamente en la base de datos y en memoria. Para cambios persistentes entre reinicios, actualice la variable de entorno ADMIN_PASS_HASH en su plataforma de despliegue.' });
 };
 

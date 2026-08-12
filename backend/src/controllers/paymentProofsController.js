@@ -1,5 +1,6 @@
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
+const { safeJsonParse } = require('../lib/parser');
 const { syncBus } = require('../routes/sync');
 const path = require('path');
 const fs = require('fs');
@@ -75,7 +76,8 @@ async function uploadPaymentProof(req, res) {
     const filename = path.basename(req.file.path);
     const proofUrl = `/uploads/comprobantes/${filename}`;
     const amount = Number(order.total || 0);
-    const customerNameStr = ((req.body && req.body.customerName) || '').toString().trim() || (typeof order.customer === 'string' ? JSON.parse(order.customer).name : order.customer?.name) || '';
+    const customerData = safeJsonParse(order.customer, {});
+    const customerNameStr = ((req.body && req.body.customerName) || '').toString().trim() || (customerData.name || '');
 
     const insertResult = await query(
       'INSERT INTO payment_proofs (order_id, customer_name, amount, proof_url) VALUES ($1, $2, $3, $4) RETURNING *',
@@ -84,8 +86,8 @@ async function uploadPaymentProof(req, res) {
 
     const proof = insertResult.rows[0];
     await query(
-      'INSERT INTO activity_log (username, action, entity_type, entity_id, details, related_order_id) VALUES ($1, $2, $3, $4, $5, $6)',
-      ['Cliente', 'Comprobante subido', 'payment_proof', proof.id, `Pedido #${orderIdNum}`, orderIdNum]
+      'INSERT INTO activity_log (username, action, entity_type, entity_id, details, related_order_id, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      ['Cliente', 'Comprobante subido', 'payment_proof', proof.id, `Pedido #${orderIdNum}`, orderIdNum, req.headers['x-tenant-id'] || req.user?.tenant_id || 'default']
     );
 
     try { syncBus.emit('payment_proof_uploaded', { orderId: orderIdNum, proofId: proof.id }); } catch (e) { /* noop */ }
@@ -114,8 +116,8 @@ async function approvePaymentProof(req, res) {
 
     const user = req.user?.user || 'admin';
     await query(
-      'INSERT INTO activity_log (username, action, entity_type, entity_id, details, related_order_id) VALUES ($1, $2, $3, $4, $5, $6)',
-      [user, 'Comprobante aprobado', 'payment_proof', proofId, `Pedido #${orderId}`, orderId]
+      'INSERT INTO activity_log (username, action, entity_type, entity_id, details, related_order_id, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      [user, 'Comprobante aprobado', 'payment_proof', proofId, `Pedido #${orderId}`, orderId, req.headers['x-tenant-id'] || req.user?.tenant_id || 'default']
     );
 
     try { syncBus.emit('payment_proof_approved', { orderId, proofId }); } catch (e) { /* noop */ }
@@ -145,8 +147,8 @@ async function rejectPaymentProof(req, res) {
 
     const user = req.user?.user || 'admin';
     await query(
-      'INSERT INTO activity_log (username, action, entity_type, entity_id, details, related_order_id) VALUES ($1, $2, $3, $4, $5, $6)',
-      [user, 'Comprobante rechazado', 'payment_proof', proofId, `Pedido #${orderId}. Motivo: ${reason || 'Sin motivo'}`, orderId]
+      'INSERT INTO activity_log (username, action, entity_type, entity_id, details, related_order_id, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      [user, 'Comprobante rechazado', 'payment_proof', proofId, `Pedido #${orderId}. Motivo: ${reason || 'Sin motivo'}`, orderId, req.headers['x-tenant-id'] || req.user?.tenant_id || 'default']
     );
 
     try { syncBus.emit('payment_proof_rejected', { orderId, proofId, reason }); } catch (e) { /* noop */ }

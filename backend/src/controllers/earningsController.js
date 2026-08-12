@@ -1,6 +1,7 @@
 const { query } = require('../lib/db');
 const { isLocal } = require('../lib/db');
 const logger = require('../lib/logger');
+const { safeJsonParse } = require('../lib/parser');
 
 const isValidDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value) && !isNaN(Date.parse(value));
 
@@ -90,12 +91,7 @@ const getEarnings = async (req, res) => {
 
     const categoryMap = {};
     ordersResult.rows.forEach(function (o) {
-      var items = [];
-      try {
-        items = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || []);
-      } catch (e) {
-        items = [];
-      }
+      var items = safeJsonParse(o.items, []);
       items.forEach(function (item) {
         var catName = item.category_name || 'Sin categoría';
         var catSlug = item.category_slug || 'sin-categoria';

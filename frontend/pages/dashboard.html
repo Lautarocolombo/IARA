@@ -482,11 +482,11 @@
                     <option value="custom">Personalizado</option>
                   </select>
                   <div id="customDateRange" style="display:none;gap:0.5rem;align-items:center;">
-                    <input type="date" id="sales_start_date" class="card-filter" onchange="loadSalesSummary()" />
+                     <input type="date" id="sales_start_date" class="card-filter" data-event="change" data-action="loadSalesSummary" />
                     <span>a</span>
-                    <input type="date" id="sales_end_date" class="card-filter" onchange="loadSalesSummary()" />
+                     <input type="date" id="sales_end_date" class="card-filter" data-event="change" data-action="loadSalesSummary" />
                   </div>
-                  <select id="sales_category_filter" class="card-filter" onchange="loadSalesSummary()">
+                   <select id="sales_category_filter" class="card-filter" data-event="change" data-action="loadSalesSummary">
                     <option value="">Todas las categorías</option>
                   </select>
                   <button class="btn btn-secondary btn-sm" id="syncSalesBtn">
@@ -1164,11 +1164,6 @@
     </div>
   </div>
 
-  <script>
-    if (window.location.protocol === 'file:') {
-      document.body.innerHTML = '<div style="padding:2rem;text-align:center;"><h2>⚠️ Panel de administración</h2><p>Este panel debe abrirse desde el servidor, no desde el sistema de archivos.</p></div>';
-    }
-  </script>
   <script src="../js/admin-dashboard.js"></script>
   <script src="../js/admin-sync.js"></script>
   <script src="../js/admin-content.js"></script>
@@ -1177,52 +1172,7 @@
   <script src="../js/admin-sales.js"></script>
   <script src="../js/admin-orders.js"></script>
   <script src="../js/admin-payments.js"></script>
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      if (typeof initAdminDashboard === 'function') initAdminDashboard();
-      if (typeof initContentEditor === 'function') initContentEditor();
-      if (typeof initProductManager === 'function') initProductManager();
-      if (typeof initCategoryManager === 'function') initCategoryManager();
-      if (typeof initSalesPanel === 'function') initSalesPanel();
-      if (typeof initOrdersPanel === 'function') initOrdersPanel();
-      if (typeof initPaymentsPanel === 'function') initPaymentsPanel();
-
-      var sidebar = document.getElementById('adminSidebar');
-      var overlay = document.getElementById('sidebarOverlay');
-      var toggle = document.getElementById('sidebarToggle');
-
-      function openSidebar() {
-        sidebar.classList.add('admin-sidebar-open');
-        overlay.classList.add('admin-sidebar-overlay-visible');
-        toggle.setAttribute('aria-expanded', 'true');
-        document.body.style.overflow = 'hidden';
-      }
-
-      function closeSidebar() {
-        sidebar.classList.remove('admin-sidebar-open');
-        overlay.classList.remove('admin-sidebar-overlay-visible');
-        toggle.setAttribute('aria-expanded', 'false');
-        document.body.style.overflow = '';
-      }
-
-      if (toggle && sidebar) {
-        toggle.addEventListener('click', function() {
-          if (sidebar.classList.contains('admin-sidebar-open')) {
-            closeSidebar();
-          } else {
-            openSidebar();
-          }
-        });
-      }
-
-      if (overlay) {
-        overlay.addEventListener('click', closeSidebar);
-      }
-
-      document.getElementById('logoutBtn')?.addEventListener('click', function() {
-        if (typeof doLogout === 'function') doLogout();
-      });
-    });
-  </script>
+  <script src="../js/pages/dashboard.js"></script>
 </body>
 </html>
+

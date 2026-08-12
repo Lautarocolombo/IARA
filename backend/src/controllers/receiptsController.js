@@ -1,5 +1,6 @@
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
+const { safeJsonParse } = require('../lib/parser');
 const path = require('path');
 const fs = require('fs');
 const PDFDocument = require('pdfkit');
@@ -11,8 +12,8 @@ const generateReceiptPDF = async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
     
     const order = result.rows[0];
-    const customer = typeof order.customer === 'string' ? JSON.parse(order.customer) : order.customer;
-    const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+    const customer = safeJsonParse(order.customer, {});
+    const items = safeJsonParse(order.items, []);
     
     const filename = `comprobante-pedido-${orderId}.pdf`;
     const filepath = path.join(__dirname, '..', '..', 'uploads', 'receipts', filename);
@@ -80,7 +81,7 @@ const sendReceiptWhatsApp = async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
     
     const order = result.rows[0];
-    const customer = typeof order.customer === 'string' ? JSON.parse(order.customer) : order.customer;
+    const customer = safeJsonParse(order.customer, {});
     const phone = (customer?.phone || '').replace(/[^\d]/g, '');
     
     if (!phone) {

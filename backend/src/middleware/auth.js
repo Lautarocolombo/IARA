@@ -1,4 +1,11 @@
 const jwt = require('jsonwebtoken');
+const tokenBlacklist = require('../lib/tokenBlacklist');
+
+const ROLE_PERMISSIONS = {
+  admin: ['products:read', 'products:write', 'products:delete', 'orders:read', 'orders:write', 'orders:delete', 'categories:read', 'categories:write', 'categories:delete', 'testimonials:read', 'testimonials:write', 'testimonials:delete', 'reviews:read', 'reviews:write', 'reviews:delete', 'contacts:read', 'newsletter:read', 'site:read', 'site:write', 'reports:read', 'settings:read', 'settings:write', 'payments:read', 'payments:write', 'uploads:read', 'uploads:write', 'sync:read', 'sync:write'],
+  editor: ['products:read', 'products:write', 'orders:read', 'categories:read', 'categories:write', 'testimonials:read', 'testimonials:write', 'reviews:read', 'reviews:write', 'contacts:read', 'newsletter:read', 'site:read', 'reports:read', 'settings:read', 'payments:read'],
+  viewer: ['products:read', 'orders:read', 'categories:read', 'testimonials:read', 'reviews:read', 'contacts:read', 'reports:read', 'settings:read']
+};
 
 function adminAuth(req, res, next) {
   const authHeader = req.headers.authorization || '';
@@ -9,12 +16,15 @@ function adminAuth(req, res, next) {
   }
 
   try {
+    if (tokenBlacklist.has(token)) {
+      return res.status(401).json({ error: 'Token revocado. Iniciá sesión nuevamente.' });
+    }
     const JWT_SECRET = process.env.JWT_SECRET;
     if (!JWT_SECRET) {
       return res.status(500).json({ error: 'JWT_SECRET no configurado en el servidor' });
     }
     const decoded = jwt.verify(token, JWT_SECRET);
-    if (!['admin', 'editor'].includes(decoded.role)) {
+    if (!['admin', 'editor', 'viewer'].includes(decoded.role)) {
       return res.status(401).json({ error: 'No autorizado' });
     }
     req.user = decoded;
@@ -39,6 +49,10 @@ function requirePermission(permission) {
     if (req.user.role === 'admin') {
       return next();
     }
+    const rolePerms = ROLE_PERMISSIONS[req.user.role] || [];
+    if (rolePerms.includes(permission)) {
+      return next();
+    }
     const perms = req.user.permissions || {};
     if (perms.all === true || perms[permission] === true) {
       return next();
@@ -47,4 +61,8 @@ function requirePermission(permission) {
   };
 }
 
-module.exports = { adminAuth, adminOnly, requirePermission };
+function getRolePermissions(role) {
+  return ROLE_PERMISSIONS[role] || [];
+}
+
+module.exports = { adminAuth, adminOnly, requirePermission, getRolePermissions, ROLE_PERMISSIONS };

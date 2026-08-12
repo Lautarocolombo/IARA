@@ -1,10 +1,19 @@
+/** @type {import('jest').Config} */
 module.exports = {
   testEnvironment: 'node',
-  testMatch: ['**/*.test.js'],
-  moduleFileExtensions: ['js'],
-  transform: {},
-  verbose: true,
-  testTimeout: 20000,
-  setupFiles: ['<rootDir>/jest.setup.js'],
-  forceExit: true
+  coverageDirectory: 'coverage',
+  collectCoverageFrom: [
+    'src/**/*.js',
+    '!src/server.js',
+    '!src/lib/db.js',
+    '!src/middleware/**/*.js'
+  ],
+  coverageThreshold: {
+    global: {
+      branches: 80,
+      functions: 80,
+      lines: 80,
+      statements: 80
+    }
+  }
 };

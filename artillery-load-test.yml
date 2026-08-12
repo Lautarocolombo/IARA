@@ -1,0 +1,63 @@
+config:
+  target: http://localhost:3000
+  phases:
+    - duration: 60
+      arrivalRate: 5
+      name: Warm up
+    - duration: 120
+      arrivalRate: 20
+      name: Sustained load
+    - duration: 30
+      arrivalRate: 50
+      name: Spike
+  defaults:
+    headers:
+      Content-Type: application/json
+
+scenarios:
+  - name: Public API
+    flow:
+      - get:
+          url: /api/products
+      - get:
+          url: /api/categories
+      - get:
+          url: /api/site-texts
+      - get:
+          url: /api/testimonials
+      - get:
+          url: /health
+
+  - name: Order creation
+    flow:
+      - post:
+          url: /api/orders
+          json:
+            items:
+              - id: 1
+                name: Pulsera Test
+                price: 100
+                qty: 1
+                emoji: "📿"
+                image: ""
+            total: 100
+            customer:
+              name: Test User
+              email: test@example.com
+            shipping_name: Test
+            shipping_address: Calle Test 123
+            shipping_phone: 1234567890
+            shipping_email: test@example.com
+            shipping_zip: 2840
+            shipping_city: Gualeguay
+            subtotal: 100
+            shipping_cost: 0
+
+  - name: Contact form
+    flow:
+      - post:
+          url: /api/contact
+          json:
+            name: Test User
+            email: test@example.com
+            message: Test message from Artillery
