@@ -388,6 +388,13 @@ app.get('/', (req, res) => {
 
 app.use(express.static(staticDir));
 
+app.use((req, res, next) => {
+  if (res.getHeader('Content-Type')?.includes('text/html') && !res.getHeader('Content-Type')?.includes('charset')) {
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  }
+  next();
+});
+
 app.use('/api', csrfProtection);
 app.use('/api', limiter);
 

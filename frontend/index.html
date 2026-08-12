@@ -311,14 +311,14 @@
          <h3>Suscríbete a nuestro Newsletter</h3>
          <p>Recibe ofertas exclusivas y descuentos en tu email</p>
        </div>
-         <form class="newsletter-form" id="newsletterForm">
-           <input type="email" id="newsletterEmail" name="email" placeholder="tu@email.com" required />
-           <div style="display:flex;align-items:center;gap:0.5rem;margin:0.5rem 0;">
-            <input type="checkbox" id="newsletterConsent" style="width:auto;" />
-            <label for="newsletterConsent" style="margin:0;font-weight:normal;font-size:0.85rem;">Acepto la <a href="../pages/privacy.html" target="_blank" rel="noopener">Política de Privacidad</a></label>
-          </div>
-           <button type="submit" class="btn-primary">Suscribirse</button>
-         </form>
+          <form class="newsletter-form" id="newsletterForm">
+            <input type="email" id="newsletterEmail" name="email" placeholder="tu@email.com" required />
+            <div class="newsletter-consent">
+              <input type="checkbox" id="newsletterConsent" />
+              <label for="newsletterConsent">Acepto la <a href="../pages/privacy.html" target="_blank" rel="noopener">Política de Privacidad</a></label>
+            </div>
+            <button type="submit" class="btn-primary">Suscribirse</button>
+          </form>
      </section>
 
      <!-- ============== TESTIMONIALS SECTION ============== -->

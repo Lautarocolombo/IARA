@@ -1220,13 +1220,17 @@ html, body { overflow-x: hidden; }
 
 .newsletter-form {
   display: flex;
-  gap: 0.75rem;
-  max-width: 420px;
+  flex-wrap: wrap;
+  gap: 1rem;
+  max-width: 520px;
   margin: 0 auto;
+  align-items: center;
+  justify-content: center;
 }
 
 .newsletter-form input {
-  flex: 1;
+  flex: 1 1 180px;
+  min-width: 180px;
   padding: 11px 16px;
    border: 1.5px solid var(--border-color);
    border-radius: 40px;
@@ -1238,7 +1242,42 @@ html, body { overflow-x: hidden; }
 
 .newsletter-form input:focus { outline: none; border-color: var(--rose-dark); }
 
-.newsletter-form button { padding: 11px 22px; font-size: 13px; }
+.newsletter-form button {
+  flex-shrink: 0;
+  padding: 12px 28px;
+  font-size: 14px;
+  border-radius: 28px;
+  white-space: nowrap;
+}
+
+.newsletter-form .newsletter-consent {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.newsletter-form .newsletter-consent input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--rose-dark);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.newsletter-form .newsletter-consent label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+  font-weight: normal;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.newsletter-form .newsletter-consent label a {
+  color: var(--rose-dark);
+  text-decoration: underline;
+}
 
 /* ==================== FOOTER ==================== */
 .footer {
@@ -1369,7 +1408,18 @@ html, body { overflow-x: hidden; }
   .whatsapp-cta { margin-top: 1rem; }
   .about-stats { grid-template-columns: 1fr; }
   .newsletter { padding: 3rem 20px; }
-  .newsletter-form { flex-direction: column; }
+  .newsletter-form {
+    flex-direction: column;
+    align-items: stretch;
+    max-width: 420px;
+  }
+  .newsletter-form .newsletter-consent {
+    justify-content: center;
+  }
+  .newsletter-form button {
+    width: 100%;
+    text-align: center;
+  }
   .footer { padding: 2rem 20px 1.5rem; }
   .footer-content { grid-template-columns: 1fr; gap: 1.5rem; }
   .toast { min-width: 90%; }

@@ -1,8 +1,4 @@
 {
-  // IMPORTANTE: La URL del backend (https://iara-uxcu.onrender.com) está hardcodeada.
-  // Si el deployment de Render cambia de URL, actualizá las líneas 7 y 11 manualmente.
-  // Para evitar hardcodear, considerá usar un dominio personalizado para Render
-  // o migrar el proxy a Vercel Edge Functions leyendo BACKEND_URL de env vars.
   "version": 2,
   "outputDirectory": "frontend",
   "rewrites": [
