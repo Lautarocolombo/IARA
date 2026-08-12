@@ -9,7 +9,7 @@ const pino = require('pino');
 
 dotenv.config({ override: false });
 
-const { initDB, setTenant } = require('./lib/db');
+const { initDB } = require('./lib/db');
 const { handleUploadError, processFile, uploadSingle } = require('./lib/upload');
 const { errorHandler } = require('./middleware/errorHandler');
 const { notFound } = require('./middleware/errorHandler');
