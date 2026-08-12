@@ -58,7 +58,8 @@ const getSiteTexts = async (req, res) => {
   } catch (err) {
     console.error('siteTexts error', err);
     logger.error('Error obteniendo textos:', err);
-    res.status(500).json({ error: 'Error interno del servidor' });
+    const debug = process.env.DEBUG_API_ERROR;
+    res.status(500).json({ error: debug ? err.message : 'Error interno del servidor' });
   }
 };
 
