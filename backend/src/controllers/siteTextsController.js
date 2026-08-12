@@ -19,6 +19,14 @@ const getSiteTexts = async (req, res) => {
     if (maxUpdated) {
       map.__updatedAt = maxUpdated;
     }
+
+    if (map.hero_subtitle && map.hero_subtitle.includes('�')) {
+      map.hero_subtitle = map.hero_subtitle.replace(/Cada pieza es .nica\./g, 'Cada pieza es única.');
+    }
+    if (map.hero_cta_text && map.hero_cta_text.includes('�')) {
+      map.hero_cta_text = map.hero_cta_text.replace(/Explorar Cat.logo/g, 'Explorar Catálogo');
+    }
+
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json(map);
   } catch (err) {
