@@ -324,6 +324,8 @@ app.get('/metrics', (req, res) => {
   });
 });
 
+const gitCommit = require('child_process').execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
+
 app.get('/health', async (req, res) => {
   const health = {
     status: 'ok',
@@ -344,6 +346,7 @@ app.get('/health', async (req, res) => {
 
   health.checks.sentry = Sentry ? 'ok' : 'disabled';
 
+  res.setHeader('X-Commit', gitCommit);
   res.status(health.status === 'ok' ? 200 : 503).json(health);
 });
 
