@@ -39,7 +39,31 @@
         const imageHtml = images.length
           ? `<div class="product-image-gallery"><div class="product-image-main">${window.renderProductImage(principalImage ? principalImage.url : '', product.name, { id: 'productMainImage', lazy: false, placeholder: '📿' })}</div><div class="product-image-thumbs" id="productThumbs">${thumbsHtml}</div></div>`
            : `${window.renderProductImage('', product.name, { style: 'width:100%;aspect-ratio:1;object-fit:contain;object-position:center;', placeholder: '📿' })}`;
-      container.innerHTML = `
+          const freeShippingThreshold = Number(CONFIG.CART.SHIPPING_THRESHOLD) || 0;
+          const freeShippingHint = document.getElementById('freeShippingHint');
+          const freeShippingText = document.getElementById('freeShippingText');
+          const freeShippingFill = document.getElementById('freeShippingFill');
+          const cartItems = window.getCart ? window.getCart() : [];
+          const cartSubtotal = cartItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
+          const remaining = Math.max(0, freeShippingThreshold - cartSubtotal);
+          if (freeShippingHint && freeShippingText && freeShippingFill) {
+            if (remaining <= 0 && freeShippingThreshold > 0) {
+              freeShippingHint.style.display = 'inline';
+              freeShippingHint.textContent = '🎉 ' + (CONFIG.CART.FREE_SHIPPING_TEXT || 'Envío gratis');
+              freeShippingText.textContent = 'Alcanzaste el envío gratis';
+              freeShippingFill.style.width = '100%';
+            } else if (freeShippingThreshold > 0) {
+              freeShippingHint.style.display = 'none';
+              freeShippingText.textContent = 'Te faltan ' + window.formatARS(remaining) + ' para envío gratis';
+              const pct = freeShippingThreshold > 0 ? Math.min(100, Math.max(0, (cartSubtotal / freeShippingThreshold) * 100)) : 100;
+              freeShippingFill.style.width = pct + '%';
+            } else {
+              freeShippingHint.style.display = 'none';
+              freeShippingText.textContent = '';
+              freeShippingFill.style.width = '0%';
+            }
+          }
+          container.innerHTML = `
         <div class="product-detail-grid">
           <div class="product-image-large" aria-hidden="true">${imageHtml}</div>
           <div>
@@ -47,6 +71,13 @@
             <h1 class="product-detail-title">${product.name}</h1>
             <p class="product-detail-desc">${product.description || ''}</p>
             <p class="product-detail-price">${formatARS(product.price)}</p>
+            <div id="freeShippingHint" class="free-shipping-hint" style="display:none;"></div>
+            <div id="freeShippingProgress" class="free-shipping-progress" style="display:none;">
+              <div class="free-shipping-progress-bar">
+                <div class="free-shipping-progress-fill" id="freeShippingFill"></div>
+              </div>
+              <p class="free-shipping-progress-text" id="freeShippingText"></p>
+            </div>
             <div class="product-detail-actions">
               <button class="btn-primary btn-add-cart" data-product-id="${product.id}" data-product-name="${product.name.replace(/"/g, '&quot;')}" data-product-price="${product.price}" data-product-emoji="${product.emoji||'📿'}" data-product-image="${(product.image||'').replace(/"/g, '&quot;')}" data-product-stock="${product.stock||0}">Agregar al carrito</button>
               <button class="btn-outline btn-wishlist-detail" data-product-id="${product.id}" data-product-name="${product.name.replace(/"/g, '&quot;')}" data-product-price="${product.price}" data-product-emoji="${product.emoji||'📿'}" data-product-image="${(product.image||'').replace(/"/g, '&quot;')}" aria-label="Favoritos">${window.isInWishlist(product.id) ? '❤️' : '🤍'}</button>
@@ -123,15 +154,15 @@
          if (avatarInput && avatarInput.files && avatarInput.files[0]) {
            formData.append('avatar', avatarInput.files[0]);
          }
-         try {
-           const res = await fetch(`${CONFIG.API.BASE}/api/products/${id}/reviews`, {
-             method: 'POST',
-             body: formData
-           });
-           if (!res.ok) {
-             const data = await res.json().catch(() => ({}));
-             throw new Error(data.error || 'Error al enviar la reseña');
-           }
+          try {
+            const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${id}/reviews`, {
+              method: 'POST',
+              body: formData
+            }, 2, 1000);
+            if (!res || !res.ok) {
+              const data = await res.json().catch(() => ({}));
+              throw new Error(data.error || 'Error al enviar la reseña');
+            }
            showToast('', '¡Reseña enviada! Gracias.', 'success');
            document.getElementById('reviewName').value = '';
            document.getElementById('reviewComment').value = '';
@@ -166,8 +197,38 @@
         unit: 'u',
         qty: 1
       };
-      if (typeof addToCart === 'function') addToCart(product);
+      if (typeof addToCart === 'function') {
+        addToCart(product);
+        setTimeout(updateFreeShippingHint, 100);
+      }
     });
+
+    function updateFreeShippingHint() {
+      const freeShippingThreshold = Number(CONFIG.CART.SHIPPING_THRESHOLD) || 0;
+      const freeShippingHint = document.getElementById('freeShippingHint');
+      const freeShippingText = document.getElementById('freeShippingText');
+      const freeShippingFill = document.getElementById('freeShippingFill');
+      const cartItems = window.getCart ? window.getCart() : [];
+      const cartSubtotal = cartItems.reduce((sum, item) => sum + (item.price * item.qty), 0);
+      const remaining = Math.max(0, freeShippingThreshold - cartSubtotal);
+      if (freeShippingHint && freeShippingText && freeShippingFill) {
+        if (remaining <= 0 && freeShippingThreshold > 0) {
+          freeShippingHint.style.display = 'inline';
+          freeShippingHint.textContent = '🎉 ' + (CONFIG.CART.FREE_SHIPPING_TEXT || 'Envío gratis');
+          freeShippingText.textContent = 'Alcanzaste el envío gratis';
+          freeShippingFill.style.width = '100%';
+        } else if (freeShippingThreshold > 0) {
+          freeShippingHint.style.display = 'none';
+          freeShippingText.textContent = 'Te faltan ' + window.formatARS(remaining) + ' para envío gratis';
+          const pct = freeShippingThreshold > 0 ? Math.min(100, Math.max(0, (cartSubtotal / freeShippingThreshold) * 100)) : 100;
+          freeShippingFill.style.width = pct + '%';
+        } else {
+          freeShippingHint.style.display = 'none';
+          freeShippingText.textContent = '';
+          freeShippingFill.style.width = '0%';
+        }
+      }
+    }
 
     document.getElementById('productContent')?.addEventListener('click', (e) => {
       const btn = e.target.closest('.btn-wishlist-detail');
@@ -224,6 +285,12 @@
       const productId = params.get('id');
       if (productId) {
         loadProduct();
+      }
+    });
+
+    window.addEventListener('storage', (e) => {
+      if (e.key === 'ag_cart') {
+        updateFreeShippingHint();
       }
     });
   }
