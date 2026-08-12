@@ -25,7 +25,7 @@ services:
       - key: BACKEND_URL
          value: https://iara-os3h.onrender.com
       - key: ALLOWED_ORIGINS
-        value: https://artesania-gualeguay.vercel.app,https://*.vercel.app,https://ira-wz9o.vercel.app,https://artesaniagualeguay.com,http://localhost:3000,http://localhost:5173
+        value: https://artesania-gualeguay.vercel.app,https://*.vercel.app,https://iara-wz9o.vercel.app,https://artesaniagualeguay.com,http://localhost:3000,http://localhost:5173
       - key: SHIPPING_COST
         value: "200"
       - key: SHIPPING_THRESHOLD

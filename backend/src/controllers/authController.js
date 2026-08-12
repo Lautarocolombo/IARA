@@ -47,7 +47,11 @@ const login = async (req, res) => {
           path: '/'
         });
         return res.json({ token, user: u.username, role, permissions });
+      } else {
+        logger.warn({ username: cleanUsername, userId: u.id }, 'Login fallido: contraseña incorrecta para usuario en DB');
       }
+    } else {
+      logger.warn({ username: cleanUsername }, 'Login fallido: usuario no encontrado en DB');
     }
 
     const envUser = process.env.ADMIN_USER;
@@ -78,7 +82,13 @@ const login = async (req, res) => {
           path: '/'
         });
         return res.json({ token, user: jwtUser, role, permissions });
+      } else {
+        logger.warn({ username: cleanUsername }, 'Login fallido: contraseña incorrecta para ADMIN_USER env');
       }
+    } else if (cleanUsername === (envUser || '')) {
+      logger.warn({ username: cleanUsername, hasEnvHash: !!envPassHash }, 'Login fallido: ADMIN_USER coincide pero falta ADMIN_PASS_HASH o contraseña incorrecta');
+    } else {
+      logger.warn({ username: cleanUsername, envUser: envUser || '(no definido)' }, 'Login fallido: usuario no coincide con ADMIN_USER env');
     }
 
     return res.status(401).json({ error: 'Credenciales inválidas' });
