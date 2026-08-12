@@ -7,31 +7,47 @@ let connection = null;
 let webhookQueue = null;
 let workerInstance = null;
 
+function isRedisUrlValid(url) {
+  if (!url || typeof url !== 'string') return false;
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function getRedisConnection() {
-  if (!redisUrl) {
+  if (!isRedisUrlValid(redisUrl)) {
     return null;
   }
 
   if (!connection) {
-    connection = new Redis(redisUrl, {
-      maxRetriesPerRequest: null,
-      retryStrategy: (times) => {
-        const delay = Math.min(1000 * Math.pow(2, times), 30000);
-        logger.warn({ attempt: times, delay }, 'Reintentando conexión a Redis (webhookQueue)');
-        if (times >= 10) {
-          logger.error('Se agotaron los reintentos de conexión a Redis (webhookQueue)');
-          return null;
-        }
-        return delay;
-      },
-      lazyConnect: true,
-      enableReadyCheck: false,
-    });
+    try {
+      connection = new Redis(redisUrl, {
+        maxRetriesPerRequest: null,
+        retryStrategy: (times) => {
+          const delay = Math.min(1000 * Math.pow(2, times), 30000);
+          logger.warn({ attempt: times, delay }, 'Reintentando conexión a Redis (webhookQueue)');
+          if (times >= 10) {
+            logger.error('Se agotaron los reintentos de conexión a Redis (webhookQueue)');
+            return null;
+          }
+          return delay;
+        },
+        lazyConnect: true,
+        enableReadyCheck: false,
+      });
 
-    connection.on('connect', () => logger.info('Conectado a Redis (webhookQueue)'));
-    connection.on('error', (err) => logger.error({ err: err.message }, 'Error en conexión Redis (webhookQueue)'));
-    connection.on('close', () => logger.warn('Conexión Redis cerrada (webhookQueue)'));
-    connection.on('reconnecting', () => logger.info('Reconectando a Redis... (webhookQueue)'));
+      connection.on('connect', () => logger.info('Conectado a Redis (webhookQueue)'));
+      connection.on('error', (err) => logger.error({ err: err.message }, 'Error en conexión Redis (webhookQueue)'));
+      connection.on('close', () => logger.warn('Conexión Redis cerrada (webhookQueue)'));
+      connection.on('reconnecting', () => logger.info('Reconectando a Redis... (webhookQueue)'));
+    } catch (err) {
+      logger.warn({ err: err.message }, 'No se pudo crear conexión Redis (webhookQueue)');
+      connection = null;
+      return null;
+    }
   }
   return connection;
 }

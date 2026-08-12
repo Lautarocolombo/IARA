@@ -1,11 +1,21 @@
 const Redis = require('ioredis');
 
+function isRedisUrlValid(url) {
+  if (!url || typeof url !== 'string') return false;
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 class RedisStore {
   constructor(options = {}) {
     this.prefix = options.prefix || 'rl:';
     const redisUrl = options.url || process.env.REDIS_URL;
-    if (!redisUrl) {
-      throw new Error('REDIS_URL no configurada. Configurá la variable de entorno REDIS_URL en Render para habilitar rate limiting con Redis.');
+    if (!isRedisUrlValid(redisUrl)) {
+      throw new Error('REDIS_URL no configurada o inválida. Configurá la variable de entorno REDIS_URL en Render para habilitar rate limiting con Redis.');
     }
 
     this.redis = new Redis(redisUrl, {
