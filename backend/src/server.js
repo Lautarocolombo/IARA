@@ -10,7 +10,7 @@ const pino = require('pino');
 dotenv.config({ override: false });
 
 const { initDB, setTenant } = require('./lib/db');
-const { handleUploadError, processFile, uploadSingle, getPublicUrl } = require('./lib/upload');
+const { handleUploadError, processFile, uploadSingle } = require('./lib/upload');
 const { errorHandler } = require('./middleware/errorHandler');
 const { notFound } = require('./middleware/errorHandler');
 const { tenantContext } = require('./middleware/tenant');
@@ -116,6 +116,7 @@ const defaultOrigins = [
   'https://iara-wz9o.vercel.app',
   'https://iara-lovat-orcin.vercel.app',
   'https://artesaniagualeguay.vercel.app',
+  'https://artesania-gualeguay.vercel.app',
   'https://artesaniagualeguay.com',
   'http://localhost:3000',
   'http://localhost:3001',
@@ -265,15 +266,6 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
-app.use('/api', (req, res, next) => {
-  const tenantId = req.headers['x-tenant-id'] || req.user?.tenant_id || 'default';
-  setTenant(tenantId).catch(() => {});
-  next();
-});
-
-app.use('/api', csrfProtection);
-app.use('/api', limiter);
-
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/admin', require('./routes/auth'));
 app.use('/api', require('./routes/products'));
@@ -297,6 +289,9 @@ app.use('/api', require('./routes/heroCards'));
 app.use('/api', require('./routes/sales'));
 app.use('/api', require('./routes/earnings'));
 app.use('/api/sync', require('./routes/sync'));
+
+app.use('/api', csrfProtection);
+app.use('/api', limiter);
 
 app.get('/metrics', (req, res) => {
   const clientIp = req.ip || req.connection.remoteAddress || '';

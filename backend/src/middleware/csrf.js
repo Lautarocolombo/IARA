@@ -7,7 +7,6 @@ function csrfProtection(req, res, next) {
   }
 
   const origin = req.headers.origin || req.headers.referer || '';
-  const host = req.headers.host || '';
   const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || '').split(',').filter(Boolean);
 
   const isAllowed = allowedOrigins.some(allowed => {

@@ -83,7 +83,7 @@ const updateCategory = async (req, res) => {
   });
   values.push(id);
   try {
-    const result = await query(`UPDATE categories SET ${setParts.join(', ')}, updated_at = CURRENT_TIMESTAMP, tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\') WHERE id = $${values.length} RETURNING *`, values);
+    const result = await query(`UPDATE categories SET ${setParts.join(', ')}, updated_at = CURRENT_TIMESTAMP, tenant_id = COALESCE(current_setting('app.current_tenant', TRUE), 'default') WHERE id = $${values.length} RETURNING *`, values);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Categoría no encontrada' });
     res.json(result.rows[0]);
   } catch (err) {

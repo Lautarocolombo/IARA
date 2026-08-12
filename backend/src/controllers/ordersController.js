@@ -78,7 +78,7 @@ const getUserOrders = async (req, res) => {
 
 const createOrder = async (req, res) => {
   logger.info('createOrder: inicio');
-  const { items, total, customer, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, subtotal, shipping_cost, notes, idempotency_key } = req.body || {};
+  const { items, total, customer, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, shipping_cost, notes, idempotency_key } = req.body || {};
   logger.info('createOrder: body parseado');
 
   if (idempotency_key) {
@@ -353,17 +353,6 @@ const getOrderDetail = async (req, res) => {
   }
 };
 
-const getPaymentConfig = async (req, res) => {
-  try {
-    const result = await query('SELECT * FROM payment_config LIMIT 1');
-    if (result.rows.length === 0) return res.json({});
-    res.json(result.rows[0]);
-  } catch (err) {
-    logger.error({ err: err.message }, 'Error obteniendo configuracion de pago');
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-};
-
 const addOrderActivity = async (req, res) => {
   const orderId = Number(req.params.id);
   const { action, details } = req.body || {};
@@ -474,4 +463,4 @@ const getPublicOrderTrack = async (req, res) => {
   }
 };
 
-module.exports = { getOrders, getUserOrders, createOrder, updateOrderStatus, deleteOrder, updateOrderNotes, getOrderDetail, exportOrders, getPaymentConfig, addOrderActivity, getOrderReceipt, getOrderActivities, getPublicOrderTrack };
+module.exports = { getOrders, getUserOrders, createOrder, updateOrderStatus, deleteOrder, updateOrderNotes, getOrderDetail, exportOrders, addOrderActivity, getOrderReceipt, getOrderActivities, getPublicOrderTrack };

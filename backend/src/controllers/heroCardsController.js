@@ -135,7 +135,7 @@ const updateHeroSlot = async (req, res) => {
           values.push(f === 'activo' ? v !== false : v);
         });
         values.push(existing.rows[0].id);
-        await query(`UPDATE hero_cards SET ${setParts.join(', ')} WHERE id = $${values.length} AND tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\') RETURNING *`, values);
+        await query(`UPDATE hero_cards SET ${setParts.join(', ')} WHERE id = $${values.length} AND tenant_id = COALESCE(current_setting('app.current_tenant', TRUE), 'default') RETURNING *`, values);
       }
     }
     const result = await query('SELECT * FROM hero_cards WHERE slot = $1 AND tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')', [slot]);

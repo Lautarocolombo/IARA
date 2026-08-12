@@ -776,7 +776,25 @@ async function initDB() {
     await query('INSERT INTO migrations (name) VALUES ($1) ON CONFLICT (name) DO NOTHING', [mig.name]);
   }
 
-   logger.info('Tablas de base de datos inicializadas (PostgreSQL)');
+    logger.info('Tablas de base de datos inicializadas (PostgreSQL)');
+    try {
+      const tenantTables = [
+        'products', 'categories', 'orders', 'contacts', 'reviews',
+        'testimonials', 'product_images', 'subscribers', 'webhook_events',
+        'hero_cards', 'payment_config', 'payment_proofs', 'site_settings', 'site_texts'
+      ];
+      for (const table of tenantTables) {
+        const colExists = await query(
+          "SELECT COUNT(*) AS count FROM information_schema.columns WHERE table_name = $1 AND column_name = 'tenant_id'",
+          [table]
+        );
+        if (colExists.rows[0].count === 0) {
+          await query(`ALTER TABLE ${table} ADD COLUMN tenant_id TEXT DEFAULT 'default'`);
+        }
+      }
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Error asegurando columna tenant_id (PostgreSQL)');
+    }
     try {
       const seqTables = ['products', 'categories', 'orders', 'contacts', 'reviews', 'testimonials', 'product_images', 'subscribers', 'webhook_events', 'hero_cards'];
       for (const table of seqTables) {
