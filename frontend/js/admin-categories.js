@@ -38,7 +38,10 @@
       if (!res || !res.ok) throw new Error('Error cargando categorías');
       categoriesCache = await res.json();
       renderCategories();
-      populateParentSelect();
+      var modal = document.getElementById('categoryModalOverlay');
+      if (!modal || !modal.classList.contains('active')) {
+        populateParentSelect();
+      }
       if (window.refreshAllSaveButtons) window.refreshAllSaveButtons();
     } catch (err) {
       console.error('[Categories] Error:', err);
@@ -362,6 +365,13 @@
     var saveBtn = document.getElementById('saveCategoryBtn');
     if (saveBtn) saveBtn.addEventListener('click', saveCategory);
 
+    var saveCloudBtn = document.getElementById('saveCategoriesCloudBtn');
+    if (saveCloudBtn) {
+      saveCloudBtn.addEventListener('click', function () {
+        if (window.saveAllCategoryChanges) window.saveAllCategoryChanges();
+      });
+    }
+
     var closeBtn = document.getElementById('closeCategoryModal');
     if (closeBtn) closeBtn.addEventListener('click', closeCategoryModal);
 
@@ -402,9 +412,13 @@
   window.saveCategory = saveCategory;
   window.reloadCategories = loadCategories;
   window.saveAllCategoryChanges = async function () {
-    if (window.__adminDirtyState && window.__adminDirtyState.categories && typeof window.saveCategory === 'function') {
-      await window.saveCategory();
-    }
+    await window.saveToCloud('categories', {
+      btnId: 'saveCategoriesCloudBtn',
+      loadingId: 'saveCategoriesCloudBtnLoading',
+      action: async function () {
+        await loadCategories();
+      }
+    });
   };
   window.discardAllCategoryChanges = loadCategories;
 })();

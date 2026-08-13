@@ -324,7 +324,12 @@ app.get('/metrics', (req, res) => {
   });
 });
 
-const gitCommit = require('child_process').execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
+let gitCommit = '';
+try {
+  gitCommit = require('child_process').execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
+} catch (e) {
+  gitCommit = 'unknown';
+}
 
 app.get('/health', async (req, res) => {
   const health = {

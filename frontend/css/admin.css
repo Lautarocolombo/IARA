@@ -967,7 +967,7 @@ tr:last-child td {
 }
 
 .toggle input:checked + .toggle-slider {
-  background-color: #10b981;
+  background-color: var(--accent);
 }
 
 .toggle input:checked + .toggle-slider:before {
@@ -1782,7 +1782,7 @@ textarea.hero-slot-input {
   border-radius: 50%;
 }
 .testimonial-active-toggle input:checked + .slider {
-  background-color: #10b981;
+  background-color: var(--accent);
 }
 .testimonial-active-toggle input:checked + .slider:before {
   transform: translateX(22px);
@@ -1881,6 +1881,188 @@ textarea.hero-slot-input {
      max-height: 100vh;
      border-radius: 0;
    }
+}
+
+/* ==================== PRODUCT MODAL REDESIGN ==================== */
+
+.form-group--primary label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.form-group--primary input {
+  padding: 0.7rem 0.9rem;
+  font-size: 0.95rem;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+
+.form-group--primary input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(212, 112, 144, 0.15);
+}
+
+.form-group--primary .required {
+  color: #dc2626;
+  font-size: 1rem;
+}
+
+.field-error {
+  font-size: 0.75rem;
+  color: #dc2626;
+  margin-top: 0.25rem;
+  min-height: 1.1em;
+  font-weight: 500;
+}
+
+.form-group.is-invalid input,
+.form-group.is-invalid textarea,
+.form-group.is-invalid select {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.form-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .form-grid-3 {
+    grid-template-columns: 1fr;
+  }
+  .modal-toggles-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+}
+
+.modal-toggles-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  margin: 0.5rem 0 1rem;
+}
+
+.modal-toggles-row .toggle-field {
+  gap: 0.5rem;
+}
+
+#productModalOverlay .toggle input:checked + .toggle-slider {
+  background-color: var(--accent);
+}
+
+#productModalOverlay .toggle input:checked + .toggle-slider:before {
+  transform: translateX(22px);
+}
+
+.product-dropzone {
+  position: relative;
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  background: #fafafa;
+  transition: all .2s;
+  cursor: pointer;
+  text-align: center;
+}
+
+.product-dropzone:hover,
+.product-dropzone.drag-over {
+  border-color: var(--accent);
+  background: var(--white);
+}
+
+.product-dropzone input[type="file"] {
+  display: none;
+}
+
+.dropzone-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.dropzone-content svg {
+  color: var(--accent);
+}
+
+.dropzone-content span {
+  font-weight: 600;
+  color: #334155;
+  font-size: 0.9rem;
+}
+
+.dropzone-content small {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.modal-image-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.modal-image-item {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--white);
+  transition: all .2s;
+}
+
+.modal-image-item:hover {
+  border-color: #f4a7c0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+}
+
+.modal-image-item img {
+  width: 100%;
+  height: 80px;
+  object-fit: cover;
+  display: block;
+}
+
+.modal-image-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(255,255,255,0.9);
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  cursor: pointer;
+  color: #dc2626;
+  transition: all .2s;
+}
+
+.modal-image-remove:hover {
+  background: #dc2626;
+  color: #fff;
+}
+
+/* ==================== MODAL FOOTER STICKY ==================== */
+#productModalOverlay .toggle input:checked + .toggle-slider {
+  background-color: #d47090;
 }
 
 /* ==================== DARK MODE FOR ADMIN ==================== */

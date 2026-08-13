@@ -397,28 +397,32 @@
         <section id="section-products" class="admin-section-inactive">
           <div id="productsRoot">
             <div class="card">
-              <div class="card-header">
-                <h3 class="card-header-title">Productos</h3>
-                <div class="card-controls">
-                  <input type="text" id="productFilter" class="card-filter" placeholder="Buscar por nombre..." />
-                  <select id="filter_category" class="card-filter">
-                    <option value="">Todas las categorías</option>
-                  </select>
-                  <select id="filter_active" class="card-filter">
-                    <option value="true">Activos</option>
-                    <option value="false">Inactivos</option>
-                    <option value="">Todos</option>
-                  </select>
-                  <label class="switch-card" style="padding:0.4rem 0.75rem;font-size:0.8rem;">
-                    <input type="checkbox" id="showInactiveCheck" style="margin-right:0.4rem;" />
-                    <span class="switch-label">Mostrar inactivos</span>
-                  </label>
-                  <button class="btn btn-primary btn-sm" id="createProductBtn">
-                    <span id="createProductBtnText">+ Nuevo producto</span>
-                    <span id="createProductBtnLoading" class="hidden">Creando...</span>
-                  </button>
-                </div>
-              </div>
+        <div class="card-header">
+          <h3 class="card-header-title">Productos</h3>
+          <div class="card-controls">
+            <input type="text" id="productFilter" class="card-filter" placeholder="Buscar por nombre..." />
+            <select id="filter_category" class="card-filter">
+              <option value="">Todas las categorías</option>
+            </select>
+            <select id="filter_active" class="card-filter">
+              <option value="true">Activos</option>
+              <option value="false">Inactivos</option>
+              <option value="">Todos</option>
+            </select>
+            <label class="switch-card" style="padding:0.4rem 0.75rem;font-size:0.8rem;">
+              <input type="checkbox" id="showInactiveCheck" style="margin-right:0.4rem;" />
+              <span class="switch-label">Mostrar inactivos</span>
+            </label>
+            <button class="btn btn-secondary btn-sm" id="saveProductsCloudBtn" data-scope="products">
+              <span id="saveProductsCloudBtnText">Guardar en Nube</span>
+              <span id="saveProductsCloudBtnLoading" class="hidden">Guardando...</span>
+            </button>
+            <button class="btn btn-primary btn-sm" id="createProductBtn">
+              <span id="createProductBtnText">+ Nuevo producto</span>
+              <span id="createProductBtnLoading" class="hidden">Creando...</span>
+            </button>
+          </div>
+        </div>
               <div class="card-body">
                 <div id="productsTableContainer">
                   <table id="productsTable">
@@ -448,13 +452,19 @@
         <section id="section-categories" class="admin-section-inactive">
           <div id="categoriesRoot">
             <div class="card">
-              <div class="card-header">
-                <h3 class="card-header-title">Categorías</h3>
-                <button class="btn btn-primary btn-sm" id="createCategoryBtn">
-                  <span id="createCategoryBtnText">+ Nueva categoría</span>
-                  <span id="createCategoryBtnLoading" class="hidden">Creando...</span>
-                </button>
-              </div>
+        <div class="card-header">
+          <h3 class="card-header-title">Categorías</h3>
+          <div class="card-controls">
+            <button class="btn btn-secondary btn-sm" id="saveCategoriesCloudBtn" data-scope="categories">
+              <span id="saveCategoriesCloudBtnText">Guardar en Nube</span>
+              <span id="saveCategoriesCloudBtnLoading" class="hidden">Guardando...</span>
+            </button>
+            <button class="btn btn-primary btn-sm" id="createCategoryBtn">
+              <span id="createCategoryBtnText">+ Nueva categoría</span>
+              <span id="createCategoryBtnLoading" class="hidden">Creando...</span>
+            </button>
+          </div>
+        </div>
               <div class="card-body">
                 <div id="categoriesListContainer">
                   <div id="categoriesTree"></div>
@@ -587,16 +597,22 @@
               <div class="card">
                 <div class="card-header">
                   <h3 class="card-header-title">Pedidos</h3>
-                  <input type="text" id="orderSearch" class="card-filter" placeholder="Buscar por ID o cliente..." />
-                  <select id="orderStatusFilter" class="card-filter">
-                    <option value="">Todos los estados</option>
-                    <option value="pending">Pendiente</option>
-                    <option value="confirmed">Confirmado</option>
-                    <option value="preparing">Preparando</option>
-                    <option value="shipped">Enviado</option>
-                    <option value="delivered">Entregado</option>
-                    <option value="cancelled">Cancelado</option>
-                  </select>
+                  <div class="card-controls">
+                    <input type="text" id="orderSearch" class="card-filter" placeholder="Buscar por ID o cliente..." />
+                    <select id="orderStatusFilter" class="card-filter">
+                      <option value="">Todos los estados</option>
+                      <option value="pending">Pendiente</option>
+                      <option value="confirmed">Confirmado</option>
+                      <option value="preparing">Preparando</option>
+                      <option value="shipped">Enviado</option>
+                      <option value="delivered">Entregado</option>
+                      <option value="cancelled">Cancelado</option>
+                    </select>
+                    <button class="btn btn-secondary btn-sm" id="saveOrdersCloudBtn" data-scope="orders">
+                      <span id="saveOrdersCloudBtnText">Guardar en Nube</span>
+                      <span id="saveOrdersCloudBtnLoading" class="hidden">Guardando...</span>
+                    </button>
+                  </div>
                 </div>
                 <div class="card-body card-body--flush">
                   <div id="ordersListContainer">
@@ -995,31 +1011,21 @@
       <div class="modal-body">
         <form id="productEditForm">
           <input type="hidden" id="editProductId" />
+          
           <div class="form-grid-2">
-            <div class="form-group">
+            <div class="form-group form-group--primary" id="prod_name_group">
               <label>Nombre <span class="required">*</span></label>
               <input type="text" id="prod_name" required placeholder="Ej: Pulsera Minimalista Rosa" />
+              <div class="field-error" id="prod_name_error"></div>
             </div>
-            <div class="form-group">
+            <div class="form-group form-group--primary" id="prod_price_group">
               <label>Precio (ARS) <span class="required">*</span></label>
               <input type="number" id="prod_price" required min="0" step="10" placeholder="0.00" />
-            </div>
-            <div class="form-group">
-              <label>Categoría</label>
-              <select id="prod_category">
-                <option value="">Sin categoría</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>Stock</label>
-              <input type="number" id="prod_stock" min="0" step="1" placeholder="0" />
+              <div class="field-error" id="prod_price_error"></div>
             </div>
           </div>
-          <div class="form-group">
-            <label>Descripción</label>
-            <textarea id="prod_description" rows="3" placeholder="Descripción del producto..."></textarea>
-          </div>
-          <div class="form-grid-2">
+          
+          <div class="form-grid-3">
             <div class="form-group">
               <label>Emoji</label>
               <input type="text" id="prod_emoji" placeholder="📿" />
@@ -1032,42 +1038,63 @@
               <label>SKU</label>
               <input type="text" id="prod_sku" placeholder="Código interno" />
             </div>
+          </div>
+          
+          <div class="form-grid-2">
             <div class="form-group">
-              <label>Destacado</label>
-              <label class="toggle">
-                <input type="checkbox" id="prod_featured" />
-                <span class="toggle-slider"></span>
-              </label>
+              <label>Categoría</label>
+              <select id="prod_category">
+                <option value="">Sin categoría</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Stock</label>
+              <input type="number" id="prod_stock" min="0" step="1" placeholder="0" />
             </div>
           </div>
+          
           <div class="form-group">
-            <label>Imágenes (hasta 5)</label>
-            <label class="image-upload-zone" for="prod_images">
-              <div class="image-upload-primary">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                <span>Hacé clic o arrastrá imágenes</span>
-                <small class="form-hint">JPG, PNG o WEBP. Máx 5MB c/u. Hasta 5 imágenes.</small>
-              </div>
-              <input type="file" id="prod_images" name="images" accept="image/jpeg,image/png,image/webp" multiple />
-            </label>
-            <div id="modalImageGallery"></div>
+            <label>Descripción</label>
+            <textarea id="prod_description" rows="3" placeholder="Descripción del producto..."></textarea>
           </div>
-          <div class="form-group">
+          
+          <div class="modal-toggles-row">
+            <label class="toggle-field">
+              <span class="toggle">
+                <input type="checkbox" id="prod_featured" />
+                <span class="toggle-slider"></span>
+              </span>
+              <span class="switch-label">Destacado</span>
+            </label>
             <label class="toggle-field">
               <span class="toggle">
                 <input type="checkbox" id="prod_active" checked />
                 <span class="toggle-slider"></span>
               </span>
-              <span style="font-size:0.85rem;font-weight:600;">Producto activo</span>
+              <span class="switch-label">Producto activo</span>
             </label>
           </div>
-          <div class="admin-section">
-            <button type="button" class="btn btn-primary" id="saveProductBtn">
-              <span id="saveProductBtnText">Crear producto</span>
-              <span id="saveProductBtnLoading" class="hidden">Guardando...</span>
-            </button>
+          
+          <div class="form-group">
+            <label>Imágenes (hasta 5)</label>
+            <div class="product-dropzone" id="productDropzone">
+              <input type="file" id="prod_images" name="images" accept="image/jpeg,image/png,image/webp" multiple />
+              <div class="dropzone-content">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span>Seleccionar imágenes</span>
+                <small>JPG, PNG o WEBP. Máx 5MB c/u. Hasta 5 imágenes.</small>
+              </div>
+            </div>
+            <div id="modalImageGallery" class="modal-image-gallery"></div>
           </div>
         </form>
+      </div>
+      <div class="modal-footer modal-footer--sticky">
+        <button type="button" class="btn btn-secondary" id="cancelProductBtn">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="saveProductBtn">
+          <span id="saveProductBtnText">Crear producto</span>
+          <span id="saveProductBtnLoading" class="hidden">Guardando...</span>
+        </button>
       </div>
     </div>
   </div>

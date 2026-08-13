@@ -11,7 +11,7 @@ async function checkServerHealth() {
   const hint = document.getElementById('loginHint');
   const retryBtn = document.getElementById('retryHealthBtn');
   const indicator = document.getElementById('connectionIndicator');
-  const timeoutMs = 8000;
+  const timeoutMs = 30000;
 
   let timeoutId;
   try {
@@ -239,6 +239,57 @@ if (window.SENTRY_DSN) {
     document.head.appendChild(script);
   })();
 }
+
+function showSaveStatus(statusId, type, message) {
+  var el = document.getElementById(statusId);
+  if (!el) return;
+  el.className = 'save-status visible ' + type;
+  el.textContent = message;
+  setTimeout(function () {
+    if (el) { el.className = 'save-status'; el.textContent = ''; }
+  }, 4000);
+}
+
+function setButtonState(btnId, loadingId, loading, defaultText, loadingText) {
+  var btn = document.getElementById(btnId);
+  var load = document.getElementById(loadingId);
+  if (btn) btn.disabled = loading;
+  if (load) load.classList.toggle('hidden', !loading);
+  var textSpan = load ? load.previousElementSibling : null;
+  if (textSpan && textSpan.id === btnId + 'Text') {
+    textSpan.textContent = loading ? (loadingText || 'Procesando...') : (defaultText || 'Guardar');
+  }
+}
+
+async function saveToCloud(section, options) {
+  var btnId = options.btnId;
+  var loadingId = options.loadingId;
+  var defaultText = options.defaultText || 'Guardar en Nube';
+  var loadingText = options.loadingText || 'Guardando...';
+  var statusId = options.statusId;
+  var action = options.action;
+
+  setButtonState(btnId, loadingId, true, defaultText, loadingText);
+  if (statusId) showSaveStatus(statusId, 'saving', 'Guardando cambios...');
+
+  try {
+    await action();
+    if (statusId) showSaveStatus(statusId, 'success', 'Cambios guardados ✅');
+    window.showToast('✅', 'Cambios guardados ✅', 'success');
+    return true;
+  } catch (err) {
+    console.error('[saveToCloud] Error guardando ' + section + ':', err);
+    if (statusId) showSaveStatus(statusId, 'error', err.message || 'Error al guardar, intentá de nuevo');
+    window.showToast('❌', err.message || 'Error al guardar, intentá de nuevo', 'error');
+    return false;
+  } finally {
+    setButtonState(btnId, loadingId, false, defaultText, loadingText);
+  }
+}
+
+window.showSaveStatus = showSaveStatus;
+window.setButtonState = setButtonState;
+window.saveToCloud = saveToCloud;
 
 document.addEventListener('DOMContentLoaded', () => {
   const passwordToggle = document.getElementById('passwordToggle');

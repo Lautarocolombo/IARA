@@ -123,39 +123,56 @@
     selectedFiles.forEach(function (file, index) {
       var url = URL.createObjectURL(file);
       var div = document.createElement('div');
-      div.className = 'image-thumb';
-      div.innerHTML = '<img src="' + url + '" alt="Preview" style="width:64px;height:64px;object-fit:cover;border-radius:6px;" />' +
-        '<button type="button" onclick="window.removeImagePreview(' + index + ')" title="Quitar" style="position:absolute;top:2px;right:2px;background:rgba(255,255,255,0.9);border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;">✕</button>';
+      div.className = 'modal-image-item';
+      div.innerHTML = '<img src="' + url + '" alt="Preview" />' +
+        '<button type="button" class="modal-image-remove" onclick="window.removeImagePreview(' + index + ')" title="Quitar">✕</button>';
       container.appendChild(div);
     });
   }
 
-  /* ===== VALIDACIÓN ===== */
-
-  function validateForm() {
+  function validateFormInline() {
     var name = (document.getElementById('prod_name')?.value || '').trim();
     var price = parseFloat(document.getElementById('prod_price')?.value || '');
+    var nameGroup = document.getElementById('prod_name_group');
+    var priceGroup = document.getElementById('prod_price_group');
+    var nameError = document.getElementById('prod_name_error');
+    var priceError = document.getElementById('prod_price_error');
+
+    var valid = true;
 
     if (!name) {
-      window.showToast('❌', 'El nombre del producto es obligatorio.', 'error');
-      return false;
+      nameGroup?.classList.add('is-invalid');
+      if (nameError) nameError.textContent = 'El nombre es obligatorio';
+      valid = false;
+    } else {
+      nameGroup?.classList.remove('is-invalid');
+      if (nameError) nameError.textContent = '';
     }
+
     if (isNaN(price) || price <= 0) {
-      window.showToast('❌', 'Ingresá un precio mayor a 0.', 'error');
-      return false;
+      priceGroup?.classList.add('is-invalid');
+      if (priceError) priceError.textContent = 'Ingresá un precio mayor a 0';
+      valid = false;
+    } else {
+      priceGroup?.classList.remove('is-invalid');
+      if (priceError) priceError.textContent = '';
     }
-    if (editingProductId === null && !selectedFiles.length) {
-      window.showToast('❌', 'Debés cargar al menos una imagen.', 'error');
-      return false;
-    }
-    return true;
+
+    return valid;
+  }
+
+  function clearFormValidation() {
+    document.getElementById('prod_name_group')?.classList.remove('is-invalid');
+    document.getElementById('prod_price_group')?.classList.remove('is-invalid');
+    document.getElementById('prod_name_error').textContent = '';
+    document.getElementById('prod_price_error').textContent = '';
   }
 
   /* ===== GUARDAR (FORMULARIO DEL MODAL) ===== */
 
   async function handleProductSubmit(e) {
     e.preventDefault();
-    if (!validateForm()) return;
+    if (!validateFormInline()) return;
 
     var form = document.getElementById('productEditForm');
     var btn = document.getElementById('saveProductBtn');
@@ -241,12 +258,14 @@
   function openProductModal() {
     var overlay = document.getElementById('productModalOverlay');
     if (overlay) overlay.style.display = 'flex';
+    clearFormValidation();
   }
 
   function closeProductModal() {
     var overlay = document.getElementById('productModalOverlay');
     if (overlay) overlay.style.display = 'none';
     resetProductForm();
+    clearFormValidation();
   }
 
   function resetProductForm() {
@@ -273,6 +292,8 @@
 
     var gallery = document.getElementById('modalImageGallery');
     if (gallery) gallery.innerHTML = '';
+    
+    clearFormValidation();
   }
 
   /* ===== EDITAR / ELIMINAR ===== */
@@ -303,6 +324,7 @@
 
     selectedFiles = [];
     renderImagePreviews();
+    clearFormValidation();
 
     openProductModal();
   };
@@ -375,6 +397,11 @@
       closeModal.addEventListener('click', closeProductModal);
     }
 
+    var cancelBtn = document.getElementById('cancelProductBtn');
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', closeProductModal);
+    }
+
     var overlay = document.getElementById('productModalOverlay');
     if (overlay) {
       overlay.addEventListener('click', function (e) {
@@ -409,6 +436,33 @@
       });
     }
 
+    var dropzone = document.getElementById('productDropzone');
+    if (dropzone && imageInput) {
+      dropzone.addEventListener('click', function () {
+        imageInput.click();
+      });
+      dropzone.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        dropzone.classList.add('drag-over');
+      });
+      dropzone.addEventListener('dragleave', function () {
+        dropzone.classList.remove('drag-over');
+      });
+      dropzone.addEventListener('drop', function (e) {
+        e.preventDefault();
+        dropzone.classList.remove('drag-over');
+        var files = e.dataTransfer.files;
+        if (!files || !files.length) return;
+        var totalAfter = selectedFiles.length + files.length;
+        if (totalAfter > 5) {
+          window.showToast('❌', 'Máximo 5 imágenes por producto.', 'error');
+          return;
+        }
+        Array.from(files).forEach(function (f) { selectedFiles.push(f); });
+        renderImagePreviews();
+      });
+    }
+
     var filterInput = document.getElementById('productFilter');
     if (filterInput) {
       filterInput.addEventListener('input', function () {
@@ -432,12 +486,26 @@
         renderProducts(filtered);
       });
     }
+
+    var saveCloudBtn = document.getElementById('saveProductsCloudBtn');
+    if (saveCloudBtn) {
+      saveCloudBtn.addEventListener('click', function () {
+        if (window.saveAllProductsChanges) window.saveAllProductsChanges();
+      });
+    }
   }
 
   /* EXPORTS for admin-sync.js */
   window.initProductManager = initProductManager;
   window.reloadProducts = loadProducts;
-  window.saveAllProductChanges = function () {
-    window.showToast('ℹ️', 'Los productos se guardan individualmente.', 'info');
+  window.saveAllProductsChanges = async function () {
+    await window.saveToCloud('products', {
+      btnId: 'saveProductsCloudBtn',
+      loadingId: 'saveProductsCloudBtnLoading',
+      action: async function () {
+        await loadProducts();
+      }
+    });
   };
+  window.saveAllProductChanges = window.saveAllProductsChanges;
 })();

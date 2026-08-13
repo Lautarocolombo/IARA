@@ -1,22 +1,22 @@
 'use strict';
 
-const { migrate } = require('node-pg-migrate');
+const { runner } = require('node-pg-migrate');
 const path = require('path');
 
 async function runMigrations(direction = 'up') {
   const connectionString = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL;
   const config = {
-    dir: path.join(__dirname, 'migrations'),
+    dir: path.join(__dirname, '..', 'migrations'),
     schema: 'public',
     migrationsTable: 'pgmigrations',
     createMigrationsTable: true,
     createSchemas: false,
     disableTransaction: false,
-    dirList: [path.join(__dirname, 'migrations')],
+    dirList: [path.join(__dirname, '..', 'migrations')],
   };
 
   if (connectionString) {
-    config.connectionString = connectionString;
+    config.databaseUrl = connectionString;
     config.ssl = { rejectUnauthorized: false };
   } else {
     config.database = process.env.DB_NAME || process.env.PGDATABASE || 'postgres';
@@ -27,7 +27,7 @@ async function runMigrations(direction = 'up') {
   }
 
   try {
-    await migrate({
+    await runner({
       ...config,
       direction,
     });

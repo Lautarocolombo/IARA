@@ -708,7 +708,24 @@
     paymentConfig = await fetchPaymentConfig();
     bindEvents();
     await loadOrders();
+
+    var saveCloudBtn = document.getElementById('saveOrdersCloudBtn');
+    if (saveCloudBtn) {
+      saveCloudBtn.addEventListener('click', function () {
+        if (window.saveAllOrdersChanges) window.saveAllOrdersChanges();
+      });
+    }
   }
 
   window.initOrdersPanel = initOrdersPanel;
+  window.loadOrders = loadOrders;
+  window.saveAllOrdersChanges = async function () {
+    await window.saveToCloud('orders', {
+      btnId: 'saveOrdersCloudBtn',
+      loadingId: 'saveOrdersCloudBtnLoading',
+      action: async function () {
+        await loadOrders();
+      }
+    });
+  };
 })();
