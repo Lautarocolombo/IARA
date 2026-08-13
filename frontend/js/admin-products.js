@@ -170,17 +170,8 @@
 
   /* ===== GUARDAR (FORMULARIO DEL MODAL) ===== */
 
-  async function handleProductSubmit(e) {
-    e.preventDefault();
-    if (!validateFormInline()) return;
-
+  async function saveProductToApi() {
     var form = document.getElementById('productEditForm');
-    var btn = document.getElementById('saveProductBtn');
-    var btnText = btn?.querySelector('span') || btn;
-
-    if (btn) btn.disabled = true;
-    if (btnText) btnText.textContent = editingProductId ? 'Guardando...' : 'Creando...';
-
     var formData = new FormData(form);
     formData.append('name', (document.getElementById('prod_name')?.value || '').trim());
     formData.append('category', document.getElementById('prod_category')?.value || '');
@@ -188,53 +179,56 @@
     formData.append('description', document.getElementById('prod_description')?.value.trim() || '');
     formData.append('emoji', document.getElementById('prod_emoji')?.value || '📿');
     formData.append('stock', document.getElementById('prod_stock')?.value || '0');
-    formData.append('featured', 'false');
+    formData.append('featured', document.getElementById('prod_featured')?.checked ? 'true' : 'false');
     formData.append('active', document.getElementById('prod_active')?.checked ? 'true' : 'false');
     formData.append('sku', document.getElementById('prod_sku')?.value || '');
     formData.append('badge', document.getElementById('prod_badge')?.value || '');
 
-    try {
-      var res;
-      var productId;
-
-      if (editingProductId) {
-        res = await window.adminFetch('/api/admin/products/' + editingProductId, {
-          method: 'PUT',
-          body: formData
-        });
-      } else {
-        res = await window.adminFetch('/api/admin/products', {
-          method: 'POST',
-          body: formData
-        });
-      }
-
-      if (!res || !res.ok) {
-        var errMsg = 'Error al guardar el producto.';
-        if (res) {
-          var errData = await res.json().catch(function () { return {}; });
-          errMsg = errData.error || errMsg;
-        }
-        throw new Error(errMsg);
-      }
-
-      var product = await res.json();
-      productId = product.id || editingProductId;
-
-      if (selectedFiles.length > 0) {
-        await uploadProductImages(productId);
-      }
-
-      window.showToast('✅', 'Producto ' + (editingProductId ? 'actualizado' : 'creado') + ' correctamente.', 'success');
-      closeProductModal();
-      await loadProducts();
-    } catch (err) {
-      console.error('[Products] Error guardando:', err);
-      window.showToast('❌', err.message || 'Error al guardar el producto.', 'error');
-    } finally {
-      if (btn) btn.disabled = false;
-      if (btnText) btnText.textContent = editingProductId ? 'Guardar cambios' : 'Crear producto';
+    var res;
+    if (editingProductId) {
+      res = await window.adminFetch('/api/admin/products/' + editingProductId, {
+        method: 'PUT',
+        body: formData
+      });
+    } else {
+      res = await window.adminFetch('/api/admin/products', {
+        method: 'POST',
+        body: formData
+      });
     }
+
+    if (!res || !res.ok) {
+      var errMsg = editingProductId ? 'Error al actualizar el producto.' : 'Error al crear el producto.';
+      if (res) {
+        var errData = await res.json().catch(function () { return {}; });
+        errMsg = errData.error || errMsg;
+      }
+      throw new Error(errMsg);
+    }
+
+    var product = await res.json();
+    return product.id || editingProductId;
+  }
+
+  async function handleProductSubmit(e) {
+    e.preventDefault();
+    if (!validateFormInline()) return;
+
+    await window.saveToCloud('products', {
+      btnId: 'saveProductBtn',
+      loadingId: 'saveProductBtnLoading',
+      defaultText: 'Guardar en Nube',
+      loadingText: 'Guardando...',
+      successMessage: 'Producto guardado ✅',
+      action: async function () {
+        var productId = await saveProductToApi();
+        if (selectedFiles.length > 0) {
+          await uploadProductImages(productId);
+        }
+        await loadProducts();
+        closeProductModal();
+      }
+    });
   }
 
   async function uploadProductImages(productId) {
@@ -258,6 +252,8 @@
   function openProductModal() {
     var overlay = document.getElementById('productModalOverlay');
     if (overlay) overlay.style.display = 'flex';
+    var btn = document.getElementById('saveProductBtn');
+    if (btn) btn.disabled = false;
     clearFormValidation();
   }
 
@@ -288,7 +284,7 @@
     if (btn) btn.style.display = 'block';
 
     var btnText = btn?.querySelector('span') || btn;
-    if (btnText) btnText.textContent = 'Crear producto';
+    if (btnText) btnText.textContent = 'Guardar en Nube';
 
     var gallery = document.getElementById('modalImageGallery');
     if (gallery) gallery.innerHTML = '';
@@ -320,7 +316,7 @@
     if (btn) btn.style.display = 'block';
 
     var btnText = btn?.querySelector('span') || btn;
-    if (btnText) btnText.textContent = 'Guardar cambios';
+    if (btnText) btnText.textContent = 'Guardar en Nube';
 
     selectedFiles = [];
     renderImagePreviews();

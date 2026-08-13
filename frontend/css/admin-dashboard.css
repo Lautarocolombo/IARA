@@ -742,6 +742,109 @@
   user-select: none;
 }
 
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+}
+
+.section-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.section-grid-3 {
+  display: grid;
+  grid-template-columns: 320px 1fr 320px;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .section-grid-2,
+  .section-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .section-grid-2,
+  .section-grid-3 {
+    gap: 1rem;
+  }
+}
+
+/* ==================== CONTENT SECTIONS ==================== */
+.content-section-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ==================== PRODUCTS TABLE ==================== */
+#productsTableContainer {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ==================== CATEGORIES TREE ==================== */
+#categoriesListContainer {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ==================== ORDERS TABLE ==================== */
+#ordersListContainer {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ==================== SALES LAYOUT ==================== */
+.sales-top-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .sales-top-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sales-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .sales-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ==================== TRANSACTIONS TABLE ==================== */
+#transactionsTableContainer {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ==================== ACTIVITY TABLE ==================== */
+#pmActivityTableContainer {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#orderActivityTableContainer {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .hero-image-editor {
   margin-top: 0.5rem;
 }
@@ -839,4 +942,21 @@
   color: #6b7280;
   margin-bottom: 0.5rem;
   font-weight: 500;
+}
+
+/* Ensure card content respects boundaries */
+.card {
+  min-width: 0;
+}
+
+.card-body {
+  min-width: 0;
+}
+
+.card-body--flush {
+  min-width: 0;
+}
+
+.table-wrap {
+  min-width: 0;
 }

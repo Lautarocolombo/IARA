@@ -253,7 +253,10 @@ function showSaveStatus(statusId, type, message) {
 function setButtonState(btnId, loadingId, loading, defaultText, loadingText) {
   var btn = document.getElementById(btnId);
   var load = document.getElementById(loadingId);
-  if (btn) btn.disabled = loading;
+  if (btn) {
+    btn.disabled = loading;
+    btn.classList.toggle('is-saving', loading);
+  }
   if (load) load.classList.toggle('hidden', !loading);
   var textSpan = load ? load.previousElementSibling : null;
   if (textSpan && textSpan.id === btnId + 'Text') {
@@ -266,6 +269,7 @@ async function saveToCloud(section, options) {
   var loadingId = options.loadingId;
   var defaultText = options.defaultText || 'Guardar en Nube';
   var loadingText = options.loadingText || 'Guardando...';
+  var successMessage = options.successMessage || 'Cambios guardados ✅';
   var statusId = options.statusId;
   var action = options.action;
 
@@ -274,13 +278,14 @@ async function saveToCloud(section, options) {
 
   try {
     await action();
-    if (statusId) showSaveStatus(statusId, 'success', 'Cambios guardados ✅');
-    window.showToast('✅', 'Cambios guardados ✅', 'success');
+    if (statusId) showSaveStatus(statusId, 'success', successMessage);
+    window.showToast('✅', successMessage, 'success');
     return true;
   } catch (err) {
     console.error('[saveToCloud] Error guardando ' + section + ':', err);
-    if (statusId) showSaveStatus(statusId, 'error', err.message || 'Error al guardar, intentá de nuevo');
-    window.showToast('❌', err.message || 'Error al guardar, intentá de nuevo', 'error');
+    var errMsg = err.message || 'Error al guardar, intentá de nuevo';
+    if (statusId) showSaveStatus(statusId, 'error', errMsg);
+    window.showToast('❌', errMsg, 'error');
     return false;
   } finally {
     setButtonState(btnId, loadingId, false, defaultText, loadingText);

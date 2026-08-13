@@ -424,7 +424,7 @@
           </div>
         </div>
               <div class="card-body">
-                <div id="productsTableContainer">
+                <div id="productsTableContainer" class="table-wrap">
                   <table id="productsTable">
                     <thead>
                       <tr>
@@ -466,7 +466,7 @@
           </div>
         </div>
               <div class="card-body">
-                <div id="categoriesListContainer">
+                <div id="categoriesListContainer" class="table-wrap">
                   <div id="categoriesTree"></div>
                   <div id="categoriesEmptyState" class="empty-state" style="display:none;">
                     <h3>No hay categorías</h3>
@@ -506,84 +506,93 @@
                 </div>
               </div>
               <div class="card-body">
-                <div id="salesMetrics">
-                  <div class="metrics-grid">
-                    <div class="metric-card">
-                      <div class="metric-value" id="metricRevenue">ARS 0</div>
-                      <div class="metric-label">Total Ventas Brutas</div>
-                    </div>
-                    <div class="metric-card">
-                      <div class="metric-value" id="metricNetRevenue">ARS 0</div>
-                      <div class="metric-label">Ventas Netas</div>
-                    </div>
-                    <div class="metric-card">
-                      <div class="metric-value" id="metricOrders">0</div>
-                      <div class="metric-label">Número Total de Pedidos</div>
-                    </div>
-                    <div class="metric-card">
-                      <div class="metric-value" id="metricAvg">ARS 0</div>
-                      <div class="metric-label">Ganancia Promedio por Pedido</div>
-                    </div>
-                  </div>
-                  <div class="charts-row">
-                    <div class="chart-container" style="flex:2;">
-                      <canvas id="salesChart"></canvas>
-                    </div>
-                    <div class="chart-container" style="flex:1;max-width:320px;">
-                      <canvas id="salesDonut"></canvas>
+                <div class="sales-top-grid">
+                  <div id="salesMetrics">
+                    <div class="metrics-grid">
+                      <div class="metric-card">
+                        <div class="metric-value" id="metricRevenue">ARS 0</div>
+                        <div class="metric-label">Total Ventas Brutas</div>
+                      </div>
+                      <div class="metric-card">
+                        <div class="metric-value" id="metricNetRevenue">ARS 0</div>
+                        <div class="metric-label">Ventas Netas</div>
+                      </div>
+                      <div class="metric-card">
+                        <div class="metric-value" id="metricOrders">0</div>
+                        <div class="metric-label">Número Total de Pedidos</div>
+                      </div>
+                      <div class="metric-card">
+                        <div class="metric-value" id="metricAvg">ARS 0</div>
+                        <div class="metric-label">Ganancia Promedio por Pedido</div>
+                      </div>
                     </div>
                   </div>
-                  <div class="save-status" id="salesSummaryStatus"></div>
+                  <div>
+                    <div class="charts-row">
+                      <div class="chart-container" style="flex:2;">
+                        <canvas id="salesChart"></canvas>
+                      </div>
+                      <div class="chart-container" style="flex:1;max-width:320px;">
+                        <canvas id="salesDonut"></canvas>
+                      </div>
+                    </div>
+                  </div>
                 </div>
+                <div class="save-status" id="salesSummaryStatus"></div>
 
-                <div class="admin-section-title" style="margin-top:2rem;">Historial de Transacciones</div>
-                <div class="report-section">
-                  <table class="table-admin" id="transactionsTable">
-                    <thead>
-                      <tr>
-                        <th>ID</th>
-                        <th>Fecha</th>
-                        <th>Cliente / Producto</th>
-                        <th style="text-align:center;">Estado</th>
-                        <th style="text-align:right;">Monto</th>
-                      </tr>
-                    </thead>
-                    <tbody id="transactionsTableBody"></tbody>
-                  </table>
-                  <div id="transactionsEmptyState" class="empty-state" style="display:none;">
-                    <h3>No hay transacciones</h3>
+                <div class="sales-bottom-grid" style="margin-top:2rem;">
+                  <div>
+                    <div class="admin-section-title">Historial de Transacciones</div>
+                    <div class="report-section table-wrap">
+                      <table class="table-admin" id="transactionsTable">
+                        <thead>
+                          <tr>
+                            <th>ID</th>
+                            <th>Fecha</th>
+                            <th>Cliente / Producto</th>
+                            <th style="text-align:center;">Estado</th>
+                            <th style="text-align:right;">Monto</th>
+                          </tr>
+                        </thead>
+                        <tbody id="transactionsTableBody"></tbody>
+                      </table>
+                      <div id="transactionsEmptyState" class="empty-state" style="display:none;">
+                        <h3>No hay transacciones</h3>
+                      </div>
+                      <div class="pagination" id="transactionsPagination"></div>
+                    </div>
                   </div>
-                  <div class="pagination" id="transactionsPagination"></div>
+                  <div>
+                    <div class="admin-section-title">Registrar venta manual</div>
+                    <form id="manualSaleForm">
+                      <div class="form-grid-2">
+                        <div class="form-group">
+                          <label>Producto <span class="required">*</span></label>
+                          <select id="sale_product_id" required>
+                            <option value="">Seleccionar producto...</option>
+                          </select>
+                        </div>
+                        <div class="form-group">
+                          <label>Cantidad <span class="required">*</span></label>
+                          <input type="number" id="sale_quantity" required min="1" step="1" placeholder="1" />
+                        </div>
+                      </div>
+                      <div class="form-group">
+                        <label>Precio unitario</label>
+                        <input type="text" id="sale_unit_price" readonly />
+                      </div>
+                      <div class="form-group">
+                        <label>Total</label>
+                        <input type="text" id="sale_total" readonly />
+                      </div>
+                      <button type="submit" class="btn btn-primary" id="saveSaleBtn">
+                        <span id="saveSaleBtnText">Guardar venta</span>
+                        <span id="saveSaleBtnLoading" class="hidden">Guardando...</span>
+                      </button>
+                      <div class="save-status" id="saleSaveStatus"></div>
+                    </form>
+                  </div>
                 </div>
-
-                <div class="admin-section-title" style="margin-top:2rem;">Registrar venta manual</div>
-                <form id="manualSaleForm">
-                  <div class="form-grid-2">
-                    <div class="form-group">
-                      <label>Producto <span class="required">*</span></label>
-                      <select id="sale_product_id" required>
-                        <option value="">Seleccionar producto...</option>
-                      </select>
-                    </div>
-                    <div class="form-group">
-                      <label>Cantidad <span class="required">*</span></label>
-                      <input type="number" id="sale_quantity" required min="1" step="1" placeholder="1" />
-                    </div>
-                  </div>
-                  <div class="form-group">
-                    <label>Precio unitario</label>
-                    <input type="text" id="sale_unit_price" readonly />
-                  </div>
-                  <div class="form-group">
-                    <label>Total</label>
-                    <input type="text" id="sale_total" readonly />
-                  </div>
-                  <button type="submit" class="btn btn-primary" id="saveSaleBtn">
-                    <span id="saveSaleBtnText">Guardar venta</span>
-                    <span id="saveSaleBtnLoading" class="hidden">Guardando...</span>
-                  </button>
-                  <div class="save-status" id="saleSaveStatus"></div>
-                </form>
               </div>
             </div>
           </div>
@@ -615,7 +624,7 @@
                   </div>
                 </div>
                 <div class="card-body card-body--flush">
-                  <div id="ordersListContainer">
+                  <div id="ordersListContainer" class="table-wrap">
                     <table class="table-admin" id="ordersTable">
                       <thead>
                         <tr>
@@ -913,26 +922,28 @@
                   </div>
                 </div>
                 <div class="card-body card-body--flush">
-                  <div id="pmProofsLoading" class="empty-state" style="display:none;">
-                    <p>Cargando comprobantes...</p>
+                  <div id="pmProofsTableContainer" class="table-wrap">
+                    <div id="pmProofsLoading" class="empty-state" style="display:none;">
+                      <p>Cargando comprobantes...</p>
+                    </div>
+                    <table class="table-admin" id="pmProofsTable">
+                      <thead>
+                        <tr>
+                          <th>Pedido</th>
+                          <th>Fecha</th>
+                          <th>Cliente</th>
+                          <th>Comprobante</th>
+                          <th>Estado</th>
+                          <th style="width:160px;">Acciones</th>
+                        </tr>
+                      </thead>
+                      <tbody id="pmProofsTableBody"></tbody>
+                    </table>
+                    <div id="pmProofsEmpty" class="empty-state" style="display:none;">
+                      <h3>No se encontraron comprobantes</h3>
+                    </div>
+                    <div id="pmProofsPagination" class="table-pagination"></div>
                   </div>
-                  <table class="table-admin" id="pmProofsTable">
-                    <thead>
-                      <tr>
-                        <th>Pedido</th>
-                        <th>Fecha</th>
-                        <th>Cliente</th>
-                        <th>Comprobante</th>
-                        <th>Estado</th>
-                        <th style="width:160px;">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody id="pmProofsTableBody"></tbody>
-                  </table>
-                  <div id="pmProofsEmpty" class="empty-state" style="display:none;">
-                    <h3>No se encontraron comprobantes</h3>
-                  </div>
-                  <div id="pmProofsPagination" class="table-pagination"></div>
                 </div>
               </div>
             </div>
@@ -975,20 +986,22 @@
                   <h3 class="card-header-title">Registro de Actividad</h3>
                 </div>
                 <div class="card-body card-body--flush">
-                  <div id="pmActivityLoading" class="empty-state" style="display:none;">
-                    <p>Cargando actividad...</p>
-                  </div>
-                  <table class="table-admin" id="pmActivityTable">
-                    <thead>
-                      <tr>
-                        <th>Actividad</th>
-                        <th>Fecha</th>
-                      </tr>
-                    </thead>
-                    <tbody id="pmActivityTableBody"></tbody>
-                  </table>
-                  <div id="pmActivityEmpty" class="empty-state" style="display:none;">
-                    <h3>Sin actividad reciente</h3>
+                  <div id="pmActivityTableContainer" class="table-wrap">
+                    <div id="pmActivityLoading" class="empty-state" style="display:none;">
+                      <p>Cargando actividad...</p>
+                    </div>
+                    <table class="table-admin" id="pmActivityTable">
+                      <thead>
+                        <tr>
+                          <th>Actividad</th>
+                          <th>Fecha</th>
+                        </tr>
+                      </thead>
+                      <tbody id="pmActivityTableBody"></tbody>
+                    </table>
+                    <div id="pmActivityEmpty" class="empty-state" style="display:none;">
+                      <h3>Sin actividad reciente</h3>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1092,7 +1105,7 @@
       <div class="modal-footer modal-footer--sticky">
         <button type="button" class="btn btn-secondary" id="cancelProductBtn">Cancelar</button>
         <button type="button" class="btn btn-primary" id="saveProductBtn">
-          <span id="saveProductBtnText">Crear producto</span>
+          <span id="saveProductBtnText">Guardar en Nube</span>
           <span id="saveProductBtnLoading" class="hidden">Guardando...</span>
         </button>
       </div>

@@ -6,6 +6,10 @@ function csrfProtection(req, res, next) {
     return next();
   }
 
+  if (req.path === '/api/admin/upload') {
+    return next();
+  }
+
   const origin = req.headers.origin || req.headers.referer || '';
   const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || '').split(',').filter(Boolean);
 
@@ -29,6 +33,11 @@ function csrfProtection(req, res, next) {
   }
 
   if (method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE') {
+    const authHeader = req.headers.authorization || '';
+    if (authHeader.startsWith('Bearer ')) {
+      return next();
+    }
+
     const csrfToken = req.headers['x-csrf-token'] || req.body?._csrf;
     const sessionToken = req.session?.csrfToken;
 
