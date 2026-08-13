@@ -2,6 +2,50 @@
 
   /* eslint-disable no-unused-vars */
 
+  let appliedCoupon = null;
+
+  async function applyCoupon() {
+    const codeEl = document.getElementById('couponCode');
+    const errorEl = document.getElementById('couponError');
+    const successEl = document.getElementById('couponSuccess');
+    const code = codeEl ? codeEl.value.trim() : '';
+    if (!code) {
+      if (errorEl) { errorEl.textContent = 'Ingresá un código de cupón'; errorEl.style.display = 'block'; }
+      if (successEl) successEl.style.display = 'none';
+      appliedCoupon = null;
+      updateSummary();
+      return;
+    }
+    if (errorEl) { errorEl.textContent = ''; errorEl.style.display = 'none'; }
+    if (successEl) successEl.style.display = 'none';
+
+    const items = getCart();
+    const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
+
+    try {
+      const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/coupons/validate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code, amount: subtotal })
+      }, 2, 1000);
+      if (!res || !res.ok) {
+        const data = await res.json().catch(() => ({ error: 'Cupón inválido' }));
+        if (errorEl) { errorEl.textContent = data.error || 'Cupón inválido'; errorEl.style.display = 'block'; }
+        appliedCoupon = null;
+        updateSummary();
+        return;
+      }
+      const data = await res.json();
+      appliedCoupon = data;
+      if (successEl) { successEl.textContent = `Cupón aplicado: descuento de ${formatARS(data.discount)}`; successEl.style.display = 'block'; }
+      updateSummary();
+    } catch (err) {
+      if (errorEl) { errorEl.textContent = 'Error validando cupón'; errorEl.style.display = 'block'; }
+      appliedCoupon = null;
+      updateSummary();
+    }
+  }
+
   function updateSummary() {
     const items = getCart();
     const container = document.getElementById('summaryItems');
@@ -23,10 +67,12 @@
 
     const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
     const shipping = subtotal > CONFIG.CART.SHIPPING_THRESHOLD ? 0 : CONFIG.CART.SHIPPING_COST;
-    const total = subtotal + shipping;
+    const couponDiscount = appliedCoupon ? Number(appliedCoupon.discount || 0) : 0;
+    const total = subtotal - couponDiscount + shipping;
 
     totals.innerHTML = `
       <div class="summary-row"><span>Subtotal</span><span>${formatARS(subtotal)}</span></div>
+      ${couponDiscount > 0 ? `<div class="summary-row" style="color:#10b981;"><span>Descuento</span><span>-${formatARS(couponDiscount)}</span></div>` : ''}
       <div class="summary-row"><span>Envío</span><span>${shipping === 0 ? CONFIG.CART.FREE_SHIPPING_TEXT : formatARS(shipping)}</span></div>
       <div class="summary-row total"><span>Total</span><span>${formatARS(total)}</span></div>
     `;
@@ -194,7 +240,8 @@
 
     const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
     const shippingCost = subtotal > CONFIG.CART.SHIPPING_THRESHOLD ? 0 : CONFIG.CART.SHIPPING_COST;
-    const total = subtotal + shippingCost;
+    const couponDiscount = appliedCoupon ? Number(appliedCoupon.discount || 0) : 0;
+    const total = subtotal - couponDiscount + shippingCost;
 
     const submitBtn = document.getElementById('checkoutSubmitBtn');
     if (submitBtn) {
@@ -216,7 +263,8 @@
           shipping_city: shipping.city,
           subtotal,
           shipping_cost: shippingCost,
-          total
+          total,
+          couponCode: appliedCoupon ? appliedCoupon.code : ''
         })
       });
 
@@ -447,3 +495,8 @@
       }
     });
   });
+
+  const applyCouponBtn = document.getElementById('applyCouponBtn');
+  if (applyCouponBtn) {
+    applyCouponBtn.addEventListener('click', applyCoupon);
+  }

@@ -109,13 +109,15 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       - name: Smoke test
         run: |
+          $siteUrl = if ($env:FRONTEND_URL) { $env:FRONTEND_URL } else { 'https://artesaniagualeguay.com' }
           $max = 30; $i = 0
           while ($i -lt $max) {
             try {
-              $r = Invoke-WebRequest -Uri 'https://iara-lovat-orcin.vercel.app/health' -UseBasicParsing
+              $r = Invoke-WebRequest -Uri "$siteUrl/health" -UseBasicParsing
               if ($r.StatusCode -eq 200) { Write-Host "Health check OK"; break }
             } catch {}
             Start-Sleep -Seconds 2
             $i++
           }
-        shell: powershell
+        env:
+          FRONTEND_URL: ${{ vars.FRONTEND_URL || 'https://artesaniagualeguay.com' }}

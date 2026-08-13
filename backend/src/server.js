@@ -113,14 +113,14 @@ app.use(require('compression')());
 
 const envOrigins = (process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || '').split(',').filter(Boolean);
 const defaultOrigins = [
-  'https://iara-wz9o.vercel.app',
-  'https://iara-lovat-orcin.vercel.app',
-  'https://artesaniagualeguay.vercel.app',
-  'https://artesania-gualeguay.vercel.app',
   'https://artesaniagualeguay.com',
+  'https://www.artesaniagualeguay.com',
+  'https://artesania-gualeguay.vercel.app',
   'http://localhost:3000',
   'http://localhost:3001',
-  'http://localhost:5173'
+  'http://localhost:5173',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173'
 ];
 const allowedOrigins = envOrigins.length ? envOrigins : defaultOrigins;
 
@@ -293,6 +293,9 @@ app.use('/api/sync', require('./routes/sync'));
 app.use('/api', tenantContext);
 app.use('/api', csrfProtection);
 app.use('/api', limiter);
+
+app.use('/api/admin', require('./routes/users'));
+app.use('/api', require('./routes/coupons'));
 
 app.get('/metrics', (req, res) => {
   const clientIp = req.ip || req.connection.remoteAddress || '';

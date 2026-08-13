@@ -63,6 +63,10 @@
           <span>📋</span>
           <span>Pedidos Individuales</span>
         </a>
+        <a href="#" data-section="users">
+          <span>👥</span>
+          <span>Usuarios</span>
+        </a>
       </nav>
       <div class="sidebar-footer">
         <span id="lowStockIndicator" class="low-stock-indicator" style="display:none;"></span>
@@ -1175,6 +1179,78 @@
     </div>
   </div>
 
+  <!-- ===== SECCIÓN: USUARIOS ===== -->
+  <section id="section-users" class="admin-section-inactive">
+    <div class="admin-section">
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-header-title">Usuarios del panel</h3>
+          <button class="btn btn-primary btn-sm" id="addUserBtn">+ Nuevo usuario</button>
+        </div>
+        <div class="card-body">
+          <div class="table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Usuario</th>
+                  <th>Rol</th>
+                  <th>Estado</th>
+                  <th>Creado</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody">
+                <tr><td colspan="5" class="loading-row">Cargando usuarios...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODAL USUARIO -->
+  <div class="modal-overlay" id="userModalOverlay">
+    <div class="modal" style="max-width:420px;">
+      <div class="modal-header">
+        <h3 id="userModalTitle">Nuevo usuario</h3>
+        <button class="btn btn-secondary btn-sm" id="closeUserModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="userForm">
+          <div class="form-group">
+            <label>Usuario</label>
+            <input type="text" id="userUsername" required />
+          </div>
+          <div class="form-group">
+            <label>Contraseña</label>
+            <input type="password" id="userPassword" autocomplete="new-password" />
+            <small id="userPasswordHint" style="display:none;color:#f59e0b;">Dejalo vacío para mantener la contraseña actual.</small>
+          </div>
+          <div class="form-group">
+            <label>Rol</label>
+            <select id="userRole">
+              <option value="admin">Admin</option>
+              <option value="editor">Editor</option>
+              <option value="viewer">Viewer</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Estado</label>
+            <select id="userActive">
+              <option value="true">Activo</option>
+              <option value="false">Inactivo</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="cancelUserBtn">Cancelar</button>
+        <button class="btn btn-primary" id="saveUserBtn">Guardar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL CONFIRMACIÓN -->
   <div class="modal-overlay confirmation-overlay" id="confirmModalOverlay">
     <div class="modal" style="max-width:400px;">
@@ -1212,6 +1288,7 @@
   <script src="../js/admin-sales.js"></script>
   <script src="../js/admin-orders.js"></script>
   <script src="../js/admin-payments.js"></script>
+  <script src="../js/admin-users.js"></script>
   <script src="../js/pages/dashboard.js"></script>
 </body>
 </html>

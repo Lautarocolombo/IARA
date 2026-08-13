@@ -21,7 +21,8 @@ const { query } = require('../lib/db');
     const buffer = Buffer.from(b64, 'base64');
     fs.writeFileSync(filepath, buffer);
 
-    const url = `https://iara-os3h.onrender.com/uploads/imagenes/${filename}`;
+    const baseUrl = (process.env.BACKEND_URL || process.env.SITE_URL || '').replace(/\/+$/, '');
+    const url = `${baseUrl}/uploads/imagenes/${filename}`;
     await query('UPDATE products SET image = $1 WHERE id = $2', [url, row.id]);
     console.log('Migrado producto', row.id, '→', filename);
   }

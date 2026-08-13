@@ -70,10 +70,13 @@ const CONFIG = {
     TRANSITION_SPEED: 0.4
   },
 
-  // API — usar URLs relativas para aprovechar el rewrite de Vercel
-   // (/api/* → Render backend), evitando problemas de CORS y cold starts
+   // API — usar URLs relativas para aprovechar el rewrite de Vercel
+   // (/api/* → Render backend), evitando problemas de CORS y cold starts.
+   // Si API.BASE está vacío, se usan rutas relativas.
+   // Si necesitás llamar al backend directamente (ej: admin), completá BACKEND_URL.
    API: {
-     BASE: ''
+     BASE: '',
+     BACKEND_URL: ''
    },
 
    // Imagen placeholder para productos sin imagen
@@ -91,7 +94,7 @@ const CONFIG = {
   },
 
   // La configuración de pago (alias, WhatsApp, mensaje, activo) se obtiene
-  // dinámicamente desde /api/payment-config en el backend. No se usa MercadoPago.
+  // dinámicamente desde /api/payment-config en el backend.
 
   // Horarios
   HOURS: {

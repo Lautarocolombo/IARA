@@ -192,7 +192,25 @@ const bulkImportProducts = async (req, res) => {
 const getPublicProducts = async (req, res) => {
   try {
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
-    const result = await query('SELECT * FROM products WHERE active = TRUE AND deleted = FALSE ORDER BY id ASC');
+    const { category, minPrice, maxPrice } = req.query;
+    let where = 'WHERE active = TRUE AND deleted = FALSE';
+    const params = [];
+    if (category) {
+      const idx = params.length + 1;
+      where += ` AND category = $${idx}`;
+      params.push(category);
+    }
+    if (minPrice !== undefined && minPrice !== '') {
+      const idx = params.length + 1;
+      where += ` AND price >= $${idx}`;
+      params.push(Number(minPrice));
+    }
+    if (maxPrice !== undefined && maxPrice !== '') {
+      const idx = params.length + 1;
+      where += ` AND price <= $${idx}`;
+      params.push(Number(maxPrice));
+    }
+    const result = await query(`SELECT * FROM products ${where} ORDER BY id ASC`, params);
     const enriched = await attachImagesToProducts(result.rows, baseUrl);
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json(enriched);
@@ -206,12 +224,34 @@ const getPublicProducts = async (req, res) => {
 const searchProducts = async (req, res) => {
   try {
     const q = (req.query.q || '').trim();
-    if (!q) return res.json([]);
+    if (!q) {
+      return res.json([]);
+    }
+    const { category, minPrice, maxPrice } = req.query;
+    let where = 'WHERE active = TRUE AND deleted = FALSE';
+    const params = [];
+    if (q) {
+      const idx = params.length + 1;
+      where += ` AND (name LIKE $${idx} OR description LIKE $${idx} OR category LIKE $${idx} OR sku LIKE $${idx})`;
+      params.push(`%${q}%`);
+    }
+    if (category) {
+      const idx = params.length + 1;
+      where += ` AND category = $${idx}`;
+      params.push(category);
+    }
+    if (minPrice !== undefined && minPrice !== '') {
+      const idx = params.length + 1;
+      where += ` AND price >= $${idx}`;
+      params.push(Number(minPrice));
+    }
+    if (maxPrice !== undefined && maxPrice !== '') {
+      const idx = params.length + 1;
+      where += ` AND price <= $${idx}`;
+      params.push(Number(maxPrice));
+    }
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
-    const result = await query(
-      'SELECT * FROM products WHERE active = TRUE AND deleted = FALSE AND (name LIKE $1 OR description LIKE $1 OR category LIKE $1 OR sku LIKE $1) ORDER BY id ASC',
-      [`%${q}%`]
-    );
+    const result = await query(`SELECT * FROM products ${where} ORDER BY id ASC`, params);
     const enriched = await attachImagesToProducts(result.rows, baseUrl);
     res.json(enriched);
   } catch (err) {

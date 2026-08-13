@@ -49,10 +49,10 @@ http://localhost:3000
 
 
 
-## Deploy
+## Despliegue
 
-- **Vercel (producción):** `https://iara-lovat-orcin.vercel.app`
-- **Render (alternativo):** `https://iara-uxcu.onrender.com`
+- **Frontend (Vercel):** `https://artesaniagualeguay.com`
+- **Backend (Render):** `https://api.artesaniagualeguay.com`
 
 ### Variables de entorno en Vercel
 
@@ -64,11 +64,16 @@ Configurar en **Vercel Dashboard > Settings > Environment Variables**:
 | `JWT_SECRET` | string seguro aleatorio |
 | `ADMIN_USER` | tu usuario admin |
 | `ADMIN_PASS_HASH` | hash bcrypt de tu contraseña admin (generar con `bcrypt.hash('contraseña', 10)`) |
-| `ALLOWED_ORIGINS` | `https://iara-lovat-orcin.vercel.app,http://localhost:3000` |
+| `ALLOWED_ORIGINS` | `https://artesaniagualeguay.com,https://*.vercel.app,http://localhost:3000` |
 | `DATABASE_URL` | connection string de Neon |
+| `SITE_URL` | `https://artesaniagualeguay.com` |
+| `BACKEND_URL` | `https://api.artesaniagualeguay.com` |
 | `RESEND_API_KEY` | (opcional) |
 | `EMAIL_FROM` | `noreply@artesaniagualeguay.com` |
 | `ADMIN_NOTIFICATION_EMAIL` | `admin@artesaniagualeguay.com` |
+| `MP_ACCESS_TOKEN` | (opcional) token de Mercado Pago |
+| `MP_PUBLIC_KEY` | (opcional) clave pública de MP |
+| `MP_INTEGRATOR_ID` | (opcional) ID de integrador de MP |
 
 > Importante: No subas `backend/.env` a Git. Usá `vercel env add` o el Dashboard.
 
@@ -98,3 +103,12 @@ Opcionalmente, podés usar Vercel Blob para almacenamiento externo:
 - Backend: Node.js, Express
 - Base de datos: PostgreSQL (Neon)
 - Deploy: Vercel, Render
+
+## Mejoras implementadas
+
+- Búsqueda y filtrado avanzado de productos (texto, categoría, precio mínimo/máximo).
+- Gestión de usuarios del panel admin (crear, editar, eliminar, roles).
+- Sistema de cupones de descuento (porcentaje y monto fijo) con validación en backend.
+- Externalización de URLs hardcodeadas a variables de entorno.
+- Tests unitarios ampliados para controladores críticos (orders, payments, auth).
+- Documentación de entorno de staging (`docs/staging.md`).

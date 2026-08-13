@@ -16,6 +16,7 @@ JWT_SECRET=<random 64+ chars>
 ADMIN_USER=<username>
 ADMIN_PASS_HASH=<bcrypt hash>
 SITE_URL=https://artesaniagualeguay.com
+BACKEND_URL=https://api.artesaniagualeguay.com
 RESEND_API_KEY=<resend key>
 EMAIL_FROM=noreply@artesaniagualeguay.com
 ```
@@ -27,6 +28,7 @@ EMAIL_FROM=noreply@artesaniagualeguay.com
 3. Build command: `echo 'Build complete'`
 4. Output directory: `frontend`
 5. Install command: `npm ci && cd backend && npm ci`
+6. Configurar rewrite de `/api/*` hacia `https://api.artesaniagualeguay.com/api/$1`
 
 ## Deploy en Render
 
@@ -34,6 +36,7 @@ EMAIL_FROM=noreply@artesaniagualeguay.com
 2. Build command: `npm ci && cd backend && npm ci`
 3. Start command: `cd backend && npm start`
 4. Configurar variables de entorno
+5. Configurar dominio personalizado `api.artesaniagualeguay.com` (opcional pero recomendado)
 
 ## Health checks
 
@@ -62,6 +65,10 @@ vercel rollback
 - Sentry: errores frontend + backend
 - Vercel Analytics: métricas de rendimiento
 - /metrics: memoria/CPU (acceso restringido)
+
+## Staging
+
+Para probar cambios antes de producción, consultá `docs/staging.md`.
 
 ## Comandos locales
 

@@ -10,7 +10,8 @@
     categories: { title: 'Categorías',         breadcrumb: 'Gestionar categorías del catálogo' },
     sales:      { title: 'Ganancias',          breadcrumb: 'Reportes de ventas e ingresos' },
     payments:   { title: 'Medio de Pago',       breadcrumb: 'Configurar alias y método de pago' },
-    orders:     { title: 'Pedidos',             breadcrumb: 'Gestionar pedidos individuales' }
+    orders:     { title: 'Pedidos',             breadcrumb: 'Gestionar pedidos individuales' },
+    users:      { title: 'Usuarios',            breadcrumb: 'Gestionar accesos al panel' }
   };
 
   var AUTH_KEY = 'ag_admin_token';
@@ -85,6 +86,8 @@
     if (typeof window.onDashboardSectionChange === 'function') {
       window.onDashboardSectionChange(section);
     }
+
+    window.dispatchEvent(new CustomEvent('dashboard:section-changed', { detail: { section: section } }));
 
     if (typeof window.updateUnsavedUI === 'function') {
       window.updateUnsavedUI();

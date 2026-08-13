@@ -7,6 +7,7 @@ const { safeJsonParse } = require('../lib/parser');
 const path = require('path');
 const fs = require('fs');
 const PDFDocument = require('pdfkit');
+const { sendOrderConfirmationEmail } = require('../lib/email');
 
 async function logActivity(user, action, entityType = '', entityId = 0, details = '', ip = '', relatedOrderId = 0, tenantId = 'default') {
   try {
@@ -78,7 +79,7 @@ const getUserOrders = async (req, res) => {
 
 const createOrder = async (req, res) => {
   logger.info('createOrder: inicio');
-  const { items, total, customer, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, shipping_cost, notes, idempotency_key } = req.body || {};
+  const { items, total, customer, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, shipping_cost, notes, idempotency_key, couponCode } = req.body || {};
   logger.info('createOrder: body parseado');
 
   if (idempotency_key) {
@@ -140,7 +141,22 @@ const createOrder = async (req, res) => {
     const shippingCostConfig = paymentConfigResult.rows.length > 0 ? Number(paymentConfigResult.rows[0].shipping_cost || 0) : Number(shipping_cost || 0);
     const freeShippingFrom = paymentConfigResult.rows.length > 0 ? Number(paymentConfigResult.rows[0].free_shipping_from || 0) : 2000;
     const calculatedShipping = calculatedSubtotal >= freeShippingFrom ? 0 : shippingCostConfig;
-    const calculatedTotal = calculatedSubtotal + calculatedShipping;
+
+    let couponDiscount = 0;
+    let couponRow = null;
+    if (couponCode) {
+      const couponResult = await query(
+        'SELECT * FROM coupons WHERE code = $1 AND active = TRUE AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')',
+        [String(couponCode).trim()]
+      );
+      if (couponResult.rows.length > 0) {
+        couponRow = couponResult.rows[0];
+      } else {
+        return res.status(400).json({ error: 'Cupón inválido' });
+      }
+    }
+
+    const calculatedTotal = calculatedSubtotal - couponDiscount + calculatedShipping;
 
     if (Math.abs(calculatedTotal - Number(total)) > 0.01) {
       logger.warn({ frontendTotal: total, calculatedTotal }, 'createOrder: total del frontend no coincide con el calculado por el backend');
@@ -165,11 +181,48 @@ const createOrder = async (req, res) => {
         );
       }
 
+      let finalCouponCode = couponCode ? String(couponCode).trim() : '';
+      let finalCouponDiscount = 0;
+      if (couponRow) {
+        const lockedCoupon = await query(
+          'SELECT * FROM coupons WHERE code = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') FOR UPDATE',
+          [finalCouponCode],
+          client
+        );
+        if (lockedCoupon.rows.length === 0) {
+          throw new Error('Cupón no encontrado');
+        }
+        const coupon = lockedCoupon.rows[0];
+        if (coupon.expires_at && new Date(coupon.expires_at) < new Date()) {
+          throw new Error('Cupón expirado');
+        }
+        if (coupon.max_uses > 0 && coupon.used_count >= coupon.max_uses) {
+          throw new Error('Cupón agotado');
+        }
+        if (calculatedSubtotal < Number(coupon.min_amount || 0)) {
+          throw new Error('Monto mínimo no alcanzado para este cupón');
+        }
+        if (coupon.type === 'percent') {
+          finalCouponDiscount = calculatedSubtotal * (Number(coupon.value) / 100);
+        } else {
+          finalCouponDiscount = Number(coupon.value);
+        }
+        finalCouponDiscount = Math.min(finalCouponDiscount, calculatedSubtotal);
+
+        await query(
+          'UPDATE coupons SET used_count = used_count + 1 WHERE code = $1',
+          [finalCouponCode],
+          client
+        );
+      }
+
+      const finalTotal = calculatedSubtotal - finalCouponDiscount + calculatedShipping;
+
       const orderResult = await query(
-        'INSERT INTO orders (items, total, customer, status, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, subtotal, shipping_cost, notes, order_token, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) RETURNING *',
+        'INSERT INTO orders (items, total, customer, status, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, subtotal, shipping_cost, notes, order_token, coupon_code, coupon_discount, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) RETURNING *',
         [
           JSON.stringify(validatedItems),
-          calculatedTotal,
+          finalTotal,
           JSON.stringify(customerData),
           'pending',
           shipping_name || '',
@@ -181,7 +234,9 @@ const createOrder = async (req, res) => {
           calculatedSubtotal,
           calculatedShipping,
           notes || '',
-          orderToken
+          orderToken,
+          finalCouponCode,
+          finalCouponDiscount
         ],
         client
       );
@@ -192,6 +247,13 @@ const createOrder = async (req, res) => {
     logger.info({ orderId: result.id, total: calculatedTotal, itemsCount: validatedItems.length }, 'Orden creada');
     res.status(201).json(result);
     try { syncBus.emit('order_created', { id: result.id }); } catch (e) { /* noop */ }
+
+    const customerEmail = shipping_email || (typeof customer === 'string' ? '' : customer?.email) || '';
+    if (customerEmail) {
+      sendOrderConfirmationEmail(result, customerEmail).catch(err => {
+        logger.warn({ err: err.message, orderId: result.id }, 'No se pudo enviar email de confirmación');
+      });
+    }
   } catch (err) {
     logger.error({ err: err.message }, 'Error creando pedido');
     res.status(400).json({ error: err.message || 'Error interno del servidor' });

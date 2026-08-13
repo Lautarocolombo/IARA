@@ -1,5 +1,5 @@
 const API_BASE = CONFIG.API.BASE;
-const BACKEND_DIRECT_URL = 'https://iara-os3h.onrender.com';
+const BACKEND_DIRECT_URL = CONFIG.API.BACKEND_URL || '';
 let authToken = localStorage.getItem('ag_admin_token') || '';
 window.__getAdminToken = () => authToken;
 

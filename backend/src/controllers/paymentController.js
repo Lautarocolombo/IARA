@@ -2,6 +2,7 @@ const { query, transaction } = require('../lib/db');
 const logger = require('../lib/logger');
 const crypto = require('crypto');
 const { enqueueWebhook } = require('../queues/webhookQueue');
+const { sendOrderStatusEmail } = require('../lib/email');
 
 async function confirmTransferPayment(req, res) {
   try {
@@ -58,7 +59,7 @@ async function processWebhookSync(payload) {
     );
 
     const updateResult = await query(
-      'UPDATE orders SET status = $1 WHERE id = $2 AND status != $1 RETURNING id',
+      'UPDATE orders SET status = $1 WHERE id = $2 AND status != $1 RETURNING id, shipping_email, customer',
       ['confirmed', Number(orderId)],
       client
     );
@@ -69,6 +70,14 @@ async function processWebhookSync(payload) {
         ['processed', reference],
         client
       );
+
+      const updatedOrder = updateResult.rows[0];
+      const customerEmail = updatedOrder.shipping_email || (typeof updatedOrder.customer === 'string' ? '' : updatedOrder.customer?.email) || '';
+      if (customerEmail) {
+        sendOrderStatusEmail({ id: Number(orderId), total: amount }, customerEmail, 'confirmed').catch(err => {
+          logger.warn({ err: err.message, orderId }, 'No se pudo enviar email de estado por transferencia');
+        });
+      }
     } else {
       await query(
         'UPDATE webhook_events SET status = $1 WHERE event_id = $2',

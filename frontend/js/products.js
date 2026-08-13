@@ -127,9 +127,15 @@ function setProducts(newProducts) {
   products = newProducts;
 }
 
-async function fetchProducts() {
+async function fetchProducts(filters = {}) {
   try {
-    const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products`, {}, 2, 1000);
+    const params = new URLSearchParams();
+    if (filters.category) params.set('category', filters.category);
+    if (filters.minPrice !== undefined && filters.minPrice !== '') params.set('minPrice', filters.minPrice);
+    if (filters.maxPrice !== undefined && filters.maxPrice !== '') params.set('maxPrice', filters.maxPrice);
+    const queryString = params.toString();
+    const url = `${CONFIG.API.BASE}/api/products${queryString ? `?${queryString}` : ''}`;
+    const res = await window.fetchWithRetry(url, {}, 2, 1000);
     if (res) {
       products = await res.json();
     }
@@ -140,14 +146,19 @@ async function fetchProducts() {
   }
 }
 
-async function searchProducts(query) {
-  if (!query || query.trim().length < 2) {
-    await fetchProducts();
-    renderProducts(getProducts());
+async function searchProducts(query, filters = {}) {
+  const trimmed = (query || '').trim();
+  if (!trimmed || trimmed.length < 2) {
+    await applyFilters(filters);
     return;
   }
   try {
-    const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/search?q=${encodeURIComponent(query.trim())}`, {}, 2, 1000);
+    const params = new URLSearchParams();
+    params.set('q', trimmed);
+    if (filters.category) params.set('category', filters.category);
+    if (filters.minPrice !== undefined && filters.minPrice !== '') params.set('minPrice', filters.minPrice);
+    if (filters.maxPrice !== undefined && filters.maxPrice !== '') params.set('maxPrice', filters.maxPrice);
+    const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/search?${params.toString()}`, {}, 2, 1000);
     if (res) {
       products = await res.json();
       renderProducts(getProducts());
@@ -156,6 +167,20 @@ async function searchProducts(query) {
     console.error('Error buscando productos:', err);
     showToast('', window.getFetchErrorMessage(err), 'error');
   }
+}
+
+async function applyFilters(filters = {}) {
+  const category = filters.category || 'all';
+  if (category === 'all' && !filters.minPrice && !filters.maxPrice) {
+    await fetchProducts();
+  } else {
+    await fetchProducts({
+      category: category === 'all' ? '' : category,
+      minPrice: filters.minPrice,
+      maxPrice: filters.maxPrice
+    });
+  }
+  renderProducts(getProducts());
 }
 
 function getProducts() {
@@ -242,25 +267,67 @@ document.addEventListener('DOMContentLoaded', async () => {
   startDataSync('products', fetchProducts);
 
   const filterButtons = document.querySelectorAll('.filter-btn');
+  const searchInput = document.getElementById('searchInput');
+  const searchBtn = document.getElementById('searchBtn');
+  const minPriceInput = document.getElementById('minPrice');
+  const maxPriceInput = document.getElementById('maxPrice');
+  const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+
+  function getCurrentFilters() {
+    const activeBtn = document.querySelector('.filter-btn.active');
+    return {
+      category: activeBtn ? activeBtn.dataset.filter : 'all',
+      minPrice: minPriceInput ? minPriceInput.value : '',
+      maxPrice: maxPriceInput ? maxPriceInput.value : ''
+    };
+  }
+
+  async function refreshProducts() {
+    const filters = getCurrentFilters();
+    const query = searchInput ? searchInput.value : '';
+    if (query) {
+      await searchProducts(query, filters);
+    } else {
+      await applyFilters(filters);
+    }
+  }
+
   filterButtons.forEach(btn => {
     btn.addEventListener('click', (e) => {
       filterButtons.forEach(b => b.classList.remove('active'));
       e.target.classList.add('active');
-      const category = e.target.dataset.filter;
-      renderProducts(getProductsByCategory(category));
+      refreshProducts();
     });
   });
 
-  const searchInput = document.getElementById('searchInput');
-  const searchBtn = document.getElementById('searchBtn');
   if (searchInput && searchBtn) {
     searchBtn.addEventListener('click', () => {
-      searchProducts(searchInput.value);
+      refreshProducts();
     });
     searchInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
-        searchProducts(searchInput.value);
+        refreshProducts();
       }
+    });
+  }
+
+  [minPriceInput, maxPriceInput].forEach(input => {
+    if (!input) return;
+    input.addEventListener('input', () => {
+      clearTimeout(input._debounce);
+      input._debounce = setTimeout(refreshProducts, 400);
+    });
+  });
+
+  if (clearFiltersBtn) {
+    clearFiltersBtn.addEventListener('click', () => {
+      if (searchInput) searchInput.value = '';
+      if (minPriceInput) minPriceInput.value = '';
+      if (maxPriceInput) maxPriceInput.value = '';
+      filterButtons.forEach(b => b.classList.remove('active'));
+      const allBtn = document.querySelector('.filter-btn[data-filter="all"]');
+      if (allBtn) allBtn.classList.add('active');
+      refreshProducts();
     });
   }
 

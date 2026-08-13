@@ -10,6 +10,12 @@ function csrfProtection(req, res, next) {
   if (fullPath === '/api/admin/upload') {
     return next();
   }
+  if (fullPath === '/api/sync') {
+    return next();
+  }
+  if (fullPath === '/api/coupons/validate') {
+    return next();
+  }
 
   const authHeader = req.headers.authorization || '';
   if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) && authHeader.startsWith('Bearer ')) {
