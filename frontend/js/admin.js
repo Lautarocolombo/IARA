@@ -1,4 +1,5 @@
 const API_BASE = CONFIG.API.BASE;
+const BACKEND_DIRECT_URL = 'https://iara-os3h.onrender.com';
 let authToken = localStorage.getItem('ag_admin_token') || '';
 window.__getAdminToken = () => authToken;
 
@@ -150,7 +151,9 @@ async function doLogout() {
 async function adminFetch(url, opts = {}, isRetry = false) {
   if (!authToken) throw new Error('No autorizado');
   const headers = { Authorization: `Bearer ${authToken}`, ...(opts.headers || {}) };
-  const fullUrl = url.startsWith('/api/') ? `${CONFIG.API.BASE}${url}` : url;
+  const isUpload = url === '/api/admin/upload';
+  const directUploadOrigin = isUpload ? `${BACKEND_DIRECT_URL}${url}` : null;
+  const fullUrl = directUploadOrigin || (url.startsWith('/api/') ? `${CONFIG.API.BASE}${url}` : url);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20000);
   try {
@@ -161,7 +164,11 @@ async function adminFetch(url, opts = {}, isRetry = false) {
       const { 'Content-Type': _ct, ...rest } = headers;
       finalHeaders = rest;
     }
-    const res = await fetch(fullUrl, { ...opts, headers: finalHeaders, signal: controller.signal, credentials: 'include' });
+    const fetchOpts = { ...opts, headers: finalHeaders, signal: controller.signal };
+    if (isUpload) {
+      fetchOpts.credentials = 'include';
+    }
+    const res = await fetch(fullUrl, fetchOpts);
     clearTimeout(timeout);
     if (res.status === 401 && !isRetry) {
       try {
