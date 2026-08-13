@@ -51,3 +51,10 @@ test-results/
 backend/_check_prod.js
 backend/_inspect_env.js
 backend/test-output.txt
+
+# Diagnostic/test scripts in backend root
+backend/check_neon.js
+backend/check_payment.js
+backend/verify_hash.js
+backend/fix_neon_user.js
+backend/test_admin_products.js
