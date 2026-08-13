@@ -11,12 +11,12 @@
 ```env
 NODE_ENV=production
 DATABASE_URL=postgresql://user:pass@host:5432/db
-ALLOWED_ORIGINS=https://artesaniagualeguay.com,https://*.vercel.app
+ALLOWED_ORIGINS=https://artesaniagualeguay.vercel.app,http://localhost:3000,http://localhost:5173
 JWT_SECRET=<random 64+ chars>
 ADMIN_USER=<username>
 ADMIN_PASS_HASH=<bcrypt hash>
-SITE_URL=https://artesaniagualeguay.com
-BACKEND_URL=https://api.artesaniagualeguay.com
+SITE_URL=https://artesaniagualeguay.vercel.app
+BACKEND_URL=https://iara-backend.onrender.com
 RESEND_API_KEY=<resend key>
 EMAIL_FROM=noreply@artesaniagualeguay.com
 ```
@@ -28,7 +28,7 @@ EMAIL_FROM=noreply@artesaniagualeguay.com
 3. Build command: `echo 'Build complete'`
 4. Output directory: `frontend`
 5. Install command: `npm ci && cd backend && npm ci`
-6. Configurar rewrite de `/api/*` hacia `https://api.artesaniagualeguay.com/api/$1`
+6. Configurar rewrite de `/api/*` hacia `https://iara-backend.onrender.com/api/$1`
 
 ## Deploy en Render
 

@@ -51,8 +51,8 @@ http://localhost:3000
 
 ## Despliegue
 
-- **Frontend (Vercel):** `https://artesaniagualeguay.com`
-- **Backend (Render):** `https://api.artesaniagualeguay.com`
+- **Frontend (Vercel):** `https://artesaniagualeguay.vercel.app`
+- **Backend (Render):** `https://iara-backend.onrender.com`
 
 ### Variables de entorno en Vercel
 
@@ -64,16 +64,14 @@ Configurar en **Vercel Dashboard > Settings > Environment Variables**:
 | `JWT_SECRET` | string seguro aleatorio |
 | `ADMIN_USER` | tu usuario admin |
 | `ADMIN_PASS_HASH` | hash bcrypt de tu contraseña admin (generar con `bcrypt.hash('contraseña', 10)`) |
-| `ALLOWED_ORIGINS` | `https://artesaniagualeguay.com,https://*.vercel.app,http://localhost:3000` |
-| `DATABASE_URL` | connection string de Neon |
-| `SITE_URL` | `https://artesaniagualeguay.com` |
-| `BACKEND_URL` | `https://api.artesaniagualeguay.com` |
+| `ALLOWED_ORIGINS` | `https://artesaniagualeguay.vercel.app,http://localhost:3000,http://localhost:5173` |
+| `DATABASE_URL` | connection string de PostgreSQL |
+| `SITE_URL` | `https://artesaniagualeguay.vercel.app` |
+| `BACKEND_URL` | `https://iara-backend.onrender.com` |
 | `RESEND_API_KEY` | (opcional) |
 | `EMAIL_FROM` | `noreply@artesaniagualeguay.com` |
 | `ADMIN_NOTIFICATION_EMAIL` | `admin@artesaniagualeguay.com` |
-| `MP_ACCESS_TOKEN` | (opcional) token de Mercado Pago |
-| `MP_PUBLIC_KEY` | (opcional) clave pública de MP |
-| `MP_INTEGRATOR_ID` | (opcional) ID de integrador de MP |
+| `WHATSAPP` | `+5493444634444` |
 
 > Importante: No subas `backend/.env` a Git. Usá `vercel env add` o el Dashboard.
 
