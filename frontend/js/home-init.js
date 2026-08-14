@@ -90,7 +90,7 @@ onSyncMessage('products_updated', () => {
   }
 });
 
-onSyncMessage('site_texts_updated', (data) => {
+onSyncMessage('site_texts_updated', (_data) => {
   if (typeof loadSiteTexts === 'function') loadSiteTexts();
   if (typeof loadHeroCards === 'function') loadHeroCards();
   if (typeof loadHeroImage === 'function') loadHeroImage();

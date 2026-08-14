@@ -89,7 +89,7 @@
     init();
   }
 
-  async function loadSuccessPaymentConfig(order) {
+  async function loadSuccessPaymentConfig(_order) {
     try {
       const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/payment-config`, {}, 2, 1000);
       if (!res) return;
@@ -144,7 +144,6 @@
       e.preventDefault();
       const btn = document.getElementById('successReceiptBtn');
       const orderId = btn ? (btn.dataset.orderId || '') : '';
-      const orderNumber = btn ? (btn.dataset.orderNumber || '') : '';
       const fileInput = document.getElementById('receiptFile');
       const holderInput = document.getElementById('receiptHolderName');
       if (!orderId || !fileInput.files.length) {

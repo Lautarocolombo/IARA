@@ -84,16 +84,6 @@
           },
           animation: google.maps.Animation.DROP
         });
-        var circle = new google.maps.Circle({
-          strokeColor: '#d47090',
-          strokeOpacity: 0.3,
-          strokeWeight: 1,
-          fillColor: '#d47090',
-          fillOpacity: 0.1,
-          map: map,
-          center: userLocation,
-          radius: 50
-        });
         var userInfoWindow = new google.maps.InfoWindow({
           content: '<div style="font-family:DM Sans,sans-serif;padding:4px;"><strong>Tu ubicación</strong><br>Precisión: 50m</div>'
         });
@@ -133,17 +123,6 @@
             strokeWeight: 3
           },
           animation: google.maps.Animation.DROP
-        });
-
-        var circle = new google.maps.Circle({
-          strokeColor: '#d47090',
-          strokeOpacity: 0.3,
-          strokeWeight: 1,
-          fillColor: '#d47090',
-          fillOpacity: 0.1,
-          map: map,
-          center: userLocation,
-          radius: accuracy
         });
 
         var userInfoWindow = new google.maps.InfoWindow({
