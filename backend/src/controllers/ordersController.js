@@ -68,7 +68,7 @@ const getUserOrders = async (req, res) => {
     if (!email) {
       return res.status(400).json({ error: 'Email es requerido para buscar pedidos' });
     }
-    const result = await query('SELECT * FROM orders WHERE shipping_email = $1 ORDER BY created_at DESC', [email]);
+    const result = await query('SELECT * FROM orders WHERE shipping_email = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') ORDER BY created_at DESC', [email]);
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json(result.rows);
   } catch (err) {
@@ -151,6 +151,21 @@ const createOrder = async (req, res) => {
       );
       if (couponResult.rows.length > 0) {
         couponRow = couponResult.rows[0];
+        if (couponRow.expires_at && new Date(couponRow.expires_at) < new Date()) {
+          return res.status(400).json({ error: 'Cupón expirado' });
+        }
+        if (couponRow.max_uses > 0 && couponRow.used_count >= couponRow.max_uses) {
+          return res.status(400).json({ error: 'Cupón agotado' });
+        }
+        if (calculatedSubtotal < Number(couponRow.min_amount || 0)) {
+          return res.status(400).json({ error: 'Monto mínimo no alcanzado para este cupón' });
+        }
+        if (couponRow.type === 'percent') {
+          couponDiscount = calculatedSubtotal * (Number(couponRow.value) / 100);
+        } else {
+          couponDiscount = Number(couponRow.value);
+        }
+        couponDiscount = Math.min(couponDiscount, calculatedSubtotal);
       } else {
         return res.status(400).json({ error: 'Cupón inválido' });
       }
@@ -515,7 +530,7 @@ const getPublicOrderTrack = async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!id) return res.status(400).json({ error: 'ID de pedido requerido' });
-    const result = await query('SELECT id, items, total, status, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, created_at FROM orders WHERE id = $1', [id]);
+    const result = await query('SELECT id, items, total, status, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, created_at FROM orders WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json(result.rows[0]);

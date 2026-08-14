@@ -41,7 +41,6 @@ const updateUser = async (req, res) => {
   try {
     const id = Number(req.params.id);
     const { username, password, role, permissions, active } = req.body || {};
-    const updates = {};
     const fields = [];
     const values = [];
 
