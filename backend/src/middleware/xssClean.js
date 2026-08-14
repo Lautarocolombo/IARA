@@ -2,7 +2,7 @@ const validator = require('validator');
 
 function xssClean(input) {
   if (typeof input !== 'string') return input;
-  return validator.escape(input);
+  return validator.escape(input, { escapeMode: 'html' }).replace(/&#x2F;/g, '/');
 }
 
 function sanitizeBody(req, res, next) {

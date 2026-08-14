@@ -392,10 +392,10 @@
       const shippingBreakdown = document.getElementById('transferShippingBreakdown');
       if (shippingBreakdown) {
         if (shippingCost > 0 && shipping.province) {
-          shippingBreakdown.innerHTML = `<div class="transfer-item-row" style="color:#d47090;"><span class="transfer-item-name">Diferencia de envío (${shipping.province})</span><span class="transfer-item-price">${formatARS(shippingCost)}</span></div>`;
+          shippingBreakdown.innerHTML = `<div class='transfer-item-row' style='color:#d47090;'><span class='transfer-item-name'>Diferencia de envío (${shipping.province})</span><span class='transfer-item-price'>${formatARS(shippingCost)}</span></div>`;
           shippingBreakdown.style.display = '';
         } else if (shippingCost === 0) {
-          shippingBreakdown.innerHTML = `<div class="transfer-item-row" style="color:#10b981;"><span class="transfer-item-name">Envío incluido en el precio</span><span class="transfer-item-price">$0</span></div>`;
+          shippingBreakdown.innerHTML = '<div class=\'transfer-item-row\' style=\'color:#10b981;\'><span class=\'transfer-item-name\'>Envío incluido en el precio</span><span class=\'transfer-item-price\'>$0</span></div>';
           shippingBreakdown.style.display = '';
         } else {
           shippingBreakdown.style.display = 'none';
