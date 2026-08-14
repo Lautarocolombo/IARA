@@ -3,6 +3,34 @@
   /* eslint-disable no-unused-vars */
 
   let appliedCoupon = null;
+  let shippingDiff = 0;
+  let shippingDiffProvince = '';
+  let includedShippingCost = 0;
+
+  async function fetchShippingDiff(province) {
+    if (!province) {
+      shippingDiff = 0;
+      shippingDiffProvince = '';
+      updateSummary();
+      return;
+    }
+    try {
+      const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/shipping-diff?province=${encodeURIComponent(province)}`, {}, 1, 500);
+      if (res && res.ok) {
+        const data = await res.json();
+        shippingDiff = Number(data.diff || 0);
+        shippingDiffProvince = data.province || province;
+        includedShippingCost = Number(data.included_shipping_cost || 0);
+      } else {
+        shippingDiff = 0;
+        shippingDiffProvince = province;
+      }
+    } catch (err) {
+      shippingDiff = 0;
+      shippingDiffProvince = province;
+    }
+    updateSummary();
+  }
 
   async function applyCoupon() {
     const codeEl = document.getElementById('couponCode');
@@ -66,14 +94,27 @@
     `).join('');
 
     const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
-    const shipping = subtotal > CONFIG.CART.SHIPPING_THRESHOLD ? 0 : CONFIG.CART.SHIPPING_COST;
+    const freeShippingFrom = Number(CONFIG.CART.SHIPPING_THRESHOLD) || 0;
+    let shipping = 0;
+    let shippingLabel = CONFIG.CART.FREE_SHIPPING_TEXT;
+
+    if (subtotal < freeShippingFrom) {
+      if (shippingDiff > 0 && shippingDiffProvince) {
+        shipping = shippingDiff;
+        shippingLabel = `Diferencia de zona (${shippingDiffProvince})`;
+      } else if (CONFIG.CART.SHIPPING_COST > 0) {
+        shipping = CONFIG.CART.SHIPPING_COST;
+        shippingLabel = formatARS(shipping);
+      }
+    }
+
     const couponDiscount = appliedCoupon ? Number(appliedCoupon.discount || 0) : 0;
     const total = subtotal - couponDiscount + shipping;
 
     totals.innerHTML = `
-      <div class="summary-row"><span>Subtotal</span><span>${formatARS(subtotal)}</span></div>
+      <div class="summary-row"><span>Subtotal productos</span><span>${formatARS(subtotal)}</span></div>
       ${couponDiscount > 0 ? `<div class="summary-row" style="color:#10b981;"><span>Descuento</span><span>-${formatARS(couponDiscount)}</span></div>` : ''}
-      <div class="summary-row"><span>Envío</span><span>${shipping === 0 ? CONFIG.CART.FREE_SHIPPING_TEXT : formatARS(shipping)}</span></div>
+      <div class="summary-row"><span>Envío</span><span>${shippingLabel}</span></div>
       <div class="summary-row total"><span>Total</span><span>${formatARS(total)}</span></div>
     `;
 
@@ -109,10 +150,11 @@
           if (transferAliasEl) transferAliasEl.textContent = 'No configurado';
          return { alias: CONFIG.CONTACT.WHATSAPP_ALIAS || '', whatsapp: (CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, ''), message: '', active: false, mpEnabled: false };
         }
-       const data = await res.json();
-       if (data.shippingCost !== undefined) CONFIG.CART.SHIPPING_COST = Number(data.shippingCost);
-       if (data.freeShippingFrom !== undefined) CONFIG.CART.SHIPPING_THRESHOLD = Number(data.freeShippingFrom);
-       const alias = data.transferAlias || '';
+        const data = await res.json();
+        if (data.shippingCost !== undefined) CONFIG.CART.SHIPPING_COST = Number(data.shippingCost);
+        if (data.freeShippingFrom !== undefined) CONFIG.CART.SHIPPING_THRESHOLD = Number(data.freeShippingFrom);
+        if (data.includedShippingCost !== undefined) includedShippingCost = Number(data.includedShippingCost);
+        const alias = data.transferAlias || '';
        const cbuCvu = data.cbuCvu || '';
        const holderName = data.holderName || '';
        const whatsapp = (data.whatsapp || CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, '');
@@ -207,6 +249,7 @@
       address: fields.address.value.trim(),
       zip: fields.zip.value.trim(),
       city: fields.city.value.trim(),
+      province: fields.province.value.trim(),
       phone: fields.phone.value.trim(),
       email: fields.email.value.trim()
     };
@@ -215,6 +258,7 @@
     errors.address = validateField('address', shipping.address);
     errors.zip = validateField('zip', shipping.zip);
     errors.city = validateField('city', shipping.city);
+    errors.province = validateField('province', shipping.province);
     errors.phone = validateField('phone', shipping.phone);
     errors.email = validateField('email', shipping.email);
 
@@ -245,7 +289,15 @@
     }
 
     const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
-    const shippingCost = subtotal > CONFIG.CART.SHIPPING_THRESHOLD ? 0 : CONFIG.CART.SHIPPING_COST;
+    const freeShippingFrom = Number(CONFIG.CART.SHIPPING_THRESHOLD) || 0;
+    let shippingCost = 0;
+    if (subtotal < freeShippingFrom) {
+      if (shippingDiff > 0 && shipping.province) {
+        shippingCost = shippingDiff;
+      } else if (CONFIG.CART.SHIPPING_COST > 0) {
+        shippingCost = CONFIG.CART.SHIPPING_COST;
+      }
+    }
     const couponDiscount = appliedCoupon ? Number(appliedCoupon.discount || 0) : 0;
     const total = subtotal - couponDiscount + shippingCost;
 
@@ -266,7 +318,7 @@
           shipping_phone: shipping.phone,
           shipping_email: shipping.email || '',
           shipping_zip: shipping.zip,
-          shipping_city: shipping.city,
+          shipping_city: shipping.province || shipping.city,
           subtotal,
           shipping_cost: shippingCost,
           total,
@@ -303,7 +355,10 @@
       const orderNumber = `#${String(orderId).padStart(4, '0')}`;
       const customerName = shipping.name || 'Cliente';
       const productList = items.map(i => `- ${i.name} x${i.qty} = ${formatARS(i.price * i.qty)}`).join('\n');
-      const waMsg = encodeURIComponent(`Hola! Soy ${customerName}, acabo de hacer el pedido ${orderNumber}:\n${productList}\nTotal: ${formatARS(total)}\nLes mando el comprobante de la transferencia.`);
+      const shippingLine = shippingCost > 0 && shipping.province
+        ? `Diferencia de envío (${shipping.province}): ${formatARS(shippingCost)}`
+        : (shippingCost === 0 ? 'Envío incluido en el precio' : `Envío: ${formatARS(shippingCost)}`);
+      const waMsg = encodeURIComponent(`Hola! Soy ${customerName}, acabo de hacer el pedido ${orderNumber}:\n${productList}\nSubtotal productos: ${formatARS(subtotal)}\n${shippingLine}\nTotal: ${formatARS(total)}\nLes mando el comprobante de la transferencia.`);
 
       sessionStorage.setItem('ag_last_order', JSON.stringify({
         id: orderId,
@@ -315,8 +370,11 @@
         shippingName: shipping.name,
         shippingAddress: shipping.address,
         shippingCity: shipping.city,
+        shippingProvince: shipping.province,
         shippingPhone: shipping.phone,
         shippingEmail: shipping.email,
+        shippingCost: shippingCost,
+        subtotal: subtotal,
         orderToken: orderData.order_token || ''
       }));
 
@@ -331,6 +389,18 @@
           <span class="transfer-item-price">${formatARS(i.price * i.qty)}</span>
         </div>
       `).join('');
+      const shippingBreakdown = document.getElementById('transferShippingBreakdown');
+      if (shippingBreakdown) {
+        if (shippingCost > 0 && shipping.province) {
+          shippingBreakdown.innerHTML = `<div class="transfer-item-row" style="color:#d47090;"><span class="transfer-item-name">Diferencia de envío (${shipping.province})</span><span class="transfer-item-price">${formatARS(shippingCost)}</span></div>`;
+          shippingBreakdown.style.display = '';
+        } else if (shippingCost === 0) {
+          shippingBreakdown.innerHTML = `<div class="transfer-item-row" style="color:#10b981;"><span class="transfer-item-name">Envío incluido en el precio</span><span class="transfer-item-price">$0</span></div>`;
+          shippingBreakdown.style.display = '';
+        } else {
+          shippingBreakdown.style.display = 'none';
+        }
+      }
       document.getElementById('transferOrderTotalHighlight').textContent = formatARS(total);
 
       document.getElementById('whatsappComprobanteBtn').href = `https://wa.me/${waNumber}?text=${waMsg}`;
@@ -393,6 +463,11 @@
           </div>
         `).join('');
       }
+      if (order.shippingProvince) {
+        const provinceEl = document.getElementById('shipProvince');
+        if (provinceEl) provinceEl.value = order.shippingProvince;
+        fetchShippingDiff(order.shippingProvince);
+      }
       if (order.waNumber && order.waMsg) {
         document.getElementById('whatsappComprobanteBtn').href = `https://wa.me/${order.waNumber}?text=${order.waMsg}`;
         document.getElementById('transferReceiptBtn').href = `https://wa.me/${order.waNumber}?text=${order.waMsg}`;
@@ -439,6 +514,7 @@
     address: document.getElementById('shipAddress'),
     zip: document.getElementById('shipZip'),
     city: document.getElementById('shipCity'),
+    province: document.getElementById('shipProvince'),
     phone: document.getElementById('shipPhone'),
     email: document.getElementById('shipEmail')
   };
@@ -448,6 +524,7 @@
     address: '',
     zip: '',
     city: '',
+    province: '',
     phone: '',
     email: ''
   };
@@ -457,6 +534,7 @@
     if (key === 'address' && !value.trim()) return 'Ingresá tu dirección';
     if (key === 'zip' && !value.trim()) return 'Ingresá el código postal';
     if (key === 'city' && !value.trim()) return 'Ingresá tu localidad';
+    if (key === 'province' && !value.trim()) return 'Seleccioná tu provincia';
     if (key === 'phone') {
       const digits = value.replace(/[^\d]/g, '');
       if (!value.trim()) return 'Ingresá tu teléfono';
@@ -502,6 +580,14 @@
       }
     });
   });
+
+  const provinceField = document.getElementById('shipProvince');
+  if (provinceField) {
+    provinceField.addEventListener('change', () => {
+      clearFieldError('province');
+      fetchShippingDiff(provinceField.value.trim());
+    });
+  }
 
   const applyCouponBtn = document.getElementById('applyCouponBtn');
   if (applyCouponBtn) {

@@ -52,7 +52,8 @@ const getSiteSettings = async (req, res) => {
         holder_name: paymentConfig.holder_name || '',
         message: paymentConfig.message || '',
         shipping_cost: Number(paymentConfig.shipping_cost || 0),
-        free_shipping_from: Number(paymentConfig.free_shipping_from || 0)
+        free_shipping_from: Number(paymentConfig.free_shipping_from || 0),
+        included_shipping_cost: Number(paymentConfig.included_shipping_cost || 0)
       }
     });
   } catch (err) {
@@ -86,7 +87,7 @@ const updateSiteSettings = async (req, res) => {
     }
 
     const payment = payload.payment || payload || {};
-    const paymentFields = ['mp_enabled', 'cash_enabled', 'transfer_alias', 'cbu_cvu', 'holder_name', 'message', 'shipping_cost', 'free_shipping_from', 'mp_alias', 'notify_admin_new_proof', 'notify_client_approved', 'notify_client_rejected'];
+    const paymentFields = ['mp_enabled', 'cash_enabled', 'transfer_alias', 'cbu_cvu', 'holder_name', 'message', 'shipping_cost', 'free_shipping_from', 'included_shipping_cost', 'mp_alias', 'notify_admin_new_proof', 'notify_client_approved', 'notify_client_rejected'];
     const hasPayment = paymentFields.some(f => payment[f] !== undefined || payload[f] !== undefined || payload[f.replace('_', '')] !== undefined);
 
     if (hasPayment) {
@@ -104,6 +105,7 @@ const updateSiteSettings = async (req, res) => {
       const cash_enabled = payment.cash_enabled !== undefined ? payment.cash_enabled !== false : (payload.cash_enabled !== undefined ? payload.cash_enabled !== false : current.cash_enabled || false);
       const shipping_cost = payment.shipping_cost !== undefined ? Number(payment.shipping_cost) : (payload.shipping_cost !== undefined ? Number(payload.shipping_cost) : current.shipping_cost || 0);
       const free_shipping_from = payment.free_shipping_from !== undefined ? Number(payment.free_shipping_from) : (payload.free_shipping_from !== undefined ? Number(payload.free_shipping_from) : current.free_shipping_from || 0);
+      const included_shipping_cost = payment.included_shipping_cost !== undefined ? Number(payment.included_shipping_cost) : (payload.included_shipping_cost !== undefined ? Number(payload.included_shipping_cost) : current.included_shipping_cost || 0);
       const notify_admin_new_proof = payment.notify_admin_new_proof !== undefined ? payment.notify_admin_new_proof !== false : (current.notify_admin_new_proof || false);
       const notify_client_approved = payment.notify_client_approved !== undefined ? payment.notify_client_approved !== false : (current.notify_client_approved || false);
       const notify_client_rejected = payment.notify_client_rejected !== undefined ? payment.notify_client_rejected !== false : (current.notify_client_rejected || false);
@@ -114,14 +116,14 @@ const updateSiteSettings = async (req, res) => {
 
       if (row.rows.length === 0) {
         await query(
-          `INSERT INTO payment_config (mp_alias, transfer_alias, holder_name, cbu_cvu, whatsapp, message, active, mp_enabled, cash_enabled, shipping_cost, free_shipping_from, notify_admin_new_proof, notify_client_approved, notify_client_rejected)
+          `INSERT INTO payment_config (mp_alias, transfer_alias, holder_name, cbu_cvu, whatsapp, message, active, mp_enabled, cash_enabled, shipping_cost, free_shipping_from, included_shipping_cost, notify_admin_new_proof, notify_client_approved, notify_client_rejected)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
-          [mp_alias, transfer_alias, holder_name, cbu_cvu, whatsapp, message, active, mp_enabled, cash_enabled, shipping_cost, free_shipping_from, notify_admin_new_proof, notify_client_approved, notify_client_rejected]
+          [mp_alias, transfer_alias, holder_name, cbu_cvu, whatsapp, message, active, mp_enabled, cash_enabled, shipping_cost, free_shipping_from, included_shipping_cost, notify_admin_new_proof, notify_client_approved, notify_client_rejected]
         );
       } else {
         await query(
-          'UPDATE payment_config SET mp_alias = $1, transfer_alias = $2, holder_name = $3, cbu_cvu = $4, whatsapp = $5, message = $6, active = $7, mp_enabled = $8, cash_enabled = $9, shipping_cost = $10, free_shipping_from = $11, notify_admin_new_proof = $12, notify_client_approved = $13, notify_client_rejected = $14, updated_at = CURRENT_TIMESTAMP WHERE id = $15',
-          [mp_alias, transfer_alias, holder_name, cbu_cvu, whatsapp, message, active, mp_enabled, cash_enabled, shipping_cost, free_shipping_from, notify_admin_new_proof, notify_client_approved, notify_client_rejected, row.rows[0].id]
+          'UPDATE payment_config SET mp_alias = $1, transfer_alias = $2, holder_name = $3, cbu_cvu = $4, whatsapp = $5, message = $6, active = $7, mp_enabled = $8, cash_enabled = $9, shipping_cost = $10, free_shipping_from = $11, included_shipping_cost = $12, notify_admin_new_proof = $13, notify_client_approved = $14, notify_client_rejected = $15, updated_at = CURRENT_TIMESTAMP WHERE id = $16',
+          [mp_alias, transfer_alias, holder_name, cbu_cvu, whatsapp, message, active, mp_enabled, cash_enabled, shipping_cost, free_shipping_from, included_shipping_cost, notify_admin_new_proof, notify_client_approved, notify_client_rejected, row.rows[0].id]
         );
       }
     }
@@ -143,14 +145,14 @@ const upsertPaymentConfig = async (data) => {
   const row = await getPaymentConfigRow();
   if (!row) {
     await query(
-      `INSERT INTO payment_config (mp_alias, transfer_alias, holder_name, cbu_cvu, whatsapp, message, active, mp_enabled, cash_enabled, shipping_cost, free_shipping_from, notify_admin_new_proof, notify_client_approved, notify_client_rejected)
+      `INSERT INTO payment_config (mp_alias, transfer_alias, holder_name, cbu_cvu, whatsapp, message, active, mp_enabled, cash_enabled, shipping_cost, free_shipping_from, included_shipping_cost, notify_admin_new_proof, notify_client_approved, notify_client_rejected)
        VALUES ($1, $2, $3, $4, $5, $6, true, $7, $8, $9, $10, $11, $12, $13)`,
-      [data.mpAlias || '', data.transferAlias || '', data.holderName || '', data.cbuCvu || '', data.whatsapp || '', data.message || '', data.mpEnabled !== false, data.cashEnabled !== false, Number(data.shippingCost) || 0, Number(data.freeShippingFrom) || 0, data.notifyAdminNewProof !== false, data.notifyClientApproved !== false, data.notifyClientRejected !== false]
+      [data.mpAlias || '', data.transferAlias || '', data.holderName || '', data.cbuCvu || '', data.whatsapp || '', data.message || '', data.mpEnabled !== false, data.cashEnabled !== false, Number(data.shippingCost) || 0, Number(data.freeShippingFrom) || 0, Number(data.includedShippingCost) || 0, data.notifyAdminNewProof !== false, data.notifyClientApproved !== false, data.notifyClientRejected !== false]
     );
   } else {
     await query(
-      'UPDATE payment_config SET mp_alias = $1, transfer_alias = $2, holder_name = $3, cbu_cvu = $4, whatsapp = $5, message = $6, active = $7, mp_enabled = $8, cash_enabled = $9, shipping_cost = $10, free_shipping_from = $11, notify_admin_new_proof = $12, notify_client_approved = $13, notify_client_rejected = $14, updated_at = CURRENT_TIMESTAMP WHERE id = $15',
-      [data.mpAlias || '', data.transferAlias || '', data.holderName || '', data.cbuCvu || '', data.whatsapp || '', data.message || '', data.active !== false, data.mpEnabled !== false, data.cashEnabled !== false, Number(data.shippingCost) || 0, Number(data.freeShippingFrom) || 0, data.notifyAdminNewProof !== false, data.notifyClientApproved !== false, data.notifyClientRejected !== false, row.id]
+      'UPDATE payment_config SET mp_alias = $1, transfer_alias = $2, holder_name = $3, cbu_cvu = $4, whatsapp = $5, message = $6, active = $7, mp_enabled = $8, cash_enabled = $9, shipping_cost = $10, free_shipping_from = $11, included_shipping_cost = $12, notify_admin_new_proof = $13, notify_client_approved = $14, notify_client_rejected = $15, updated_at = CURRENT_TIMESTAMP WHERE id = $16',
+      [data.mpAlias || '', data.transferAlias || '', data.holderName || '', data.cbuCvu || '', data.whatsapp || '', data.message || '', data.active !== false, data.mpEnabled !== false, data.cashEnabled !== false, Number(data.shippingCost) || 0, Number(data.freeShippingFrom) || 0, Number(data.includedShippingCost) || 0, data.notifyAdminNewProof !== false, data.notifyClientApproved !== false, data.notifyClientRejected !== false, row.id]
     );
   }
 };
@@ -176,6 +178,7 @@ const getAdminPaymentConfig = async (req, res) => {
       cashEnabled: row.cash_enabled !== false,
       shippingCost: Number(row.shipping_cost || 0),
       freeShippingFrom: Number(row.free_shipping_from || 0),
+      includedShippingCost: Number(row.included_shipping_cost || 0),
       notifyAdminNewProof: row.notify_admin_new_proof !== false,
       notifyClientApproved: row.notify_client_approved !== false,
       notifyClientRejected: row.notify_client_rejected !== false
@@ -187,11 +190,11 @@ const getAdminPaymentConfig = async (req, res) => {
 };
 
 const updateAdminPaymentConfig = async (req, res) => {
-  const { mpAlias, transferAlias, holderName, cbuCvu, whatsapp, message, active, mpEnabled, cashEnabled, shippingCost, freeShippingFrom, notifyAdminNewProof, notifyClientApproved, notifyClientRejected } = req.body || {};
+  const { mpAlias, transferAlias, holderName, cbuCvu, whatsapp, message, active, mpEnabled, cashEnabled, shippingCost, freeShippingFrom, includedShippingCost, notifyAdminNewProof, notifyClientApproved, notifyClientRejected } = req.body || {};
   try {
     await upsertPaymentConfig({
       mpAlias, transferAlias, holderName, cbuCvu, whatsapp, message, active,
-      mpEnabled, cashEnabled, shippingCost, freeShippingFrom,
+      mpEnabled, cashEnabled, shippingCost, freeShippingFrom, includedShippingCost,
       notifyAdminNewProof, notifyClientApproved, notifyClientRejected
     });
     res.json({
@@ -207,6 +210,7 @@ const updateAdminPaymentConfig = async (req, res) => {
       cashEnabled: cashEnabled !== false,
       shippingCost: Number(shippingCost) || 0,
       freeShippingFrom: Number(freeShippingFrom) || 0,
+      includedShippingCost: Number(includedShippingCost) || 0,
       notifyAdminNewProof: notifyAdminNewProof !== false,
       notifyClientApproved: notifyClientApproved !== false,
       notifyClientRejected: notifyClientRejected !== false
@@ -246,7 +250,8 @@ const getPublicPaymentConfig = async (req, res) => {
       mpEnabled: row.mp_enabled !== false,
       cashEnabled: row.cash_enabled !== false,
       shippingCost: Number(row.shipping_cost || 0),
-      freeShippingFrom: Number(row.free_shipping_from || 0)
+      freeShippingFrom: Number(row.free_shipping_from || 0),
+      includedShippingCost: Number(row.included_shipping_cost || 0)
     });
   } catch (err) {
     logger.error('Error obteniendo config de pago pública:', err);

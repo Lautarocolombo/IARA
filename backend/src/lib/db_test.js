@@ -812,14 +812,14 @@ async function initDB() {
     logger.debug({ err: err.message }, 'Error asegurando columnas tenant_id (PostgreSQL)');
   }
 
-     try {
-       await query(`CREATE TABLE IF NOT EXISTS shipping_rates_by_province (
-         id SERIAL PRIMARY KEY,
-         province TEXT UNIQUE NOT NULL,
-         shipping_cost NUMERIC(10,2) DEFAULT 0,
-         tenant_id TEXT DEFAULT 'default',
-         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-       )`);
+   try {
+     await query(`CREATE TABLE IF NOT EXISTS shipping_rates_by_province (
+       id SERIAL PRIMARY KEY,
+       province TEXT UNIQUE NOT NULL,
+       shipping_cost NUMERIC(10,2) DEFAULT 0,
+       tenant_id TEXT DEFAULT 'default',
+       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+     )`);
      const colExists = await query("SELECT COUNT(*) AS count FROM information_schema.columns WHERE table_name = 'payment_config' AND column_name = 'included_shipping_cost'");
      if (colExists.rows[0].count === 0) {
        await query('ALTER TABLE payment_config ADD COLUMN included_shipping_cost NUMERIC(10,2) DEFAULT 0');

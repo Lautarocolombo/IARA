@@ -278,6 +278,7 @@ app.use('/api', require('./routes/newsletter'));
 app.use('/api', require('./routes/contact'));
 app.use('/api', require('./routes/siteConfig'));
 app.use('/api', require('./routes/siteSettings'));
+app.use('/api', require('./routes/shipping'));
 app.use('/api', require('./routes/sitemap'));
 app.use('/api', require('./routes/reviews'));
 app.use('/api', require('./routes/productImages'));

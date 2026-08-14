@@ -825,6 +825,13 @@
                     <small class="form-hint">0 = envío pago siempre</small>
                   </div>
                 </div>
+                <div class="form-grid-2">
+                  <div class="form-group">
+                    <label>Envío incluido en precio (ARS)</label>
+                    <input type="number" id="pmIncludedShippingCost" min="0" step="10" placeholder="1500" />
+                    <small class="form-hint">Monto de envío que ya está cubierto en el precio de cada producto</small>
+                  </div>
+                </div>
                 <div class="form-group">
                   <label class="toggle-field">
                     <span class="toggle">
@@ -862,6 +869,20 @@
                     </label>
                   </div>
                   <div class="save-status" id="savePaymentStatus"></div>
+
+                  <div class="card" style="margin-top:1rem;">
+                    <div class="card-header">
+                      <h3 class="card-header-title">Costos de envío por provincia</h3>
+                      <button class="btn btn-primary btn-sm" id="saveShippingRatesBtn">
+                        <span id="saveShippingRatesBtnText">Guardar en Nube</span>
+                        <span id="saveShippingRatesBtnLoading" class="hidden">Guardando...</span>
+                      </button>
+                    </div>
+                    <div class="card-body">
+                      <div id="shippingRatesMap" class="shipping-rates-grid"></div>
+                      <div class="save-status" id="saveShippingRatesStatus"></div>
+                    </div>
+                  </div>
 
                   <div class="payment-preview">
                     <h4 class="payment-preview-title">Flujo de Pago del Cliente</h4>

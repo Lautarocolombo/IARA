@@ -137,10 +137,28 @@ const createOrder = async (req, res) => {
       calculatedSubtotal += dbPrice * Number(item.quantity || 1);
     }
 
-    const paymentConfigResult = await query('SELECT shipping_cost, free_shipping_from FROM payment_config LIMIT 1');
+    const paymentConfigResult = await query('SELECT shipping_cost, free_shipping_from, included_shipping_cost FROM payment_config LIMIT 1');
     const shippingCostConfig = paymentConfigResult.rows.length > 0 ? Number(paymentConfigResult.rows[0].shipping_cost || 0) : Number(shipping_cost || 0);
     const freeShippingFrom = paymentConfigResult.rows.length > 0 ? Number(paymentConfigResult.rows[0].free_shipping_from || 0) : 2000;
-    const calculatedShipping = calculatedSubtotal >= freeShippingFrom ? 0 : shippingCostConfig;
+    const includedShippingCost = paymentConfigResult.rows.length > 0 ? Number(paymentConfigResult.rows[0].included_shipping_cost || 0) : 0;
+
+    let calculatedShipping = 0;
+    if (calculatedSubtotal < freeShippingFrom) {
+      if (shipping_city) {
+        const rateResult = await query(
+          'SELECT shipping_cost FROM shipping_rates_by_province WHERE province = $1',
+          [shipping_city]
+        );
+        if (rateResult.rows.length > 0) {
+          const provinceCost = Number(rateResult.rows[0].shipping_cost || 0);
+          calculatedShipping = Math.max(0, provinceCost - includedShippingCost);
+        } else {
+          calculatedShipping = shippingCostConfig;
+        }
+      } else {
+        calculatedShipping = shippingCostConfig;
+      }
+    }
 
     let couponDiscount = 0;
     let couponRow = null;

@@ -58,8 +58,10 @@
 
       var shippingCostEl = document.getElementById('pmShippingCost');
       var freeShippingFromEl = document.getElementById('pmFreeShippingFrom');
+      var includedShippingCostEl = document.getElementById('pmIncludedShippingCost');
       if (shippingCostEl) shippingCostEl.value = data.shippingCost || 0;
       if (freeShippingFromEl) freeShippingFromEl.value = data.freeShippingFrom || 0;
+      if (includedShippingCostEl) includedShippingCostEl.value = data.includedShippingCost || 0;
 
       var notifyAdminEl = document.getElementById('pmNotifyAdmin');
       var notifyClientApprovedEl = document.getElementById('pmNotifyClientApproved');
@@ -91,6 +93,7 @@
       var active = document.getElementById('pmActive')?.checked !== false;
       var shippingCost = Number(document.getElementById('pmShippingCost')?.value || 0);
       var freeShippingFrom = Number(document.getElementById('pmFreeShippingFrom')?.value || 0);
+      var includedShippingCost = Number(document.getElementById('pmIncludedShippingCost')?.value || 0);
 
       var res = await window.adminFetch('/api/admin/payment-config', {
         method: 'PUT',
@@ -102,6 +105,7 @@
           active: active,
           shippingCost: shippingCost,
           freeShippingFrom: freeShippingFrom,
+          includedShippingCost: includedShippingCost,
           notifyAdminNewProof: document.getElementById('pmNotifyAdmin')?.checked !== false,
           notifyClientApproved: document.getElementById('pmNotifyClientApproved')?.checked !== false,
           notifyClientRejected: document.getElementById('pmNotifyClientRejected')?.checked !== false
@@ -412,15 +416,108 @@
     }
   }
 
+   async function loadShippingRates() {
+    var container = document.getElementById('shippingRatesMap');
+    if (!container) return;
+    container.innerHTML = '<p style="color:#64748b;">Cargando provincias...</p>';
+    try {
+      var res = await window.adminFetch('/api/admin/shipping-rates', { method: 'GET' });
+      if (!res || !res.ok) throw new Error('Error cargando tarifas');
+      var data = await res.json();
+      var includedCost = 0;
+      var configRes = await window.adminFetch('/api/admin/payment-config', { method: 'GET' });
+      if (configRes && configRes.ok) {
+        var config = await configRes.json();
+        includedCost = Number(config.includedShippingCost || 0);
+      }
+      renderShippingRates(data.rates || [], includedCost);
+    } catch (err) {
+      console.error('[Payments] Error cargando tarifas:', err);
+      container.innerHTML = '<p style="color:#dc2626;">Error al cargar provincias</p>';
+    }
+  }
+
+  function renderShippingRates(rates, includedCost) {
+    var container = document.getElementById('shippingRatesMap');
+    if (!container) return;
+    if (!rates.length) {
+      container.innerHTML = '<p style="color:#64748b;">Sin datos</p>';
+      return;
+    }
+    var html = '';
+    rates.forEach(function (r) {
+      var cost = Number(r.shipping_cost || 0);
+      var hasDiff = cost > includedCost;
+      var icon = hasDiff ? '🔴' : '🟢';
+      var cls = hasDiff ? 'has-diff' : 'no-diff';
+      html += '<div class="shipping-rate-item ' + cls + '">' +
+        '<span class="shipping-rate-name">' + escapeHtml(r.province) + ' ' + icon + '</span>' +
+        '<span class="shipping-rate-cost">' +
+          '<input type="number" data-province="' + escapeHtml(r.province) + '" value="' + cost + '" min="0" step="10" />' +
+        '</span>' +
+      '</div>';
+    });
+    container.innerHTML = html;
+  }
+
+  async function saveShippingRates() {
+    var btnId = 'saveShippingRatesBtn';
+    var loadingId = 'saveShippingRatesBtnLoading';
+    setLoading(btnId, loadingId, true, 'Guardar en Nube', 'Guardando...');
+    try {
+      var inputs = document.querySelectorAll('#shippingRatesMap input[data-province]');
+      var rates = [];
+      inputs.forEach(function (input) {
+        rates.push({
+          province: input.getAttribute('data-province'),
+          shipping_cost: Number(input.value || 0)
+        });
+      });
+      var res = await window.adminFetch('/api/admin/shipping-rates', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rates: rates })
+      });
+      if (!res || !res.ok) {
+        var data = await res.json().catch(function () { return {}; });
+        throw new Error(data.error || 'Error guardando tarifas');
+      }
+      var statusEl = document.getElementById('saveShippingRatesStatus');
+      if (statusEl) {
+        statusEl.textContent = '✅ Tarifas guardadas correctamente';
+        statusEl.className = 'save-status visible success';
+        setTimeout(function () { statusEl.className = 'save-status'; }, 3000);
+      }
+      showToast('✅', 'Tarifas de envío guardadas', 'success');
+      loadShippingRates();
+    } catch (err) {
+      var statusEl2 = document.getElementById('saveShippingRatesStatus');
+      if (statusEl2) {
+        statusEl2.textContent = '❌ ' + (err.message || 'Error al guardar');
+        statusEl2.className = 'save-status visible error';
+        setTimeout(function () { statusEl2.className = 'save-status'; }, 4000);
+      }
+      showToast('❌', err.message || 'Error al guardar', 'error');
+    } finally {
+      setLoading(btnId, loadingId, false, 'Guardar en Nube', 'Guardando...');
+    }
+  }
+
   function initPaymentsPanel() {
     loadPaymentConfig();
     loadPaymentProofs();
     loadPaymentStats();
     loadActivityLog();
+    loadShippingRates();
 
     var saveBtn = document.getElementById('savePaymentConfigBtn');
     if (saveBtn) {
       saveBtn.addEventListener('click', savePaymentConfig);
+    }
+
+    var saveRatesBtn = document.getElementById('saveShippingRatesBtn');
+    if (saveRatesBtn) {
+      saveRatesBtn.addEventListener('click', saveShippingRates);
     }
 
     var searchInput = document.getElementById('pmProofSearch');
