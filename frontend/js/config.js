@@ -72,12 +72,12 @@ const CONFIG = {
 
    // API — usar URLs relativas para aprovechar el rewrite de Vercel
    // (/api/* → Render backend), evitando problemas de CORS y cold starts.
-   // Si API.BASE está vacío, se usan rutas relativas.
-   // Si necesitás llamar al backend directamente (ej: admin), completá BACKEND_URL.
-   API: {
-     BASE: '',
-     BACKEND_URL: ''
-   },
+    // Si API.BASE está vacío, se usan rutas relativas.
+    // Si necesitás llamar al backend directamente (ej: admin), completá BACKEND_URL.
+    API: {
+      BASE: '',
+      BACKEND_URL: 'https://iara-os3h.onrender.com'
+    },
 
    // Imagen placeholder para productos sin imagen
    PLACEHOLDER: {
