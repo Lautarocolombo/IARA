@@ -11,11 +11,11 @@
 ```env
 NODE_ENV=production
 DATABASE_URL=postgresql://user:pass@host:5432/db
-ALLOWED_ORIGINS=https://artesaniagualeguay.vercel.app,http://localhost:3000,http://localhost:5173
+ALLOWED_ORIGINS=https://artesania-gualeguay.vercel.app,http://localhost:3000,http://localhost:5173
 JWT_SECRET=<random 64+ chars>
 ADMIN_USER=<username>
 ADMIN_PASS_HASH=<bcrypt hash>
-SITE_URL=https://artesaniagualeguay.vercel.app
+SITE_URL=https://artesania-gualeguay.vercel.app
 BACKEND_URL=https://iara-backend.onrender.com
 RESEND_API_KEY=<resend key>
 EMAIL_FROM=noreply@artesaniagualeguay.com

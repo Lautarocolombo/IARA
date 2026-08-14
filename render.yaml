@@ -21,11 +21,11 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: SITE_URL
-        value: https://artesaniagualeguay.vercel.app
-       - key: BACKEND_URL
-         value: https://iara-backend.onrender.com
+        value: https://artesania-gualeguay.vercel.app
+      - key: BACKEND_URL
+        value: https://iara-backend.onrender.com
       - key: ALLOWED_ORIGINS
-        value: https://artesaniagualeguay.vercel.app,https://artesaniagualeguay.vercel.app,https://artesania-gualeguay.vercel.app,http://localhost:3000,http://localhost:5173
+        value: https://artesania-gualeguay.vercel.app,https://artesania-gualeguay.vercel.app,https://artesania-gualeguay.vercel.app,http://localhost:3000,http://localhost:5173
       - key: SHIPPING_COST
         value: "200"
       - key: SHIPPING_THRESHOLD

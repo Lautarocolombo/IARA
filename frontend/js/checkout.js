@@ -186,12 +186,16 @@
     });
   }
 
+  let isSubmitting = false;
   document.getElementById('shippingForm').addEventListener('submit', async (e) => {
+    if (isSubmitting) return;
+    isSubmitting = true;
     e.preventDefault();
 
     const items = getCart();
     if (!items.length) {
       showToast('', 'Carrito vacío', 'error');
+      isSubmitting = false;
       return;
     }
 
@@ -226,6 +230,7 @@
     const consentEl = document.getElementById('checkoutConsent');
     if (!consentEl?.checked) {
       showToast('', 'Aceptá la política de privacidad y cookies para continuar', 'error');
+      isSubmitting = false;
       consentEl?.focus();
       return;
     }
@@ -235,6 +240,7 @@
       if (firstError && fields[firstError]) {
         fields[firstError].focus();
       }
+      isSubmitting = false;
       return;
     }
 
@@ -355,6 +361,7 @@
       showToast('', window.getFetchErrorMessage(err) || 'Error al procesar tu compra. Intentá nuevamente o contactanos.', 'error');
       console.error('Checkout error:', err);
     } finally {
+      isSubmitting = false;
       if (submitBtn) {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Continuar al pago';

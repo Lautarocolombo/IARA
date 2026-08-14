@@ -51,7 +51,7 @@ http://localhost:3000
 
 ## Despliegue
 
-- **Frontend (Vercel):** `https://artesaniagualeguay.vercel.app`
+- **Frontend (Vercel):** `https://artesania-gualeguay.vercel.app`
 - **Backend (Render):** `https://iara-backend.onrender.com`
 
 ### Variables de entorno en Vercel
@@ -64,9 +64,9 @@ Configurar en **Vercel Dashboard > Settings > Environment Variables**:
 | `JWT_SECRET` | string seguro aleatorio |
 | `ADMIN_USER` | tu usuario admin |
 | `ADMIN_PASS_HASH` | hash bcrypt de tu contraseña admin (generar con `bcrypt.hash('contraseña', 10)`) |
-| `ALLOWED_ORIGINS` | `https://artesaniagualeguay.vercel.app,http://localhost:3000,http://localhost:5173` |
+| `ALLOWED_ORIGINS` | `https://artesania-gualeguay.vercel.app,http://localhost:3000,http://localhost:5173` |
 | `DATABASE_URL` | connection string de PostgreSQL |
-| `SITE_URL` | `https://artesaniagualeguay.vercel.app` |
+| `SITE_URL` | `https://artesania-gualeguay.vercel.app` |
 | `BACKEND_URL` | `https://iara-backend.onrender.com` |
 | `RESEND_API_KEY` | (opcional) |
 | `EMAIL_FROM` | `noreply@artesaniagualeguay.com` |
