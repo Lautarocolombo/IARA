@@ -130,7 +130,10 @@
 
       const heroVisual = document.getElementById('heroCardsContainer');
       if (heroVisual) {
-        heroVisual.innerHTML = data.map((card, i) => {
+        const heroMainImage = document.getElementById('heroMainImage');
+        const heroMainImageHtml = heroMainImage ? heroMainImage.outerHTML : '';
+
+        const cardsHtml = data.map((card, i) => {
           const imgSrc = card.imagen || '';
           const imgHtml = imgSrc
             ? `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(card.titulo || '')}" loading="lazy" />`
@@ -145,6 +148,8 @@
             </div>
           `;
         }).join('');
+
+        heroVisual.innerHTML = heroMainImageHtml + cardsHtml;
       }
     } catch (err) {
       console.error('[Hero] Error renderizando cards:', err);
