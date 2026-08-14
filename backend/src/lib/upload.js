@@ -248,6 +248,13 @@ async function processFile(file, baseUrl) {
     logger.warn('El upload a Vercel Blob falló, intentando fallback...');
   }
 
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (isProduction && !useBlob) {
+    const err = new Error('Storage de imágenes no configurado. Necesitás configurar BLOB_READ_WRITE_TOKEN en Render para subir imágenes.');
+    logger.error({ err: err.message }, 'Upload bloqueado: falta configuración de storage persistente');
+    throw err;
+  }
+
   const optimizedPath = await optimizeWithSharp(file.path);
   const filename = path.basename(optimizedPath);
   const relativeUrl = `/uploads/imagenes/${filename}`;

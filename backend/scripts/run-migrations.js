@@ -1,7 +1,15 @@
 'use strict';
 
-const { runner } = require('node-pg-migrate');
+const dotenv = require('dotenv');
 const path = require('path');
+const fs = require('fs');
+
+const envPath = path.join(__dirname, '..', '.env');
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath });
+}
+
+const { runner } = require('node-pg-migrate');
 
 async function runMigrations(direction = 'up') {
   const connectionString = process.env.DATABASE_URL || process.env.NEON_DATABASE_URL;

@@ -79,23 +79,21 @@ describe('Vercel Blob helpers', () => {
     expect(put).not.toHaveBeenCalled();
   });
 
-  test('processFile usa fallback base64 en producción ephemeral (Render)', async () => {
+  test('processFile lanza error claro en producción si no hay Blob configurado', async () => {
     const originalNodeEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
     delete process.env.BLOB_READ_WRITE_TOKEN;
 
     const tmpFile = makeTmpFile('test3.png', [0x89, 0x50, 0x4e, 0x47]);
 
-    const result = await upload.processFile({
-      path: tmpFile,
-      originalname: 'test3.png',
-      mimetype: 'image/png',
-      size: 4
-    });
-
-    expect(result.isBlob).toBe(false);
-    expect(result.url).toMatch(/^data:image\/png;base64,/);
-    expect(put).not.toHaveBeenCalled();
+    await expect(
+      upload.processFile({
+        path: tmpFile,
+        originalname: 'test3.png',
+        mimetype: 'image/png',
+        size: 4
+      })
+    ).rejects.toThrow('Storage de imágenes no configurado');
 
     process.env.NODE_ENV = originalNodeEnv;
   });

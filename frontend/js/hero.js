@@ -69,13 +69,11 @@
   async function renderHeroCards(cards) {
     try {
       let siteTexts = {};
-      if (!Array.isArray(cards) || cards.length === 0) {
-        try {
-          const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-texts`, {}, 2, 1000);
-          if (res && res.ok) siteTexts = await res.json();
-        } catch (err) {
-          console.error('[Hero] Error cargando site-texts:', err);
-        }
+      try {
+        const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-texts`, {}, 2, 1000);
+        if (res && res.ok) siteTexts = await res.json();
+      } catch (err) {
+        console.error('[Hero] Error cargando site-texts:', err);
       }
 
       const defaults = [

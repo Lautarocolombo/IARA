@@ -58,3 +58,5 @@ backend/check_payment.js
 backend/verify_hash.js
 backend/fix_neon_user.js
 backend/test_admin_products.js
+
+.env*

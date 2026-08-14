@@ -383,7 +383,8 @@ app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUplo
     });
   } catch (err) {
     logger.error({ err: err.message }, 'Error procesando imagen');
-    res.status(500).json({ error: 'Error al procesar la imagen' });
+    const message = err.message || 'Error al procesar la imagen';
+    res.status(500).json({ error: message });
   }
 });
 

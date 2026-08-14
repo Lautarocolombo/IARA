@@ -862,6 +862,20 @@ tr:last-child td {
   border: 1px solid #cbd5e1;
 }
 
+.image-error-message {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #dc2626;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+}
+
 .actions {
   display: flex;
   gap: 0.4rem;

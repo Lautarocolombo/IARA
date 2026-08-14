@@ -380,6 +380,7 @@
 
       var uploadPromises = [];
       var uploadMap = {};
+      var uploadErrors = {};
 
       if (heroImageFile) {
         var formDataHero = new FormData();
@@ -399,6 +400,9 @@
           var data = await res.json();
           heroImageUrl = data.url || '';
           uploadMap.hero = heroImageUrl;
+        }).catch(function (err) {
+          uploadErrors.hero = err.message || 'Error al subir imagen del hero';
+          throw err;
         });
         uploadPromises.push(heroPromise);
       } else if (heroRemoveFlag) {
@@ -423,6 +427,9 @@
           var data = await res.json();
           fpImageUrl = data.url || '';
           uploadMap.fp = fpImageUrl;
+        }).catch(function (err) {
+          uploadErrors.fp = err.message || 'Error al subir imagen del producto';
+          throw err;
         });
         uploadPromises.push(fpPromise);
       } else if (fpRemoveFlag) {
@@ -430,7 +437,21 @@
       }
 
       if (uploadPromises.length > 0) {
-        await Promise.all(uploadPromises);
+        try {
+          await Promise.all(uploadPromises);
+        } catch (err) {
+          var heroImageErrorEl = document.getElementById('heroImageError');
+          var fpImageErrorEl = document.getElementById('fpImageError');
+          if (heroImageErrorEl && uploadErrors.hero) {
+            heroImageErrorEl.textContent = uploadErrors.hero;
+            heroImageErrorEl.style.display = 'block';
+          }
+          if (fpImageErrorEl && uploadErrors.fp) {
+            fpImageErrorEl.textContent = uploadErrors.fp;
+            fpImageErrorEl.style.display = 'block';
+          }
+          throw new Error(uploadErrors.hero || uploadErrors.fp || 'Error al subir imágenes');
+        }
       }
 
       var payload = {
@@ -466,6 +487,11 @@
 
       if (heroImageFileInput) heroImageFileInput.value = '';
       if (heroImageRemoveBtn) delete heroImageRemoveBtn.dataset.remove;
+      var heroImgErrorEl = document.getElementById('heroImageError');
+      if (heroImgErrorEl) {
+        heroImgErrorEl.style.display = 'none';
+        heroImgErrorEl.textContent = '';
+      }
       var heroNewPreview = document.getElementById('heroImageNewPreview');
       var heroNewImg = document.getElementById('heroImageNewImg');
       if (heroNewPreview) heroNewPreview.style.display = 'none';
@@ -483,6 +509,11 @@
 
       if (fpImageFileInput) fpImageFileInput.value = '';
       if (fpImageRemoveBtn) delete fpImageRemoveBtn.dataset.remove;
+      var fpImgErrorEl = document.getElementById('fpImageError');
+      if (fpImgErrorEl) {
+        fpImgErrorEl.style.display = 'none';
+        fpImgErrorEl.textContent = '';
+      }
       var fpNewPreview = document.getElementById('fpImageNewPreview');
       var fpNewImg = document.getElementById('fpImageNewImg');
       if (fpNewPreview) fpNewPreview.style.display = 'none';
@@ -726,20 +757,35 @@
 
     var heroImageChangeBtn = document.getElementById('heroImageChangeBtn');
     var heroImageInput = document.getElementById('heroImageInput');
+    var heroImageError = document.getElementById('heroImageError');
     if (heroImageChangeBtn && heroImageInput) {
       heroImageChangeBtn.addEventListener('click', function () {
         heroImageInput.click();
       });
       heroImageInput.addEventListener('change', function () {
+        if (heroImageError) {
+          heroImageError.style.display = 'none';
+          heroImageError.textContent = '';
+        }
         if (heroImageInput.files && heroImageInput.files[0]) {
           var file = heroImageInput.files[0];
           if (file.size > 5 * 1024 * 1024) {
-            window.showToast('❌', 'La imagen es muy grande (máximo 5MB)', 'error');
+            var heroMsg = 'La imagen es muy grande (máximo 5MB)';
+            window.showToast('❌', heroMsg, 'error');
+            if (heroImageError) {
+              heroImageError.textContent = heroMsg;
+              heroImageError.style.display = 'block';
+            }
             heroImageInput.value = '';
             return;
           }
           if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-            window.showToast('❌', 'Formato no soportado. Usá JPG, PNG o WEBP.', 'error');
+            var heroMsg2 = 'Formato no soportado. Usá JPG, PNG o WEBP.';
+            window.showToast('❌', heroMsg2, 'error');
+            if (heroImageError) {
+              heroImageError.textContent = heroMsg2;
+              heroImageError.style.display = 'block';
+            }
             heroImageInput.value = '';
             return;
           }
@@ -774,20 +820,35 @@
 
     var fpImageChangeBtn = document.getElementById('fpImageChangeBtn');
     var fpImageInput = document.getElementById('fpImageInput');
+    var fpImageError = document.getElementById('fpImageError');
     if (fpImageChangeBtn && fpImageInput) {
       fpImageChangeBtn.addEventListener('click', function () {
         fpImageInput.click();
       });
       fpImageInput.addEventListener('change', function () {
+        if (fpImageError) {
+          fpImageError.style.display = 'none';
+          fpImageError.textContent = '';
+        }
         if (fpImageInput.files && fpImageInput.files[0]) {
           var file = fpImageInput.files[0];
           if (file.size > 5 * 1024 * 1024) {
-            window.showToast('❌', 'La imagen es muy grande (máximo 5MB)', 'error');
+            var fpMsg = 'La imagen es muy grande (máximo 5MB)';
+            window.showToast('❌', fpMsg, 'error');
+            if (fpImageError) {
+              fpImageError.textContent = fpMsg;
+              fpImageError.style.display = 'block';
+            }
             fpImageInput.value = '';
             return;
           }
           if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-            window.showToast('❌', 'Formato no soportado. Usá JPG, PNG o WEBP.', 'error');
+            var fpMsg2 = 'Formato no soportado. Usá JPG, PNG o WEBP.';
+            window.showToast('❌', fpMsg2, 'error');
+            if (fpImageError) {
+              fpImageError.textContent = fpMsg2;
+              fpImageError.style.display = 'block';
+            }
             fpImageInput.value = '';
             return;
           }
