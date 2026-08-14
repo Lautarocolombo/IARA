@@ -2,10 +2,10 @@ services:
   - type: web
     name: iara-backend
     env: node
-    rootDirectory: .
+    rootDirectory: backend
     plan: free
-    buildCommand: npm install --legacy-peer-deps && cd backend && npm install --legacy-peer-deps
-    startCommand: cd backend && npm start
+    buildCommand: npm install --legacy-peer-deps
+    startCommand: node src/server.js
     healthCheckPath: /health
     envVars:
       - key: NODE_ENV
@@ -25,7 +25,7 @@ services:
       - key: BACKEND_URL
         value: https://iara-backend.onrender.com
       - key: ALLOWED_ORIGINS
-        value: https://artesania-gualeguay.vercel.app,https://artesania-gualeguay.vercel.app,https://artesania-gualeguay.vercel.app,http://localhost:3000,http://localhost:5173
+        value: https://artesania-gualeguay.vercel.app,https://artesania-gualeguay.vercel.app,http://localhost:3000,http://localhost:5173
       - key: SHIPPING_COST
         value: "200"
       - key: SHIPPING_THRESHOLD
