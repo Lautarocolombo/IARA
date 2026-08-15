@@ -24,6 +24,56 @@
   --shadow-md: 0 8px 32px rgba(212,112,144,0.15);
   --shadow-lg: 0 16px 48px rgba(212,112,144,0.20);
   --transition: all 0.2s ease;
+
+  /* ==================== TYPOGRAPHY TOKENS ==================== */
+  --font-title: 'Playfair Display', serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: ui-monospace, monospace;
+
+  --text-xs: 0.7rem;
+  --text-sm: 0.78rem;
+  --text-base: 0.875rem;
+  --text-md: 0.9rem;
+  --text-lg: 1rem;
+  --text-xl: 1.1rem;
+  --text-2xl: 1.25rem;
+  --text-3xl: 1.5rem;
+  --text-4xl: 1.75rem;
+  --text-5xl: 2rem;
+
+  --text-dark: #0f172a;
+  --text-body: #334155;
+  --text-muted: #64748b;
+  --text-subtle: #94a3b8;
+  --text-label: #334155;
+  --text-table-header: #64748b;
+
+  --leading-tight: 1.25;
+  --leading-normal: 1.5;
+  --leading-snug: 1.4;
+
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* ==================== ADMIN TOKENS ==================== */
+  --admin-title: 1.6rem;
+  --admin-subtitle: var(--text-sm);
+  --admin-card-title: var(--text-xl);
+  --admin-block-title: var(--text-lg);
+  --admin-label: var(--text-base);
+  --admin-body: var(--text-base);
+  --admin-small: var(--text-xs);
+  --admin-metric: var(--text-4xl);
+  --admin-table-header: var(--text-xs);
+  --admin-table-body: var(--text-base);
+  --admin-btn: var(--text-md);
+  --admin-btn-sm: var(--text-sm);
+  --admin-input: var(--text-md);
+  --admin-input-height: 40px;
+  --admin-input-padding: 0.6rem 0.875rem;
+  --admin-input-radius: 8px;
 }
 
 [data-theme="dark"] {

@@ -35,8 +35,6 @@
     var isDarkMode = isDark === true || (document && document.documentElement && document.documentElement.getAttribute('data-theme') === 'dark');
     var bgFrom = isDarkMode ? '#2a1c24' : '#fde8ef';
     var bgTo = isDarkMode ? '#4a1f28' : '#f8d5e4';
-    var rectFill = isDarkMode ? '#1a1014' : '#ffffff';
-    var rectStroke = isDarkMode ? '#3a2028' : '#f4c8d4';
     var iconFill = isDarkMode ? '#d47090' : '#d47090';
     var lineStroke = isDarkMode ? '#d47090' : '#e8a0b5';
     var textFill = isDarkMode ? '#d47090' : '#d47090';
@@ -48,8 +46,6 @@
       '<stop offset="100%" stop-color="' + bgTo + '"/>' +
       '</linearGradient></defs>' +
       '<rect width="200" height="200" rx="14" fill="url(#agBg)"/>' +
-      '<rect x="42" y="46" width="116" height="76" rx="8" fill="' + rectFill + '" opacity="0.65"' +
-      ' stroke="' + rectStroke + '" stroke-width="1.5" stroke-dasharray="6 5"/>' +
       '<circle cx="74" cy="70" r="6" fill="' + iconFill + '" opacity="0.45"/>' +
       '<circle cx="126" cy="70" r="6" fill="' + iconFill + '" opacity="0.45"/>' +
       '<circle cx="100" cy="88" r="6" fill="' + iconFill + '" opacity="0.45"/>' +
@@ -70,6 +66,7 @@
   }
 
   window.getPlaceholderDataUri = getPlaceholderDataUri;
+  window.escapeAttr = escapeAttr;
 
   // Global <img> onError handler.
   // imgError(img, fallback?) — `fallback` is an optional emoji glyph.

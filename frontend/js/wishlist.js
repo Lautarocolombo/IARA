@@ -56,3 +56,5 @@ window.addToWishlist = addToWishlist;
 window.removeFromWishlist = removeFromWishlist;
 window.isInWishlist = isInWishlist;
 window.getWishlist = getWishlist;
+window.saveWishlist = saveWishlist;
+window.updateWishlistBadge = updateWishlistBadge;

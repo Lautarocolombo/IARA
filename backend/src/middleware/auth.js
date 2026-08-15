@@ -2,9 +2,9 @@ const jwt = require('jsonwebtoken');
 const tokenBlacklist = require('../lib/tokenBlacklist');
 
 const ROLE_PERMISSIONS = {
-  admin: ['products:read', 'products:write', 'products:delete', 'orders:read', 'orders:write', 'orders:delete', 'categories:read', 'categories:write', 'categories:delete', 'testimonials:read', 'testimonials:write', 'testimonials:delete', 'reviews:read', 'reviews:write', 'reviews:delete', 'contacts:read', 'newsletter:read', 'site:read', 'site:write', 'reports:read', 'settings:read', 'settings:write', 'payments:read', 'payments:write', 'uploads:read', 'uploads:write', 'sync:read', 'sync:write'],
-  editor: ['products:read', 'products:write', 'orders:read', 'categories:read', 'categories:write', 'testimonials:read', 'testimonials:write', 'reviews:read', 'reviews:write', 'contacts:read', 'newsletter:read', 'site:read', 'reports:read', 'settings:read', 'payments:read'],
-  viewer: ['products:read', 'orders:read', 'categories:read', 'testimonials:read', 'reviews:read', 'contacts:read', 'reports:read', 'settings:read']
+  admin: ['products:read', 'products:write', 'products:delete', 'orders:read', 'orders:write', 'orders:delete', 'categories:read', 'categories:write', 'categories:delete', 'testimonials:read', 'testimonials:write', 'testimonials:delete', 'reviews:read', 'reviews:write', 'reviews:delete', 'contacts:read', 'contacts:write', 'newsletter:read', 'site:read', 'site:write', 'earnings:read', 'settings:read', 'settings:write', 'payments:read', 'payments:write', 'uploads:read', 'uploads:write', 'sync:read', 'sync:write', 'users:read', 'users:write', 'users:delete'],
+  editor: ['products:read', 'products:write', 'orders:read', 'categories:read', 'categories:write', 'testimonials:read', 'testimonials:write', 'reviews:read', 'reviews:write', 'contacts:read', 'newsletter:read', 'site:read', 'settings:read'],
+  viewer: ['products:read', 'orders:read', 'categories:read', 'testimonials:read', 'reviews:read', 'contacts:read', 'settings:read']
 };
 
 function adminAuth(req, res, next) {

@@ -353,6 +353,51 @@
     }
   }
 
+  function openResetModal() {
+    var modal = document.getElementById('confirmModalOverlay');
+    var msg = document.getElementById('confirmModalMessage');
+    var actionBtn = document.getElementById('confirmModalAction');
+    if (modal) {
+      if (msg) msg.textContent = 'Esto va a poner en $0 el Total de Ventas Brutas, Ventas Netas, Número de Pedidos y Ganancia Promedio, y vaciar el gráfico de ingresos semanales. Esta acción no se puede deshacer. ¿Confirmás?';
+      if (actionBtn) {
+        actionBtn.textContent = 'Sí, reiniciar';
+        actionBtn.className = 'btn btn-danger';
+        actionBtn.onclick = async function () {
+          if (modal) modal.classList.add('hidden');
+          await confirmReset();
+        };
+      }
+      modal.classList.remove('hidden');
+    }
+  }
+
+  async function confirmReset() {
+    var btn = document.getElementById('resetMetricsBtn');
+    var btnText = document.getElementById('resetMetricsBtnText');
+    var btnLoading = document.getElementById('resetMetricsBtnLoading');
+
+    if (btn) btn.disabled = true;
+    if (btnText) btnText.style.display = 'none';
+    if (btnLoading) btnLoading.classList.remove('hidden');
+
+    try {
+      var res = await window.adminFetch('/api/admin/reports/reset', { method: 'POST' });
+      if (!res || !res.ok) {
+        var errData = await res.json().catch(function () { return {}; });
+        throw new Error(errData.error || 'Error al reiniciar las métricas.');
+      }
+      window.showToast('✅', 'Métricas reiniciadas correctamente.', 'success');
+      await loadSalesSummary(currentView);
+    } catch (err) {
+      console.error('[Sales] Error reiniciando métricas:', err);
+      window.showToast('❌', err.message || 'Error al reiniciar las métricas.', 'error');
+    } finally {
+      if (btn) btn.disabled = false;
+      if (btnText) btnText.style.display = '';
+      if (btnLoading) btnLoading.classList.add('hidden');
+    }
+  }
+
   /* ===== HELPERS GLOBALES ===== */
 
   function escapeAttr(str) {
@@ -378,6 +423,13 @@
     if (syncBtn) {
       syncBtn.addEventListener('click', function () {
         loadSalesSummary(currentView);
+      });
+    }
+
+    var resetBtn = document.getElementById('resetMetricsBtn');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function () {
+        openResetModal();
       });
     }
 

@@ -35,10 +35,29 @@ const getEarnings = async (req, res) => {
     }
     const whereSql = whereClauses.length ? 'WHERE ' + whereClauses.join(' AND ') : 'WHERE TRUE';
 
-    const countResult = await query('SELECT COUNT(*) as total FROM orders ' + whereSql, whereParams);
+    let resetAt = null;
+    try {
+      const resetResult = await query("SELECT value FROM site_settings WHERE key = 'metrics_reset_at' AND tenant_id = COALESCE(current_setting('app.current_tenant', TRUE), 'default')");
+      const resetRow = resetResult.rows[0];
+      if (resetRow && resetRow.value) {
+        resetAt = new Date(resetRow.value);
+      }
+    } catch (e) {
+      resetAt = null;
+    }
+
+    const kpiWhereClauses = Array.from(whereClauses);
+    const kpiWhereParams = Array.from(whereParams);
+    if (resetAt) {
+      kpiWhereParams.push(resetAt.toISOString());
+      kpiWhereClauses.push('created_at > $' + kpiWhereParams.length);
+    }
+    const kpiWhereSql = kpiWhereClauses.length ? 'WHERE ' + kpiWhereClauses.join(' AND ') : 'WHERE TRUE';
+
+    const countResult = await query('SELECT COUNT(*) as total FROM orders ' + kpiWhereSql, kpiWhereParams);
     const totalOrders = Number(countResult.rows[0]?.total || 0);
 
-    const ordersTotalResult = await query('SELECT COALESCE(SUM(total),0) as total FROM orders ' + whereSql, whereParams);
+    const ordersTotalResult = await query('SELECT COALESCE(SUM(total),0) as total FROM orders ' + kpiWhereSql, kpiWhereParams);
     const ordersTotal = Number(ordersTotalResult.rows[0]?.total || 0);
 
     const limitIdx = whereParams.length + 1;
@@ -60,7 +79,15 @@ const getEarnings = async (req, res) => {
     }
     const salesWhereSql = salesWhereClauses.length ? 'WHERE ' + salesWhereClauses.join(' AND ') : '';
 
-    const manualSalesTotalResult = await query('SELECT COALESCE(SUM(total),0) as total FROM sales ' + salesWhereSql, salesParams);
+    const kpiSalesWhereClauses = Array.from(salesWhereClauses);
+    const kpiSalesParams = Array.from(salesParams);
+    if (resetAt) {
+      kpiSalesParams.push(resetAt.toISOString().split('T')[0]);
+      kpiSalesWhereClauses.push('sale_date > $' + kpiSalesParams.length);
+    }
+    const kpiSalesWhereSql = kpiSalesWhereClauses.length ? 'WHERE ' + kpiSalesWhereClauses.join(' AND ') : '';
+
+    const manualSalesTotalResult = await query('SELECT COALESCE(SUM(total),0) as total FROM sales ' + kpiSalesWhereSql, kpiSalesParams);
     const manualSalesTotal = Number(manualSalesTotalResult.rows[0]?.total || 0);
 
     const manualSalesResult = await query(
@@ -80,7 +107,14 @@ const getEarnings = async (req, res) => {
       monthWhereParams.push(end_date);
       monthWhereClauses.push('substr(created_at, 1, 10) <= $' + monthWhereParams.length);
     }
-    const monthWhereSql = monthWhereClauses.length ? 'WHERE ' + monthWhereClauses.join(' AND ') : '';
+
+    const chartWhereClauses = Array.from(monthWhereClauses);
+    const chartWhereParams = Array.from(monthWhereParams);
+    if (resetAt) {
+      chartWhereParams.push(resetAt.toISOString());
+      chartWhereClauses.push('created_at > $' + chartWhereParams.length);
+    }
+    const chartWhereSql = chartWhereClauses.length ? 'WHERE ' + chartWhereClauses.join(' AND ') : '';
 
     var monthExpr = 'substr(created_at, 1, 7)';
     if (!isLocal) {
@@ -88,8 +122,8 @@ const getEarnings = async (req, res) => {
     }
 
     const chartResult = await query(
-      'SELECT ' + monthExpr + ' as month, SUM(total) as total FROM orders ' + monthWhereSql + ' GROUP BY month ORDER BY month ASC',
-      monthWhereParams
+      'SELECT ' + monthExpr + ' as month, SUM(total) as total FROM orders ' + chartWhereSql + ' GROUP BY month ORDER BY month ASC',
+      chartWhereParams
     );
 
     const categoryMap = {};

@@ -17,7 +17,6 @@ router.post('/contact', async (req, res) => {
     );
     res.status(201).json({ ok: true });
   } catch (err) {
-    console.error('contact error', err);
     logger.error('Error guardando contacto:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
   }

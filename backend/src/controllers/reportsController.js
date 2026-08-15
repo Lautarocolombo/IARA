@@ -1,9 +1,19 @@
-const { query, transaction } = require('../lib/db');
+const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const { safeJsonParse } = require('../lib/parser');
 
 const WEEKLY_BAJA_THRESHOLD = 300;
 const WEEKLY_MEDIA_THRESHOLD = 800;
+
+async function getMetricsResetAt() {
+  try {
+    const result = await query("SELECT value FROM site_settings WHERE key = 'metrics_reset_at' AND tenant_id = COALESCE(current_setting('app.current_tenant', TRUE), 'default')");
+    const row = result.rows[0];
+    return row && row.value ? new Date(row.value) : null;
+  } catch (err) {
+    return null;
+  }
+}
 
 const getSalesReport = async (req, res) => {
   const startDate = String(req.query.start_date || '');
@@ -125,51 +135,12 @@ const getSalesTrend = async (req, res) => {
 
 const resetMetrics = async (req, res) => {
   try {
-    await query('CREATE TABLE IF NOT EXISTS archived_orders (id INTEGER, items JSONB, total REAL, customer JSONB, status TEXT, notes TEXT, shipping_name TEXT, shipping_address TEXT, shipping_phone TEXT, shipping_zip TEXT, shipping_city TEXT, shipping_email TEXT, subtotal REAL DEFAULT 0, shipping_cost REAL DEFAULT 0, created_at TIMESTAMP, archived_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)');
-
-    const ordersResult = await query('SELECT * FROM orders ORDER BY id ASC');
-    const allOrders = ordersResult.rows;
-
-    if (allOrders.length > 0) {
-      await transaction(async (txClient) => {
-        for (const o of allOrders) {
-          const itemsJson = typeof o.items === 'string' ? o.items : JSON.stringify(o.items || []);
-          const customerJson = typeof o.customer === 'string' ? o.customer : JSON.stringify(o.customer || {});
-          await txClient.query(
-            'INSERT INTO archived_orders (id, items, total, customer, status, notes, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, subtotal, shipping_cost, created_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)',
-            [
-              o.id,
-              itemsJson,
-              Number(o.total || 0),
-              customerJson,
-              o.status || 'pending',
-              o.notes || '',
-              o.shipping_name || '',
-              o.shipping_address || '',
-              o.shipping_phone || '',
-              o.shipping_zip || '',
-              o.shipping_city || '',
-              o.shipping_email || '',
-              Number(o.subtotal || 0),
-              Number(o.shipping_cost || 0),
-              new Date(o.created_at).toISOString()
-            ]
-          );
-        }
-      });
-
-      for (const o of allOrders) {
-        const items = typeof o.items === 'string' ? JSON.parse(o.items) : (o.items || []);
-        for (const it of items) {
-          const productId = Number(it.id);
-          const qty = Number(it.quantity || 1);
-          await query('UPDATE products SET stock = stock + $1 WHERE id = $2', [qty, productId]);
-        }
-      }
-    }
-
-    await query('DELETE FROM orders');
-    res.json({ ok: true, archived: allOrders.length });
+    const now = new Date().toISOString();
+    await query(
+      "INSERT INTO site_settings (key, value, tenant_id) VALUES ($1, $2, COALESCE(current_setting('app.current_tenant', TRUE), 'default')) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP",
+      ['metrics_reset_at', now]
+    );
+    res.json({ ok: true, reset_at: now });
   } catch (err) {
     logger.error({ err: err.message }, 'Error reiniciando métricas');
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -252,23 +223,24 @@ const getSalesSummary = async (req, res) => {
   const startDateStr = startDate.toISOString().split('T')[0];
 
   try {
-    const [ordersResult, salesResult] = await Promise.all([
-      query(
-         'SELECT created_at as date, total FROM orders WHERE status != ' + "'" + 'cancelled' + "'" + ' AND date(created_at) >= $1 ORDER BY date ASC',
-        [startDateStr]
-      ),
-      (async () => {
-        try {
-          return await query(
-            'SELECT sale_date as date, total FROM sales WHERE date(sale_date) >= $1 ORDER BY date ASC',
-            [startDateStr]
-          );
-        } catch (err) {
-          logger.debug({ err: err.message }, 'Tabla sales no disponible todavía');
-          return { rows: [] };
-        }
-      })()
-    ]);
+    const resetAt = await getMetricsResetAt();
+    const resetAtIso = resetAt ? resetAt.toISOString() : null;
+
+    let ordersQuery = 'SELECT created_at as date, total FROM orders WHERE status != ' + "'" + 'cancelled' + "'" + ' AND date(created_at) >= $1';
+    const ordersParams = [startDateStr];
+    if (resetAtIso) {
+      ordersQuery += ' AND created_at > $2';
+      ordersParams.push(resetAtIso);
+    }
+    const ordersResult = await query(ordersQuery + ' ORDER BY date ASC', ordersParams);
+
+    let salesQuery = 'SELECT sale_date as date, total FROM sales WHERE date(sale_date) >= $1';
+    const salesParams = [startDateStr];
+    if (resetAtIso) {
+      salesQuery += ' AND sale_date > $2';
+      salesParams.push(resetAtIso.split('T')[0]);
+    }
+    const salesResult = await query(salesQuery + ' ORDER BY date ASC', salesParams);
 
     const rawData = [
       ...ordersResult.rows.map(r => ({ date: r.date, total: Number(r.total || 0) })),

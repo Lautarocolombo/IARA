@@ -3,6 +3,8 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
+const TINY_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
 jest.mock('@vercel/blob', () => ({
   put: jest.fn(),
   del: jest.fn()
@@ -11,11 +13,11 @@ jest.mock('@vercel/blob', () => ({
 const { put, del } = require('@vercel/blob');
 const upload = require('../src/lib/upload');
 
-function makeTmpFile(name, bytes) {
+function makeTmpFile(name) {
   const dir = path.join(os.tmpdir(), 'blob-test');
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   const filePath = path.join(dir, name);
-  fs.writeFileSync(filePath, Buffer.from(bytes));
+  fs.writeFileSync(filePath, Buffer.from(TINY_PNG_BASE64, 'base64'));
   return filePath;
 }
 
@@ -43,7 +45,7 @@ describe('Vercel Blob helpers', () => {
 
   test('processFile sube a Vercel Blob cuando BLOB_READ_WRITE_TOKEN está configurado', async () => {
     process.env.BLOB_READ_WRITE_TOKEN = 'token-falso-para-test';
-    const tmpFile = makeTmpFile('test.png', [0x89, 0x50, 0x4e, 0x47]);
+    const tmpFile = makeTmpFile('test.png');
 
     put.mockResolvedValue({ url: 'https://proyecto.blob.vercel-storage.com/products/x.png' });
 
@@ -51,7 +53,7 @@ describe('Vercel Blob helpers', () => {
       path: tmpFile,
       originalname: 'test.png',
       mimetype: 'image/png',
-      size: 4
+      size: Buffer.from(TINY_PNG_BASE64, 'base64').length
     });
 
     expect(result.isBlob).toBe(true);
@@ -60,22 +62,23 @@ describe('Vercel Blob helpers', () => {
     const [name, buffer, opts] = put.mock.calls[0];
     expect(name).toMatch(/^products\/\d+_test\.png$/);
     expect(Buffer.isBuffer(buffer)).toBe(true);
+    expect(opts.contentType).toBe('image/webp');
     expect(opts.access).toBe('public');
     expect(opts.token).toBe('token-falso-para-test');
   });
 
   test('processFile usa fallback con URL local cuando no hay token de Blob', async () => {
-    const tmpFile = makeTmpFile('test2.png', [0x89, 0x50, 0x4e, 0x47]);
+    const tmpFile = makeTmpFile('test2.png');
 
     const result = await upload.processFile({
       path: tmpFile,
       originalname: 'test2.png',
       mimetype: 'image/png',
-      size: 4
+      size: Buffer.from(TINY_PNG_BASE64, 'base64').length
     });
 
     expect(result.isBlob).toBe(false);
-    expect(result.url).toMatch(/^http:\/\/localhost:10000\/uploads\/imagenes\/test2\.png$/);
+    expect(result.url).toMatch(/^http:\/\/localhost:10000\/uploads\/imagenes\/test2\.webp$/);
     expect(put).not.toHaveBeenCalled();
   });
 
@@ -84,14 +87,14 @@ describe('Vercel Blob helpers', () => {
     process.env.NODE_ENV = 'production';
     delete process.env.BLOB_READ_WRITE_TOKEN;
 
-    const tmpFile = makeTmpFile('test3.png', [0x89, 0x50, 0x4e, 0x47]);
+    const tmpFile = makeTmpFile('test3.png');
 
     await expect(
       upload.processFile({
         path: tmpFile,
         originalname: 'test3.png',
         mimetype: 'image/png',
-        size: 4
+        size: Buffer.from(TINY_PNG_BASE64, 'base64').length
       })
     ).rejects.toThrow('Storage de imágenes no configurado');
 

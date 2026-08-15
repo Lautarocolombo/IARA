@@ -201,13 +201,14 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: 0.75rem;
-  font-weight: 500;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
   padding: 0.35rem 0.6rem;
   border-radius: 999px;
-  border: 1px solid #f4d0da;
+  border: 1px solid var(--border);
   background: var(--white);
-  color: #64748b;
+  color: var(--text-muted);
   transition: all 0.2s;
   white-space: nowrap;
 }
@@ -238,8 +239,9 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  font-size: 0.8rem;
-  color: #64748b;
+  font-family: var(--font-body);
+  font-size: var(--admin-btn-sm);
+  color: var(--text-muted);
 }
 .autosave-indicator.saving {
   color: #6366f1;
@@ -267,17 +269,22 @@ body {
   gap: 0.4rem;
   padding: 0.6rem 1rem;
   border-radius: 10px;
-  font-weight: 600;
-  font-size: 0.9rem;
+  font-family: var(--font-body);
+  font-weight: var(--weight-semibold);
+  font-size: var(--admin-btn);
   border: none;
   cursor: pointer;
   transition: all .2s;
   text-decoration: none;
+  line-height: var(--leading-tight);
 }
 
 .btn-primary {
   background: var(--accent);
   color: #fff;
+  font-family: var(--font-body);
+  font-weight: var(--weight-semibold);
+  font-size: var(--admin-btn);
 }
 
 .btn-primary:hover {
@@ -289,6 +296,9 @@ body {
   background: var(--white);
   color: #334155;
   border: 1px solid var(--border);
+  font-family: var(--font-body);
+  font-weight: var(--weight-semibold);
+  font-size: var(--admin-btn);
 }
 
 .btn-secondary:hover {
@@ -298,6 +308,9 @@ body {
 .btn-success {
   background: #dcfce7;
   color: #15803d;
+  font-family: var(--font-body);
+  font-weight: var(--weight-semibold);
+  font-size: var(--admin-btn);
 }
 
 .btn-success:hover {
@@ -307,6 +320,9 @@ body {
 .btn-danger {
   background: #fee2e2;
   color: #dc2626;
+  font-family: var(--font-body);
+  font-weight: var(--weight-semibold);
+  font-size: var(--admin-btn);
 }
 
 .btn-danger:hover {
@@ -319,6 +335,9 @@ body {
   border: 1px solid #ec4899;
   box-shadow: 0 0 0 0 rgba(236, 72, 153, 0);
   transition: all 0.2s ease;
+  font-family: var(--font-body);
+  font-weight: var(--weight-semibold);
+  font-size: var(--admin-btn);
 }
 
 .btn-neon:hover:not(:disabled) {
@@ -334,7 +353,7 @@ body {
 
 .btn-sm {
   padding: 0.4rem 0.75rem;
-  font-size: 0.8rem;
+  font-size: var(--admin-btn-sm);
 }
 
 .card {
@@ -355,8 +374,10 @@ body {
 }
 
 .card-header-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.1rem;
+  font-family: var(--font-title);
+  font-size: var(--admin-card-title);
+  font-weight: var(--weight-semibold);
+  color: var(--text-dark);
 }
 
 .card-body {
@@ -401,11 +422,12 @@ body {
 }
 
 .card-filter {
-  height: 38px;
-  padding: 0.45rem 0.75rem;
+  height: var(--admin-input-height);
+  padding: var(--admin-input-padding);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  font-size: 0.85rem;
+  border-radius: var(--admin-input-radius);
+  font-family: var(--font-body);
+  font-size: var(--admin-input);
   background: var(--white);
   color: var(--text-dark);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -429,21 +451,23 @@ select.card-filter {
 table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: var(--admin-table-body);
+  font-family: var(--font-body);
 }
 
 th,
 td {
-  padding: 0.85rem 1.25rem;
+  padding: 0.75rem 1rem;
   text-align: left;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
 }
 
 th {
-  font-weight: 600;
-  color: #64748b;
-  font-size: 0.75rem;
+  font-family: var(--font-body);
+  font-weight: var(--weight-semibold);
+  color: var(--text-table-header);
+  font-size: var(--admin-table-header);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   background: #f8fafc;
@@ -460,13 +484,15 @@ tr:last-child td {
 }
 
 .product-name {
-  font-weight: 600;
-  color: #0f172a;
+  font-family: var(--font-body);
+  font-weight: var(--weight-semibold);
+  color: var(--text-dark);
 }
 
 .product-desc {
-  font-size: 0.8rem;
-  color: #64748b;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
   max-width: 260px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -503,14 +529,15 @@ tr:last-child td {
   display: inline-block;
   padding: 0.2rem 0.6rem;
   border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
   background: #f1f5f9;
   color: #475569;
   border: 1px solid var(--border);
 }
 
-.badge-stock { font-size: 0.7rem; padding: 0.15rem 0.5rem; }
+.badge-stock { font-family: var(--font-body); font-size: 0.7rem; padding: 0.15rem 0.5rem; }
 .badge-stock--ok { background: #dcfce7; color: #15803d; border-color: #bbf7d0; }
 .badge-stock--out { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
 .badge-stock--low { background: #fef9c3; color: #a16207; border-color: #fde68a; }
@@ -562,8 +589,8 @@ tr:last-child td {
 }
 
 .modal-header h3 {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.25rem;
+  font-family: var(--font-title);
+  font-size: var(--text-xl);
 }
 
 .modal-body {
@@ -602,9 +629,11 @@ tr:last-child td {
 }
 
 .form-group label {
-  font-weight: 600;
-  font-size: 0.85rem;
-  color: #334155;
+  font-family: var(--font-body);
+  font-size: var(--admin-label);
+  font-weight: var(--weight-semibold);
+  color: var(--text-label);
+  margin-bottom: 0.35rem;
 }
 
 .required {
@@ -622,10 +651,10 @@ tr:last-child td {
 }
 
 .admin-section-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #0f172a;
+  font-family: var(--font-title);
+  font-size: var(--admin-block-title);
+  font-weight: var(--weight-semibold);
+  color: var(--text-dark);
   margin-bottom: 0.75rem;
   display: flex;
   align-items: center;
@@ -661,21 +690,26 @@ tr:last-child td {
 }
 
 .switch-card-label {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #334155;
+  font-family: var(--font-body);
+  font-size: var(--admin-btn-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-body);
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
-  padding: 0.55rem 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font-family: inherit;
-  font-size: 0.9rem;
+  height: var(--admin-input-height);
+  padding: var(--admin-input-padding);
+  border: 1.5px solid var(--border);
+  border-radius: var(--admin-input-radius);
+  font-family: var(--font-body);
+  font-size: var(--admin-input);
   background: var(--white);
+  color: var(--text-dark);
   transition: border-color .2s;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .form-group input:focus,
@@ -766,7 +800,8 @@ tr:last-child td {
 }
 
 .form-hint {
-  font-size: 0.75rem;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
   color: var(--text-muted);
   margin-top: 0.25rem;
 }
@@ -778,9 +813,9 @@ tr:last-child td {
 }
 
 .empty-state h3 {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-title);
   margin-bottom: 0.5rem;
-  color: #0f172a;
+  color: var(--text-dark);
 }
 
 .toast-container {
@@ -796,12 +831,13 @@ tr:last-child td {
 .toast {
   padding: 0.85rem 1rem;
   background: var(--white);
-  color: #0f172a;
+  color: var(--text-dark);
   border: 1px solid var(--border);
   border-left: 4px solid var(--accent);
   border-radius: 10px;
   box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-  font-size: 0.9rem;
+  font-family: var(--font-body);
+  font-size: var(--admin-btn);
   animation: slideInRight .3s ease;
   min-width: 280px;
 }
@@ -828,8 +864,9 @@ tr:last-child td {
   margin-top: 0.5rem;
   padding: 0.5rem 0.75rem;
   border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-family: var(--font-body);
+  font-size: var(--admin-btn-sm);
+  font-weight: var(--weight-medium);
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -866,8 +903,9 @@ tr:last-child td {
   margin-top: 0.5rem;
   padding: 0.5rem 0.75rem;
   border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 500;
+  font-family: var(--font-body);
+  font-size: var(--admin-btn-sm);
+  font-weight: var(--weight-medium);
   display: flex;
   align-items: center;
   gap: 0.4rem;
@@ -906,8 +944,8 @@ tr:last-child td {
 }
 
 .login-card h2 {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.5rem;
+  font-family: var(--font-title);
+  font-size: var(--text-2xl);
   text-align: center;
   margin-bottom: 0.5rem;
 }
@@ -989,9 +1027,10 @@ tr:last-child td {
 }
 
 .toggle-label {
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #334155;
+  font-family: var(--font-body);
+  font-size: var(--admin-btn);
+  font-weight: var(--weight-semibold);
+  color: var(--text-body);
   min-width: 60px;
 }
 
@@ -1083,11 +1122,12 @@ tr:last-child td {
 }
 
 .product-image-upload-progress .progress-text {
-  font-size: 0.8rem;
-  color: #64748b;
+  font-family: var(--font-body);
+  font-size: var(--admin-btn-sm);
+  color: var(--text-muted);
   margin-top: 0.35rem;
   text-align: right;
-  font-weight: 600;
+  font-weight: var(--weight-semibold);
 }
 
 .image-upload-zone {
@@ -1137,8 +1177,9 @@ tr:last-child td {
 }
 
 .image-upload-hint {
-  font-size: 0.75rem;
-  color: #94a3b8;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--text-subtle);
   margin-top: 0.75rem;
   text-align: center;
 }
@@ -1160,8 +1201,8 @@ tr:last-child td {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  color: #334155;
-  font-weight: 500;
+  color: var(--text-body);
+  font-weight: var(--weight-medium);
 }
 
 .image-file-size {
@@ -1196,20 +1237,23 @@ tr:last-child td {
 .report-section table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.85rem;
+  font-size: var(--admin-table-body);
+  font-family: var(--font-body);
   margin-bottom: 1rem;
 }
 .report-section th, .report-section td {
-  padding: 0.5rem 0.75rem;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--border);
   text-align: left;
 }
 .report-section th {
   background: #f8fafc;
-  font-weight: 600;
-  color: #64748b;
-  font-size: 0.75rem;
+  font-family: var(--font-body);
+  font-weight: var(--weight-semibold);
+  color: var(--text-table-header);
+  font-size: var(--admin-table-header);
   text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .order-detail-grid {
@@ -1273,9 +1317,9 @@ tr:last-child td {
 }
 
 .order-product-name {
-  font-weight: 600;
-  color: #0f172a;
-  font-size: 0.9rem;
+  font-weight: var(--weight-semibold);
+  color: var(--text-dark);
+  font-size: var(--admin-btn);
 }
 
 .order-product-meta {
@@ -1285,9 +1329,9 @@ tr:last-child td {
 }
 
 .order-product-total {
-  font-weight: 700;
-  color: #0f172a;
-  font-size: 0.9rem;
+  font-weight: var(--weight-bold);
+  color: var(--text-dark);
+  font-size: var(--admin-btn);
   min-width: 80px;
   text-align: right;
 }
@@ -1302,8 +1346,9 @@ tr:last-child td {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.9rem;
-  color: #334155;
+  font-family: var(--font-body);
+  font-size: var(--admin-btn);
+  color: var(--text-body);
 }
 
 .order-total-row span:last-child {
@@ -1313,7 +1358,9 @@ tr:last-child td {
 .order-total-row--grand {
   border-top: 2px solid var(--border);
   padding-top: 0.5rem;
-  font-size: 1.05rem;
+  font-family: var(--font-body);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
 }
 
 .order-total-row--grand span:last-child {
@@ -1364,14 +1411,15 @@ tr:last-child td {
   text-align: center;
 }
 .metric-value {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #0f172a;
+  font-family: var(--font-title);
+  font-size: var(--admin-metric);
+  font-weight: var(--weight-bold);
+  color: var(--text-dark);
 }
 .metric-label {
-  font-size: 0.75rem;
-  color: #64748b;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-top: 0.25rem;
@@ -1396,14 +1444,15 @@ tr:last-child td {
   text-align: center;
 }
 .weekly-value {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #0f172a;
+  font-family: var(--font-title);
+  font-size: var(--admin-metric);
+  font-weight: var(--weight-bold);
+  color: var(--text-dark);
 }
 .weekly-label {
-  font-size: 0.75rem;
-  color: #64748b;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-top: 0.25rem;
@@ -1411,9 +1460,9 @@ tr:last-child td {
 
 /* ==================== SETTINGS ==================== */
 .settings-section-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 1rem;
-  color: #0f172a;
+  font-family: var(--font-title);
+  font-size: var(--admin-block-title);
+  color: var(--text-dark);
   margin: 1.5rem 0 0.75rem;
   padding-bottom: 0.5rem;
   border-bottom: 1px solid var(--border);
@@ -1465,10 +1514,10 @@ tr:last-child td {
 }
 
 .hero-slot-label {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-title);
   font-size: 19px;
-  font-weight: 700;
-  color: #0f172a;
+  font-weight: var(--weight-bold);
+  color: var(--text-dark);
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
@@ -1483,8 +1532,9 @@ tr:last-child td {
 }
 
 .hero-slot-badge {
+  font-family: var(--font-body);
   font-size: 0.68rem;
-  font-weight: 700;
+  font-weight: var(--weight-bold);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   padding: 0.3rem 0.8rem;
@@ -1561,15 +1611,17 @@ tr:last-child td {
 }
 
 .hero-slot-preview-action {
-  font-size: 0.72rem;
-  font-weight: 600;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
   color: #fff;
   letter-spacing: 0.04em;
 }
 
 .hero-slot-preview-label {
-  font-size: 0.72rem;
-  font-weight: 700;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted, #9a7a88);
@@ -1589,8 +1641,9 @@ tr:last-child td {
 }
 
 .hero-slot-body .form-group label {
-  font-size: 0.7rem;
-  font-weight: 700;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted, #9a7a88);
@@ -1698,7 +1751,8 @@ textarea.hero-slot-input {
 }
 
 .hero-slot-id {
-  font-size: 0.75rem;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
   color: var(--text-muted, #64748b);
   white-space: nowrap;
 }
@@ -1802,20 +1856,23 @@ textarea.hero-slot-input {
   transform: translateX(22px);
 }
 .testimonial-active-toggle .toggle-label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #334155;
+  font-family: var(--font-body);
+  font-size: var(--admin-btn-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-body);
 }
 
 /* ==================== TEXT PREVIEW ==================== */
 /* ==================== QUICK DATE BTNS ==================== */
 .quick-date-btn {
   padding: 0.35rem 0.75rem;
-  font-size: 0.8rem;
+  font-family: var(--font-body);
+  font-size: var(--admin-btn-sm);
+  font-weight: var(--weight-medium);
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--white);
-  color: #334155;
+  color: var(--text-body);
   cursor: pointer;
   transition: all .2s;
 }
@@ -1841,12 +1898,12 @@ textarea.hero-slot-input {
 .pagination-bar .btn-sm {
   min-width: 32px;
   padding: 0.3rem 0.6rem;
-  font-size: 0.8rem;
+  font-size: var(--admin-btn-sm);
 }
 .page-ellipsis {
   padding: 0.3rem 0.5rem;
-  color: #94a3b8;
-  font-size: 0.9rem;
+  color: var(--text-subtle);
+  font-size: var(--admin-btn-sm);
 }
 
 /* ==================== SHIPPING ZONES ==================== */
@@ -1869,7 +1926,8 @@ textarea.hero-slot-input {
   border: 1.5px solid var(--border);
   border-radius: 6px;
   padding: 2px 6px;
-  font-size: 0.75rem;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
   background: var(--white);
   color: var(--text-dark);
   min-width: 100px;
@@ -1900,9 +1958,10 @@ textarea.hero-slot-input {
 /* ==================== PRODUCT MODAL REDESIGN ==================== */
 
 .form-group--primary label {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #0f172a;
+  font-family: var(--font-body);
+  font-size: var(--admin-label);
+  font-weight: var(--weight-bold);
+  color: var(--text-dark);
 }
 
 .form-group--primary input {
@@ -1925,11 +1984,12 @@ textarea.hero-slot-input {
 }
 
 .field-error {
-  font-size: 0.75rem;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
   color: #dc2626;
   margin-top: 0.25rem;
   min-height: 1.1em;
-  font-weight: 500;
+  font-weight: var(--weight-medium);
 }
 
 .form-group.is-invalid input,
@@ -2013,9 +2073,10 @@ textarea.hero-slot-input {
 }
 
 .dropzone-content span {
-  font-weight: 600;
-  color: #334155;
-  font-size: 0.9rem;
+  font-family: var(--font-body);
+  font-weight: var(--weight-semibold);
+  color: var(--text-body);
+  font-size: var(--admin-btn);
 }
 
 .dropzone-content small {
@@ -2230,16 +2291,20 @@ textarea.hero-slot-input {
 }
 
 .admin-header h1 {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.4rem;
-  color: #0f172a;
+  font-family: var(--font-title);
+  font-size: var(--admin-title);
+  color: var(--text-dark);
   margin: 0;
 }
 
 .admin-header .header-breadcrumb {
-  font-size: 0.8rem;
-  color: #64748b;
+  font-family: var(--font-body);
+  font-size: var(--admin-subtitle);
+  color: var(--text-muted);
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.01em;
   margin-top: 0.2rem;
+  display: block;
 }
 
 .admin-header-right {
@@ -2252,8 +2317,9 @@ textarea.hero-slot-input {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.85rem;
-  color: #334155;
+  font-family: var(--font-body);
+  font-size: var(--admin-btn-sm);
+  color: var(--text-body);
 }
 
 .admin-header-right .user-info .user-avatar {
@@ -2292,7 +2358,9 @@ textarea.hero-slot-input {
   color: var(--rose-dark);
   cursor: pointer;
   padding: 0.3rem 0.6rem;
-  font-size: 0.85rem;
+  font-family: var(--font-body);
+  font-size: var(--admin-btn-sm);
+  font-weight: var(--weight-medium);
   border-radius: 6px;
   transition: all .2s;
   display: inline-flex;
@@ -2345,9 +2413,10 @@ textarea.hero-slot-input {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: #0f172a;
+  font-family: var(--font-body);
+  font-weight: var(--weight-semibold);
+  font-size: var(--admin-btn);
+  color: var(--text-dark);
   transition: all .2s;
 }
 
@@ -2382,7 +2451,8 @@ textarea.hero-slot-input {
 }
 
 .price-display {
-  font-weight: 700;
+  font-family: var(--font-body);
+  font-weight: var(--weight-bold);
   color: var(--rose-dark);
   min-width: 80px;
 }
@@ -2402,8 +2472,9 @@ textarea.hero-slot-input {
   padding: 0.3rem 0.5rem;
   border: 1px solid var(--rose-light);
   border-radius: 6px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-family: var(--font-body);
+  font-size: var(--admin-btn-sm);
+  font-weight: var(--weight-semibold);
   text-align: right;
 }
 
@@ -2480,9 +2551,9 @@ textarea.hero-slot-input {
 }
 
 .metric-value {
-  font-family: 'Playfair Display', serif;
-  font-size: 1.75rem;
-  font-weight: 700;
+  font-family: var(--font-title);
+  font-size: var(--admin-metric);
+  font-weight: var(--weight-bold);
   color: var(--rose-dark);
 }
 
@@ -2510,8 +2581,9 @@ textarea.hero-slot-input {
   display: inline-block;
   padding: 0.2rem 0.6rem;
   border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 600;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -2548,8 +2620,9 @@ textarea.hero-slot-input {
 }
 
 .text-editor-item label {
-  font-size: 0.7rem;
-  font-weight: 700;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: #64748b;
@@ -2644,9 +2717,10 @@ textarea.hero-slot-input {
 }
 
 .switch-label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #334155;
+  font-family: var(--font-body);
+  font-size: var(--admin-btn-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-body);
 }
 
 /* ==================== EMPTY STATE ==================== */
@@ -2658,9 +2732,9 @@ textarea.hero-slot-input {
 }
 
 .empty-state h3 {
-  font-family: 'Playfair Display', serif;
+  font-family: var(--font-title);
   margin-bottom: 0.5rem;
-  color: #0f172a;
+  color: var(--text-dark);
 }
 
 /* ==================== PAGINATION BAR ==================== */
@@ -2791,7 +2865,8 @@ textarea.hero-slot-input {
   transform: translateX(-50%);
   opacity: 0;
   transition: opacity 0.2s;
-  font-size: 0.72rem;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
   pointer-events: none;
 }
 
@@ -2806,8 +2881,9 @@ textarea.hero-slot-input {
   display: inline-block;
   padding: 0.15rem 0.55rem;
   border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 600;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
   white-space: nowrap;
 }
 
@@ -2834,8 +2910,9 @@ textarea.hero-slot-input {
 }
 
 .sticky-save-bar .save-summary {
-  font-size: 0.85rem;
-  color: #64748b;
+  font-family: var(--font-body);
+  font-size: var(--admin-btn-sm);
+  color: var(--text-muted);
 }
 
 .sticky-save-bar .save-actions {
@@ -2848,25 +2925,28 @@ textarea.hero-slot-input {
 .order-items-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.85rem;
+  font-size: var(--admin-table-body);
+  font-family: var(--font-body);
   margin-top: 0.75rem;
 }
 
 .order-items-table th,
 .order-items-table td {
-  padding: 0.5rem 0.75rem;
+  padding: 0.75rem 1rem;
   text-align: left;
   border-bottom: 1px solid var(--border);
-  font-size: 0.82rem;
+  font-family: var(--font-body);
+  font-size: var(--admin-table-body);
 }
 
 .order-items-table th {
   background: #f8fafc;
-  font-weight: 600;
-  color: #64748b;
-  font-size: 0.72rem;
+  font-family: var(--font-body);
+  font-weight: var(--weight-semibold);
+  color: var(--text-table-header);
+  font-size: var(--admin-table-header);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
 }
 
 /* ==================== DARK MODE ==================== */
@@ -3055,8 +3135,9 @@ textarea.hero-slot-input {
 }
 
 .feature-sub-card-label {
-  font-size: 0.7rem;
-  font-weight: 700;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-muted);
@@ -3298,15 +3379,16 @@ textarea.hero-slot-input {
 /* ==================== TRANSACTION TABLE ==================== */
 #transactionsTable th,
 #transactionsTable td {
-  padding: 0.75rem;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--border);
   text-align: left;
-  font-size: 0.9rem;
+  font-size: var(--admin-table-body);
 }
 #transactionsTable th {
-  font-weight: 600;
-  color: #64748b;
-  font-size: 0.75rem;
+  font-family: var(--font-body);
+  font-weight: var(--weight-semibold);
+  color: var(--text-table-header);
+  font-size: var(--admin-table-header);
   text-transform: uppercase;
   background: #f8fafc;
 }
@@ -3315,8 +3397,9 @@ textarea.hero-slot-input {
   color: #166534;
   padding: 0.25rem 0.6rem;
   border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
   display: inline-block;
 }
 .badge-status--pending {
@@ -3324,8 +3407,9 @@ textarea.hero-slot-input {
   color: #854d0e;
   padding: 0.25rem 0.6rem;
   border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
   display: inline-block;
 }
 .badge-status--cancelled {
@@ -3333,8 +3417,9 @@ textarea.hero-slot-input {
   color: #991b1b;
   padding: 0.25rem 0.6rem;
   border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
   display: inline-block;
 }
 .badge-status--processing {
@@ -3342,8 +3427,9 @@ textarea.hero-slot-input {
   color: #3730a3;
   padding: 0.25rem 0.6rem;
   border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
   display: inline-block;
 }
 
@@ -3369,14 +3455,15 @@ textarea.hero-slot-input {
 }
 .transaction-detail th,
 .transaction-detail td {
-  padding: 0.5rem;
+  padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--border);
   text-align: left;
-  font-size: 0.9rem;
+  font-size: var(--admin-table-body);
 }
 .transaction-detail th {
-  font-weight: 600;
-  color: #64748b;
+  font-family: var(--font-body);
+  font-weight: var(--weight-semibold);
+  color: var(--text-table-header);
   background: #f8fafc;
 }
 
@@ -3407,7 +3494,7 @@ textarea.hero-slot-input {
     height: 260px;
   }
   #transactionsTable {
-    font-size: 0.8rem;
+    font-size: var(--admin-table-body);
   }
   #transactionsTable th,
   #transactionsTable td {

@@ -29,7 +29,7 @@ if (process.env.SENTRY_DSN) {
       tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
     });
   } catch (err) {
-    console.warn('Sentry no disponible:', err.message);
+    logger.warn('Sentry no disponible:', err.message);
   }
 }
 
@@ -71,9 +71,9 @@ if (isProduction) {
 }
 
 if (missingEnvVars.length > 0) {
-  console.error('='.repeat(60));
-  console.error('FALTAN VARIABLES DE ENTORNO REQUERIDAS');
-  console.error('='.repeat(60));
+  logger.error('='.repeat(60));
+  logger.error('FALTAN VARIABLES DE ENTORNO REQUERIDAS');
+  logger.error('='.repeat(60));
   missingEnvVars.forEach(key => {
     let hint = '';
     if (key === 'JWT_SECRET') hint = ' (generar con: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"';
@@ -81,9 +81,9 @@ if (missingEnvVars.length > 0) {
     else if (key === 'ADMIN_PASS_HASH') hint = ' (generar con: npx bcrypt-cli hash)';
     else if (key === 'DATABASE_URL') hint = ' (connection string de PostgreSQL)';
     else if (key === 'ALLOWED_ORIGINS') hint = ' (ej: https://tudominio.com,http://localhost:3000)';
-    console.error(`  ${key} → requerido${hint}`);
+    logger.error(`  ${key} → requerido${hint}`);
   });
-  console.error('='.repeat(60));
+  logger.error('='.repeat(60));
   process.exit(1);
 }
 
@@ -168,7 +168,7 @@ if (process.env.REDIS_URL) {
     const RedisStore = require('./lib/redisStore');
     rateLimitStore = new RedisStore();
   } catch (err) {
-    console.warn('Redis store no disponible, usando memoria:', err.message);
+    logger.warn('Redis store no disponible, usando memoria:', err.message);
   }
 }
 
@@ -457,7 +457,6 @@ const dbReady = initDB().then(async () => {
   }
 }).catch(err => {
   logger.error({ err: err.message, stack: err.stack }, 'Error inicializando DB');
-  console.error('Error inicializando DB:', err);
 });
 
 if (process.env.REDIS_URL) {

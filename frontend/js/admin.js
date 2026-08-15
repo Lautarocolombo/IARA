@@ -107,7 +107,9 @@ async function doLogin() {
     }
      authToken = data.token;
     localStorage.setItem('ag_admin_token', authToken);
-    const userNameEl = document.getElementById('adminUserName');
+    localStorage.setItem('ag_admin_user', data.user || '');
+    localStorage.setItem('ag_admin_role', data.role || '');
+    var userNameEl = document.getElementById('adminUserName');
     if (userNameEl && data.user) userNameEl.textContent = data.user;
     window.location.href = '../pages/dashboard.html';
   } catch (err) {
@@ -145,6 +147,8 @@ async function doLogout() {
   }
   authToken = '';
   localStorage.removeItem('ag_admin_token');
+  localStorage.removeItem('ag_admin_user');
+  localStorage.removeItem('ag_admin_role');
   window.location.href = '../index.html';
 }
 
@@ -220,7 +224,14 @@ window.togglePasswordVisibility = togglePasswordVisibility;
 window.checkServerHealth = checkServerHealth;
 window.showLoginError = showLoginError;
 window.clearLoginError = clearLoginError;
-window.getAuthToken = function() { return authToken; };
+window.getAuthToken = function() { return localStorage.getItem('ag_admin_token') || ''; };
+window.getCurrentUser = function() {
+  return {
+    username: localStorage.getItem('ag_admin_user') || '',
+    role: localStorage.getItem('ag_admin_role') || ''
+  };
+};
+window.getAdminRole = function() { return localStorage.getItem('ag_admin_role') || ''; };
 window.adminFetch = adminFetch;
 
 window.addEventListener('error', function(event) {

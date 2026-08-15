@@ -10,6 +10,8 @@ function initPayment() {
   }
 }
 
+window.initPayment = initPayment;
+
 document.addEventListener('DOMContentLoaded', function () {
   initPayment();
 });

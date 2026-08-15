@@ -56,7 +56,6 @@ const getSiteTexts = async (req, res) => {
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json(map);
   } catch (err) {
-    console.error('siteTexts error', err);
     logger.error('Error obteniendo textos:', err);
     const debug = process.env.DEBUG_API_ERROR;
     res.status(500).json({ error: debug ? err.message : 'Error interno del servidor' });

@@ -4,6 +4,16 @@
 (function () {
   'use strict';
 
+  var SECTION_ROLES = {
+    content:    ['admin', 'editor', 'viewer'],
+    products:   ['admin', 'editor', 'viewer'],
+    categories: ['admin', 'editor', 'viewer'],
+    sales:      ['admin'],
+    payments:   ['admin'],
+    orders:     ['admin', 'editor', 'viewer'],
+    users:      ['admin']
+  };
+
   var SECTION_MAP = {
     content:    { title: 'Contenido del sitio',  breadcrumb: 'Editar textos visibles del frontend' },
     products:   { title: 'Productos',          breadcrumb: 'Crear, editar y gestionar productos' },
@@ -59,6 +69,33 @@
     });
   }
 
+  function getCurrentRole() {
+    return localStorage.getItem('ag_admin_role') || 'admin';
+  }
+
+  function applyRoleVisibility() {
+    var role = getCurrentRole();
+    var adminNav = document.getElementById('adminNav');
+    if (!adminNav) return;
+
+    var navLinks = adminNav.querySelectorAll('a[data-section]');
+    navLinks.forEach(function (link) {
+      var section = link.getAttribute('data-section');
+      var allowed = SECTION_ROLES[section];
+      if (!allowed || allowed.indexOf(role) === -1) {
+        link.style.display = 'none';
+      }
+    });
+
+    Object.keys(SECTION_MAP).forEach(function (section) {
+      var allowed = SECTION_ROLES[section];
+      var el = document.getElementById('section-' + section);
+      if ((allowed && allowed.indexOf(role) === -1) && el) {
+        el.style.display = 'none';
+      }
+    });
+  }
+
   function switchSection(section) {
     var sections = document.querySelectorAll('.admin-section-active, .admin-section-inactive');
     sections.forEach(function (el) {
@@ -96,12 +133,14 @@
 
   function initAdminDashboard() {
     setupNavigation();
+    applyRoleVisibility();
 
     if (isTokenPresent()) {
       checkAuth().then(function (ok) {
         if (ok) {
+          var user = window.getCurrentUser ? window.getCurrentUser() : { username: 'Admin', role: 'admin' };
           var tokenEl = document.getElementById('adminUserName');
-          if (tokenEl) tokenEl.textContent = 'Iara';
+          if (tokenEl && user.username) tokenEl.textContent = user.username;
         }
       });
       updateLowStockIndicator();
@@ -136,6 +175,9 @@
   }
 
   window.updateLowStockIndicator = updateLowStockIndicator;
+  window.applyRoleVisibility = applyRoleVisibility;
+  window.getCurrentRole = getCurrentRole;
+  window.SECTION_ROLES = SECTION_ROLES;
 
   window.initAdminDashboard = initAdminDashboard;
   window.switchSection = switchSection;

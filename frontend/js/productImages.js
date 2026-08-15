@@ -605,6 +605,8 @@ xhr.addEventListener('load', () => {
     removePendingFile,
     renderPendingPreview,
     renderPendingFileList,
-    addPendingUrl
+    addPendingUrl,
+    addPendingFiles,
+    renderGallery
   };
 })();

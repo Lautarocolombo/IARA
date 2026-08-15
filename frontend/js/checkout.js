@@ -79,19 +79,23 @@
     const container = document.getElementById('summaryItems');
     const totals = document.getElementById('summaryTotals');
     const hasPendingOrder = !!sessionStorage.getItem('ag_last_order');
-    document.getElementById('emptyCart').style.display = items.length || hasPendingOrder ? 'none' : 'block';
-    document.getElementById('checkoutContent').style.display = items.length || hasPendingOrder ? 'grid' : 'none';
+    const emptyCart = document.getElementById('emptyCart');
+    const checkoutContent = document.getElementById('checkoutContent');
+    if (emptyCart) emptyCart.style.display = items.length || hasPendingOrder ? 'none' : 'block';
+    if (checkoutContent) checkoutContent.style.display = items.length || hasPendingOrder ? 'grid' : 'none';
 
-    container.innerHTML = items.map(it => `
-      <div class="item-row">
-        <div class="item-thumb">${it.image ? `${window.renderProductImage(it.image, it.name, { placeholder: '📿' })}` : (it.emoji || '📿')}</div>
-        <div class="item-meta">
-          <h4>${it.name}</h4>
-          <p>Cantidad: ${it.qty}</p>
+    if (container) {
+      container.innerHTML = items.map(it => `
+        <div class="item-row">
+          <div class="item-thumb">${it.image ? `${window.renderProductImage(it.image, it.name, { placeholder: '📿' })}` : (it.emoji || '📿')}</div>
+          <div class="item-meta">
+            <h4>${it.name}</h4>
+            <p>Cantidad: ${it.qty}</p>
+          </div>
+          <div class="item-price">${formatARS(it.price * it.qty)}</div>
         </div>
-        <div class="item-price">${formatARS(it.price * it.qty)}</div>
-      </div>
-    `).join('');
+      `).join('');
+    }
 
     const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
     const freeShippingFrom = Number(CONFIG.CART.SHIPPING_THRESHOLD) || 0;
@@ -111,12 +115,14 @@
     const couponDiscount = appliedCoupon ? Number(appliedCoupon.discount || 0) : 0;
     const total = subtotal - couponDiscount + shipping;
 
-    totals.innerHTML = `
-      <div class="summary-row"><span>Subtotal productos</span><span>${formatARS(subtotal)}</span></div>
-      ${couponDiscount > 0 ? `<div class="summary-row" style="color:#10b981;"><span>Descuento</span><span>-${formatARS(couponDiscount)}</span></div>` : ''}
-      <div class="summary-row"><span>Envío</span><span>${shippingLabel}</span></div>
-      <div class="summary-row total"><span>Total</span><span>${formatARS(total)}</span></div>
-    `;
+    if (totals) {
+      totals.innerHTML = `
+        <div class="summary-row"><span>Subtotal productos</span><span>${formatARS(subtotal)}</span></div>
+        ${couponDiscount > 0 ? `<div class="summary-row" style="color:#10b981;"><span>Descuento</span><span>-${formatARS(couponDiscount)}</span></div>` : ''}
+        <div class="summary-row"><span>Envío</span><span>${shippingLabel}</span></div>
+        <div class="summary-row total"><span>Total</span><span>${formatARS(total)}</span></div>
+      `;
+    }
 
     const progressWrap = document.getElementById('freeShippingProgressCheckout');
     const progressFill = document.getElementById('freeShippingFillCheckout');
@@ -229,7 +235,9 @@
   }
 
   let isSubmitting = false;
-  document.getElementById('shippingForm').addEventListener('submit', async (e) => {
+  const shippingForm = document.getElementById('shippingForm');
+  if (shippingForm) {
+    shippingForm.addEventListener('submit', async (e) => {
     if (isSubmitting) return;
     isSubmitting = true;
     e.preventDefault();
@@ -438,6 +446,7 @@
       }
     }
   });
+}
 
   window.addEventListener('storage', updateSummary);
 
@@ -592,4 +601,21 @@
   const applyCouponBtn = document.getElementById('applyCouponBtn');
   if (applyCouponBtn) {
     applyCouponBtn.addEventListener('click', applyCoupon);
+  }
+
+  window.checkout = {
+    validateField,
+    updateSummary,
+    fetchShippingDiff,
+    applyCoupon,
+    loadMpAlias,
+    copyMpAlias,
+    copyTransferField,
+    showFieldError,
+    clearFieldError,
+    restoreOrderFromSession
+  };
+
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = window.checkout;
   }

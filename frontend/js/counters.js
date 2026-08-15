@@ -1,9 +1,6 @@
 'use strict';
 
 (function() {
-  const counters = document.querySelectorAll('.stat-number[data-target]');
-  if (!counters.length) return;
-
   function animateCount(el) {
     const target = parseInt(el.getAttribute('data-target'), 10);
     if (isNaN(target)) return;
@@ -27,11 +24,16 @@
     requestAnimationFrame(tick);
   }
 
+  window.animateCount = window.animateCount || animateCount;
+
+  const counters = document.querySelectorAll('.stat-number[data-target]');
+  if (!counters.length) return;
+
   if ('IntersectionObserver' in window) {
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          animateCount(entry.target);
+          window.animateCount(entry.target);
           observer.unobserve(entry.target);
         }
       });
@@ -39,8 +41,6 @@
 
     counters.forEach(el => observer.observe(el));
   } else {
-    counters.forEach(el => animateCount(el));
+    counters.forEach(el => window.animateCount(el));
   }
-
-  window.animateCount = animateCount;
 })();

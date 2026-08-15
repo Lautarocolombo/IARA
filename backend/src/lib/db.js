@@ -31,7 +31,7 @@ function createPool(connectionString) {
   return new Pool({
     connectionString: finalConnectionString,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-    max: 5,
+    max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,
     allowExitOnIdle: false
@@ -432,6 +432,7 @@ async function initDB() {
       role TEXT DEFAULT 'admin',
       permissions TEXT DEFAULT '{}',
       active BOOLEAN DEFAULT TRUE,
+      last_login DATETIME,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
@@ -455,6 +456,11 @@ async function initDB() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
     logger.info('Tablas de base de datos inicializadas (SQLite)');
+    try {
+      await query('ALTER TABLE users ADD COLUMN last_login DATETIME');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna last_login ya existe o no se pudo agregar (SQLite)');
+    }
    try {
      await ensureAdminUser();
    } catch (err) {

@@ -5,7 +5,7 @@ jest.mock('../src/lib/tokenBlacklist', () => ({
 
 const jwt = require('jsonwebtoken');
 const tokenBlacklist = require('../src/lib/tokenBlacklist');
-const { adminAuth, adminOnly, requirePermission } = require('../src/middleware/auth');
+const { adminAuth, adminOnly, requirePermission, getRolePermissions, ROLE_PERMISSIONS } = require('../src/middleware/auth');
 
 describe('auth middleware', () => {
   beforeEach(() => {
@@ -238,6 +238,108 @@ describe('auth middleware', () => {
 
       expect(res.status).toHaveBeenCalledWith(401);
       expect(res.json).toHaveBeenCalledWith({ error: 'No autorizado' });
+    });
+  });
+
+  describe('ROLE_PERMISSIONS', () => {
+    test('admin tiene todos los permisos sensibles', () => {
+      expect(ROLE_PERMISSIONS.admin).toContain('earnings:read');
+      expect(ROLE_PERMISSIONS.admin).toContain('payments:read');
+      expect(ROLE_PERMISSIONS.admin).toContain('payments:write');
+      expect(ROLE_PERMISSIONS.admin).toContain('users:read');
+      expect(ROLE_PERMISSIONS.admin).toContain('users:write');
+      expect(ROLE_PERMISSIONS.admin).toContain('users:delete');
+    });
+
+    test('editor NO tiene permisos de ganancias/pagos/usuarios', () => {
+      expect(ROLE_PERMISSIONS.editor).not.toContain('earnings:read');
+      expect(ROLE_PERMISSIONS.editor).not.toContain('payments:read');
+      expect(ROLE_PERMISSIONS.editor).not.toContain('payments:write');
+      expect(ROLE_PERMISSIONS.editor).not.toContain('reports:read');
+      expect(ROLE_PERMISSIONS.editor).not.toContain('users:read');
+      expect(ROLE_PERMISSIONS.editor).not.toContain('users:write');
+      expect(ROLE_PERMISSIONS.editor).not.toContain('users:delete');
+    });
+
+    test('editor tiene permisos de productos, categorías y contenido', () => {
+      expect(ROLE_PERMISSIONS.editor).toContain('products:read');
+      expect(ROLE_PERMISSIONS.editor).toContain('products:write');
+      expect(ROLE_PERMISSIONS.editor).toContain('categories:read');
+      expect(ROLE_PERMISSIONS.editor).toContain('categories:write');
+      expect(ROLE_PERMISSIONS.editor).toContain('site:read');
+      expect(ROLE_PERMISSIONS.editor).toContain('orders:read');
+    });
+
+    test('getRolePermissions retorna el array correcto', () => {
+      const adminPerms = getRolePermissions('admin');
+      const editorPerms = getRolePermissions('editor');
+      const unknownPerms = getRolePermissions('unknown');
+
+      expect(adminPerms).toEqual(expect.arrayContaining(['products:write']));
+      expect(editorPerms).toEqual(expect.arrayContaining(['products:write']));
+      expect(unknownPerms).toEqual([]);
+    });
+  });
+
+  describe('requirePermission en endpoints sensibles', () => {
+    test('adminOnly deniende acceso a editor (Ganancias/Medios de Pago/Usuarios)', () => {
+      const req = { user: { role: 'editor' } };
+      const res = {
+        status: jest.fn(() => res),
+        json: jest.fn()
+      };
+      const next = jest.fn();
+
+      adminOnly(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Solo administradores' });
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    test('requirePermission deniende earnings:read a editor', () => {
+      const middleware = requirePermission('earnings:read');
+      const req = { user: { role: 'editor', permissions: {} } };
+      const res = {
+        status: jest.fn(() => res),
+        json: jest.fn()
+      };
+      const next = jest.fn();
+
+      middleware(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    test('requirePermission deniende payments:write a editor', () => {
+      const middleware = requirePermission('payments:write');
+      const req = { user: { role: 'editor', permissions: {} } };
+      const res = {
+        status: jest.fn(() => res),
+        json: jest.fn()
+      };
+      const next = jest.fn();
+
+      middleware(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    test('requirePermission deniende users:write a editor', () => {
+      const middleware = requirePermission('users:write');
+      const req = { user: { role: 'editor', permissions: {} } };
+      const res = {
+        status: jest.fn(() => res),
+        json: jest.fn()
+      };
+      const next = jest.fn();
+
+      middleware(req, res, next);
+
+      expect(res.status).toHaveBeenCalledWith(403);
+      expect(next).not.toHaveBeenCalled();
     });
   });
 });

@@ -136,8 +136,8 @@
         const cardsHtml = data.map((card, i) => {
           const imgSrc = card.imagen || '';
           const imgHtml = imgSrc
-            ? `<img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(card.titulo || '')}" loading="lazy" />`
-            : (i === 0 ? '📿' : '📿');
+            ? window.renderProductImage(imgSrc, card.titulo || '', { style: 'width:100%;height:100%;object-fit:cover;' })
+            : window.renderProductImage('', card.titulo || '', { style: 'width:100%;height:100%;object-fit:cover;', placeholder: i === 0 ? '📿' : '📿' });
 
           return `
             <div class="hero-card" data-hero-card="${i + 1}">
@@ -169,4 +169,6 @@
   window.loadHeroCards = loadHeroCards;
   window.renderHeroCards = renderHeroCards;
   window.loadHeroImage = loadHeroImage;
+  window.escapeHtml = escapeHtml;
+  window.sanitizeHtml = sanitizeHtml;
 })();

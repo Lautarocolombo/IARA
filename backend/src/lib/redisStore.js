@@ -1,4 +1,5 @@
 const Redis = require('ioredis');
+const logger = require('./logger');
 
 function isRedisUrlValid(url) {
   if (!url || typeof url !== 'string') return false;
@@ -22,9 +23,9 @@ class RedisStore {
       maxRetriesPerRequest: null,
       retryStrategy: (times) => {
         const delay = Math.min(1000 * Math.pow(2, times), 30000);
-        console.warn(`[rate-limit] Reintentando conexión a Redis (intento ${times}, delay ${delay}ms)`);
+        logger.warn(`[rate-limit] Reintentando conexión a Redis (intento ${times}, delay ${delay}ms)`);
         if (times >= 10) {
-          console.error('[rate-limit] Se agotaron los reintentos de conexión a Redis');
+          logger.error('[rate-limit] Se agotaron los reintentos de conexión a Redis');
           return null;
         }
         return delay;
@@ -34,11 +35,11 @@ class RedisStore {
     });
 
     this.redis.on('connect', () => {
-      console.log('[rate-limit] Redis conectado');
+      logger.info('[rate-limit] Redis conectado');
     });
 
     this.redis.on('error', (err) => {
-      console.warn('[rate-limit] Redis error:', err.message);
+      logger.warn('[rate-limit] Redis error:', err.message);
     });
   }
 

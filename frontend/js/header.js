@@ -100,14 +100,17 @@ function initSiteHeader(options) {
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', autoInitSiteHeader);
-} else {
+} else if (!window.__skipHeaderAutoInit) {
   autoInitSiteHeader();
 }
+
+window.initSiteHeader = initSiteHeader;
+window.autoInitSiteHeader = autoInitSiteHeader;
 
 function autoInitSiteHeader() {
   if (window.__siteHeaderInitialized) return;
   var path = window.location.pathname;
   var isHome = path === '/' || path.endsWith('/index.html') || path === '';
   window.__siteHeaderInitialized = true;
-  initSiteHeader({ showBackButton: !isHome });
+  window.initSiteHeader({ showBackButton: !isHome });
 }

@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs');
 
 const getUsers = async (req, res) => {
   try {
-    const result = await query('SELECT id, username, role, permissions, active, created_at, updated_at FROM users ORDER BY created_at DESC');
+    const result = await query('SELECT id, username, role, permissions, active, last_login, created_at, updated_at FROM users ORDER BY created_at DESC');
     const users = result.rows.map(u => ({
       ...u,
       permissions: typeof u.permissions === 'string' ? JSON.parse(u.permissions || '{}') : (u.permissions || {})

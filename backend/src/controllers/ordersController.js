@@ -373,39 +373,6 @@ const deleteOrder = async (req, res) => {
   }
 };
 
-// Bulk delete removido del flujo público/admin
-// const deleteMultipleOrders = async (req, res) => {
-//   const ids = (req.body.ids || []).map(Number).filter(Boolean);
-//   if (!ids.length) return res.status(400).json({ error: 'No se proporcionaron IDs de pedidos' });
-//   try {
-//     const results = { deleted: 0, errors: [] };
-//     for (const id of ids) {
-//       try {
-//         const orderResult = await query('SELECT * FROM orders WHERE id = $1', [id]);
-//         if (orderResult.rows.length === 0) {
-//           results.errors.push(`Pedido #${id} no encontrado`);
-//           continue;
-//         }
-//         const order = orderResult.rows[0];
-//         const items = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
-//         if (order.status === 'pending' || order.status === 'confirmed' || order.status === 'cancelled') {
-//           await restoreStockForOrder(items);
-//         }
-//         const user = req.user?.user || 'admin';
-//         await logActivity(user, 'delete', 'order', id, `Pedido #${id} eliminado (bulk)`, req.ip || '');
-//         await query('DELETE FROM orders WHERE id = $1', [id]);
-//         results.deleted++;
-//       } catch (err) {
-//         results.errors.push(`Error eliminando pedido #${id}: ${err.message}`);
-//       }
-//     }
-//     res.json(results);
-//   } catch (err) {
-//     logger.error({ err: err.message }, 'Error en eliminación masiva de pedidos');
-//     res.status(500).json({ error: 'Error interno del servidor' });
-//   }
-// };
-
 const updateOrderNotes = async (req, res) => {
   const id = Number(req.params.id);
   const { notes } = req.body || {};

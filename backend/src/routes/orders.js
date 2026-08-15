@@ -16,7 +16,6 @@ router.patch('/admin/orders/:id/status', adminAuth, updateOrderStatus);
 router.put('/admin/orders/:id/notes', adminAuth, updateOrderNotes);
 router.post('/admin/orders/:id/activity', adminAuth, addOrderActivity);
 router.get('/admin/orders/:id/activity', adminAuth, getOrderActivities);
-// router.delete('/admin/orders/bulk', adminAuth, deleteMultipleOrders);
 router.get('/admin/orders/:id', adminAuth, getOrderDetail);
 router.delete('/admin/orders/:id', adminAuth, deleteOrder);
 
