@@ -131,6 +131,40 @@ describe('header.js', () => {
     expect(quickLink.textContent).toContain('Mis pedidos');
   });
 
+  test('initSiteHeader con showBackButton true usa ordersHref correcto para subdirectorio', () => {
+    Object.defineProperty(window, 'location', {
+      value: { pathname: '/pages/wishlist.html' },
+      writable: true,
+      configurable: true
+    });
+    require('../../frontend/js/header');
+    window.initSiteHeader({ showBackButton: true });
+    const ordersLink = document.querySelector('.nav-quick-link');
+    expect(ordersLink).not.toBeNull();
+    expect(ordersLink.getAttribute('href')).toBe('../pages/orders.html');
+  });
+
+  test('initSiteHeader con showBackButton true usa ordersHref correcto para raíz', () => {
+    Object.defineProperty(window, 'location', {
+      value: { pathname: '/index.html' },
+      writable: true,
+      configurable: true
+    });
+    require('../../frontend/js/header');
+    window.initSiteHeader({ showBackButton: true });
+    const ordersLink = document.querySelector('.nav-quick-link');
+    expect(ordersLink).not.toBeNull();
+    expect(ordersLink.getAttribute('href')).toBe('pages/orders.html');
+  });
+
+  test('initSiteHeader respeta ordersHref personalizado', () => {
+    require('../../frontend/js/header');
+    window.initSiteHeader({ showBackButton: true, ordersHref: 'custom-orders.html' });
+    const ordersLink = document.querySelector('.nav-quick-link');
+    expect(ordersLink).not.toBeNull();
+    expect(ordersLink.getAttribute('href')).toBe('custom-orders.html');
+  });
+
   test('initSiteHeader con showBackButton true agrega enlace a favoritos', () => {
     require('../../frontend/js/header');
     window.initSiteHeader({ showBackButton: true });

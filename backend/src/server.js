@@ -108,7 +108,7 @@ if (Sentry) {
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(sanitizeBody);
+app.use(sanitizeBody({ excludeKeys: ['about_text'] }));
 app.use(require('compression')());
 
 const envOrigins = (process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || '').split(',').filter(Boolean);
@@ -295,8 +295,7 @@ app.use('/api', tenantContext);
 app.use('/api', csrfProtection);
 app.use('/api', limiter);
 
-app.use('/api/admin', require('./routes/users'));
-app.use('/api', require('./routes/coupons'));
+app.use('/api/admin', require('./routes/coupons'));
 
 app.get('/metrics', (req, res) => {
   const clientIp = req.ip || req.connection.remoteAddress || '';

@@ -39,11 +39,12 @@
     var btn = document.getElementById(btnId);
     var load = document.getElementById(loadingId);
     if (btn) btn.disabled = loading;
-    if (load) load.classList.toggle('hidden', !loading);
     var textSpan = load ? load.previousElementSibling : null;
     if (textSpan && textSpan.id === btnId + 'Text') {
       textSpan.textContent = loading ? (loadingText || 'Procesando...') : (defaultText || 'Guardar');
+      textSpan.classList.toggle('hidden', loading);
     }
+    if (load) load.classList.toggle('hidden', !loading);
   }
 
   function getStatusLabel(status) {
@@ -204,6 +205,28 @@
     }
   }
 
+   function getOrderItemsSummary(order) {
+    var items = [];
+    try { items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []); } catch (e) { items = []; }
+    if (!items.length) return '<span style="color:#94a3b8;font-size:0.8rem;">Sin productos</span>';
+
+    var totalQty = 0;
+    var names = [];
+    items.forEach(function (item) {
+      var qty = Number(item.quantity || 1);
+      totalQty += qty;
+      var name = item.name || item.title || 'Producto';
+      if (names.length < 2) names.push(name);
+    });
+
+    var result = names.join(', ');
+    if (items.length > 2) result += ' + ' + (items.length - 2) + ' más';
+    return '<span title="' + escapeHtml(result) + '" style="font-size:0.8rem;color:#334155;">' +
+      escapeHtml(result) +
+      (items.length > 1 ? ' <span style="color:#94a3b8;font-size:0.75rem;">(' + totalQty + ' u.)</span>' : '') +
+      '</span>';
+  }
+
   function renderOrdersList(orders) {
     var tbody = document.getElementById('ordersTableBody');
     var empty = document.getElementById('ordersEmptyState');
@@ -227,14 +250,37 @@
         '<td>#' + order.id + '</td>' +
         '<td>' + name + '</td>' +
         '<td><span class="status-badge status-' + order.status + '">' + status + '</span></td>' +
+        '<td>' + getOrderItemsSummary(order) + '</td>' +
+        '<td style="text-align:right;white-space:nowrap;">' +
+          '<button class="btn-delete-order" data-order-id="' + order.id + '" title="Eliminar pedido" style="background:none;border:none;color:#94a3b8;cursor:pointer;padding:0.3rem;border-radius:6px;transition:all 0.2s;display:inline-flex;align-items:center;justify-content:center;">' +
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>' +
+          '</button>' +
+        '</td>' +
       '</tr>';
     });
     tbody.innerHTML = html;
 
     tbody.querySelectorAll('tr').forEach(function (row) {
-      row.addEventListener('click', function () {
+      row.addEventListener('click', function (e) {
+        if (e.target.closest('.btn-delete-order')) return;
         var id = Number(row.getAttribute('data-order-id'));
         selectOrder(id);
+      });
+    });
+
+    tbody.querySelectorAll('.btn-delete-order').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var id = Number(btn.getAttribute('data-order-id'));
+        deleteOrder(id);
+      });
+      btn.addEventListener('mouseenter', function () {
+        btn.style.color = '#dc2626';
+        btn.style.background = '#fee2e2';
+      });
+      btn.addEventListener('mouseleave', function () {
+        btn.style.color = '#94a3b8';
+        btn.style.background = 'none';
       });
     });
   }
@@ -257,8 +303,52 @@
     renderWizard(order);
     renderPaymentDetails(order);
     renderShippingInfo(order);
+    renderOrderItems(order);
     renderActivityLog(id);
     updateOrderActions(order);
+  }
+
+  function renderOrderItems(order) {
+    var tbody = document.getElementById('orderItemsTableBody');
+    var totalEl = document.getElementById('orderItemsTotal');
+    var emptyEl = document.getElementById('orderItemsEmpty');
+    var contentEl = document.getElementById('orderItemsContent');
+    if (!tbody || !contentEl) return;
+
+    tbody.innerHTML = '';
+
+    var items = [];
+    try { items = typeof order.items === 'string' ? JSON.parse(order.items) : (order.items || []); } catch (e) { items = []; }
+
+    var grandTotal = 0;
+
+    items.forEach(function (item) {
+      var price = Number(item.price || item.unit_price || 0);
+      var qty = Number(item.quantity || 1);
+      var subtotal = price * qty;
+      grandTotal += subtotal;
+
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + escapeHtml(item.name || item.title || 'Producto') +
+          (item.variation ? ' (' + escapeHtml(item.variation) + ')' : '') + '</td>' +
+        '<td style="text-align:center;">' + qty + '</td>' +
+        '<td style="text-align:right;">' + formatCurrency(price) + '</td>' +
+        '<td style="text-align:right;">' + formatCurrency(subtotal) + '</td>';
+      tbody.appendChild(tr);
+    });
+
+    if (items.length === 0) {
+      emptyEl.style.display = 'block';
+      contentEl.style.display = 'none';
+      return;
+    }
+
+    emptyEl.style.display = 'none';
+    contentEl.style.display = 'block';
+
+    var orderTotal = Number(order.total || grandTotal);
+    if (totalEl) totalEl.textContent = formatCurrency(orderTotal);
   }
 
   function renderPaymentDetails(order) {
@@ -409,16 +499,19 @@
 
   async function saveShippingInfo() {
     if (!selectedOrderId) return;
-    var fields = ['shipping_name', 'shipping_phone', 'shipping_email', 'shipping_address', 'shipping_city', 'shipping_zip'];
+
+    var fields = {
+      shipping_name: document.getElementById('shipName'),
+      shipping_phone: document.getElementById('shipPhone'),
+      shipping_email: document.getElementById('shipEmail'),
+      shipping_address: document.getElementById('shipAddress'),
+      shipping_city: document.getElementById('shipCity'),
+      shipping_zip: document.getElementById('shipZip')
+    };
+
     var payload = {};
-    fields.forEach(function (key) {
-      var input = document.getElementById(key.replace('shipping_', 'ship').charAt(0).toUpperCase() + key.replace('shipping_', 'ship').slice(1));
-      if (key === 'shipping_name') input = document.getElementById('shipName');
-      if (key === 'shipping_phone') input = document.getElementById('shipPhone');
-      if (key === 'shipping_email') input = document.getElementById('shipEmail');
-      if (key === 'shipping_address') input = document.getElementById('shipAddress');
-      if (key === 'shipping_city') input = document.getElementById('shipCity');
-      if (key === 'shipping_zip') input = document.getElementById('shipZip');
+    Object.keys(fields).forEach(function (key) {
+      var input = fields[key];
       payload[key] = input ? input.value : '';
     });
 
@@ -562,6 +655,86 @@
     }
   }
 
+  async function deleteOrder(id) {
+    var modal = document.getElementById('confirmModalOverlay');
+    var msg = document.getElementById('confirmModalMessage');
+    var actionBtn = document.getElementById('confirmModalAction');
+    if (modal) {
+      if (msg) msg.textContent = '¿Eliminar este pedido #' + id + '? Esta acción no se puede deshacer.';
+      if (actionBtn) {
+        actionBtn.textContent = 'Eliminar';
+        actionBtn.className = 'btn btn-danger';
+        actionBtn.onclick = async function () {
+          if (modal) modal.classList.add('hidden');
+          await processDeleteOrder(id);
+        };
+      }
+      modal.classList.remove('hidden');
+    }
+  }
+
+  async function processDeleteOrder(id) {
+    try {
+      var res = await window.adminFetch('/api/admin/orders/' + id, { method: 'DELETE' });
+      if (!res || !res.ok) {
+        var data = await res.json().catch(function () { return {}; });
+        throw new Error(data.error || 'Error eliminando pedido');
+      }
+      showToast('✅', 'Pedido eliminado correctamente', 'success');
+      if (selectedOrderId === id) {
+        selectedOrderId = null;
+        document.getElementById('orderWizardEmpty').style.display = '';
+        document.getElementById('orderWizardContent').style.display = 'none';
+        document.getElementById('orderInfoEmpty').style.display = '';
+        document.getElementById('orderInfoContent').style.display = 'none';
+      }
+      ordersList = ordersList.filter(function (o) { return o.id !== id; });
+      renderOrdersList(ordersList);
+      if (window.reloadSales) window.reloadSales();
+    } catch (err) {
+      showToast('❌', err.message || 'Error eliminando pedido', 'error');
+    }
+  }
+
+  async function batchDeleteOrders(status) {
+    var label = status === 'cancelled' ? 'cancelados' : 'pendientes';
+    var modal = document.getElementById('confirmModalOverlay');
+    var msg = document.getElementById('confirmModalMessage');
+    var actionBtn = document.getElementById('confirmModalAction');
+    if (modal) {
+      if (msg) msg.textContent = '¿Eliminar todos los pedidos ' + label + '? Esta acción no se puede deshacer.';
+      if (actionBtn) {
+        actionBtn.textContent = 'Eliminar ' + label;
+        actionBtn.className = 'btn btn-danger';
+        actionBtn.onclick = async function () {
+          if (modal) modal.classList.add('hidden');
+          await processBatchDelete(status);
+        };
+      }
+      modal.classList.remove('hidden');
+    }
+  }
+
+  async function processBatchDelete(status) {
+    try {
+      var res = await window.adminFetch('/api/admin/orders/batch', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: status })
+      });
+      if (!res || !res.ok) {
+        var data = await res.json().catch(function () { return {}; });
+        throw new Error(data.error || 'Error eliminando pedidos en lote');
+      }
+      var result = await res.json();
+      showToast('✅', result.deleted + ' pedidos eliminados', 'success');
+      await loadOrders();
+      if (window.reloadSales) window.reloadSales();
+    } catch (err) {
+      showToast('❌', err.message || 'Error eliminando pedidos en lote', 'error');
+    }
+  }
+
   function bindEvents() {
     var searchInput = document.getElementById('orderSearch');
     var statusFilter = document.getElementById('orderStatusFilter');
@@ -609,6 +782,20 @@
 
     var saveShippingBtn = document.getElementById('saveShippingBtn');
     if (saveShippingBtn) saveShippingBtn.addEventListener('click', saveShippingInfo);
+
+    var batchDeleteCancelledBtn = document.getElementById('batchDeleteCancelledBtn');
+    if (batchDeleteCancelledBtn) {
+      batchDeleteCancelledBtn.addEventListener('click', function () {
+        batchDeleteOrders('cancelled');
+      });
+    }
+
+    var batchDeletePendingBtn = document.getElementById('batchDeletePendingBtn');
+    if (batchDeletePendingBtn) {
+      batchDeletePendingBtn.addEventListener('click', function () {
+        batchDeleteOrders('pending');
+      });
+    }
 
     var shipInputs = document.querySelectorAll('#shipName, #shipPhone, #shipEmail, #shipAddress, #shipCity, #shipZip');
     shipInputs.forEach(function (input) {

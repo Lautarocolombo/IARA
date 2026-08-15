@@ -25,11 +25,12 @@
     var btn = document.getElementById(btnId);
     var load = document.getElementById(loadingId);
     if (btn) btn.disabled = loading;
-    if (load) load.classList.toggle('hidden', !loading);
     var textSpan = load ? load.previousElementSibling : null;
     if (textSpan && textSpan.id === btnId + 'Text') {
       textSpan.textContent = loading ? 'Guardando...' : 'Guardar cambios';
+      textSpan.classList.toggle('hidden', loading);
     }
+    if (load) load.classList.toggle('hidden', !loading);
   }
 
   async function loadCategories() {

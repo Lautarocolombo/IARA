@@ -67,7 +67,7 @@ const upsertSiteText = async (req, res) => {
   const resolvedKey = key || req.params.key;
   if (!resolvedKey || value === undefined) return res.status(400).json({ error: 'key y value son requeridos' });
   try {
-    await query('INSERT INTO site_texts (key, value, tenant_id) VALUES ($1, $2, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = CURRENT_TIMESTAMP', [resolvedKey, value]);
+    await query('INSERT INTO site_texts (key, value, tenant_id) VALUES ($1, $2, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = CURRENT_TIMESTAMP, tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')', [resolvedKey, value]);
     res.json({ ok: true });
   } catch (err) {
     logger.error('Error guardando texto:', err);
@@ -107,7 +107,7 @@ const syncTextsToNeon = async (req, res) => {
           }
         }
 
-        await query('INSERT INTO site_texts (key, value, tenant_id) VALUES ($1, $2, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = CURRENT_TIMESTAMP', [key, newValue]);
+        await query('INSERT INTO site_texts (key, value, tenant_id) VALUES ($1, $2, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = CURRENT_TIMESTAMP, tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')', [key, newValue]);
         results.saved += 1;
       } catch (err) {
         results.errors += 1;

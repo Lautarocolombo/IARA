@@ -373,6 +373,30 @@ const deleteOrder = async (req, res) => {
   }
 };
 
+const batchDeleteOrders = async (req, res) => {
+  const { status } = req.body || {};
+  if (!status || !VALID_STATUSES.includes(status)) {
+    return res.status(400).json({ error: 'Estado inválido para eliminación en lote' });
+  }
+  try {
+    const result = await query('SELECT id, items, status FROM orders WHERE status = $1', [status]);
+    const orders = result.rows;
+    for (const order of orders) {
+      const items = safeJsonParse(order.items, []);
+      if (order.status === 'pending' || order.status === 'confirmed' || order.status === 'cancelled') {
+        await restoreStockForOrder(items);
+      }
+      const user = req.user?.user || 'admin';
+      await logActivity(user, 'batch_delete', 'order', order.id, `Pedido #${order.id} eliminado en lote (estado: ${status})`, req.ip || '', order.id, req.headers['x-tenant-id'] || req.user?.tenant_id || 'default');
+    }
+    const deleteResult = await query('DELETE FROM orders WHERE status = $1', [status]);
+    res.json({ ok: true, deleted: deleteResult.rowCount });
+  } catch (err) {
+    logger.error({ err: err.message }, 'Error eliminando pedidos en lote');
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
 const updateOrderNotes = async (req, res) => {
   const id = Number(req.params.id);
   const { notes } = req.body || {};
@@ -387,6 +411,64 @@ const updateOrderNotes = async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     logger.error('Error actualizando nota del pedido:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+const updateOrder = async (req, res) => {
+  const id = Number(req.params.id);
+  const {
+    shipping_name, shipping_address, shipping_phone, shipping_zip,
+    shipping_city, shipping_email, notes, subtotal, shipping_cost,
+    payment_method, status
+  } = req.body || {};
+
+  const updates = {};
+  const logMsgs = [];
+  if (status !== undefined && VALID_STATUSES.includes(status)) {
+    updates.status = status;
+    logMsgs.push('Estado cambiado a ' + status);
+  }
+  if (shipping_name !== undefined) updates.shipping_name = shipping_name;
+  if (shipping_address !== undefined) updates.shipping_address = shipping_address;
+  if (shipping_phone !== undefined) updates.shipping_phone = shipping_phone;
+  if (shipping_zip !== undefined) updates.shipping_zip = shipping_zip;
+  if (shipping_city !== undefined) updates.shipping_city = shipping_city;
+  if (shipping_email !== undefined) updates.shipping_email = shipping_email;
+  if (notes !== undefined) updates.notes = notes;
+  if (subtotal !== undefined) updates.subtotal = Number(subtotal);
+  if (shipping_cost !== undefined) updates.shipping_cost = Number(shipping_cost);
+  if (payment_method !== undefined) updates.payment_method = payment_method;
+
+  const fields = Object.keys(updates);
+  if (!fields.length) return res.status(400).json({ error: 'Sin datos para actualizar' });
+
+  const values = fields.map(f => updates[f]);
+  values.push(id);
+  const setClause = fields.map((_, i) => `${fields[i]} = $${i + 1}`).join(', ');
+
+  try {
+    if (status === 'cancelled') {
+      const existing = await query('SELECT items, status FROM orders WHERE id = $1', [id]);
+      if (existing.rows.length > 0 && existing.rows[0].status !== 'cancelled') {
+        const items = safeJsonParse(existing.rows[0].items, []);
+        for (const item of items) {
+          const productId = Number(item.id);
+          const qty = Number(item.quantity || 1);
+          await query('UPDATE products SET stock = stock + $1 WHERE id = $2', [qty, productId]);
+        }
+        logMsgs.push('Stock restaurado');
+      }
+    }
+
+    const result = await query(`UPDATE orders SET ${setClause} WHERE id = $${values.length} RETURNING *`, values);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
+    const user = req.user?.user || 'admin';
+    await logActivity(user, 'update', 'order', id, logMsgs.join('; '), req.ip || '', id, req.headers['x-tenant-id'] || req.user?.tenant_id || 'default');
+    res.json(result.rows[0]);
+    try { syncBus.emit('order_status_updated', { id: Number(req.params.id), status: updates.status }); } catch (e) { /* noop */ }
+  } catch (err) {
+    logger.error({ err: err.message }, 'Error actualizando pedido');
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
@@ -525,4 +607,4 @@ const getPublicOrderTrack = async (req, res) => {
   }
 };
 
-module.exports = { getOrders, getUserOrders, createOrder, updateOrderStatus, deleteOrder, updateOrderNotes, getOrderDetail, exportOrders, addOrderActivity, getOrderReceipt, getOrderActivities, getPublicOrderTrack };
+module.exports = { getOrders, getUserOrders, createOrder, updateOrderStatus, deleteOrder, batchDeleteOrders, updateOrderNotes, updateOrder, getOrderDetail, exportOrders, addOrderActivity, getOrderReceipt, getOrderActivities, getPublicOrderTrack };

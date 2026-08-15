@@ -10,8 +10,9 @@ function initSiteHeader(options) {
   var pathParts = window.location.pathname.split('/');
   var inSubdir = pathParts.length > 2 && pathParts[1] === 'pages';
   var wishlistHref = options.wishlistHref || (inSubdir ? 'wishlist.html' : 'pages/wishlist.html');
+  var ordersHref = options.ordersHref || (inSubdir ? '../pages/orders.html' : 'pages/orders.html');
   var adminHref = options.adminHref || (inSubdir ? 'admin.html' : 'pages/admin.html');
-  var cartHref = options.cartHref || '../pages/cart.html';
+  var cartHref = options.cartHref || (inSubdir ? '../pages/cart.html' : 'pages/cart.html');
 
   var existing = document.getElementById('navbar');
   if (existing) {
@@ -40,12 +41,12 @@ function initSiteHeader(options) {
     html += '<li><a href="#home" class="nav-link">Inicio</a></li>';
     html += '<li><a href="#catalog" class="nav-link">Catálogo</a></li>';
     html += '<li><a href="#about" class="nav-link">Sobre Nosotros</a></li>';
-    html += '<li><a href="pages/orders.html" class="nav-link">Mis pedidos</a></li>';
+    html += '<li><a href="' + ordersHref + '" class="nav-link">Mis pedidos</a></li>';
     html += '<li><a href="#contact" class="nav-link">Contacto</a></li>';
     html += '</ul>';
   } else {
     html += '<a href="' + backHref + '" class="nav-back" aria-label="Volver al inicio">← Volver al inicio</a>';
-    html += '<a href="pages/orders.html" class="nav-quick-link" style="margin-left:0.75rem;font-size:0.85rem;">Mis pedidos</a>';
+    html += '<a href="' + ordersHref + '" class="nav-quick-link" style="margin-left:0.75rem;font-size:0.85rem;">Mis pedidos</a>';
     html += '<a href="' + wishlistHref + '" class="nav-quick-link" style="margin-left:0.75rem;font-size:0.85rem;">❤️ Favoritos</a>';
   }
 

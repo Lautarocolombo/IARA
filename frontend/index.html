@@ -8,7 +8,7 @@
   <title>Artesanía Gualeguay | Pulseras & Souvenirs Artesanales</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌸</text></svg>" />
   <meta property="og:title" content="Artesanía Gualeguay | Pulseras & Souvenirs Artesanales" />
-  <meta property="og:description" content="Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es única." />
+  <meta property="og:description" content="Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es unica." />
   <meta property="og:image" content="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%221200%22 height=%22630%22><rect width=%221200%22 height=%22630%22 fill=%22%23e8a0b5%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2280%22 fill=%22white%22>🌸 Artesanía Gualeguay 🌸</text></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -49,7 +49,7 @@
          </div>
          <div class="hero-greeting">Buenos Días Iara 🌸</div>
          <h1 class="hero-title">Regalos <em>artesanales</em> que cuentan historias</h1>
-        <p class="hero-subtitle">Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es única.</p>
+        <p class="hero-subtitle">Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es unica.</p>
         <div class="hero-buttons">
           <a href="#catalog" class="btn-primary reveal">Explorar Catálogo</a>
           <a href="#contact" class="btn-outline reveal">Contáctanos</a>
@@ -176,9 +176,6 @@
         <button class="filter-btn" data-filter="pulseras">Pulseras</button>
         <button class="filter-btn" data-filter="accesorios">Accesorios</button>
         <button class="filter-btn" data-filter="souvenirs">Souvenirs</button>
-        <input type="number" id="minPrice" placeholder="Precio mínimo" min="0" step="1" aria-label="Precio mínimo" />
-        <input type="number" id="maxPrice" placeholder="Precio máximo" min="0" step="1" aria-label="Precio máximo" />
-        <button id="clearFiltersBtn" class="filter-clear-btn" aria-label="Limpiar filtros">Limpiar</button>
       </div>
       <div class="search-bar">
         <input type="text" id="searchInput" placeholder="Buscar productos..." aria-label="Buscar productos" />
@@ -198,6 +195,15 @@
       <div class="about-content">
         <div class="about-text reveal" id="aboutText">
           <p>En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.</p>
+        </div>
+
+        <div class="about-carousel-wrap reveal" id="aboutCarouselWrap">
+          <div class="about-carousel" id="aboutCarousel">
+            <div class="about-carousel-track" id="aboutCarouselTrack"></div>
+            <button class="about-carousel-btn about-carousel-btn--prev" id="aboutCarouselPrev" aria-label="Anterior">&#10094;</button>
+            <button class="about-carousel-btn about-carousel-btn--next" id="aboutCarouselNext" aria-label="Siguiente">&#10095;</button>
+            <div class="about-carousel-dots" id="aboutCarouselDots"></div>
+          </div>
         </div>
 
         <div class="about-stats">

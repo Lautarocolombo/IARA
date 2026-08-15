@@ -1,7 +1,7 @@
 const path = require('path');
 const fs = require('fs');
-const sharp = require('sharp');
 const logger = require('./logger');
+const { generateVariant, generateAllVariants } = require('./imageOptimizer');
 
 const isVercel = process.env.VERCEL === 'true';
 const isRender = !!process.env.RENDER_EXTERNAL_HOSTNAME;
@@ -20,41 +20,6 @@ const VARIANTS = {
   catalog: { width: 400, height: 400, fit: 'cover', name: 'catalog' },
   zoom: { width: 1200, height: 1200, fit: 'inside', withoutEnlargement: true, name: 'zoom' }
 };
-
-async function generateVariant(filePath, variantKey) {
-  const config = VARIANTS[variantKey];
-  if (!config) return null;
-
-  const ext = path.extname(filePath).toLowerCase();
-  const baseName = path.basename(filePath, ext);
-  const variantName = `${baseName}_${config.name}.webp`;
-  const variantPath = path.join(variantsDir, variantName);
-
-  if (fs.existsSync(variantPath)) {
-    return variantPath;
-  }
-
-  try {
-    const transform = sharp(filePath).resize(config.width, config.height, {
-      fit: config.fit,
-      withoutEnlargement: config.withoutEnlargement || false
-    }).webp({ quality: 80 });
-
-    await transform.toFile(variantPath);
-    return variantPath;
-  } catch (err) {
-    logger.warn({ err: err.message, variant: variantKey }, 'Error generando variante');
-    return null;
-  }
-}
-
-async function generateAllVariants(filePath) {
-  const variants = {};
-  for (const key of Object.keys(VARIANTS)) {
-    variants[key] = await generateVariant(filePath, key);
-  }
-  return variants;
-}
 
 function getVariantUrl(originalUrl, cloudinaryPublicId, variantKey, baseUrl, watermark) {
   const config = VARIANTS[variantKey];

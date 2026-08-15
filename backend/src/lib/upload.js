@@ -2,6 +2,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const logger = require('./logger');
+const { optimizeImage } = require('./imageOptimizer');
 
 const BLOB_URL_RE = /^https?:\/\/[^/]+\.blob\.vercel-storage\.com/;
 
@@ -35,20 +36,9 @@ async function uploadToBlob(file) {
     return null;
   }
   try {
-    let buffer = fs.readFileSync(file.path);
-    let contentType = file.mimetype || 'application/octet-stream';
-
-    try {
-      const sharp = require('sharp');
-      const optimized = await sharp(buffer)
-        .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
-        .webp({ quality: 80 })
-        .toBuffer();
-      buffer = optimized;
-      contentType = 'image/webp';
-    } catch (err) {
-      logger.warn('Sharp no disponible para optimización en Blob, subiendo original:', err.message);
-    }
+    const optimizedPath = await optimizeImage(file.path, { format: 'webp' });
+    let buffer = fs.readFileSync(optimizedPath);
+    let contentType = path.extname(optimizedPath).toLowerCase() === '.webp' ? 'image/webp' : file.mimetype || 'application/octet-stream';
 
     const ext = path.extname(file.originalname).toLowerCase() || '.webp';
     const safe = file.originalname
@@ -62,7 +52,7 @@ async function uploadToBlob(file) {
       contentType
     });
 
-    return { url: blob.url, filename: blobName, blobName, isBlob: true };
+    return { url: blob.url, filename: blobName, blobName, isCloudinary: false, isBlob: true };
   } catch (err) {
     logger.error('Error subiendo a Vercel Blob:', err.message);
     return null;
@@ -189,25 +179,6 @@ function handleUploadError(err, req, res, next) {
   next();
 }
 
-async function optimizeWithSharp(filePath) {
-  try {
-    const sharp = require('sharp');
-    const ext = path.extname(filePath).toLowerCase();
-    const optimizedPath = filePath.replace(ext, '.webp');
-    await sharp(filePath)
-      .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
-      .webp({ quality: 80 })
-      .toFile(optimizedPath);
-    if (optimizedPath !== filePath && fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
-    return optimizedPath;
-  } catch (err) {
-    logger.warn({ err: err.message, stack: err.stack }, 'Sharp no disponible o error en optimización, usando archivo original');
-    return filePath;
-  }
-}
-
 async function fileToBase64DataUri(filePath) {
   const ext = path.extname(filePath).toLowerCase();
   const mimeMap = {
@@ -215,7 +186,8 @@ async function fileToBase64DataUri(filePath) {
     '.jpeg': 'image/jpeg',
     '.png': 'image/png',
     '.webp': 'image/webp',
-    '.gif': 'image/gif'
+    '.gif': 'image/gif',
+    '.avif': 'image/avif'
   };
   const mimeType = mimeMap[ext] || 'image/jpeg';
   const buffer = fs.readFileSync(filePath);
@@ -255,7 +227,7 @@ async function processFile(file, baseUrl) {
     throw err;
   }
 
-  const optimizedPath = await optimizeWithSharp(file.path);
+  const optimizedPath = await optimizeImage(file.path, { format: 'webp' });
   const filename = path.basename(optimizedPath);
   const relativeUrl = `/uploads/imagenes/${filename}`;
 

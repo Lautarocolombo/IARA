@@ -176,6 +176,84 @@
   font-size: 0.85rem;
 }
 
+.map-popup-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  padding: 16px;
+  max-width: 300px;
+  font-family: 'DM Sans', sans-serif;
+  line-height: 1.4;
+}
+
+.map-popup-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.map-popup-header {
+  margin-bottom: 10px;
+}
+
+.map-popup-pin {
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.map-popup-address {
+  color: var(--text-dark);
+  font-size: var(--text-base);
+  font-weight: 500;
+}
+
+.map-popup-rating {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.map-popup-star {
+  color: var(--gold);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.map-popup-score {
+  color: var(--text-dark);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.map-popup-reviews {
+  color: var(--text-mid);
+  font-size: var(--text-sm);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.map-popup-reviews:hover {
+  color: var(--rose-dark);
+  text-decoration: underline;
+}
+
+.map-popup-info {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: help;
+}
+
+@media (max-width: 480px) {
+  .map-popup-card {
+    max-width: 220px;
+    padding: 12px;
+  }
+}
+
 @media (max-width: 768px) {
   .cesion-section {
     padding: 60px 16px 30px;

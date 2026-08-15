@@ -63,6 +63,48 @@
     }
   }
 
+  async function loadTransactions() {
+    var tbody = document.getElementById('transactionsTableBody');
+    var emptyState = document.getElementById('transactionsEmptyState');
+    if (!tbody) return;
+
+    try {
+      var res = await window.adminFetch('/api/admin/earnings', { method: 'GET' });
+      if (!res || !res.ok) {
+        throw new Error('No se pudieron cargar las transacciones');
+      }
+      var data = await res.json();
+      var transactions = Array.isArray(data.transactions) ? data.transactions : [];
+
+      tbody.innerHTML = '';
+
+      if (transactions.length === 0) {
+        if (emptyState) emptyState.style.display = '';
+        return;
+      }
+
+      if (emptyState) emptyState.style.display = 'none';
+
+      transactions.forEach(function (t) {
+        var tr = document.createElement('tr');
+        var dateStr = t.date ? new Date(t.date).toLocaleDateString('es-AR') : '-';
+        var statusLabel = t.status === 'completed' ? 'Completada' : (t.status || 'Pendiente');
+        var statusClass = t.status === 'completed' ? 'status-completed' : 'status-pending';
+
+        tr.innerHTML =
+          '<td>#' + escapeAttr(t.id) + '</td>' +
+          '<td>' + escapeAttr(dateStr) + '</td>' +
+          '<td>' + escapeAttr(t.customer || '-') + '</td>' +
+          '<td style="text-align:center;"><span class="' + escapeAttr(statusClass) + '">' + escapeAttr(statusLabel) + '</span></td>' +
+          '<td style="text-align:right;">$' + Number(t.total || 0).toLocaleString('es-AR') + '</td>';
+
+        tbody.appendChild(tr);
+      });
+    } catch (err) {
+      console.error('[Sales] Error cargando transacciones:', err);
+    }
+  }
+
   /* ===== RENDER KPIs ===== */
 
   function renderKPIs(kpis) {
@@ -306,7 +348,7 @@
     var btnLoading = document.getElementById('saveSaleBtnLoading');
 
     if (btn) btn.disabled = true;
-    if (btnText) btnText.textContent = 'Guardando...';
+    if (btnText) btnText.classList.add('hidden');
     if (btnLoading) btnLoading.classList.remove('hidden');
 
     try {
@@ -348,7 +390,10 @@
       window.showToast('❌', err.message || 'Error al registrar la venta.', 'error');
     } finally {
       if (btn) btn.disabled = false;
-      if (btnText) btnText.textContent = 'Guardar venta';
+      if (btnText) {
+        btnText.classList.remove('hidden');
+        btnText.textContent = 'Guardar venta';
+      }
       if (btnLoading) btnLoading.classList.add('hidden');
     }
   }
@@ -357,17 +402,23 @@
     var modal = document.getElementById('confirmModalOverlay');
     var msg = document.getElementById('confirmModalMessage');
     var actionBtn = document.getElementById('confirmModalAction');
+    var cancelBtn = document.getElementById('cancelConfirmBtn');
     if (modal) {
-      if (msg) msg.textContent = 'Esto va a poner en $0 el Total de Ventas Brutas, Ventas Netas, Número de Pedidos y Ganancia Promedio, y vaciar el gráfico de ingresos semanales. Esta acción no se puede deshacer. ¿Confirmás?';
+      if (msg) msg.textContent = '¿Estás seguro? Se eliminarán todos los datos de ventas actuales para empezar de cero. Esta acción no se puede deshacer';
       if (actionBtn) {
         actionBtn.textContent = 'Sí, reiniciar';
         actionBtn.className = 'btn btn-danger';
         actionBtn.onclick = async function () {
-          if (modal) modal.classList.add('hidden');
+          if (modal) modal.classList.remove('active');
           await confirmReset();
         };
       }
-      modal.classList.remove('hidden');
+      if (cancelBtn) {
+        cancelBtn.onclick = function () {
+          if (modal) modal.classList.remove('active');
+        };
+      }
+      modal.classList.add('active');
     }
   }
 
@@ -381,13 +432,18 @@
     if (btnLoading) btnLoading.classList.remove('hidden');
 
     try {
-      var res = await window.adminFetch('/api/admin/reports/reset', { method: 'POST' });
+      var res = await window.adminFetch('/api/admin/reports/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: true })
+      });
       if (!res || !res.ok) {
         var errData = await res.json().catch(function () { return {}; });
         throw new Error(errData.error || 'Error al reiniciar las métricas.');
       }
       window.showToast('✅', 'Métricas reiniciadas correctamente.', 'success');
       await loadSalesSummary(currentView);
+      await loadTransactions();
     } catch (err) {
       console.error('[Sales] Error reiniciando métricas:', err);
       window.showToast('❌', err.message || 'Error al reiniciar las métricas.', 'error');
@@ -433,11 +489,28 @@
       });
     }
 
+    var resetSalesBtn = document.getElementById('resetSalesBtn');
+    if (resetSalesBtn) {
+      resetSalesBtn.addEventListener('click', function () {
+        openResetModal();
+      });
+    }
+
+    var confirmOverlay = document.getElementById('confirmModalOverlay');
+    if (confirmOverlay) {
+      confirmOverlay.addEventListener('click', function (e) {
+        if (e.target === confirmOverlay) {
+          confirmOverlay.classList.remove('active');
+        }
+      });
+    }
+
     attachManualSaleHandlers();
 
     Promise.all([
       loadSalesSummary('weekly'),
-      loadProductsForSale()
+      loadProductsForSale(),
+      loadTransactions()
     ]);
   }
 

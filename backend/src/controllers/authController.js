@@ -42,8 +42,8 @@ const login = async (req, res) => {
         if (!JWT_SECRET) {
           return res.status(500).json({ error: 'JWT_SECRET no configurado en el servidor' });
         }
-        const token = jwt.sign({ role, user: u.username, permissions }, JWT_SECRET, { expiresIn: '15m' });
-        const refreshToken = jwt.sign({ role, user: u.username, permissions }, JWT_SECRET, { expiresIn: '7d' });
+        const token = jwt.sign({ role, user: u.username, permissions, tenant_id: u.tenant_id }, JWT_SECRET, { expiresIn: '15m' });
+        const refreshToken = jwt.sign({ role, user: u.username, permissions, tenant_id: u.tenant_id }, JWT_SECRET, { expiresIn: '7d' });
         res.cookie('refreshToken', refreshToken, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
@@ -77,8 +77,8 @@ const login = async (req, res) => {
         if (!JWT_SECRET) {
           return res.status(500).json({ error: 'JWT_SECRET no configurado en el servidor' });
         }
-        const token = jwt.sign({ role, user: jwtUser, permissions }, JWT_SECRET, { expiresIn: '15m' });
-        const refreshToken = jwt.sign({ role, user: jwtUser, permissions }, JWT_SECRET, { expiresIn: '7d' });
+        const token = jwt.sign({ role, user: jwtUser, permissions, tenant_id: dbCheck.rows[0]?.tenant_id || 'default' }, JWT_SECRET, { expiresIn: '15m' });
+        const refreshToken = jwt.sign({ role, user: jwtUser, permissions, tenant_id: dbCheck.rows[0]?.tenant_id || 'default' }, JWT_SECRET, { expiresIn: '7d' });
         res.cookie('refreshToken', refreshToken, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
@@ -116,7 +116,7 @@ const refresh = async (req, res) => {
     }
 
     const decoded = jwt.verify(refreshToken, JWT_SECRET);
-    const accessToken = jwt.sign({ role: decoded.role, user: decoded.user, permissions: decoded.permissions || {} }, JWT_SECRET, { expiresIn: '15m' });
+    const accessToken = jwt.sign({ role: decoded.role, user: decoded.user, permissions: decoded.permissions || {}, tenant_id: decoded.tenant_id }, JWT_SECRET, { expiresIn: '15m' });
     res.json({ token: accessToken });
   } catch (err) {
     return res.status(401).json({ error: 'Refresh token inválido o expirado' });
@@ -169,5 +169,74 @@ const changePassword = async (req, res) => {
   res.json({ ok: true, message: 'Contraseña actualizada correctamente.' });
 };
 
-module.exports = { login, refresh, logout, hashPassword, changePassword };
+const requestPasswordReset = async (req, res) => {
+  try {
+    const { email } = req.body || {};
+    if (!email) return res.status(400).json({ error: 'Email es requerido' });
+
+    const result = await query('SELECT id, username FROM users WHERE email = $1 AND active = TRUE', [email]);
+    if (result.rows.length === 0) {
+      return res.json({ ok: true, message: 'Si el email existe, recibirás un enlace de recuperación.' });
+    }
+
+    const user = result.rows[0];
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetHash = crypto.createHash('sha256').update(resetToken).digest('hex');
+
+    await query(
+      'UPDATE users SET reset_token = $1, reset_token_expires = NOW() + INTERVAL \'15 minutes\' WHERE id = $2',
+      [resetHash, user.id]
+    );
+
+    RESET_TOKENS.set(resetToken, { userId: user.id, username: user.username, expires: Date.now() + RESET_TOKEN_EXPIRY });
+    setTimeout(() => RESET_TOKENS.delete(resetToken), RESET_TOKEN_EXPIRY);
+
+    const resetLink = `${process.env.SITE_URL || 'http://localhost:3000'}/reset-password.html?token=${resetToken}`;
+    const html = `
+      <h1>Recuperación de contraseña</h1>
+      <p>Hola ${user.username},</p>
+      <p>Recibimos una solicitud para restablecer tu contraseña. Hacé clic en el siguiente enlace:</p>
+      <p><a href="${resetLink}">Restablecer contraseña</a></p>
+      <p>Este enlace vence en 15 minutos.</p>
+      <p>Si no solicitaste este cambio, ignorá este email.</p>
+    `;
+    await require('../lib/email').sendEmail({ to: email, subject: 'Recuperación de contraseña - Artesanía Gualeguay', html });
+
+    res.json({ ok: true, message: 'Si el email existe, recibirás un enlace de recuperación.' });
+  } catch (err) {
+    logger.error('Error en requestPasswordReset:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body || {};
+    if (!token || !newPassword) return res.status(400).json({ error: 'Token y nueva contraseña son requeridos' });
+    if (newPassword.length < 6) return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
+
+    const resetHash = crypto.createHash('sha256').update(token).digest('hex');
+    const result = await query('SELECT id, reset_token_expires FROM users WHERE reset_token = $1 AND active = TRUE', [resetHash]);
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: 'Token inválido o expirado' });
+    }
+
+    const user = result.rows[0];
+    if (new Date(user.reset_token_expires) < new Date()) {
+      await query('UPDATE users SET reset_token = NULL, reset_token_expires = NULL WHERE id = $1', [user.id]);
+      return res.status(400).json({ error: 'Token expirado' });
+    }
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await query('UPDATE users SET password_hash = $1, reset_token = NULL, reset_token_expires = NULL WHERE id = $2', [newHash, user.id]);
+
+    res.json({ ok: true, message: 'Contraseña restablecida correctamente.' });
+  } catch (err) {
+    logger.error('Error en resetPassword:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+module.exports = { login, refresh, logout, hashPassword, changePassword, requestPasswordReset, resetPassword };
 

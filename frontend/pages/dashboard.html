@@ -63,10 +63,7 @@
           <span>📋</span>
           <span>Pedidos Individuales</span>
         </a>
-        <a href="#" data-section="users">
-          <span>👥</span>
-          <span>Usuarios</span>
-        </a>
+
       </nav>
       <div class="sidebar-footer">
         <span id="lowStockIndicator" class="low-stock-indicator" style="display:none;"></span>
@@ -122,19 +119,39 @@
                       <label>Título <span class="required">*</span></label>
                       <input type="text" id="hero_title" placeholder="Regalos artesanales que cuentan historias" />
                     </div>
-                    <div class="form-group">
-                      <label>Descripción</label>
-                      <input type="text" id="hero_subtitle" placeholder="Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es única." />
-                    </div>
+                     <div class="form-group">
+                       <label>Descripción</label>
+                       <input type="text" id="hero_subtitle" placeholder="Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es única." />
+                     </div>
+                     <div class="form-group">
+                       <label>Frase de la tarjeta 1</label>
+                       <textarea id="hero_card_1_text" rows="2" placeholder="Frases cortas para la tarjeta polaroid..."></textarea>
+                     </div>
                     <div class="form-group">
                       <label>Texto del botón</label>
                       <input type="text" id="hero_cta_text" placeholder="Explorar Catálogo" />
                     </div>
-                    <div class="form-group">
-                      <label>URL del botón</label>
-                      <input type="text" id="hero_cta_url" placeholder="#catalog" />
-                    </div>
-                  </div>
+                     <div class="form-group">
+                       <label>URL del botón</label>
+                       <input type="text" id="hero_cta_url" placeholder="#catalog" />
+                     </div>
+                     <div class="form-group">
+                       <label>Nombre tarjeta 1</label>
+                       <input type="text" id="hero_card_1_name" placeholder="Pulsera Minimalista" />
+                     </div>
+                     <div class="form-group">
+                       <label>Precio / descripción tarjeta 1</label>
+                       <input type="text" id="hero_card_1_price" placeholder="$450" />
+                     </div>
+                     <div class="form-group">
+                       <label>Botón CTA tarjeta 1</label>
+                       <input type="text" id="hero_card_1_cta_text" placeholder="Ver más" />
+                     </div>
+                     <div class="form-group">
+                       <label>URL botón CTA tarjeta 1</label>
+                       <input type="text" id="hero_card_1_cta_url" placeholder="#catalog" />
+                     </div>
+                   </div>
                   <div class="home-block-image-card">
                     <label>Imagen destacada</label>
                     <div class="hero-image-editor">
@@ -168,10 +185,14 @@
                       <label>Nombre del producto <span class="required">*</span></label>
                       <input type="text" id="fp_name" placeholder="Anillo Cerámica" />
                     </div>
-                    <div class="form-group">
-                      <label>Descripción corta</label>
-                      <input type="text" id="fp_description" placeholder="Artesanía con alma" />
-                    </div>
+                     <div class="form-group">
+                       <label>Descripción corta</label>
+                       <input type="text" id="fp_description" placeholder="Artesanía con alma" />
+                     </div>
+                     <div class="form-group">
+                       <label>Frase de la tarjeta 2</label>
+                       <textarea id="hero_card_2_text" rows="2" placeholder="Frases cortas para la tarjeta polaroid..."></textarea>
+                     </div>
                     <div class="form-group">
                       <label>Texto del botón</label>
                       <input type="text" id="fp_cta_text" placeholder="Ver producto" />
@@ -223,6 +244,76 @@
                     <div class="form-group" style="grid-column: 1 / -1;">
                       <label>Texto principal <span class="required">*</span></label>
                       <div id="about_text_editor" style="min-height:200px;background:#fff;border-radius:8px;"></div>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                      <label>Imágenes del carrusel (Sobre Nosotros)</label>
+                       <div class="about-images-grid" id="aboutImagesGrid">
+                         <div class="about-image-upload" data-index="1">
+                           <img id="aboutImagePreview1" src="" alt="Sobre Nosotros 1" style="display:none; max-width:100%; border-radius:8px; margin-bottom:0.5rem;" />
+                           <div id="aboutImageNewPreview1" style="display:none; max-width:100%; border-radius:8px; margin-bottom:0.5rem; border: 2px dashed #d4a0b5; padding: 4px; background:#fff0f6;">
+                             <img id="aboutImageNewImg1" src="" alt="Nueva imagen 1" style="width:100%; border-radius:6px; display:block;" />
+                           </div>
+                           <div id="aboutImagePlaceholder1" style="width:100%; aspect-ratio:16/9; background:#fde8ef; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#be6b82; font-size:0.85rem; margin-bottom:0.5rem;">Imagen 1</div>
+                           <input type="file" id="aboutImageInput1" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                           <div class="about-image-actions">
+                             <button type="button" class="btn btn-secondary btn-sm" id="aboutImageChangeBtn1">Cambiar</button>
+                             <button type="button" class="btn btn-outline btn-sm" id="aboutImageRemoveBtn1">Quitar</button>
+                           </div>
+                           <div id="aboutImageError1" class="image-error-message" style="display:none; margin-top:0.5rem; color:#ef4444; font-size:0.85rem;"></div>
+                         </div>
+                         <div class="about-image-upload" data-index="2">
+                           <img id="aboutImagePreview2" src="" alt="Sobre Nosotros 2" style="display:none; max-width:100%; border-radius:8px; margin-bottom:0.5rem;" />
+                           <div id="aboutImageNewPreview2" style="display:none; max-width:100%; border-radius:8px; margin-bottom:0.5rem; border: 2px dashed #d4a0b5; padding: 4px; background:#fff0f6;">
+                             <img id="aboutImageNewImg2" src="" alt="Nueva imagen 2" style="width:100%; border-radius:6px; display:block;" />
+                           </div>
+                           <div id="aboutImagePlaceholder2" style="width:100%; aspect-ratio:16/9; background:#fde8ef; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#be6b82; font-size:0.85rem; margin-bottom:0.5rem;">Imagen 2</div>
+                           <input type="file" id="aboutImageInput2" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                           <div class="about-image-actions">
+                             <button type="button" class="btn btn-secondary btn-sm" id="aboutImageChangeBtn2">Cambiar</button>
+                             <button type="button" class="btn btn-outline btn-sm" id="aboutImageRemoveBtn2">Quitar</button>
+                           </div>
+                           <div id="aboutImageError2" class="image-error-message" style="display:none; margin-top:0.5rem; color:#ef4444; font-size:0.85rem;"></div>
+                         </div>
+                         <div class="about-image-upload" data-index="3">
+                           <img id="aboutImagePreview3" src="" alt="Sobre Nosotros 3" style="display:none; max-width:100%; border-radius:8px; margin-bottom:0.5rem;" />
+                           <div id="aboutImageNewPreview3" style="display:none; max-width:100%; border-radius:8px; margin-bottom:0.5rem; border: 2px dashed #d4a0b5; padding: 4px; background:#fff0f6;">
+                             <img id="aboutImageNewImg3" src="" alt="Nueva imagen 3" style="width:100%; border-radius:6px; display:block;" />
+                           </div>
+                           <div id="aboutImagePlaceholder3" style="width:100%; aspect-ratio:16/9; background:#fde8ef; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#be6b82; font-size:0.85rem; margin-bottom:0.5rem;">Imagen 3</div>
+                           <input type="file" id="aboutImageInput3" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                           <div class="about-image-actions">
+                             <button type="button" class="btn btn-secondary btn-sm" id="aboutImageChangeBtn3">Cambiar</button>
+                             <button type="button" class="btn btn-outline btn-sm" id="aboutImageRemoveBtn3">Quitar</button>
+                           </div>
+                           <div id="aboutImageError3" class="image-error-message" style="display:none; margin-top:0.5rem; color:#ef4444; font-size:0.85rem;"></div>
+                         </div>
+                         <div class="about-image-upload" data-index="4">
+                           <img id="aboutImagePreview4" src="" alt="Sobre Nosotros 4" style="display:none; max-width:100%; border-radius:8px; margin-bottom:0.5rem;" />
+                           <div id="aboutImageNewPreview4" style="display:none; max-width:100%; border-radius:8px; margin-bottom:0.5rem; border: 2px dashed #d4a0b5; padding: 4px; background:#fff0f6;">
+                             <img id="aboutImageNewImg4" src="" alt="Nueva imagen 4" style="width:100%; border-radius:6px; display:block;" />
+                           </div>
+                           <div id="aboutImagePlaceholder4" style="width:100%; aspect-ratio:16/9; background:#fde8ef; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#be6b82; font-size:0.85rem; margin-bottom:0.5rem;">Imagen 4</div>
+                           <input type="file" id="aboutImageInput4" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                           <div class="about-image-actions">
+                             <button type="button" class="btn btn-secondary btn-sm" id="aboutImageChangeBtn4">Cambiar</button>
+                             <button type="button" class="btn btn-outline btn-sm" id="aboutImageRemoveBtn4">Quitar</button>
+                           </div>
+                           <div id="aboutImageError4" class="image-error-message" style="display:none; margin-top:0.5rem; color:#ef4444; font-size:0.85rem;"></div>
+                         </div>
+                         <div class="about-image-upload" data-index="5">
+                           <img id="aboutImagePreview5" src="" alt="Sobre Nosotros 5" style="display:none; max-width:100%; border-radius:8px; margin-bottom:0.5rem;" />
+                           <div id="aboutImageNewPreview5" style="display:none; max-width:100%; border-radius:8px; margin-bottom:0.5rem; border: 2px dashed #d4a0b5; padding: 4px; background:#fff0f6;">
+                             <img id="aboutImageNewImg5" src="" alt="Nueva imagen 5" style="width:100%; border-radius:6px; display:block;" />
+                           </div>
+                           <div id="aboutImagePlaceholder5" style="width:100%; aspect-ratio:16/9; background:#fde8ef; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#be6b82; font-size:0.85rem; margin-bottom:0.5rem;">Imagen 5</div>
+                           <input type="file" id="aboutImageInput5" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                           <div class="about-image-actions">
+                             <button type="button" class="btn btn-secondary btn-sm" id="aboutImageChangeBtn5">Cambiar</button>
+                             <button type="button" class="btn btn-outline btn-sm" id="aboutImageRemoveBtn5">Quitar</button>
+                           </div>
+                           <div id="aboutImageError5" class="image-error-message" style="display:none; margin-top:0.5rem; color:#ef4444; font-size:0.85rem;"></div>
+                         </div>
+                       </div>
                     </div>
                   </div>
               </div>
@@ -411,13 +502,17 @@
               <option value="">Todas las categorías</option>
             </select>
             <select id="filter_active" class="card-filter">
+              <option value="">Todos</option>
               <option value="true">Activos</option>
               <option value="false">Inactivos</option>
-              <option value="">Todos</option>
             </select>
             <label class="switch-card" style="padding:0.4rem 0.75rem;font-size:0.8rem;">
               <input type="checkbox" id="showInactiveCheck" style="margin-right:0.4rem;" />
               <span class="switch-label">Mostrar inactivos</span>
+            </label>
+            <label class="switch-card" style="padding:0.4rem 0.75rem;font-size:0.8rem;">
+              <input type="checkbox" id="showFeaturedCheck" style="margin-right:0.4rem;" />
+              <span class="switch-label">Solo destacados</span>
             </label>
             <button class="btn btn-secondary btn-sm" id="saveProductsCloudBtn" data-scope="products">
               <span id="saveProductsCloudBtnText">Guardar en Nube</span>
@@ -434,10 +529,11 @@
                   <table id="productsTable">
                     <thead>
                       <tr>
-                        <th data-sort="name">Producto</th>
+                        <th>Producto</th>
+                        <th>Nombre</th>
                         <th>Categoría</th>
-                        <th style="text-align:right;" data-sort="price">Precio</th>
-                        <th style="text-align:center;" data-sort="stock">Stock</th>
+                        <th style="text-align:right;">Precio</th>
+                        <th style="text-align:center;">Stock</th>
                         <th style="text-align:center;">Estado</th>
                         <th style="text-align:center;">Acciones</th>
                       </tr>
@@ -449,6 +545,7 @@
                     <p>Creá tu primer producto con el botón de arriba.</p>
                   </div>
                 </div>
+                <div id="productsMobileCards" class="products-mobile-cards"></div>
               </div>
             </div>
           </div>
@@ -552,7 +649,12 @@
 
                 <div class="sales-bottom-grid" style="margin-top:2rem;">
                   <div>
-                    <div class="admin-section-title">Historial de Transacciones</div>
+                     <div class="admin-section-title" style="justify-content:space-between;">
+                       <span>Historial de Transacciones</span>
+                       <button class="btn btn-danger btn-sm" id="resetSalesBtn" title="Eliminar todo el historial y empezar de 0">
+                         🗑️ Eliminar historial
+                       </button>
+                     </div>
                     <div class="report-section table-wrap">
                       <table class="table-admin" id="transactionsTable">
                         <thead>
@@ -631,21 +733,29 @@
                       <span id="saveOrdersCloudBtnText">Guardar en Nube</span>
                       <span id="saveOrdersCloudBtnLoading" class="hidden">Guardando...</span>
                     </button>
+                    <button class="btn btn-danger btn-sm" id="batchDeleteCancelledBtn">
+                      <span>Eliminar cancelados</span>
+                    </button>
+                    <button class="btn btn-outline btn-sm" id="batchDeletePendingBtn" style="border:1px solid #fcd34d;color:#92400e;background:#fef9c3;">
+                      <span>Eliminar pendientes</span>
+                    </button>
                   </div>
                 </div>
                 <div class="card-body card-body--flush">
                   <div id="ordersListContainer" class="table-wrap">
-                    <table class="table-admin" id="ordersTable">
-                      <thead>
-                        <tr>
-                          <th style="width:40px;"></th>
-                          <th>ID</th>
-                          <th>Cliente</th>
-                          <th>Estado</th>
-                        </tr>
-                      </thead>
-                      <tbody id="ordersTableBody"></tbody>
-                    </table>
+                      <table class="table-admin" id="ordersTable">
+                        <thead>
+                          <tr>
+                            <th style="width:40px;"></th>
+                            <th>ID</th>
+                            <th>Cliente</th>
+                            <th>Estado</th>
+                            <th>Productos</th>
+                            <th style="text-align:right;">Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody id="ordersTableBody"></tbody>
+                      </table>
                     <div id="ordersEmptyState" class="empty-state" style="display:none;">
                       <h3>No se encontraron pedidos</h3>
                     </div>
@@ -726,9 +836,39 @@
                   </div>
                 </div>
               </div>
-            </div>
+             </div>
 
-            <!-- Columna Derecha: Cliente + Actividad -->
+             <div class="card" id="orderItemsCard">
+               <div class="card-header">
+                 <h3 class="card-header-title">Productos del Pedido</h3>
+               </div>
+               <div class="card-body card-body--flush">
+                 <div id="orderItemsEmpty" class="empty-state">
+                   <p>Seleccioná un pedido para ver los productos.</p>
+                 </div>
+                 <div id="orderItemsContent" style="display:none;">
+                   <table class="order-items-table">
+                     <thead>
+                       <tr>
+                         <th>Producto</th>
+                         <th style="text-align:center;">Cantidad</th>
+                         <th style="text-align:right;">Precio Unit.</th>
+                         <th style="text-align:right;">Subtotal</th>
+                       </tr>
+                     </thead>
+                     <tbody id="orderItemsTableBody"></tbody>
+                     <tfoot>
+                       <tr class="order-total-row order-total-row--grand">
+                         <td colspan="3">Total del pedido</td>
+                         <td style="text-align:right;"><span id="orderItemsTotal">—</span></td>
+                       </tr>
+                     </tfoot>
+                   </table>
+                 </div>
+               </div>
+             </div>
+
+             <!-- Columna Derecha: Cliente + Actividad -->
             <div class="orders-col orders-col-right">
               <div class="card" id="orderInfoCard">
                 <div class="card-header">
@@ -1206,83 +1346,7 @@
     </div>
   </div>
 
-  <!-- ===== SECCIÓN: USUARIOS ===== -->
-  <section id="section-users" class="admin-section-inactive">
-    <div class="admin-section">
-      <div class="card">
-        <div class="card-header">
-          <h3 class="card-header-title">Usuarios del panel</h3>
-          <button class="btn btn-primary btn-sm" id="addUserBtn">+ Nuevo usuario</button>
-        </div>
-         <div class="card-body">
-           <div class="table-wrap">
-             <table class="table-admin">
-               <thead>
-                 <tr>
-                   <th>Usuario</th>
-                   <th>Rol</th>
-                   <th>Último acceso</th>
-                   <th>Estado</th>
-                   <th style="text-align:center;">Acciones</th>
-                 </tr>
-               </thead>
-               <tbody id="usersTableBody">
-                 <tr><td colspan="5" class="loading-row">Cargando usuarios...</td></tr>
-               </tbody>
-             </table>
-           </div>
-         </div>
-      </div>
-    </div>
-  </section>
 
-  <!-- MODAL USUARIO -->
-  <div class="modal-overlay" id="userModalOverlay">
-    <div class="modal" style="max-width:420px;">
-      <div class="modal-header">
-        <h3 id="userModalTitle">Nuevo usuario</h3>
-        <button class="btn btn-secondary btn-sm" id="closeUserModal">✕</button>
-      </div>
-      <div class="modal-body">
-        <form id="userForm">
-          <div class="form-group">
-            <label>Usuario</label>
-            <input type="text" id="userUsername" required />
-          </div>
-           <div class="form-group password-group">
-             <label>Contraseña</label>
-             <div class="password-input-wrapper">
-               <input type="password" id="userPassword" autocomplete="new-password" />
-               <button type="button" class="password-toggle" id="userPasswordToggle" aria-label="Mostrar contraseña">
-                 <svg class="eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
-                 <svg class="eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
-               </button>
-             </div>
-             <small id="userPasswordHint" style="display:none;color:#f59e0b;">Dejalo vacío para mantener la contraseña actual.</small>
-           </div>
-          <div class="form-group">
-            <label>Rol</label>
-            <select id="userRole">
-              <option value="admin">Admin</option>
-              <option value="editor">Editor</option>
-              <option value="viewer">Viewer</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Estado</label>
-            <select id="userActive">
-              <option value="true">Activo</option>
-              <option value="false">Inactivo</option>
-            </select>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" id="cancelUserBtn">Cancelar</button>
-        <button class="btn btn-primary" id="saveUserBtn">Guardar</button>
-      </div>
-    </div>
-  </div>
 
   <!-- MODAL CONFIRMACIÓN -->
   <div class="modal-overlay confirmation-overlay" id="confirmModalOverlay">
@@ -1321,7 +1385,6 @@
   <script src="../js/admin-sales.js"></script>
   <script src="../js/admin-orders.js"></script>
   <script src="../js/admin-payments.js"></script>
-  <script src="../js/admin-users.js"></script>
   <script src="../js/pages/dashboard.js"></script>
 </body>
 </html>

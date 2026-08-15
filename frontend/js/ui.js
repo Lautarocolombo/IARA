@@ -1,25 +1,33 @@
 /* ==================== UI.JS ==================== */
 
 // Toast Notification System
-function showToast(icon, message, type = 'default') {
+function showToast(icon, message, type = 'default', options = {}) {
   const container = document.getElementById('toastContainer');
   if (!container) return;
 
+  const { onRetry, duration } = options;
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
-  toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+  toast.innerHTML = `<span class="toast-icon">${icon}</span><div class="toast-body"><div class="toast-message">${message}</div>${onRetry ? '<button class="toast-retry" type="button">Reintentar</button>' : ''}</div><button class="toast-close" type="button" aria-label="Cerrar">&times;</button>`;
   toast.setAttribute('role', 'status');
   toast.setAttribute('aria-live', 'polite');
   container.appendChild(toast);
 
-  setTimeout(() => {
-    toast.style.animation = 'slideInRight 0.3s ease forwards';
-  }, 10);
+  const closeBtn = toast.querySelector('.toast-close');
+  const retryBtn = toast.querySelector('.toast-retry');
 
-  setTimeout(() => {
+  function close() {
     toast.style.animation = 'slideOutRight 0.3s ease forwards';
-    setTimeout(() => toast.remove(), 300);
-  }, CONFIG.ANIMATIONS.TOAST_DURATION);
+    setTimeout(() => { if (toast.parentNode) toast.remove(); }, 300);
+  }
+
+  if (closeBtn) closeBtn.addEventListener('click', close);
+  if (retryBtn) retryBtn.addEventListener('click', () => { close(); onRetry(); });
+
+  const ms = duration ?? CONFIG.ANIMATIONS.TOAST_DURATION;
+  if (ms > 0) {
+    setTimeout(close, ms);
+  }
 }
 
 // Reveal Animation on Scroll
@@ -528,7 +536,7 @@ async function safeFetch(url, opts = {}, timeoutMs = 0) {
   return fetchWithRetry(url, opts, 2, 1000, timeoutMs);
 }
 
-async function fetchWithRetry(url, opts = {}, retries = 2, backoffMs = 1000, timeoutMs = 0) {
+async function fetchWithRetry(url, opts = {}, retries = 2, backoffMs = 1000, timeoutMs = 0, showToastOnError = true) {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const fetchPromise = fetch(url, opts);
@@ -540,7 +548,7 @@ async function fetchWithRetry(url, opts = {}, retries = 2, backoffMs = 1000, tim
         : await fetchPromise;
       if (res.status === 404) {
         console.warn('Endpoint no encontrado:', url);
-        showToast('', 'Recurso no disponible en este momento.', 'error');
+        if (showToastOnError) showToast('', 'Recurso no disponible en este momento.', 'error');
         return null;
       }
       if (!res.ok) {
@@ -552,7 +560,12 @@ async function fetchWithRetry(url, opts = {}, retries = 2, backoffMs = 1000, tim
     } catch (err) {
       if (attempt === retries) {
         console.error('Fetch error after retries:', err);
-        showToast('', getFetchErrorMessage(err), 'error');
+        if (showToastOnError) {
+          showToast('', getFetchErrorMessage(err), 'error', {
+            onRetry: () => fetchWithRetry(url, opts, retries, backoffMs, timeoutMs, showToastOnError),
+            duration: 0
+          });
+        }
         return null;
       }
       console.warn(`Intento ${attempt + 1} fallido para ${url}, reintentando en ${backoffMs}ms...`, err);
@@ -569,7 +582,7 @@ window.getFetchErrorMessage = getFetchErrorMessage;
 window.escapeHtml = escapeHtml;
 
 function escapeHtml(str) {
-  if (!str) return '';
+  if (str === null || str === undefined) return '';
   return String(str)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -578,6 +591,31 @@ function escapeHtml(str) {
     .replace(/'/g, '&#39;');
 }
 window.escapeHtml = escapeHtml;
+
+function unescapeHtml(str) {
+  if (typeof str !== 'string') return str;
+  return str
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, '\'');
+}
+window.unescapeHtml = unescapeHtml;
+
+function sanitizeAboutText(raw) {
+  if (typeof raw !== 'string') return '';
+  let value = raw;
+  if (/&lt;/.test(value) || /&gt;/.test(value)) {
+    value = unescapeHtml(value);
+  }
+  const clean = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(value) : value;
+  if (!clean || /^<(p|div)>\s*(<br\s*\/?>)?\s*<\/\1>$/.test(clean)) {
+    return '';
+  }
+  return clean;
+}
+window.sanitizeAboutText = sanitizeAboutText;
 
 async function loadSiteTexts() {
   try {
@@ -593,10 +631,10 @@ async function loadSiteTexts() {
       delete data.__updatedAt;
     }
 
-    if (data.about_text && document.getElementById('aboutText')) {
-      const clean = typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(data.about_text) : data.about_text;
-      document.getElementById('aboutText').innerHTML = `<p>${clean}</p>`;
-    } else {
+    const aboutEl = document.getElementById('aboutText');
+    if (aboutEl && data.about_text !== undefined && data.about_text !== null) {
+      aboutEl.innerHTML = sanitizeAboutText(data.about_text);
+    } else if (aboutEl) {
       applyAboutFallback();
     }
 
@@ -812,6 +850,28 @@ async function loadHeroCards() {
   }
 }
 
+/* ==================== GLOBAL ERROR BOUNDARY ==================== */
+
+(function() {
+  if (window.__globalErrorHandlerInstalled) return;
+  window.__globalErrorHandlerInstalled = true;
+
+  window.onerror = function(message, source, lineno, colno, error) {
+    console.error('[GlobalError]', message, 'at', source + ':' + lineno + ':' + colno, error);
+    if (typeof showToast === 'function') {
+      showToast('⚠️', 'Hubo un problema inesperado. La página se recargará automáticamente.', 'error', { duration: 5000 });
+    }
+    return false;
+  };
+
+  window.addEventListener('unhandledrejection', function(event) {
+    console.error('[UnhandledRejection]', event.reason);
+    if (typeof showToast === 'function') {
+      showToast('⚠️', 'Error de conexión. Intentá nuevamente.', 'error', { duration: 4000 });
+    }
+  });
+})();
+
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { escapeHtml, getFetchErrorMessage, showToast, safeFetch, fetchWithRetry, initMobileNavbar, initContactForm };
+  module.exports = { escapeHtml, unescapeHtml, sanitizeAboutText, getFetchErrorMessage, showToast, safeFetch, fetchWithRetry, initMobileNavbar, initContactForm };
 }

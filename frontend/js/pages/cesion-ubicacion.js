@@ -58,7 +58,20 @@
       });
 
       var storeInfoWindow = new google.maps.InfoWindow({
-        content: '<div style="font-family:DM Sans,sans-serif;padding:4px;"><strong>Artesanía Gualeguay</strong><br>San Antonio Norte 473, Gualeguay</div>'
+        content: '<div class="map-popup-card">' +
+          '<div class="map-popup-row map-popup-header">' +
+            '<span class="map-popup-pin" aria-hidden="true">📍</span>' +
+            '<span class="map-popup-address">San Antonio Norte 473, Gualeguay, Entre Ríos, Argentina</span>' +
+          '</div>' +
+          '<div class="map-popup-rating">' +
+            '<span class="map-popup-star" aria-hidden="true">★</span>' +
+            '<span class="map-popup-score">5,0</span>' +
+            '<a class="map-popup-reviews" href="https://search.google.com/local/reviews?q=Artesan%C3%ADa+Gualeguay+Gualeguay" target="_blank" rel="noopener">(7)</a>' +
+            '<span class="map-popup-info" title="Calificación de Google">ℹ️</span>' +
+          '</div>' +
+        '</div>',
+        maxWidth: 320,
+        pixelOffset: new google.maps.Size(0, -10)
       });
       storeMarker.addListener('click', function() {
         storeInfoWindow.open(map, storeMarker);

@@ -309,13 +309,37 @@
 /* ==================== PEDIDOS INDIVIDUALES ==================== */
 .orders-layout {
   display: grid;
-  grid-template-columns: 280px 1fr 280px;
+  grid-template-columns: minmax(240px, 1fr) 1.5fr minmax(240px, 1fr);
   gap: 1rem;
-  align-items: start;
+  align-items: stretch;
 }
 
-.orders-col-left {
+.orders-col {
+  display: flex;
+  flex-direction: column;
   min-height: 500px;
+}
+
+.orders-col .card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.orders-col .card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.orders-col-center .empty-state,
+.orders-col-right .empty-state {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
 }
 
 .order-selected {
@@ -527,6 +551,11 @@
   color: #a16207;
 }
 
+.status-completed {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
 .status-confirmed {
   background: #dcfce7;
   color: #16a34a;
@@ -729,7 +758,7 @@
 
 @media (max-width: 1200px) {
   .orders-layout {
-    grid-template-columns: 240px 1fr 240px;
+    grid-template-columns: minmax(220px, 1fr) 1.2fr minmax(220px, 1fr);
   }
 }
 
@@ -737,8 +766,12 @@
   .orders-layout {
     grid-template-columns: 1fr;
   }
-  .orders-col-left {
+  .orders-col {
     min-height: auto;
+  }
+  .orders-col-center .empty-state,
+  .orders-col-right .empty-state {
+    min-height: 200px;
   }
 }
 
@@ -821,6 +854,147 @@
 #productsTableContainer {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+#productsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--admin-table-body);
+  font-family: var(--font-body);
+}
+
+#productsTable th,
+#productsTable td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+#productsTable th {
+  font-family: var(--font-body);
+  font-weight: var(--weight-semibold);
+  color: var(--text-table-header);
+  font-size: var(--admin-table-header);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: #f8fafc;
+}
+
+#productsTable td:nth-child(1) {
+  width: 50px;
+  text-align: center;
+}
+
+#productsTable td:nth-child(2) {
+  min-width: 160px;
+}
+
+.stock-cell,
+.status-cell,
+.actions-cell {
+  text-align: center;
+}
+
+.text-stock {
+  font-family: var(--font-body);
+  font-size: var(--admin-table-body);
+  color: var(--text-body);
+  font-weight: var(--weight-medium);
+}
+
+#productsTable tbody tr:hover {
+  background: rgba(212, 112, 144, 0.03);
+}
+
+/* ==================== PRODUCT MOBILE CARDS ==================== */
+.products-mobile-cards {
+  display: none;
+}
+
+.product-mobile-card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.product-mobile-card-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.product-mobile-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: linear-gradient(135deg, #fde8ef, #f8d5e4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  border: 1px solid var(--border);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.product-mobile-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.product-mobile-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.product-mobile-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+}
+
+.product-category {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.product-price {
+  font-family: var(--font-body);
+  font-weight: var(--weight-bold);
+  color: var(--text-dark);
+}
+
+.product-mobile-card-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+@media (max-width: 480px) {
+  .products-mobile-cards {
+    display: flex !important;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  #productsTable {
+    display: none;
+  }
+  .products-mobile-cards .product-mobile-card {
+    width: 100%;
+  }
 }
 
 /* ==================== CATEGORIES TREE ==================== */
@@ -1048,4 +1222,39 @@
 
 .shipping-rate-icon {
   font-size: 1rem;
+}
+
+/* ==================== ABOUT CAROUSEL PANEL ==================== */
+.about-images-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  margin-top: 0.75rem;
+}
+
+.about-image-upload {
+  background: #fff;
+  border: 1px solid #f3d1db;
+  border-radius: 12px;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.about-image-upload img {
+  max-height: 180px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.about-image-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.about-image-actions .btn {
+  flex: 1;
+  min-width: 80px;
 }

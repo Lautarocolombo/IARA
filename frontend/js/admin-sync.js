@@ -110,8 +110,8 @@
     var loadSpan = document.getElementById('saveAllBtnLoading');
     var textSpan = document.getElementById('saveAllBtnText');
     if (btn) btn.disabled = true;
+    if (textSpan) textSpan.classList.add('hidden');
     if (loadSpan) loadSpan.classList.remove('hidden');
-    if (textSpan) textSpan.textContent = 'Guardando...';
 
     try {
       switch (current) {
@@ -157,6 +157,7 @@
       if (btn) btn.disabled = false;
       if (loadSpan) loadSpan.classList.add('hidden');
       if (textSpan) {
+        textSpan.classList.remove('hidden');
         var currentSectionForText = getCurrentSection();
         if (currentSectionForText === 'sales') {
           textSpan.textContent = 'Actualizar datos';

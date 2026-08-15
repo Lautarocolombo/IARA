@@ -10,8 +10,7 @@
     categories: ['admin', 'editor', 'viewer'],
     sales:      ['admin'],
     payments:   ['admin'],
-    orders:     ['admin', 'editor', 'viewer'],
-    users:      ['admin']
+    orders:     ['admin', 'editor', 'viewer']
   };
 
   var SECTION_MAP = {
@@ -20,8 +19,7 @@
     categories: { title: 'Categorías',         breadcrumb: 'Gestionar categorías del catálogo' },
     sales:      { title: 'Ganancias',          breadcrumb: 'Reportes de ventas e ingresos' },
     payments:   { title: 'Medio de Pago',       breadcrumb: 'Configurar alias y método de pago' },
-    orders:     { title: 'Pedidos',             breadcrumb: 'Gestionar pedidos individuales' },
-    users:      { title: 'Usuarios',            breadcrumb: 'Gestionar accesos al panel' }
+    orders:     { title: 'Pedidos',             breadcrumb: 'Gestionar pedidos individuales' }
   };
 
   var AUTH_KEY = 'ag_admin_token';

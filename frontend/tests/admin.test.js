@@ -78,7 +78,6 @@ describe('Admin dashboard role-based visibility', () => {
         <a href="#" data-section="sales">Ganancias</a>
         <a href="#" data-section="payments">Medio de Pago</a>
         <a href="#" data-section="orders">Pedidos</a>
-        <a href="#" data-section="users">Usuarios</a>
       </nav>
       <section id="section-content" class="admin-section-inactive"></section>
       <section id="section-products" class="admin-section-inactive"></section>
@@ -86,7 +85,6 @@ describe('Admin dashboard role-based visibility', () => {
       <section id="section-sales" class="admin-section-inactive"></section>
       <section id="section-payments" class="admin-section-inactive"></section>
       <section id="section-orders" class="admin-section-inactive"></section>
-      <section id="section-users" class="admin-section-inactive"></section>
       <div id="toastContainer"></div>
     `;
   });
@@ -112,7 +110,7 @@ describe('Admin dashboard role-based visibility', () => {
     expect(hiddenCount).toBe(0);
   });
 
-  it('editor NO ve Ganancias, Medio de Pago ni Usuarios en el sidebar', async () => {
+  it('editor NO ve Ganancias ni Medio de Pago en el sidebar', async () => {
     await require('../js/admin.js');
     await require('../js/admin-dashboard.js');
     localStorage.setItem('ag_admin_role', 'editor');
@@ -133,10 +131,9 @@ describe('Admin dashboard role-based visibility', () => {
     expect(visibleSections).toContain('orders');
     expect(visibleSections).not.toContain('sales');
     expect(visibleSections).not.toContain('payments');
-    expect(visibleSections).not.toContain('users');
   });
 
-  it('editor NO ve las secciones Ganancias/Medio de Pago/Usuarios del DOM', async () => {
+  it('editor NO ve las secciones Ganancias/Medio de Pago del DOM', async () => {
     await require('../js/admin.js');
     await require('../js/admin-dashboard.js');
     localStorage.setItem('ag_admin_role', 'editor');
@@ -145,7 +142,6 @@ describe('Admin dashboard role-based visibility', () => {
 
     expect(document.getElementById('section-sales').style.display).toBe('none');
     expect(document.getElementById('section-payments').style.display).toBe('none');
-    expect(document.getElementById('section-users').style.display).toBe('none');
 
     expect(document.getElementById('section-content').style.display).not.toBe('none');
     expect(document.getElementById('section-products').style.display).not.toBe('none');
@@ -164,71 +160,4 @@ describe('Admin dashboard role-based visibility', () => {
   });
 });
 
-describe('Admin users module', () => {
-  beforeEach(() => {
-    jest.resetModules();
-    global.CONFIG = {
-      API: { BASE: 'http://localhost' },
-      ANIMATIONS: { TOAST_DURATION: 3000, REVEAL_THRESHOLD: 0.15, TRANSITION_SPEED: 0.4 }
-    };
-    document.body.innerHTML = `
-      <div id="usersTableBody"></div>
-      <div id="userModalOverlay"></div>
-      <div id="confirmModalOverlay"></div>
-      <div id="userModalTitle"></div>
-      <div id="userUsername"></div>
-      <div id="userPassword"></div>
-      <div id="userPasswordToggle"></div>
-      <div id="userPasswordHint"></div>
-      <div id="userRole"></div>
-      <div id="userActive"></div>
-      <button id="addUserBtn"></button>
-      <button id="closeUserModal"></button>
-      <button id="cancelUserBtn"></button>
-      <button id="saveUserBtn"></button>
-      <button id="cancelConfirmBtn"></button>
-      <button id="confirmModalAction"></button>
-      <span id="confirmModalMessage"></span>
-      <div id="toastContainer"></div>
-    `;
-    localStorage.clear();
-  });
 
-  it('admin-users.js loads and expone loadUsers, openUserModal, openDeleteModal', async () => {
-    await require('../js/ui.js');
-    await require('../js/admin.js');
-    await require('../js/admin-users.js');
-    expect(typeof window.loadUsers).toBe('function');
-    expect(typeof window.openUserModal).toBe('function');
-    expect(typeof window.openDeleteModal).toBe('function');
-  });
-
-  it('openUserModal establece el título correcto para crear', async () => {
-    await require('../js/ui.js');
-    await require('../js/admin.js');
-    await require('../js/admin-users.js');
-
-    window.openUserModal(null);
-
-    var overlay = document.getElementById('userModalOverlay');
-    var title = document.getElementById('userModalTitle');
-    expect(overlay.classList.contains('active')).toBe(true);
-    expect(title.textContent).toBe('Nuevo usuario');
-  });
-
-  it('openUserModal establece el título correcto para editar', async () => {
-    await require('../js/ui.js');
-    await require('../js/admin.js');
-    await require('../js/admin-users.js');
-
-    window.openUserModal({
-      id: 1, username: 'editor1', role: 'editor', active: true,
-      password: '', last_login: null
-    });
-
-    var overlay = document.getElementById('userModalOverlay');
-    var title = document.getElementById('userModalTitle');
-    expect(overlay.classList.contains('active')).toBe(true);
-    expect(title.textContent).toBe('Editar usuario');
-  });
-});

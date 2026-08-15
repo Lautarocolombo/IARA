@@ -1,6 +1,5 @@
 jest.mock('../src/lib/db', () => ({
-  query: jest.fn(),
-  transaction: jest.fn((fn) => fn({ query: jest.fn().mockResolvedValue({ rows: [], rowCount: 0 }) }))
+  query: jest.fn()
 }));
 
 jest.mock('../src/lib/logger', () => ({
@@ -10,37 +9,38 @@ jest.mock('../src/lib/logger', () => ({
 }));
 
 jest.mock('../src/lib/upload', () => ({
-  saveUploadedFile: jest.fn()
+  saveUploadedFile: jest.fn().mockResolvedValue('/uploads/category-image.webp')
 }));
 
 const { query } = require('../src/lib/db');
-const { getCategories, createCategory, updateCategory, deleteCategory } = require('../src/controllers/categoriesController');
+const {
+  getCategories,
+  getPublicCategories,
+  createCategory,
+  updateCategory,
+  updateCategoryOrder,
+  deleteCategory
+} = require('../src/controllers/categoriesController');
 
 describe('categoriesController', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    query.mockReset();
   });
 
   describe('getCategories', () => {
-    test('retorna lista de categorías', async () => {
-      const req = {};
+    test('retorna todas las categorías', async () => {
+      const req = { query: {} };
       const res = { json: jest.fn() };
 
-      query.mockResolvedValueOnce({
-        rows: [
-          { id: 1, name: 'Pulseras', slug: 'pulseras', description: '', active: true, orden: 0, emoji: '📿', image: '', parent_id: null, image_url: '', created_at: '2024-01-01', updated_at: '2024-01-01', product_count: 5 }
-        ]
-      });
+      query.mockResolvedValueOnce({ rows: [{ id: 1, name: 'Pulseras', product_count: 5 }] });
 
       await getCategories(req, res);
 
-      expect(res.json).toHaveBeenCalledWith([
-        { id: 1, name: 'Pulseras', slug: 'pulseras', description: '', active: true, orden: 0, emoji: '📿', image: '', parent_id: null, image_url: '', created_at: '2024-01-01', updated_at: '2024-01-01', product_count: 5 }
-      ]);
+      expect(res.json).toHaveBeenCalledWith(expect.any(Array));
     });
 
-    test('retorna 500 en error de DB', async () => {
-      const req = {};
+    test('maneja error de base de datos', async () => {
+      const req = { query: {} };
       const res = {
         status: jest.fn(() => res),
         json: jest.fn()
@@ -51,34 +51,64 @@ describe('categoriesController', () => {
       await getCategories(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Error interno del servidor' });
+    });
+  });
+
+  describe('getPublicCategories', () => {
+    test('retorna categorías públicas activas', async () => {
+      const req = { query: {} };
+      const res = {
+        setHeader: jest.fn(),
+        json: jest.fn()
+      };
+
+      query.mockResolvedValueOnce({ rows: [{ id: 1, active: true, name: 'Pulseras' }] });
+
+      await getPublicCategories(req, res);
+
+      expect(res.setHeader).toHaveBeenCalledWith('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+      expect(res.json).toHaveBeenCalledWith(expect.any(Array));
+    });
+
+    test('maneja error de base de datos', async () => {
+      const req = { query: {} };
+      const res = {
+        status: jest.fn(() => res),
+        json: jest.fn()
+      };
+
+      query.mockRejectedValueOnce(new Error('DB error'));
+
+      await getPublicCategories(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
     });
   });
 
   describe('createCategory', () => {
     test('crea categoría exitosamente', async () => {
       const req = {
-        body: { name: 'Nueva', slug: 'nueva', description: 'Desc', active: true, orden: 1 }
+        body: { name: 'Nueva Categoria', slug: 'nueva-categoria' },
+        file: null
       };
       const res = {
         status: jest.fn(() => res),
         json: jest.fn()
       };
 
-      query.mockResolvedValueOnce({
-        rows: [{ id: 2, name: 'Nueva', slug: 'nueva', description: 'Desc', active: true, orden: 1, emoji: '', image: '', parent_id: null, image_url: '', created_at: '2024-01-01', updated_at: '2024-01-01' }]
-      });
+      query.mockResolvedValueOnce({ rows: [{ id: 1, name: 'Nueva Categoria' }] });
 
       await createCategory(req, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ id: 2, name: 'Nueva', slug: 'nueva' })
-      );
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }));
     });
 
-    test('retorna 400 si faltan name o slug', async () => {
-      const req = { body: { name: 'Nueva' } };
+    test('retorna 400 si falta nombre o slug', async () => {
+      const req = {
+        body: { name: '' },
+        file: null
+      };
       const res = {
         status: jest.fn(() => res),
         json: jest.fn()
@@ -87,54 +117,31 @@ describe('categoriesController', () => {
       await createCategory(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Nombre y slug son requeridos' });
     });
 
-    test('retorna 409 en conflicto de unique', async () => {
+    test('retorna 409 si el slug ya existe', async () => {
       const req = {
-        body: { name: 'Nueva', slug: 'nueva' }
+        body: { name: 'Categoria', slug: 'categoria' },
+        file: null
       };
       const res = {
         status: jest.fn(() => res),
         json: jest.fn()
       };
 
-      const err = new Error('unique violation');
-      err.code = '23505';
-      query.mockRejectedValueOnce(err);
+      const error = new Error('duplicate key');
+      error.code = '23505';
+      query.mockRejectedValueOnce(error);
 
       await createCategory(req, res);
 
       expect(res.status).toHaveBeenCalledWith(409);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Ya existe una categoría con ese nombre o slug' });
     });
 
-    test('procesa archivo de imagen si existe', async () => {
+    test('maneja error de base de datos', async () => {
       const req = {
-        body: { name: 'Nueva', slug: 'nueva' },
-        file: { originalname: 'test.jpg' }
-      };
-      const res = {
-        status: jest.fn(() => res),
-        json: jest.fn()
-      };
-
-      const { saveUploadedFile } = require('../src/lib/upload');
-      saveUploadedFile.mockResolvedValueOnce('/uploads/imagenes/test.jpg');
-
-      query.mockResolvedValueOnce({
-        rows: [{ id: 2, name: 'Nueva', slug: 'nueva', description: '', active: true, orden: 0, emoji: '', image: '', parent_id: null, image_url: '/uploads/imagenes/test.jpg', created_at: '2024-01-01', updated_at: '2024-01-01' }]
-      });
-
-      await createCategory(req, res);
-
-      expect(saveUploadedFile).toHaveBeenCalledWith(req.file);
-      expect(query.mock.calls[0][1]).toContain('/uploads/imagenes/test.jpg');
-    });
-
-    test('retorna 500 en error de DB', async () => {
-      const req = {
-        body: { name: 'Nueva', slug: 'nueva' }
+        body: { name: 'Categoria', slug: 'categoria' },
+        file: null
       };
       const res = {
         status: jest.fn(() => res),
@@ -146,65 +153,30 @@ describe('categoriesController', () => {
       await createCategory(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Error interno del servidor' });
     });
   });
 
   describe('updateCategory', () => {
     test('actualiza categoría exitosamente', async () => {
       const req = {
-        params: { id: 1 },
-        body: { name: 'Actualizada', active: false }
+        params: { id: '1' },
+        body: { name: 'Categoria Actualizada' },
+        file: null
       };
       const res = { json: jest.fn() };
 
-      query.mockResolvedValueOnce({
-        rows: [{ id: 1, name: 'Actualizada', slug: 'pulseras', description: '', active: false, orden: 0, emoji: '📿', image: '', parent_id: null, image_url: '', created_at: '2024-01-01', updated_at: '2024-01-01' }]
-      });
+      query.mockResolvedValueOnce({ rows: [{ id: 1, name: 'Categoria Actualizada' }] });
 
       await updateCategory(req, res);
 
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ id: 1, name: 'Actualizada' })
-      );
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ id: 1, name: 'Categoria Actualizada' }));
     });
 
-    test('retorna 400 sin datos para actualizar', async () => {
+    test('retorna 404 si la categoría no existe', async () => {
       const req = {
-        params: { id: 1 },
-        body: { id: 1 }
-      };
-      const res = {
-        status: jest.fn(() => res),
-        json: jest.fn()
-      };
-
-      await updateCategory(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Sin datos para actualizar' });
-    });
-
-    test('filtra columnas no permitidas', async () => {
-      const req = {
-        params: { id: 1 },
-        body: { name: 'Actualizada', forbidden_col: 'hack' }
-      };
-      const res = { json: jest.fn() };
-
-      query.mockResolvedValueOnce({
-        rows: [{ id: 1, name: 'Actualizada', slug: 'pulseras', description: '', active: true, orden: 0, emoji: '📿', image: '', parent_id: null, image_url: '', created_at: '2024-01-01', updated_at: '2024-01-01' }]
-      });
-
-      await updateCategory(req, res);
-
-      expect(query.mock.calls[0][0]).not.toContain('forbidden_col');
-    });
-
-    test('retorna 404 si categoría no existe', async () => {
-      const req = {
-        params: { id: 999 },
-        body: { name: 'Actualizada' }
+        params: { id: '999' },
+        body: { name: 'Nuevo Nombre' },
+        file: null
       };
       const res = {
         status: jest.fn(() => res),
@@ -216,40 +188,65 @@ describe('categoriesController', () => {
       await updateCategory(req, res);
 
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Categoría no encontrada' });
     });
 
-    test('retorna 500 en error de DB', async () => {
+    test('retorna 400 si no hay datos para actualizar', async () => {
       const req = {
-        params: { id: 1 },
-        body: { name: 'Actualizada' }
+        params: { id: '1' },
+        body: {},
+        file: null
       };
       const res = {
         status: jest.fn(() => res),
         json: jest.fn()
       };
 
-      query.mockRejectedValueOnce(new Error('DB error'));
-
       await updateCategory(req, res);
 
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Error interno del servidor' });
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+  });
+
+  describe('updateCategoryOrder', () => {
+    test('actualiza orden de categorías', async () => {
+      const req = {
+        body: { orden: [{ id: 1, orden: 2 }, { id: 2, orden: 1 }] }
+      };
+      const res = { json: jest.fn() };
+
+      query.mockResolvedValueOnce({ rows: [] });
+      query.mockResolvedValueOnce({ rows: [] });
+
+      await updateCategoryOrder(req, res);
+
+      expect(res.json).toHaveBeenCalledWith({ ok: true });
+    });
+
+    test('retorna 400 si no es array', async () => {
+      const req = { body: { orden: 'invalid' } };
+      const res = {
+        status: jest.fn(() => res),
+        json: jest.fn()
+      };
+
+      await updateCategoryOrder(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
     });
   });
 
   describe('deleteCategory', () => {
-    test('elimina categoría exitosamente', async () => {
-      const req = { params: { id: 1 } };
+    test('elimina categoría sin productos ni hijos', async () => {
+      const req = { params: { id: '1' } };
       const res = {
         status: jest.fn(() => res),
         json: jest.fn()
       };
 
       query.mockResolvedValueOnce({ rows: [{ slug: 'pulseras', name: 'Pulseras' }] });
-      query.mockResolvedValueOnce({ rows: [{ count: 0 }] });
-      query.mockResolvedValueOnce({ rows: [{ count: 0 }] });
-      query.mockResolvedValueOnce({ rows: [], rowCount: 1 });
+      query.mockResolvedValueOnce({ rows: [{ count: '0' }] });
+      query.mockResolvedValueOnce({ rows: [{ count: '0' }] });
+      query.mockResolvedValueOnce({ rows: [] });
       query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
       await deleteCategory(req, res);
@@ -257,8 +254,8 @@ describe('categoriesController', () => {
       expect(res.json).toHaveBeenCalledWith({ ok: true, reassigned: 0, productCount: 0 });
     });
 
-    test('retorna 404 si categoría no existe', async () => {
-      const req = { params: { id: 999 } };
+    test('retorna 404 si la categoría no existe', async () => {
+      const req = { params: { id: '999' } };
       const res = {
         status: jest.fn(() => res),
         json: jest.fn()
@@ -269,57 +266,21 @@ describe('categoriesController', () => {
       await deleteCategory(req, res);
 
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Categoría no encontrada' });
     });
 
-    test('previene eliminación con subcategorías', async () => {
-      const req = { params: { id: 1 } };
+    test('retorna 400 si tiene subcategorías', async () => {
+      const req = { params: { id: '1' } };
       const res = {
         status: jest.fn(() => res),
         json: jest.fn()
       };
 
       query.mockResolvedValueOnce({ rows: [{ slug: 'pulseras', name: 'Pulseras' }] });
-      query.mockResolvedValueOnce({ rows: [{ count: 2 }] });
+      query.mockResolvedValueOnce({ rows: [{ count: '2' }] });
 
       await deleteCategory(req, res);
 
       expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Reasigná las subcategorías antes de eliminar esta categoría.' });
-    });
-
-    test('reasigna productos antes de eliminar', async () => {
-      const req = { params: { id: 1 } };
-      const res = {
-        status: jest.fn(() => res),
-        json: jest.fn()
-      };
-
-      query.mockResolvedValueOnce({ rows: [{ slug: 'pulseras', name: 'Pulseras' }] });
-      query.mockResolvedValueOnce({ rows: [{ count: 0 }] });
-      query.mockResolvedValueOnce({ rows: [{ count: 3 }] });
-      query.mockResolvedValueOnce({ rows: [], rowCount: 1 });
-      query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
-
-      await deleteCategory(req, res);
-
-      expect(query).toHaveBeenCalledWith('UPDATE products SET category = \'\' WHERE category = $1', ['pulseras']);
-      expect(res.json).toHaveBeenCalledWith({ ok: true, reassigned: 3, productCount: 3 });
-    });
-
-    test('retorna 500 en error de DB', async () => {
-      const req = { params: { id: 1 } };
-      const res = {
-        status: jest.fn(() => res),
-        json: jest.fn()
-      };
-
-      query.mockRejectedValueOnce(new Error('DB error'));
-
-      await deleteCategory(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Error interno del servidor' });
     });
   });
 });

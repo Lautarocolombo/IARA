@@ -100,4 +100,54 @@ async function getPaymentStatus(req, res) {
   }
 }
 
-module.exports = { confirmTransferPayment, getPaymentStatus, processWebhookSync };
+async function getPaymentReconciliation(req, res) {
+  try {
+    const { start_date, end_date } = req.query;
+    let where = 'WHERE TRUE';
+    const params = [];
+
+    if (start_date) { params.push(start_date); where += ` AND date(o.created_at) >= $${params.length}`; }
+    if (end_date) { params.push(end_date); where += ` AND date(o.created_at) <= $${params.length}`; }
+
+    const summary = await query(`
+      SELECT
+        COUNT(*) as total_orders,
+        SUM(o.total) as total_amount,
+        COUNT(CASE WHEN o.status = 'confirmed' THEN 1 END) as confirmed_orders,
+        SUM(CASE WHEN o.status = 'confirmed' THEN o.total ELSE 0 END) as confirmed_amount,
+        COUNT(CASE WHEN o.status = 'pending' THEN 1 END) as pending_orders,
+        SUM(CASE WHEN o.status = 'pending' THEN o.total ELSE 0 END) as pending_amount,
+        COUNT(CASE WHEN o.status = 'cancelled' THEN 1 END) as cancelled_orders,
+        SUM(CASE WHEN o.status = 'cancelled' THEN o.total ELSE 0 END) as cancelled_amount
+      FROM orders o
+      ${where}
+    `, params);
+
+    const details = await query(`
+      SELECT
+        o.id,
+        o.status,
+        o.total,
+        o.created_at,
+        o.shipping_email,
+        we.event_id,
+        we.status as payment_status,
+        we.processed_at
+      FROM orders o
+      LEFT JOIN webhook_events we ON we.payload->>'orderId' = o.id::text AND we.source = 'transfer'
+      ${where}
+      ORDER BY o.created_at DESC
+      LIMIT 100
+    `, params);
+
+    res.json({
+      summary: summary.rows[0],
+      details: details.rows
+    });
+  } catch (err) {
+    logger.error('Error obteniendo reconciliación de pagos:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}
+
+module.exports = { confirmTransferPayment, getPaymentStatus, processWebhookSync, getPaymentReconciliation };

@@ -61,8 +61,8 @@
 }
 
 @keyframes heroFloat {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-8px); }
+  0%, 100% { transform: rotate(var(--base-rotate, 0deg)) translateY(0); }
+  50%       { transform: rotate(var(--base-rotate, 0deg)) translateY(-8px); }
 }
 
 @keyframes glow {

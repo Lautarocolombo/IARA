@@ -118,6 +118,15 @@ const defaultProducts = [
     description: 'Marcapáginas hecho a mano con técnica mixta',
     emoji: '🎁',
     image: 'assets/placeholder-product.svg'
+  },
+  {
+    id: 13,
+    name: 'Pulsera Con tigo tengo',
+    category: 'pulseras',
+    price: 450,
+    description: 'Pulsera artesanal con diseño exclusivo',
+    emoji: '📿',
+    image: '../image/pulsera%20Con%20tigo%20tengo.jpg'
   }
 ];
 
@@ -217,24 +226,27 @@ function renderProducts(productsToRender) {
 return `
     <div class="product-card reveal" data-product-id="${product.id}">
       <a href="pages/product.html?id=${product.id}" style="text-decoration:none;color:inherit;">
-          <div class="product-image ${catClass}" aria-hidden="true">${imageHtml}</div>
-          ${badgeHtml}
-          <div class="product-info">
-            <span class="product-category">${product.category}</span>
-            <h3 class="product-name">${product.name}</h3>
-            <p class="product-description">${product.description}</p>
-            <div class="product-footer">
-              <span class="product-price">${formatARS(product.price)}</span>
-            </div>
-          </div>
+        <div class="product-image ${catClass}" aria-hidden="true">${imageHtml}</div>
+        ${badgeHtml}
+      </a>
+      <div class="product-info">
+        <span class="product-category">${product.category}</span>
+        <a href="pages/product.html?id=${product.id}" style="text-decoration:none;color:inherit;">
+          <h3 class="product-name">${product.name}</h3>
         </a>
-        <div style="display:flex;gap:0.5rem;padding:0 0.5rem 0.5rem;">
-          <button class="btn-add-cart" data-product-id="${product.id}" data-product-name="${escapeHtml(product.name)}" data-product-price="${product.price}" data-product-emoji="${escapeHtml(product.emoji||'📿')}" data-product-image="${escapeHtml(product.image||'')}" data-product-stock="${product.stock||0}" aria-label="Agregar ${escapeHtml(product.name)} al carrito"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
-          <button class="btn-wishlist" data-product-id="${product.id}" data-product-name="${escapeHtml(product.name)}" data-product-price="${product.price}" data-product-emoji="${escapeHtml(product.emoji||'📿')}" data-product-image="${escapeHtml(product.image||'')}" aria-label="Agregar a favoritos">${window.isInWishlist(product.id) ? '❤️' : '🤍'}</button>
-          <a href="${waLink}" target="_blank" class="btn-outline btn-sm" rel="noopener" title="Consultar por WhatsApp">💬</a>
+        <p class="product-description">${product.description}</p>
+        <div class="product-footer">
+          <span class="product-price">${formatARS(product.price)}</span>
+          <a href="pages/product.html?id=${product.id}" class="product-cta">Ver producto</a>
         </div>
       </div>
-    `;
+      <div class="product-actions">
+        <button class="btn-add-cart" data-product-id="${product.id}" data-product-name="${escapeHtml(product.name)}" data-product-price="${product.price}" data-product-emoji="${escapeHtml(product.emoji||'📿')}" data-product-image="${escapeHtml(product.image||'')}" data-product-stock="${product.stock||0}" aria-label="Agregar ${escapeHtml(product.name)} al carrito"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+        <button class="btn-wishlist" data-product-id="${product.id}" data-product-name="${escapeHtml(product.name)}" data-product-price="${product.price}" data-product-emoji="${escapeHtml(product.emoji||'📿')}" data-product-image="${escapeHtml(product.image||'')}" aria-label="Agregar a favoritos">${window.isInWishlist(product.id) ? '❤️' : '🤍'}</button>
+        <a href="${waLink}" target="_blank" class="btn-outline btn-sm" rel="noopener" title="Consultar por WhatsApp">💬</a>
+      </div>
+    </div>
+  `;
   }).join('');
 
   if (window.revealObserver) {

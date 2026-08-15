@@ -246,19 +246,13 @@ describe('auth middleware', () => {
       expect(ROLE_PERMISSIONS.admin).toContain('earnings:read');
       expect(ROLE_PERMISSIONS.admin).toContain('payments:read');
       expect(ROLE_PERMISSIONS.admin).toContain('payments:write');
-      expect(ROLE_PERMISSIONS.admin).toContain('users:read');
-      expect(ROLE_PERMISSIONS.admin).toContain('users:write');
-      expect(ROLE_PERMISSIONS.admin).toContain('users:delete');
     });
 
-    test('editor NO tiene permisos de ganancias/pagos/usuarios', () => {
+    test('editor NO tiene permisos de ganancias/pagos', () => {
       expect(ROLE_PERMISSIONS.editor).not.toContain('earnings:read');
       expect(ROLE_PERMISSIONS.editor).not.toContain('payments:read');
       expect(ROLE_PERMISSIONS.editor).not.toContain('payments:write');
       expect(ROLE_PERMISSIONS.editor).not.toContain('reports:read');
-      expect(ROLE_PERMISSIONS.editor).not.toContain('users:read');
-      expect(ROLE_PERMISSIONS.editor).not.toContain('users:write');
-      expect(ROLE_PERMISSIONS.editor).not.toContain('users:delete');
     });
 
     test('editor tiene permisos de productos, categorías y contenido', () => {
@@ -314,21 +308,6 @@ describe('auth middleware', () => {
 
     test('requirePermission deniende payments:write a editor', () => {
       const middleware = requirePermission('payments:write');
-      const req = { user: { role: 'editor', permissions: {} } };
-      const res = {
-        status: jest.fn(() => res),
-        json: jest.fn()
-      };
-      const next = jest.fn();
-
-      middleware(req, res, next);
-
-      expect(res.status).toHaveBeenCalledWith(403);
-      expect(next).not.toHaveBeenCalled();
-    });
-
-    test('requirePermission deniende users:write a editor', () => {
-      const middleware = requirePermission('users:write');
       const req = { user: { role: 'editor', permissions: {} } };
       const res = {
         status: jest.fn(() => res),

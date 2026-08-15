@@ -71,12 +71,30 @@ if (typeof loadSiteTexts === 'function') {
 if (typeof loadHeroCards === 'function') {
   loadHeroCards();
 }
-if (typeof loadHeroImage === 'function') {
-  loadHeroImage();
-}
 if (typeof loadTestimonials === 'function') {
   loadTestimonials();
 }
+
+  function loadAboutImages() {
+    if (typeof fetchWithRetry !== 'function') return;
+    fetchWithRetry(CONFIG.API.BASE + '/api/site-texts', {}, 2, 1000).then(function(res) {
+      if (!res || !res.ok) return;
+      res.json().then(function(texts) {
+        window.__aboutImages = {};
+        for (var i = 1; i <= 5; i++) {
+          window.__aboutImages['about_image_' + i] = texts['about_image_' + i] || '';
+        }
+        if (typeof window.initAboutCarousel === 'function') {
+          window.initAboutCarousel();
+        }
+      });
+    }).catch(function() {});
+  }
+
+if (typeof loadAboutImages === 'function') {
+  loadAboutImages();
+}
+
 startDataSync('hero-cards', loadHeroCards);
 startDataSync('site-texts', loadSiteTexts);
 startDataSync('testimonials', loadTestimonials);
@@ -93,7 +111,8 @@ onSyncMessage('products_updated', () => {
 onSyncMessage('site_texts_updated', (_data) => {
   if (typeof loadSiteTexts === 'function') loadSiteTexts();
   if (typeof loadHeroCards === 'function') loadHeroCards();
-  if (typeof loadHeroImage === 'function') loadHeroImage();
+  if (typeof loadAboutImages === 'function') loadAboutImages();
+  if (typeof window.initAboutCarousel === 'function') window.initAboutCarousel();
 });
 
 onSyncMessage('settings_updated', () => {

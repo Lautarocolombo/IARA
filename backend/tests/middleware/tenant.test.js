@@ -44,8 +44,8 @@ describe('tenant middleware', () => {
       expect(next).toHaveBeenCalled();
     });
 
-    test('establece tenant desde token con username buscando en DB', async () => {
-      const token = jwt.sign({ username: 'testuser', role: 'admin' }, 'test-secret');
+    test('establece tenant desde token con user buscando en DB', async () => {
+      const token = jwt.sign({ user: 'testuser', role: 'admin' }, 'test-secret');
       const req = {
         headers: { authorization: `Bearer ${token}` }
       };
@@ -62,6 +62,23 @@ describe('tenant middleware', () => {
       expect(next).toHaveBeenCalled();
     });
 
+    test('usa default si token tiene username pero DB no tiene tenant_id', async () => {
+      const token = jwt.sign({ user: 'testuser', role: 'admin' }, 'test-secret');
+      const req = {
+        headers: { authorization: `Bearer ${token}` }
+      };
+      const res = {};
+      const next = jest.fn();
+
+      query.mockResolvedValueOnce({ rows: [] });
+
+      await tenantContext(req, res, next);
+
+      expect(query).toHaveBeenCalledWith('SELECT tenant_id FROM users WHERE username = $1', ['testuser']);
+      expect(setTenant).toHaveBeenCalledWith('default');
+      expect(req.tenantId).toBe('default');
+      expect(next).toHaveBeenCalled();
+    });
     test('usa x-admin-token header como alternativa', async () => {
       const token = jwt.sign({ tenant_id: 'tenant-x', role: 'admin' }, 'test-secret');
       const req = {
@@ -106,8 +123,8 @@ describe('tenant middleware', () => {
       expect(next).toHaveBeenCalled();
     });
 
-    test('busca tenant en DB para username pero usa default si no existe', async () => {
-      const token = jwt.sign({ username: 'nonexistent', role: 'admin' }, 'test-secret');
+    test('busca tenant en DB para user pero usa default si no existe', async () => {
+      const token = jwt.sign({ user: 'nonexistent', role: 'admin' }, 'test-secret');
       const req = {
         headers: { authorization: `Bearer ${token}` }
       };
@@ -118,6 +135,7 @@ describe('tenant middleware', () => {
 
       await tenantContext(req, res, next);
 
+      expect(query).toHaveBeenCalledWith('SELECT tenant_id FROM users WHERE username = $1', ['nonexistent']);
       expect(setTenant).toHaveBeenCalledWith('default');
       expect(req.tenantId).toBe('default');
       expect(next).toHaveBeenCalled();

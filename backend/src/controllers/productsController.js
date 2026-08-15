@@ -8,6 +8,81 @@ const path = require('path');
 const readline = require('readline');
 const xlsx = require('xlsx');
 
+let productsSchemaVerified = false;
+
+async function ensureProductsSchema() {
+  if (productsSchemaVerified) return;
+  try {
+    const colsResult = await query(`SELECT column_name FROM information_schema.columns WHERE table_name = 'products' AND table_schema = 'public'`);
+    if (!colsResult || !Array.isArray(colsResult.rows) || colsResult.rows.length === 0) {
+      return;
+    }
+    const existing = new Set(colsResult.rows.map(r => r.column_name));
+    const needed = ['id', 'name', 'slug', 'category', 'price', 'description', 'emoji', 'image', 'badge', 'stock', 'featured', 'active', 'deleted', 'sku', 'tenant_id', 'created_at', 'updated_at'];
+    const missing = needed.filter(c => !existing.has(c));
+    if (missing.length > 0) {
+      logger.warn({ missing }, 'Faltan columnas en products, intentando agregarlas');
+      for (const col of missing) {
+        try {
+          if (col === 'featured') await query('ALTER TABLE products ADD COLUMN IF NOT EXISTS featured BOOLEAN DEFAULT FALSE');
+          else if (col === 'active') await query('ALTER TABLE products ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT TRUE');
+          else if (col === 'deleted') await query('ALTER TABLE products ADD COLUMN IF NOT EXISTS deleted BOOLEAN DEFAULT FALSE');
+          else if (col === 'slug') await query('ALTER TABLE products ADD COLUMN IF NOT EXISTS slug TEXT DEFAULT \'\'');
+          else if (col === 'sku') await query('ALTER TABLE products ADD COLUMN IF NOT EXISTS sku TEXT DEFAULT \'\'');
+          else if (col === 'tenant_id') await query('ALTER TABLE products ADD COLUMN IF NOT EXISTS tenant_id TEXT DEFAULT \'default\'');
+          else if (col === 'stock') await query('ALTER TABLE products ADD COLUMN IF NOT EXISTS stock INTEGER DEFAULT 0');
+          else if (col === 'badge') await query('ALTER TABLE products ADD COLUMN IF NOT EXISTS badge TEXT DEFAULT \'\'');
+          else if (col === 'emoji') await query('ALTER TABLE products ADD COLUMN IF NOT EXISTS emoji TEXT DEFAULT \'📿\'');
+          else if (col === 'image') await query('ALTER TABLE products ADD COLUMN IF NOT EXISTS image TEXT DEFAULT \'\'');
+          else if (col === 'description') await query('ALTER TABLE products ADD COLUMN IF NOT EXISTS description TEXT DEFAULT \'\'');
+          else if (col === 'category') await query('ALTER TABLE products ADD COLUMN IF NOT EXISTS category TEXT DEFAULT \'pulseras\'');
+          else if (col === 'price') await query('ALTER TABLE products ADD COLUMN IF NOT EXISTS price REAL DEFAULT 0');
+          else if (col === 'name') await query('ALTER TABLE products ADD COLUMN IF NOT EXISTS name TEXT DEFAULT \'\'');
+          else if (col === 'id') continue;
+          else if (col === 'created_at' || col === 'updated_at') continue;
+        } catch (e) {
+          logger.debug({ col, err: e.message }, 'No se pudo agregar columna');
+        }
+      }
+    }
+    productsSchemaVerified = true;
+  } catch (err) {
+    logger.warn({ err: err.message }, 'No se pudo verificar esquema de products');
+  }
+}
+
+async function ensureProductImagesSchema() {
+  try {
+    const colsResult = await query(`SELECT column_name FROM information_schema.columns WHERE table_name = 'product_images' AND table_schema = 'public'`);
+    if (!colsResult || !Array.isArray(colsResult.rows) || colsResult.rows.length === 0) {
+      return;
+    }
+    const existing = new Set(colsResult.rows.map(r => r.column_name));
+    const needed = ['id', 'product_id', 'url', 'alt', 'filename', 'cloudinary_public_id', 'orden', 'es_principal', 'descripcion', 'categoria', 'tenant_id', 'created_at'];
+    const missing = needed.filter(c => !existing.has(c));
+    if (missing.length > 0) {
+      logger.warn({ missing }, 'Faltan columnas en product_images, intentando agregarlas');
+      for (const col of missing) {
+        try {
+          if (col === 'cloudinary_public_id') await query('ALTER TABLE product_images ADD COLUMN IF NOT EXISTS cloudinary_public_id TEXT DEFAULT \'\'');
+          else if (col === 'alt') await query('ALTER TABLE product_images ADD COLUMN IF NOT EXISTS alt TEXT DEFAULT \'\'');
+          else if (col === 'descripcion') await query('ALTER TABLE product_images ADD COLUMN IF NOT EXISTS descripcion TEXT DEFAULT \'\'');
+          else if (col === 'categoria') await query('ALTER TABLE product_images ADD COLUMN IF NOT EXISTS categoria TEXT DEFAULT \'\'');
+          else if (col === 'filename') await query('ALTER TABLE product_images ADD COLUMN IF NOT EXISTS filename TEXT DEFAULT \'\'');
+          else if (col === 'tenant_id') await query('ALTER TABLE product_images ADD COLUMN IF NOT EXISTS tenant_id TEXT DEFAULT \'default\'');
+          else if (col === 'orden') await query('ALTER TABLE product_images ADD COLUMN IF NOT EXISTS orden INTEGER DEFAULT 0');
+          else if (col === 'es_principal') await query('ALTER TABLE product_images ADD COLUMN IF NOT EXISTS es_principal BOOLEAN DEFAULT FALSE');
+          else if (col === 'product_id' || col === 'url' || col === 'id' || col === 'created_at') continue;
+        } catch (e) {
+          logger.debug({ col, err: e.message }, 'No se pudo agregar columna en product_images');
+        }
+      }
+    }
+  } catch (err) {
+    logger.warn({ err: err.message }, 'No se pudo verificar esquema de product_images');
+  }
+}
+
 function slugify(text) {
   if (!text) return '';
   return String(text)
@@ -189,11 +264,31 @@ const bulkImportProducts = async (req, res) => {
   try { syncBus.emit('products_updated', {}); } catch (e) { /* noop */ }
 };
 
+const getFeaturedProducts = async (req, res) => {
+  try {
+    await ensureProductsSchema();
+    await ensureProductImagesSchema();
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+    const result = await query(`SELECT * FROM products WHERE active = TRUE AND deleted = FALSE AND featured = TRUE AND tenant_id = COALESCE(current_setting('app.current_tenant', TRUE), 'default') ORDER BY id ASC LIMIT 2`);
+    const enriched = await attachImagesToProducts(result.rows, baseUrl);
+    res.json(enriched);
+  } catch (err) {
+    logger.error({ err: err.message, stack: err.stack }, 'Error obteniendo productos destacados');
+    if (err.message && (err.message.includes('does not exist') || err.message.includes('no existe') || err.code === '42P01' || err.code === '42703')) {
+      logger.warn('Esquema de productos incompleto en /api/products/featured, devolviendo array vacío');
+      return res.status(200).json([]);
+    }
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
 const getPublicProducts = async (req, res) => {
   try {
+    await ensureProductsSchema();
+    await ensureProductImagesSchema();
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
     const { category, minPrice, maxPrice } = req.query;
-    let where = 'WHERE active = TRUE AND deleted = FALSE';
+    let where = 'WHERE active = TRUE AND deleted = FALSE AND tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')';
     const params = [];
     if (category) {
       const idx = params.length + 1;
@@ -217,18 +312,24 @@ const getPublicProducts = async (req, res) => {
     try { syncBus.emit('products_updated', {}); } catch (e) { /* noop */ }
   } catch (err) {
     logger.error('Error obteniendo productos:', err);
+    if (err.message && (err.message.includes('does not exist') || err.message.includes('no existe') || err.code === '42P01' || err.code === '42703')) {
+      logger.warn('Esquema de productos incompleto, devolviendo array vacío');
+      return res.status(200).json([]);
+    }
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
 const searchProducts = async (req, res) => {
   try {
+    await ensureProductsSchema();
+    await ensureProductImagesSchema();
     const q = (req.query.q || '').trim();
     if (!q) {
       return res.json([]);
     }
     const { category, minPrice, maxPrice } = req.query;
-    let where = 'WHERE active = TRUE AND deleted = FALSE';
+    let where = 'WHERE active = TRUE AND deleted = FALSE AND tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')';
     const params = [];
     if (q) {
       const idx = params.length + 1;
@@ -256,6 +357,10 @@ const searchProducts = async (req, res) => {
     res.json(enriched);
   } catch (err) {
     logger.error('Error buscando productos:', err);
+    if (err.message && (err.message.includes('does not exist') || err.message.includes('no existe') || err.code === '42P01' || err.code === '42703')) {
+      logger.warn('Esquema de productos incompleto en búsqueda, devolviendo array vacío');
+      return res.status(200).json([]);
+    }
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
@@ -329,7 +434,7 @@ const getProductById = async (req, res) => {
   const id = Number(req.params.id);
   try {
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
-    const result = await query('SELECT * FROM products WHERE id = $1 AND deleted = FALSE', [id]);
+    const result = await query('SELECT * FROM products WHERE id = $1 AND deleted = FALSE AND tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')', [id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
     const enriched = await attachImagesToProducts(result.rows, baseUrl);
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
@@ -535,7 +640,38 @@ const syncToNeon = async (req, res) => {
   }
 };
 
+const bulkDeleteProducts = async (req, res) => {
+  try {
+    const { ids } = req.body || {};
+    if (!Array.isArray(ids) || !ids.length) {
+      return res.status(400).json({ error: 'Se requiere un array de IDs' });
+    }
+    const placeholders = ids.map((_, i) => `$${i + 1}`).join(',');
+    const result = await query(`UPDATE products SET deleted = TRUE, active = FALSE WHERE id IN (${placeholders}) AND tenant_id = COALESCE(current_setting('app.current_tenant', TRUE), 'default')`, ids);
+    res.json({ deleted: result.rowCount });
+  } catch (err) {
+    logger.error('Error eliminando productos en bloque:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+const bulkToggleProducts = async (req, res) => {
+  try {
+    const { ids, active } = req.body || {};
+    if (!Array.isArray(ids) || !ids.length || active === undefined) {
+      return res.status(400).json({ error: 'Se requiere un array de IDs y el estado active' });
+    }
+    const placeholders = ids.map((_, i) => `$${i + 1}`).join(',');
+    const result = await query(`UPDATE products SET active = $${ids.length + 1} WHERE id IN (${placeholders}) AND tenant_id = COALESCE(current_setting('app.current_tenant', TRUE), 'default')`, [...ids, active]);
+    res.json({ updated: result.rowCount });
+  } catch (err) {
+    logger.error('Error cambiando estado de productos en bloque:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
 module.exports = {
+  getFeaturedProducts,
   getPublicProducts,
   getAdminProducts,
   getProductById,
@@ -547,5 +683,7 @@ module.exports = {
   searchProducts,
   syncToNeon,
   bulkImportProducts,
+  bulkDeleteProducts,
+  bulkToggleProducts,
   attachImagesToProducts
 };

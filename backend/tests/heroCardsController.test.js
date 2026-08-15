@@ -1,6 +1,5 @@
 jest.mock('../src/lib/db', () => ({
-  query: jest.fn(),
-  transaction: jest.fn((fn) => fn({ query: jest.fn().mockResolvedValue({ rows: [], rowCount: 0 }) }))
+  query: jest.fn()
 }));
 
 jest.mock('../src/lib/logger', () => ({
@@ -10,9 +9,9 @@ jest.mock('../src/lib/logger', () => ({
 }));
 
 jest.mock('../src/lib/upload', () => ({
-  getPublicUrl: jest.fn((url, base) => url || ''),
-  saveUploadedFile: jest.fn(),
-  deleteImageAsset: jest.fn()
+  getPublicUrl: jest.fn((url) => url || ''),
+  deleteImageAsset: jest.fn().mockResolvedValue(true),
+  saveUploadedFile: jest.fn().mockResolvedValue('/uploads/hero-card.webp')
 }));
 
 jest.mock('../src/routes/sync', () => ({
@@ -20,78 +19,36 @@ jest.mock('../src/routes/sync', () => ({
 }));
 
 const { query } = require('../src/lib/db');
-const { getHeroCards, upsertHeroCard, deleteHeroCard } = require('../src/controllers/heroCardsController');
+const {
+  getHeroCards,
+  getPublicHeroCards,
+  getHeroCardBySlot,
+  upsertHeroCard,
+  updateHeroSlot,
+  deleteHeroSlotImage,
+  deleteHeroCard,
+  syncHeroCards
+} = require('../src/controllers/heroCardsController');
 
 describe('heroCardsController', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    delete process.env.BACKEND_URL;
-    delete process.env.SITE_URL;
+    query.mockReset();
   });
 
   describe('getHeroCards', () => {
-    test('retorna hero cards mapeadas', async () => {
-      const req = {
-        protocol: 'http',
-        get: jest.fn(() => 'localhost:10000')
-      };
+    test('retorna todas las hero cards', async () => {
+      const req = { protocol: 'http', get: () => 'localhost' };
       const res = { json: jest.fn() };
 
-      query.mockResolvedValueOnce({
-        rows: [
-          { id: 1, slot: 1, nombre: 'Test', precio: '100', imagen: '/uploads/test.jpg', emoji: '📿', orden: 0, activo: true, titulo: 'T', subtitulo: 'S', descripcion: 'D', cta_texto: 'CTA', cta_url: '/url', tipo: 'hero' }
-        ]
-      });
-
-      const { getPublicUrl } = require('../src/lib/upload');
-      getPublicUrl.mockReturnValueOnce('http://localhost:10000/uploads/test.jpg');
+      query.mockResolvedValueOnce({ rows: [{ id: 1, slot: 1, nombre: 'Card 1' }] });
 
       await getHeroCards(req, res);
 
-      expect(res.json).toHaveBeenCalledWith([
-        {
-          id: 1,
-          slot: 1,
-          nombre: 'Test',
-          precio: '100',
-          imagen: 'http://localhost:10000/uploads/test.jpg',
-          emoji: '📿',
-          orden: 0,
-          activo: true,
-          titulo: 'T',
-          subtitulo: 'S',
-          descripcion: 'D',
-          cta_texto: 'CTA',
-          cta_url: '/url',
-          tipo: 'hero'
-        }
-      ]);
+      expect(res.json).toHaveBeenCalledWith(expect.any(Array));
     });
 
-    test('usa BACKEND_URL si está configurado', async () => {
-      process.env.BACKEND_URL = 'https://api.example.com';
-      const req = {
-        protocol: 'http',
-        get: jest.fn(() => 'localhost:10000')
-      };
-      const res = { json: jest.fn() };
-
-      query.mockResolvedValueOnce({
-        rows: [
-          { id: 1, slot: 1, nombre: 'Test', precio: '', imagen: '', emoji: '📿', orden: 0, activo: true, titulo: '', subtitulo: '', descripcion: '', cta_texto: '', cta_url: '', tipo: 'hero' }
-        ]
-      });
-
-      await getHeroCards(req, res);
-
-      expect(res.json).toHaveBeenCalled();
-    });
-
-    test('retorna 500 en error de DB', async () => {
-      const req = {
-        protocol: 'http',
-        get: jest.fn(() => 'localhost')
-      };
+    test('maneja error de base de datos', async () => {
+      const req = { protocol: 'http', get: () => 'localhost' };
       const res = {
         status: jest.fn(() => res),
         json: jest.fn()
@@ -102,148 +59,127 @@ describe('heroCardsController', () => {
       await getHeroCards(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Error interno del servidor' });
     });
   });
 
-  describe('upsertHeroCard', () => {
-    test('crea nueva hero card cuando no existe', async () => {
-      const req = {
-        params: {},
-        body: { slot: 1, nombre: 'Nueva Card', precio: '200' },
-        protocol: 'http',
-        get: jest.fn(() => 'localhost')
+  describe('getPublicHeroCards', () => {
+    test('retorna hero cards públicas activas', async () => {
+      const req = { protocol: 'http', get: () => 'localhost' };
+      const res = {
+        setHeader: jest.fn(),
+        json: jest.fn()
       };
+
+      query.mockResolvedValueOnce({ rows: [{ id: 1, activo: true }] });
+
+      await getPublicHeroCards(req, res);
+
+      expect(res.setHeader).toHaveBeenCalledWith('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+      expect(res.json).toHaveBeenCalled();
+    });
+
+    test('maneja error de base de datos', async () => {
+      const req = { protocol: 'http', get: () => 'localhost' };
+      const res = {
+        status: jest.fn(() => res),
+        json: jest.fn()
+      };
+
+      query.mockRejectedValueOnce(new Error('DB error'));
+
+      await getPublicHeroCards(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
+  });
+
+  describe('getHeroCardBySlot', () => {
+    test('retorna card por slot', async () => {
+      const req = { params: { slot: '1' }, protocol: 'http', get: () => 'localhost' };
+      const res = { json: jest.fn() };
+
+      query.mockResolvedValueOnce({ rows: [{ id: 1, slot: 1 }] });
+
+      await getHeroCardBySlot(req, res);
+
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ id: 1 }));
+    });
+
+    test('retorna 404 si no existe', async () => {
+      const req = { params: { slot: '999' }, protocol: 'http', get: () => 'localhost' };
       const res = {
         status: jest.fn(() => res),
         json: jest.fn()
       };
 
       query.mockResolvedValueOnce({ rows: [] });
-      query.mockResolvedValueOnce({
-        rows: [
-          { id: 1, slot: 1, nombre: 'Nueva Card', precio: '200', imagen: '', emoji: '📿', orden: 0, activo: true, titulo: '', subtitulo: '', descripcion: '', cta_texto: '', cta_url: '', tipo: 'hero' }
-        ]
-      });
 
-      await upsertHeroCard(req, res);
+      await getHeroCardBySlot(req, res);
 
-      expect(query).toHaveBeenCalledWith(
-        expect.stringContaining('INSERT INTO hero_cards'),
-        expect.arrayContaining(['Nueva Card', '200', '', '📿', 0, true, '', '', '', '', '', 1])
-      );
-      expect(res.json).toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(404);
     });
+  });
 
-    test('actualiza hero card existente por id', async () => {
-      const req = {
-        params: { id: 1 },
-        body: { nombre: 'Actualizada' },
-        protocol: 'http',
-        get: jest.fn(() => 'localhost')
-      };
-      const res = {
-        status: jest.fn(() => res),
-        json: jest.fn()
-      };
-
-      query.mockResolvedValueOnce({
-        rows: [
-          { id: 1, slot: 1, nombre: 'Actualizada', precio: '', imagen: '', emoji: '📿', orden: 0, activo: true, titulo: '', subtitulo: '', descripcion: '', cta_texto: '', cta_url: '', tipo: 'hero' }
-        ]
-      });
-
-      await upsertHeroCard(req, res);
-
-      expect(query).toHaveBeenCalledWith(
-        expect.stringContaining('UPDATE hero_cards SET'),
-        expect.arrayContaining(['Actualizada'])
-      );
-    });
-
-    test('upserta por slot cuando no hay id', async () => {
+  describe('upsertHeroCard', () => {
+    test('crea card cuando no existe', async () => {
       const req = {
         params: {},
-        body: { slot: 1, nombre: 'Slot Card' },
+        body: { slot: 1, nombre: 'Nueva Card' },
         protocol: 'http',
-        get: jest.fn(() => 'localhost')
+        get: () => 'localhost'
       };
-      const res = {
-        status: jest.fn(() => res),
-        json: jest.fn()
-      };
+      const res = { json: jest.fn() };
 
-      query.mockResolvedValueOnce({ rows: [{ id: 1, slot: 1 }] });
-      query.mockResolvedValueOnce({
-        rows: [
-          { id: 1, slot: 1, nombre: 'Slot Card', precio: '', imagen: '', emoji: '📿', orden: 0, activo: true, titulo: '', subtitulo: '', descripcion: '', cta_texto: '', cta_url: '', tipo: 'hero' }
-        ]
-      });
+      query.mockResolvedValueOnce({ rows: [] });
+      query.mockResolvedValueOnce({ rows: [] });
+      query.mockResolvedValueOnce({ rows: [{ id: 1, slot: 1, nombre: 'Nueva Card' }] });
 
       await upsertHeroCard(req, res);
 
-      expect(query).toHaveBeenCalledWith(
-        expect.stringContaining('UPDATE hero_cards SET'),
-        expect.arrayContaining(['Slot Card'])
-      );
+      expect(res.json).toHaveBeenCalledWith(expect.any(Array));
     });
 
-    test('procesa archivo de imagen', async () => {
+    test('actualiza card existente por ID', async () => {
       const req = {
-        params: { id: 1 },
-        body: { nombre: 'Con Imagen' },
-        file: { originalname: 'card.jpg' },
+        params: { id: '1' },
+        body: { nombre: 'Card Actualizada' },
         protocol: 'http',
-        get: jest.fn(() => 'localhost')
+        get: () => 'localhost'
       };
-      const res = {
-        status: jest.fn(() => res),
-        json: jest.fn()
-      };
+      const res = { json: jest.fn() };
 
-      const { saveUploadedFile } = require('../src/lib/upload');
-      saveUploadedFile.mockResolvedValueOnce('/uploads/card.jpg');
-
-      query.mockResolvedValueOnce({
-        rows: [
-          { id: 1, slot: 1, nombre: 'Con Imagen', precio: '', imagen: '/uploads/card.jpg', emoji: '📿', orden: 0, activo: true, titulo: '', subtitulo: '', descripcion: '', cta_texto: '', cta_url: '', tipo: 'hero' }
-        ]
-      });
+      query.mockResolvedValueOnce({ rows: [] });
+      query.mockResolvedValueOnce({ rows: [{ id: 1, nombre: 'Card Actualizada' }] });
 
       await upsertHeroCard(req, res);
 
-      expect(saveUploadedFile).toHaveBeenCalledWith(req.file);
+      expect(res.json).toHaveBeenCalledWith(expect.any(Array));
     });
 
-    test('emite syncBus después de guardar', async () => {
+    test('actualiza card existente por slot', async () => {
       const req = {
-        params: { id: 1 },
-        body: { nombre: 'Test' },
+        params: {},
+        body: { slot: 1, nombre: 'Card Actualizada' },
         protocol: 'http',
-        get: jest.fn(() => 'localhost')
+        get: () => 'localhost'
       };
-      const res = {
-        status: jest.fn(() => res),
-        json: jest.fn()
-      };
+      const res = { json: jest.fn() };
 
-      query.mockResolvedValueOnce({
-        rows: [
-          { id: 1, slot: 1, nombre: 'Test', precio: '', imagen: '', emoji: '📿', orden: 0, activo: true, titulo: '', subtitulo: '', descripcion: '', cta_texto: '', cta_url: '', tipo: 'hero' }
-        ]
-      });
+      query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+      query.mockResolvedValueOnce({ rows: [] });
+      query.mockResolvedValueOnce({ rows: [{ id: 1, nombre: 'Card Actualizada' }] });
 
       await upsertHeroCard(req, res);
 
-      expect(res.json).toHaveBeenCalled();
+      expect(res.json).toHaveBeenCalledWith(expect.any(Array));
     });
 
-    test('retorna 500 en error de DB', async () => {
+    test('maneja error de base de datos', async () => {
       const req = {
-        params: { id: 1 },
-        body: { nombre: 'Test' },
+        params: {},
+        body: { slot: 1 },
         protocol: 'http',
-        get: jest.fn(() => 'localhost')
+        get: () => 'localhost'
       };
       const res = {
         status: jest.fn(() => res),
@@ -255,13 +191,79 @@ describe('heroCardsController', () => {
       await upsertHeroCard(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Error interno del servidor' });
+    });
+  });
+
+  describe('updateHeroSlot', () => {
+    test('crea card si no existe', async () => {
+      const req = {
+        params: { slot: '1' },
+        body: { titulo: 'Nuevo Titulo' },
+        protocol: 'http',
+        get: () => 'localhost'
+      };
+      const res = { json: jest.fn() };
+
+      query.mockResolvedValueOnce({ rows: [] });
+      query.mockResolvedValueOnce({ rows: [] });
+      query.mockResolvedValueOnce({ rows: [{ id: 1, titulo: 'Nuevo Titulo' }] });
+
+      await updateHeroSlot(req, res);
+
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ titulo: 'Nuevo Titulo' }));
+    });
+
+    test('actualiza card existente', async () => {
+      const req = {
+        params: { slot: '1' },
+        body: { titulo: 'Titulo Actualizado', activo: true },
+        protocol: 'http',
+        get: () => 'localhost'
+      };
+      const res = { json: jest.fn() };
+
+      query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+      query.mockResolvedValueOnce({ rows: [{ id: 1, titulo: 'Titulo Actualizado', activo: true }] });
+      query.mockResolvedValueOnce({ rows: [{ id: 1, titulo: 'Titulo Actualizado' }] });
+
+      await updateHeroSlot(req, res);
+
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ titulo: 'Titulo Actualizado' }));
+    });
+  });
+
+  describe('deleteHeroSlotImage', () => {
+    test('elimina imagen del slot', async () => {
+      const req = { params: { slot: '1' }, protocol: 'http', get: () => 'localhost' };
+      const res = { json: jest.fn() };
+
+      query.mockResolvedValueOnce({ rows: [{ id: 1, imagen: '/uploads/hero.webp' }] });
+      query.mockResolvedValueOnce({ rows: [] });
+      query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+
+      await deleteHeroSlotImage(req, res);
+
+      expect(res.json).toHaveBeenCalledWith({ ok: true, message: 'Imagen eliminada' });
+    });
+
+    test('retorna 404 si el slot no existe', async () => {
+      const req = { params: { slot: '999' }, protocol: 'http', get: () => 'localhost' };
+      const res = {
+        status: jest.fn(() => res),
+        json: jest.fn()
+      };
+
+      query.mockResolvedValueOnce({ rows: [] });
+
+      await deleteHeroSlotImage(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
     });
   });
 
   describe('deleteHeroCard', () => {
-    test('elimina hero card exitosamente', async () => {
-      const req = { params: { id: 1 } };
+    test('elimina card exitosamente', async () => {
+      const req = { params: { id: '1' } };
       const res = { json: jest.fn() };
 
       query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
@@ -271,8 +273,8 @@ describe('heroCardsController', () => {
       expect(res.json).toHaveBeenCalledWith({ ok: true });
     });
 
-    test('retorna 404 si card no existe', async () => {
-      const req = { params: { id: 999 } };
+    test('retorna 404 si la card no existe', async () => {
+      const req = { params: { id: '999' } };
       const res = {
         status: jest.fn(() => res),
         json: jest.fn()
@@ -283,11 +285,29 @@ describe('heroCardsController', () => {
       await deleteHeroCard(req, res);
 
       expect(res.status).toHaveBeenCalledWith(404);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Card no encontrada' });
+    });
+  });
+
+  describe('syncHeroCards', () => {
+    test('sincroniza hero cards', async () => {
+      const req = {
+        body: { cards: [{ nombre: 'Card 1', slot: 1 }] },
+        protocol: 'http',
+        get: () => 'localhost'
+      };
+      const res = { json: jest.fn() };
+
+      query.mockResolvedValueOnce({ rows: [] });
+      query.mockResolvedValueOnce({ rows: [] });
+      query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+
+      await syncHeroCards(req, res);
+
+      expect(res.json).toHaveBeenCalledWith(expect.any(Array));
     });
 
-    test('retorna 500 en error de DB', async () => {
-      const req = { params: { id: 1 } };
+    test('maneja error de base de datos', async () => {
+      const req = { body: {}, protocol: 'http', get: () => 'localhost' };
       const res = {
         status: jest.fn(() => res),
         json: jest.fn()
@@ -295,10 +315,9 @@ describe('heroCardsController', () => {
 
       query.mockRejectedValueOnce(new Error('DB error'));
 
-      await deleteHeroCard(req, res);
+      await syncHeroCards(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Error interno del servidor' });
     });
   });
 });

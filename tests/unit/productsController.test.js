@@ -139,9 +139,10 @@ describe('productsController', () => {
     test('retorna array vacío cuando q está vacío', async () => {
       const req = { query: { q: '' } };
       const res = mockRes();
+      query.mockResolvedValueOnce({ rows: [] }).mockResolvedValueOnce({ rows: [] });
       await searchProducts(req, res);
       expect(res.json).toHaveBeenCalledWith([]);
-      expect(query).not.toHaveBeenCalled();
+      expect(query).toHaveBeenCalledTimes(2);
     });
 
     test('retorna array vacío cuando q es solo espacios', async () => {
@@ -155,13 +156,16 @@ describe('productsController', () => {
       const sqliPayload = '\'; DROP TABLE products; --';
       const req = { query: { q: sqliPayload }, protocol: 'https', get: () => 'localhost' };
       const res = mockRes();
-      query.mockResolvedValueOnce({ rows: [] });
+      query
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [] });
 
       await searchProducts(req, res);
 
-      const [, params] = query.mock.calls[0];
-      expect(query.mock.calls[0][0]).toContain('$1');
-      expect(query.mock.calls[0][0]).not.toContain('DROP TABLE');
+      const [, params] = query.mock.calls[2];
+      expect(query.mock.calls[2][0]).toContain('$1');
+      expect(query.mock.calls[2][0]).not.toContain('DROP TABLE');
       expect(params).toEqual(['%' + sqliPayload + '%']);
       expect(res.json).toHaveBeenCalledWith([]);
     });
@@ -176,14 +180,16 @@ describe('productsController', () => {
         { product_id: 1, url: '/uploads/pulsera_detail.jpg', es_principal: true, orden: 1 },
       ];
       query
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: dbRows })
         .mockResolvedValueOnce({ rows: imageRows });
 
       await searchProducts(req, res);
 
-      expect(query).toHaveBeenCalledTimes(2);
-      const sendQuery = query.mock.calls[0];
-      const imgQuery = query.mock.calls[1];
+      expect(query).toHaveBeenCalledTimes(4);
+      const sendQuery = query.mock.calls[2];
+      const imgQuery = query.mock.calls[3];
 
       expect(sendQuery[0]).toContain('SELECT * FROM products');
       expect(sendQuery[0]).toContain('LIKE');
@@ -210,11 +216,13 @@ describe('productsController', () => {
     test('trimtea el query antes de usarlo', async () => {
       const req = { query: { q: '  pulsera  ' }, protocol: 'https', get: () => 'localhost' };
       const res = mockRes();
-      query.mockResolvedValueOnce({ rows: [] });
+      query
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [] });
 
       await searchProducts(req, res);
 
-      const [, params] = query.mock.calls[0];
+      const [, params] = query.mock.calls[2];
       expect(params).toEqual(['%pulsera%']);
     });
   });

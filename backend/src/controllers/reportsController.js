@@ -1,4 +1,4 @@
-const { query } = require('../lib/db');
+const { query, transaction } = require('../lib/db');
 const logger = require('../lib/logger');
 const { safeJsonParse } = require('../lib/parser');
 
@@ -135,12 +135,37 @@ const getSalesTrend = async (req, res) => {
 
 const resetMetrics = async (req, res) => {
   try {
-    const now = new Date().toISOString();
-    await query(
-      "INSERT INTO site_settings (key, value, tenant_id) VALUES ($1, $2, COALESCE(current_setting('app.current_tenant', TRUE), 'default')) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP",
-      ['metrics_reset_at', now]
-    );
-    res.json({ ok: true, reset_at: now });
+    const { confirm } = req.body || {};
+    if (!confirm) {
+      return res.status(400).json({ error: 'Falta confirmación. Enviá { confirm: true } en el body para confirmar el reseteo.' });
+    }
+
+    const result = await transaction(async (client) => {
+      let deletedProofs = 0;
+      let deletedSales = 0;
+      let deletedOrders = 0;
+
+      try {
+        const proofsResult = await client.query('DELETE FROM payment_proofs');
+        deletedProofs = Number(proofsResult.rowCount || 0);
+      } catch (e) {
+        // Si la tabla no existe en el contexto actual, continuar con el resto
+      }
+
+      const salesResult = await client.query('DELETE FROM sales');
+      deletedSales = Number(salesResult.rowCount || 0);
+
+      const ordersResult = await client.query('DELETE FROM orders');
+      deletedOrders = Number(ordersResult.rowCount || 0);
+
+      await client.query(
+        "DELETE FROM site_settings WHERE key = 'metrics_reset_at' AND tenant_id = COALESCE(current_setting('app.current_tenant', TRUE), 'default')"
+      );
+
+      return { deletedProofs, deletedSales, deletedOrders };
+    });
+
+    res.json({ ok: true, deleted: result });
   } catch (err) {
     logger.error({ err: err.message }, 'Error reiniciando métricas');
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -226,19 +251,25 @@ const getSalesSummary = async (req, res) => {
     const resetAt = await getMetricsResetAt();
     const resetAtIso = resetAt ? resetAt.toISOString() : null;
 
-    let ordersQuery = 'SELECT created_at as date, total FROM orders WHERE status != ' + "'" + 'cancelled' + "'" + ' AND date(created_at) >= $1';
-    const ordersParams = [startDateStr];
+    let ordersQuery;
+    let ordersParams;
     if (resetAtIso) {
-      ordersQuery += ' AND created_at > $2';
-      ordersParams.push(resetAtIso);
+      ordersQuery = "SELECT created_at as date, total FROM orders WHERE status != 'cancelled' AND created_at > $1";
+      ordersParams = [resetAtIso];
+    } else {
+      ordersQuery = "SELECT created_at as date, total FROM orders WHERE status != 'cancelled' AND date(created_at) >= $1";
+      ordersParams = [startDateStr];
     }
     const ordersResult = await query(ordersQuery + ' ORDER BY date ASC', ordersParams);
 
-    let salesQuery = 'SELECT sale_date as date, total FROM sales WHERE date(sale_date) >= $1';
-    const salesParams = [startDateStr];
+    let salesQuery;
+    let salesParams;
     if (resetAtIso) {
-      salesQuery += ' AND sale_date > $2';
-      salesParams.push(resetAtIso.split('T')[0]);
+      salesQuery = "SELECT sale_date as date, total FROM sales WHERE sale_date > $1";
+      salesParams = [resetAtIso.split('T')[0]];
+    } else {
+      salesQuery = 'SELECT sale_date as date, total FROM sales WHERE date(sale_date) >= $1';
+      salesParams = [startDateStr];
     }
     const salesResult = await query(salesQuery + ' ORDER BY date ASC', salesParams);
 

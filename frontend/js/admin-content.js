@@ -15,7 +15,18 @@
     featured_product_cta_text: 'Ver producto',
     featured_product_cta_url: '#catalog',
     featured_product_image_url: '',
+    hero_card_1_text: 'Nose si estemos hechos el uno para el otro pero si hemos llegado hasta aquí...',
+    hero_card_2_text: 'Nose si estemos hechos el uno para el otro pero si hemos llegado hasta aquí...',
+    hero_card_1_name: 'Pulsera Minimalista',
+    hero_card_1_price: '$450',
+    hero_card_1_cta_text: 'Ver más',
+    hero_card_1_cta_url: '#catalog',
     about_text: 'En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.',
+    about_image_1: '',
+    about_image_2: '',
+    about_image_3: '',
+    about_image_4: '',
+    about_image_5: '',
     process_subtitle: 'Cinco pasos simples para comprar tu artesanía',
     process_step_1_title: '1) Elegí productos',
     process_step_1_desc: 'Filtrá por categoría y elegí tu pieza del catálogo.',
@@ -215,6 +226,22 @@
       el.value = val || '';
     });
 
+    var heroCardTextKeys = ['hero_card_1_text', 'hero_card_2_text'];
+    heroCardTextKeys.forEach(function (key) {
+      var el = document.getElementById(key);
+      if (!el) return;
+      var val = textsCache[key] !== undefined ? textsCache[key] : DEFAULT_TEXTS[key];
+      el.value = val || '';
+    });
+
+    var heroCard1Keys = ['hero_card_1_name', 'hero_card_1_price', 'hero_card_1_cta_text', 'hero_card_1_cta_url'];
+    heroCard1Keys.forEach(function (key) {
+      var el = document.getElementById(key);
+      if (!el) return;
+      var val = textsCache[key] !== undefined ? textsCache[key] : DEFAULT_TEXTS[key];
+      el.value = val || '';
+    });
+
     var heroImageUrl = textsCache['hero_image_url'] || '';
     var heroPreviewImg = document.getElementById('heroImagePreview');
     var heroPlaceholder = document.getElementById('heroImagePlaceholder');
@@ -256,6 +283,27 @@
         el.value = val || '';
       }
     });
+
+    for (let i = 1; i <= 5; i++) {
+      (function(index) {
+        var key = 'about_image_' + index;
+        var url = textsCache[key] || '';
+        var preview = document.getElementById('aboutImagePreview' + index);
+        var placeholder = document.getElementById('aboutImagePlaceholder' + index);
+        var removeBtn = document.getElementById('aboutImageRemoveBtn' + index);
+        if (preview && placeholder) {
+          if (url) {
+            preview.src = url;
+            preview.style.display = 'block';
+            placeholder.style.display = 'none';
+          } else {
+            preview.style.display = 'none';
+            placeholder.style.display = 'flex';
+          }
+        }
+        if (removeBtn) removeBtn.dataset.remove = 'false';
+      })(i);
+    }
 
     var featureKeys = ['feature_1_title', 'feature_1_desc', 'feature_2_title', 'feature_2_desc',
                     'feature_3_title', 'feature_3_desc', 'feature_4_title', 'feature_4_desc'];
@@ -321,6 +369,7 @@
     var textSpan = loadingSpan ? loadingSpan.previousElementSibling : null;
     if (textSpan && textSpan.id === btnId + 'Text') {
       textSpan.textContent = loading ? loadingText : text;
+      textSpan.classList.toggle('hidden', loading);
     }
     if (loadingSpan) loadingSpan.classList.toggle('hidden', !loading);
   }
@@ -349,6 +398,12 @@
     var fpDesc = document.getElementById('fp_description')?.value.trim() || '';
     var fpCtaText = document.getElementById('fp_cta_text')?.value.trim() || '';
     var fpCtaUrl = document.getElementById('fp_cta_url')?.value.trim() || '';
+    var heroCard1Text = document.getElementById('hero_card_1_text')?.value.trim() || '';
+    var heroCard1Name = document.getElementById('hero_card_1_name')?.value.trim() || '';
+    var heroCard1Price = document.getElementById('hero_card_1_price')?.value.trim() || '';
+    var heroCard1CtaText = document.getElementById('hero_card_1_cta_text')?.value.trim() || '';
+    var heroCard1CtaUrl = document.getElementById('hero_card_1_cta_url')?.value.trim() || '';
+    var heroCard2Text = document.getElementById('hero_card_2_text')?.value.trim() || '';
 
     if (!heroTitle) {
       showSaveStatus(statusId, 'error', 'El título del Hero es obligatorio');
@@ -432,7 +487,7 @@
           throw err;
         });
         uploadPromises.push(fpPromise);
-      } else if (fpRemoveFlag) {
+      } else       if (fpRemoveFlag) {
         fpImageUrl = '';
       }
 
@@ -464,7 +519,13 @@
         featured_product_description: fpDesc,
         featured_product_cta_text: fpCtaText,
         featured_product_cta_url: fpCtaUrl,
-        featured_product_image_url: fpImageUrl
+        featured_product_image_url: fpImageUrl,
+        hero_card_1_text: heroCard1Text,
+        hero_card_1_name: heroCard1Name,
+        hero_card_1_price: heroCard1Price,
+        hero_card_1_cta_text: heroCard1CtaText,
+        hero_card_1_cta_url: heroCard1CtaUrl,
+        hero_card_2_text: heroCard2Text
       };
 
       var res = await window.adminFetch('/api/admin/sync-texts', {
@@ -546,7 +607,7 @@
       case 'hero':
         return ['hero_title', 'hero_subtitle', 'hero_cta_text', 'hero_cta_url', 'hero_image_url'];
       case 'about':
-        return ['about_text'];
+        return ['about_text', 'about_image_1', 'about_image_2', 'about_image_3', 'about_image_4', 'about_image_5'];
       case 'features':
         return ['feature_1_title', 'feature_1_desc', 'feature_2_title', 'feature_2_desc',
                 'feature_3_title', 'feature_3_desc', 'feature_4_title', 'feature_4_desc'];
@@ -577,16 +638,90 @@
     showSaveStatus(statusId, 'saving', 'Guardando cambios...');
 
     var payload = {};
-    for (var i = 0; i < keys.length; i++) {
-      var key = keys[i];
-      if (key === 'about_text' && quillEditor) {
+
+    if (scope === 'about') {
+      if (quillEditor) {
         var raw = quillEditor.root.innerHTML;
-        payload[key] = (typeof DOMPurify !== 'undefined') ? DOMPurify.sanitize(raw) : raw;
-      } else if (key === 'hero_image_url') {
-        continue;
-      } else {
-        var el = document.getElementById(key);
-        payload[key] = el ? el.value.trim() : '';
+        var clean = (typeof DOMPurify !== 'undefined') ? DOMPurify.sanitize(raw) : raw;
+        if (!clean || /^<p>\s*(<br\s*\/?>)?\s*<\/p>$/.test(clean) || /^<div>\s*(<br\s*\/?>)?\s*<\/div>$/.test(clean)) {
+          payload['about_text'] = '';
+        } else {
+          payload['about_text'] = clean;
+        }
+      }
+
+      var aboutImageUrls = {};
+      var aboutUploadPromises = [];
+      var aboutUploadErrors = {};
+
+      for (let i = 1; i <= 5; i++) {
+        (function(index) {
+          var input = document.getElementById('aboutImageInput' + index);
+          var removeBtn = document.getElementById('aboutImageRemoveBtn' + index);
+          var removeFlag = removeBtn ? removeBtn.dataset.remove === 'true' : false;
+          var currentUrl = textsCache['about_image_' + index] || '';
+
+          if (input && input.files && input.files[0]) {
+            var formData = new FormData();
+            formData.append('image', input.files[0]);
+            var promise = window.adminFetch('/api/admin/upload', {
+              method: 'POST',
+              body: formData
+            }).then(async function (res) {
+              if (!res || !res.ok) {
+                let errMsg = 'Error al subir imagen ' + index + ' del carrusel.';
+                if (res) {
+                  let errData = await res.json().catch(function () { return {}; });
+                  errMsg = errData.error || errMsg;
+                }
+                throw new Error(errMsg);
+              }
+              var data = await res.json();
+              aboutImageUrls[index] = data.url || '';
+            }).catch(function (err) {
+              aboutUploadErrors[index] = err.message || 'Error al subir imagen ' + index;
+              throw err;
+            });
+            aboutUploadPromises.push(promise);
+          } else if (removeFlag) {
+            aboutImageUrls[index] = '';
+          } else {
+            aboutImageUrls[index] = currentUrl;
+          }
+        })(i);
+      }
+
+      if (aboutUploadPromises.length > 0) {
+        try {
+          await Promise.all(aboutUploadPromises);
+        } catch (err) {
+          for (var j = 1; j <= 5; j++) {
+            var errEl = document.getElementById('aboutImageError' + j);
+            if (errEl && aboutUploadErrors[j]) {
+              errEl.textContent = aboutUploadErrors[j];
+              errEl.style.display = 'block';
+            }
+          }
+          throw new Error(aboutUploadErrors[1] || 'Error al subir imágenes del carrusel');
+        }
+      }
+
+      for (var a = 1; a <= 5; a++) {
+        payload['about_image_' + a] = aboutImageUrls[a] || '';
+      }
+    } else {
+      for (var i = 0; i < keys.length; i++) {
+        var key = keys[i];
+        if (key === 'about_text' && quillEditor) {
+          var aboutRaw = quillEditor.root.innerHTML;
+          var aboutClean = (typeof DOMPurify !== 'undefined') ? DOMPurify.sanitize(aboutRaw) : aboutRaw;
+          payload[key] = aboutClean;
+        } else if (key === 'hero_image_url') {
+          continue;
+        } else {
+          var el = document.getElementById(key);
+          payload[key] = el ? el.value.trim() : '';
+        }
       }
     }
 
@@ -609,7 +744,41 @@
       var data = await res.json();
       textsCache = Object.assign({}, textsCache, payload);
 
-      showSaveStatus(statusId, 'success', 'Cambios guardados correctamente (' + (data.results?.saved || keys.length) + ' campos)');
+      if (scope === 'about') {
+        for (let a = 1; a <= 5; a++) {
+          (function(index) {
+            var input = document.getElementById('aboutImageInput' + index);
+            var removeBtn = document.getElementById('aboutImageRemoveBtn' + index);
+            var errorEl = document.getElementById('aboutImageError' + index);
+            var newPreview = document.getElementById('aboutImageNewPreview' + index);
+            var newImg = document.getElementById('aboutImageNewImg' + index);
+            var preview = document.getElementById('aboutImagePreview' + index);
+            var placeholder = document.getElementById('aboutImagePlaceholder' + index);
+            var url = payload['about_image_' + index] || '';
+
+            if (input) input.value = '';
+            if (removeBtn) delete removeBtn.dataset.remove;
+            if (errorEl) {
+              errorEl.style.display = 'none';
+              errorEl.textContent = '';
+            }
+            if (newPreview) newPreview.style.display = 'none';
+            if (newImg) newImg.src = '';
+            if (preview && placeholder) {
+              if (url) {
+                preview.src = url;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+              } else {
+                preview.style.display = 'none';
+                placeholder.style.display = 'flex';
+              }
+            }
+          })(a);
+        }
+      }
+
+      showSaveStatus(statusId, 'success', 'Cambios guardados correctamente (' + (data.results?.saved || Object.keys(payload).length) + ' campos)');
       window.showToast('✅', 'Cambios guardados correctamente', 'success');
       if (window.clearDirty) window.clearDirty('content');
     } catch (err) {
@@ -745,7 +914,7 @@
       });
     });
 
-    var fpInputs = document.querySelectorAll('#fp_name, #fp_description, #fp_cta_text, #fp_cta_url');
+    var fpInputs = document.querySelectorAll('#fp_name, #fp_description, #fp_cta_text, #fp_cta_url, #hero_card_1_text, #hero_card_2_text');
     fpInputs.forEach(function (input) {
       input.addEventListener('input', function () {
         if (window.markDirty) window.markDirty('content');
@@ -879,6 +1048,78 @@
         if (newImg) newImg.src = '';
         if (window.markDirty) window.markDirty('content');
       });
+    }
+
+    for (var i = 1; i <= 5; i++) {
+      (function(index) {
+        var changeBtn = document.getElementById('aboutImageChangeBtn' + index);
+        var input = document.getElementById('aboutImageInput' + index);
+        var errorEl = document.getElementById('aboutImageError' + index);
+        var removeBtn = document.getElementById('aboutImageRemoveBtn' + index);
+        var newPreview = document.getElementById('aboutImageNewPreview' + index);
+        var newImg = document.getElementById('aboutImageNewImg' + index);
+        var preview = document.getElementById('aboutImagePreview' + index);
+        var placeholder = document.getElementById('aboutImagePlaceholder' + index);
+
+        if (changeBtn && input) {
+          changeBtn.addEventListener('click', function () {
+            input.click();
+          });
+          input.addEventListener('change', function () {
+            if (errorEl) {
+              errorEl.style.display = 'none';
+              errorEl.textContent = '';
+            }
+            if (input.files && input.files[0]) {
+              var file = input.files[0];
+              if (file.size > 5 * 1024 * 1024) {
+                var msg = 'La imagen es muy grande (máximo 5MB)';
+                window.showToast('❌', msg, 'error');
+                if (errorEl) {
+                  errorEl.textContent = msg;
+                  errorEl.style.display = 'block';
+                }
+                input.value = '';
+                return;
+              }
+              if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                var msg2 = 'Formato no soportado. Usá JPG, PNG o WEBP.';
+                window.showToast('❌', msg2, 'error');
+                if (errorEl) {
+                  errorEl.textContent = msg2;
+                  errorEl.style.display = 'block';
+                }
+                input.value = '';
+                return;
+              }
+               var reader = new FileReader();
+               reader.onload = function (e) {
+                 if (newPreview && newImg) {
+                   newImg.src = e.target.result;
+                   newPreview.style.display = 'block';
+                 }
+                 if (preview && placeholder) {
+                   preview.src = e.target.result;
+                   preview.style.display = 'block';
+                   placeholder.style.display = 'none';
+                 }
+                 if (window.markDirty) window.markDirty('content');
+               };
+               reader.readAsDataURL(input.files[0]);
+            }
+          });
+        }
+
+        if (removeBtn) {
+          removeBtn.addEventListener('click', function () {
+            removeBtn.dataset.remove = 'true';
+            if (input) input.value = '';
+            if (newPreview) newPreview.style.display = 'none';
+            if (newImg) newImg.src = '';
+            if (window.markDirty) window.markDirty('content');
+          });
+        }
+      })(i);
     }
   } catch (err) {
     console.error('[Content] Error inicializando editor:', err);

@@ -81,7 +81,7 @@ const updateSiteSettings = async (req, res) => {
 
     for (const [key, value] of Object.entries(settings)) {
       await query(
-        'INSERT INTO site_settings (key, value, tenant_id) VALUES ($1, $2, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP',
+        'INSERT INTO site_settings (key, value, tenant_id) VALUES ($1, $2, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP, tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')',
         [key, String(value)]
       );
     }

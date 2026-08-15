@@ -26,11 +26,12 @@
     var btn = document.getElementById(btnId);
     var load = document.getElementById(loadingId);
     if (btn) btn.disabled = loading;
-    if (load) load.classList.toggle('hidden', !loading);
     var textSpan = load ? load.previousElementSibling : null;
     if (textSpan && textSpan.id === btnId + 'Text') {
       textSpan.textContent = loading ? (loadingText || 'Procesando...') : (defaultText || 'Guardar');
+      textSpan.classList.toggle('hidden', loading);
     }
+    if (load) load.classList.toggle('hidden', !loading);
   }
 
   function formatCurrency(value) {

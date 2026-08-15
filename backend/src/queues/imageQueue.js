@@ -1,9 +1,9 @@
 const { Queue, Worker } = require('bullmq');
 const redis = require('ioredis');
 const sharp = require('sharp');
-const path = require('path');
 const fs = require('fs');
 const logger = require('../lib/logger');
+const { optimizeImage, generateAllVariants } = require('../lib/imageOptimizer');
 
 const redisUrl = process.env.REDIS_URL || '';
 let redisConnection = null;
@@ -91,7 +91,7 @@ async function startImageWorker() {
       try {
         switch (type) {
           case 'optimize': {
-            const optimizedPath = await optimizeImage(filePath);
+            const optimizedPath = await optimizeImage(filePath, options);
             return { success: true, path: optimizedPath };
           }
 
@@ -101,7 +101,7 @@ async function startImageWorker() {
           }
 
           case 'variant': {
-            const variants = await generateVariants(filePath);
+            const variants = await generateAllVariants(filePath, options.variantsDir || '/tmp/uploads/products/variants');
             return { success: true, variants };
           }
 
@@ -138,19 +138,6 @@ async function startImageWorker() {
   }
 }
 
-async function optimizeImage(filePath) {
-  const ext = path.extname(filePath).toLowerCase();
-  const optimizedPath = filePath.replace(ext, '.webp');
-  await sharp(filePath)
-    .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
-    .webp({ quality: 80 })
-    .toFile(optimizedPath);
-  if (optimizedPath !== filePath && fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
-  }
-  return optimizedPath;
-}
-
 async function applyWatermark(filePath, watermark) {
   if (!watermark?.text) return filePath;
 
@@ -172,26 +159,6 @@ async function applyWatermark(filePath, watermark) {
     .toFile(watermarkedPath);
 
   return watermarkedPath;
-}
-
-async function generateVariants(filePath) {
-  const variants = {};
-  const sizes = [
-    { key: 'thumbnail', width: 150, height: 150 },
-    { key: 'catalog', width: 400, height: 400 },
-    { key: 'zoom', width: 1200, height: 1200 }
-  ];
-
-  for (const size of sizes) {
-    const variantPath = filePath.replace(/(\.\w+)$/, `_${size.key}$1`);
-    await sharp(filePath)
-      .resize(size.width, size.height, { fit: 'cover', withoutEnlargement: true })
-      .webp({ quality: 80 })
-      .toFile(variantPath);
-    variants[size.key] = variantPath;
-  }
-
-  return variants;
 }
 
 async function transformImage(filePath, options) {

@@ -67,7 +67,7 @@ describe('xssClean', () => {
       };
       const next = jest.fn();
 
-      sanitizeBody(req, res, next);
+      sanitizeBody()(req, res, next);
 
       expect(req.body.name).toBe('&lt;script&gt;alert(1)&lt;/script&gt;');
       expect(req.body.age).toBe(25);
@@ -85,7 +85,7 @@ describe('xssClean', () => {
       };
       const next = jest.fn();
 
-      sanitizeBody(req, res, next);
+      sanitizeBody()(req, res, next);
 
       expect(req.query.search).toBe('&lt;img src=x onerror=alert(1)&gt;');
       expect(next).toHaveBeenCalled();
@@ -103,7 +103,7 @@ describe('xssClean', () => {
       };
       const next = jest.fn();
 
-      sanitizeBody(req, res, next);
+      sanitizeBody()(req, res, next);
 
       expect(req.params.id).toBe('&lt;script&gt;alert(1)&lt;/script&gt;');
       expect(next).toHaveBeenCalled();
@@ -119,7 +119,7 @@ describe('xssClean', () => {
       };
       const next = jest.fn();
 
-      sanitizeBody(req, res, next);
+      sanitizeBody()(req, res, next);
 
       expect(req.body.items).toEqual(['&lt;b&gt;bold&lt;/b&gt;', '&lt;i&gt;italic&lt;/i&gt;']);
       expect(next).toHaveBeenCalled();
@@ -135,9 +135,26 @@ describe('xssClean', () => {
       };
       const next = jest.fn();
 
-      sanitizeBody(req, res, next);
+      sanitizeBody()(req, res, next);
 
       expect(req.body.user.name).toBe('&lt;script&gt;alert(1)&lt;/script&gt;');
+      expect(next).toHaveBeenCalled();
+    });
+
+    test('excluye about_text de la sanitizacion', () => {
+      const req = {
+        body: { about_text: '<p>Trabajamos mas de 5 años </p>', name: '<script>alert(1)</script>' }
+      };
+      const res = {
+        status: jest.fn(() => res),
+        json: jest.fn()
+      };
+      const next = jest.fn();
+
+      sanitizeBody({ excludeKeys: ['about_text'] })(req, res, next);
+
+      expect(req.body.about_text).toBe('<p>Trabajamos mas de 5 años </p>');
+      expect(req.body.name).toBe('&lt;script&gt;alert(1)&lt;/script&gt;');
       expect(next).toHaveBeenCalled();
     });
 
@@ -149,7 +166,7 @@ describe('xssClean', () => {
       };
       const next = jest.fn();
 
-      expect(() => sanitizeBody(req, res, next)).not.toThrow();
+      expect(() => sanitizeBody()(req, res, next)).not.toThrow();
       expect(next).toHaveBeenCalled();
     });
 
@@ -158,7 +175,7 @@ describe('xssClean', () => {
       const res = {};
       const next = jest.fn();
 
-      sanitizeBody(req, res, next);
+      sanitizeBody()(req, res, next);
 
       expect(next).toHaveBeenCalled();
     });

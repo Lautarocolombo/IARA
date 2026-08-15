@@ -142,60 +142,6 @@ describe('hero.js', () => {
     });
   });
 
-  describe('loadHeroImage', () => {
-    test('carga imagen principal desde API', async () => {
-      require('../../frontend/js/hero');
-      fetchWithRetryMock.mockResolvedValue({
-        ok: true,
-        json: async () => ({
-          hero_image_url: 'https://example.com/image.jpg',
-          hero_title: 'Título Hero'
-        })
-      });
-
-      document.body.innerHTML = '<img id="heroMainImage" style="display:none" alt="test" />';
-      await window.loadHeroImage();
-
-      const img = document.getElementById('heroMainImage');
-      expect(img.src).toBe('https://example.com/image.jpg');
-      expect(img.alt).toBe('Título Hero');
-      expect(img.style.display).toBe('block');
-    });
-
-    test('oculta imagen si no hay URL', async () => {
-      require('../../frontend/js/hero');
-      fetchWithRetryMock.mockResolvedValue({
-        ok: true,
-        json: async () => ({ hero_image_url: '', hero_title: '' })
-      });
-
-      document.body.innerHTML = '<img id="heroMainImage" style="display:block" alt="test" />';
-      await window.loadHeroImage();
-
-      const img = document.getElementById('heroMainImage');
-      expect(img.style.display).toBe('none');
-    });
-
-    test('maneja error al cargar imagen', async () => {
-      require('../../frontend/js/hero');
-      fetchWithRetryMock.mockRejectedValue(new Error('Network error'));
-
-      document.body.innerHTML = '<img id="heroMainImage" style="display:none" alt="test" />';
-      await window.loadHeroImage();
-    });
-
-    test('no hace nada si el elemento no existe', async () => {
-      require('../../frontend/js/hero');
-      fetchWithRetryMock.mockResolvedValue({
-        ok: true,
-        json: async () => ({ hero_image_url: 'https://example.com/image.jpg' })
-      });
-
-      document.body.innerHTML = '';
-      await window.loadHeroImage();
-    });
-  });
-
   describe('renderHeroCards', () => {
     test('renderiza tarjetas con datos del backend', async () => {
       require('../../frontend/js/hero');
@@ -329,6 +275,99 @@ describe('hero.js', () => {
       const heroVisual = document.getElementById('heroCardsContainer');
       expect(heroVisual.innerHTML).toContain('heroCard1Img');
     });
+
+    test('respeta strings vacíos de site-texts sin caer a defaults', async () => {
+      require('../../frontend/js/hero');
+      fetchWithRetryMock.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          hero_title: '',
+          hero_subtitle: '',
+          hero_cta_text: '',
+          hero_cta_url: '',
+          hero_card_1_text: ''
+        })
+      });
+
+      document.body.innerHTML = `
+        <div class="hero-content">
+          <h1></h1>
+          <p class="hero-subtitle"></p>
+          <a class="btn-primary"></a>
+        </div>
+        <div id="heroCardsContainer"></div>
+      `;
+      await window.renderHeroCards([]);
+
+      const heroContent = document.querySelector('.hero-content');
+      expect(heroContent.querySelector('h1').innerHTML).not.toContain('artesanales');
+      expect(heroContent.querySelector('.hero-subtitle').textContent).toBe('');
+      expect(heroContent.querySelector('.btn-primary').textContent).toBe('');
+    });
+
+    test('no renderiza elementos vacíos en las tarjetas hero', async () => {
+      require('../../frontend/js/hero');
+      fetchWithRetryMock.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          hero_title: '',
+          hero_subtitle: '',
+          hero_cta_text: '',
+          hero_card_1_text: '',
+          featured_product_name: '',
+          featured_product_description: '',
+          featured_product_cta_text: '',
+          hero_card_2_text: ''
+        })
+      });
+
+      document.body.innerHTML = `
+        <div class="hero-content">
+          <h1></h1>
+          <p class="hero-subtitle"></p>
+          <a class="btn-primary"></a>
+        </div>
+        <div id="heroCardsContainer"></div>
+      `;
+      await window.renderHeroCards([]);
+
+      const heroVisual = document.getElementById('heroCardsContainer');
+      expect(heroVisual.querySelectorAll('.hero-card-text').length).toBe(0);
+      expect(heroVisual.querySelectorAll('.hero-card-title').length).toBe(0);
+      expect(heroVisual.querySelectorAll('.hero-card-price').length).toBe(0);
+      expect(heroVisual.querySelectorAll('.hero-card-cta').length).toBe(0);
+    });
+
+    test('renderiza solo elementos con valores en las tarjetas hero', async () => {
+      require('../../frontend/js/hero');
+      fetchWithRetryMock.mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          hero_title: 'Título Custom',
+          hero_subtitle: 'Subtítulo Custom',
+          hero_cta_text: 'Ver más',
+          hero_cta_url: '#catalog',
+          hero_card_1_text: 'Frase 1'
+        })
+      });
+
+      document.body.innerHTML = `
+        <div class="hero-content">
+          <h1></h1>
+          <p class="hero-subtitle"></p>
+          <a class="btn-primary"></a>
+        </div>
+        <div id="heroCardsContainer"></div>
+      `;
+      await window.renderHeroCards([]);
+
+      const heroVisual = document.getElementById('heroCardsContainer');
+      const card1 = heroVisual.querySelector('[data-hero-card="1"]');
+      expect(card1.querySelector('.hero-card-text')).not.toBeNull();
+      expect(card1.querySelector('.hero-card-title')).not.toBeNull();
+      expect(card1.querySelector('.hero-card-price')).not.toBeNull();
+      expect(card1.querySelector('.hero-card-cta')).toBeNull();
+    });
   });
 
   describe('window exports', () => {
@@ -340,11 +379,6 @@ describe('hero.js', () => {
     test('expone renderHeroCards', () => {
       require('../../frontend/js/hero');
       expect(typeof window.renderHeroCards).toBe('function');
-    });
-
-    test('expone loadHeroImage', () => {
-      require('../../frontend/js/hero');
-      expect(typeof window.loadHeroImage).toBe('function');
     });
   });
 });

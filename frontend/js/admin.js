@@ -275,11 +275,12 @@ function setButtonState(btnId, loadingId, loading, defaultText, loadingText) {
     btn.disabled = loading;
     btn.classList.toggle('is-saving', loading);
   }
-  if (load) load.classList.toggle('hidden', !loading);
   var textSpan = load ? load.previousElementSibling : null;
   if (textSpan && textSpan.id === btnId + 'Text') {
     textSpan.textContent = loading ? (loadingText || 'Procesando...') : (defaultText || 'Guardar');
+    textSpan.classList.toggle('hidden', loading);
   }
+  if (load) load.classList.toggle('hidden', !loading);
 }
 
 async function saveToCloud(section, options) {
