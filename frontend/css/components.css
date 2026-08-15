@@ -1006,19 +1006,24 @@ html, body { overflow-x: hidden; }
 
 /* ==================== ABOUT SECTION ==================== */
 .about-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: start;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.about-left {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 2.5rem;
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 0 1rem;
+  gap: 2rem;
 }
 
 .about-text {
   width: 100%;
-  max-width: 720px;
-  text-align: center;
+  max-width: 100%;
+  text-align: left;
 }
 
 .about-text p {
@@ -1026,17 +1031,19 @@ html, body { overflow-x: hidden; }
   margin-bottom: 0;
   line-height: 1.8;
   font-size: 0.95rem;
-  text-align: center;
+  text-align: left;
 }
 
 .about-carousel-wrap {
   width: 100%;
   max-width: 900px;
+  grid-column: 2;
+  grid-row: 1 / 3;
 }
 
 .about-stats {
   width: 100%;
-  max-width: 700px;
+  max-width: 100%;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
@@ -1691,9 +1698,9 @@ html, body { overflow-x: hidden; }
   .how-grid { grid-template-columns: repeat(2, minmax(180px, 1fr)); }
   .products-grid, .catalog-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
   .about-content { gap: 2rem; }
-  .about-text { max-width: 100%; }
-  .about-carousel-wrap { max-width: 100%; }
-  .about-stats { max-width: 100%; grid-template-columns: 1fr; }
+  .about-left { gap: 1.5rem; }
+  .about-stats { grid-template-columns: 1fr; }
+  .about-carousel-wrap { grid-column: 1; grid-row: auto; }
   .about-carousel-btn { width: 36px; height: 36px; font-size: 0.95rem; }
   .about-carousel-btn--prev { left: 0.5rem; }
   .about-carousel-btn--next { right: 0.5rem; }

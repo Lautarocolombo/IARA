@@ -82,14 +82,25 @@ if (typeof loadTestimonials === 'function') {
       res.json().then(function(texts) {
         window.__aboutImages = {};
         for (var i = 1; i <= 5; i++) {
-          window.__aboutImages['about_image_' + i] = texts['about_image_' + i] || '';
+          var raw = texts['about_image_' + i] || '';
+          if (raw) {
+            var m = String(raw).match(/\/uploads\/imagenes\/([^/?]+)/);
+            window.__aboutImages['about_image_' + i] = m ? '/uploads/imagenes/' + m[1] : raw;
+          } else {
+            window.__aboutImages['about_image_' + i] = '';
+          }
         }
         if (typeof window.initAboutCarousel === 'function') {
           window.initAboutCarousel();
         }
       });
-    }).catch(function() {});
-  }
+    }).catch(function(err) {
+      if (typeof console !== 'undefined' && console.error) {
+        console.error('[home-init] Error cargando imágenes del carrusel:', err);
+      }
+    });
+    window.loadAboutImages = loadAboutImages;
+}
 
 if (typeof loadAboutImages === 'function') {
   loadAboutImages();

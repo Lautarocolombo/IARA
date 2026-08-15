@@ -273,6 +273,13 @@ function initSSESync() {
       if (typeof loadHeroCards === 'function') loadHeroCards();
     });
 
+    sseSource.addEventListener('site_texts_updated', () => {
+      if (typeof loadSiteTexts === 'function') loadSiteTexts();
+      if (typeof loadHeroCards === 'function') loadHeroCards();
+      if (typeof loadAboutImages === 'function') loadAboutImages();
+      if (typeof window.initAboutCarousel === 'function') window.initAboutCarousel();
+    });
+
     sseSource.addEventListener('settings_updated', () => {
       if (typeof loadMpAlias === 'function') loadMpAlias();
       if (typeof loadSiteSettings === 'function') loadSiteSettings();

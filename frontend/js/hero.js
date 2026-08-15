@@ -1,7 +1,7 @@
 (function () {
   'use strict';
 
-  function updateGreeting(siteTexts) {
+  function updateGreeting() {
     var greetingEl = document.getElementById('heroGreeting');
     if (!greetingEl) return;
 
