@@ -108,7 +108,7 @@ if (Sentry) {
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(sanitizeBody({ excludeKeys: ['about_text'] }));
+app.use(sanitizeBody({ excludeKeys: ['about_text', 'hero_title'] }));
 app.use(require('compression')());
 
 const envOrigins = (process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || '').split(',').filter(Boolean);
@@ -116,6 +116,7 @@ const defaultOrigins = [
   'https://artesaniagualeguay.com',
   'https://www.artesaniagualeguay.com',
   'https://artesania-gualeguay.vercel.app',
+  'https://iara-ivory.vercel.app',
   'http://localhost:3000',
   'http://localhost:3001',
   'http://localhost:5173',
@@ -371,9 +372,12 @@ app.get('/ready', async (req, res) => {
 app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUploadError, uploadSingle, async (req, res) => {
   try {
     if (!req.file) {
+      console.warn('[Upload] No se recibió imagen en /api/admin/upload');
       return res.status(400).json({ error: 'No se recibió imagen' });
     }
+    console.log('[Upload] Procesando imagen:', req.file.originalname, req.file.size, 'bytes');
     const processed = await processFile(req.file, `${req.protocol}://${req.get('host')}`);
+    console.log('[Upload] Imagen procesada OK:', processed.url);
     res.json({
       url: processed.url,
       filename: processed.filename,
@@ -381,7 +385,7 @@ app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUplo
       isCloudinary: processed.isCloudinary
     });
   } catch (err) {
-    logger.error({ err: err.message }, 'Error procesando imagen');
+    console.error('[Upload] Error procesando imagen:', err.message, err.stack);
     const message = err.message || 'Error al procesar la imagen';
     res.status(500).json({ error: message });
   }

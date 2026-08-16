@@ -51,6 +51,7 @@ const createCategory = async (req, res) => {
       'INSERT INTO categories (name, slug, description, active, orden, emoji, image, parent_id, image_url, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) RETURNING *',
       [name, slug, description, active !== false, Number(orden) || 0, emoji || '', image, parent_id, image_url]
     );
+    logger.info({ categoryId: result.rows[0].id, name, slug }, 'createCategory: categoría creada');
     res.status(201).json(result.rows[0]);
   } catch (err) {
     if (err.code === '23505' || err.code === 'SQLITE_CONSTRAINT') {
@@ -85,6 +86,7 @@ const updateCategory = async (req, res) => {
   try {
     const result = await query(`UPDATE categories SET ${setParts.join(', ')}, updated_at = CURRENT_TIMESTAMP, tenant_id = COALESCE(current_setting('app.current_tenant', TRUE), 'default') WHERE id = $${values.length} RETURNING *`, values);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Categoría no encontrada' });
+    logger.info({ categoryId: id, fields }, 'updateCategory: categoría actualizada');
     res.json(result.rows[0]);
   } catch (err) {
     if (err.code === '23505' || err.code === 'SQLITE_CONSTRAINT') {
@@ -133,6 +135,7 @@ const deleteCategory = async (req, res) => {
     await query('UPDATE products SET category = \'\' WHERE category = $1', [slug]);
     const result = await query('DELETE FROM categories WHERE id = $1 RETURNING id', [id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Categoría no encontrada' });
+    logger.info({ categoryId: id, slug, productCount }, 'deleteCategory: categoría eliminada');
     res.json({ ok: true, reassigned: productCount, productCount });
   } catch (err) {
     logger.error('Error eliminando categoría:', err);

@@ -10,9 +10,7 @@ async function tenantContext(req, res, next) {
     if (token && process.env.JWT_SECRET) {
       try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        if (decoded.role === 'admin') {
-          tenantId = 'default';
-        } else if (decoded.tenant_id) {
+        if (decoded.tenant_id) {
           tenantId = decoded.tenant_id;
         } else if (decoded.user) {
           const { query } = require('../lib/db');

@@ -117,7 +117,7 @@ const updateSiteSettings = async (req, res) => {
       if (row.rows.length === 0) {
         await query(
           `INSERT INTO payment_config (mp_alias, transfer_alias, holder_name, cbu_cvu, whatsapp, message, active, mp_enabled, cash_enabled, shipping_cost, free_shipping_from, included_shipping_cost, notify_admin_new_proof, notify_client_approved, notify_client_rejected)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
           [mp_alias, transfer_alias, holder_name, cbu_cvu, whatsapp, message, active, mp_enabled, cash_enabled, shipping_cost, free_shipping_from, included_shipping_cost, notify_admin_new_proof, notify_client_approved, notify_client_rejected]
         );
       } else {
@@ -128,6 +128,7 @@ const updateSiteSettings = async (req, res) => {
       }
     }
 
+    logger.info({ settingsKeys: Object.keys(settings), hasPayment }, 'updateSiteSettings: configuración actualizada');
     res.json({ ok: true });
     try { syncBus.emit('settings_updated', {}); } catch (e) { /* noop */ }
   } catch (err) {
@@ -197,6 +198,7 @@ const updateAdminPaymentConfig = async (req, res) => {
       mpEnabled, cashEnabled, shippingCost, freeShippingFrom, includedShippingCost,
       notifyAdminNewProof, notifyClientApproved, notifyClientRejected
     });
+    logger.info({ mpAlias, transferAlias, active, mpEnabled, cashEnabled }, 'updateAdminPaymentConfig: configuración de pago actualizada');
     res.json({
       ok: true,
       mpAlias: mpAlias || '',

@@ -210,20 +210,24 @@ if (sharpAvailable) {
 
 async function processFile(file, baseUrl) {
   const useBlob = isBlobConfigured();
+  console.log('[Upload] processFile start:', { useBlob, filename: file.originalname, size: file.size, NODE_ENV: process.env.NODE_ENV, isRender: !!process.env.RENDER_EXTERNAL_HOSTNAME });
 
   if (useBlob) {
     const blobResult = await uploadToBlob(file);
     if (blobResult) {
       try { fs.unlinkSync(file.path); } catch (e) { /* noop */ }
+      console.log('[Upload] Subido a Vercel Blob:', blobResult.url);
       return { url: blobResult.url, filename: blobResult.filename, cloudinary_public_id: '', isCloudinary: false, isBlob: true };
     }
-    logger.warn('El upload a Vercel Blob falló, intentando fallback...');
+    console.warn('[Upload] Upload a Vercel Blob falló, intentando fallback...');
   }
 
   const isProduction = process.env.NODE_ENV === 'production';
-  if (isProduction && !useBlob) {
+  const isRender = !!process.env.RENDER_EXTERNAL_HOSTNAME;
+
+  if (!useBlob && isProduction && !isRender) {
     const err = new Error('Storage de imágenes no configurado. Necesitás configurar BLOB_READ_WRITE_TOKEN en Render para subir imágenes.');
-    logger.error({ err: err.message }, 'Upload bloqueado: falta configuración de storage persistente');
+    console.error({ err: err.message }, '[Upload] Bloqueado: falta configuración de storage persistente');
     throw err;
   }
 
@@ -234,20 +238,21 @@ async function processFile(file, baseUrl) {
   const resolvedBaseUrl = baseUrl || process.env.SITE_URL || process.env.BACKEND_URL || (process.env.RENDER_EXTERNAL_HOSTNAME ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` : 'http://localhost:10000');
   const absoluteUrl = `${resolvedBaseUrl}${relativeUrl}`;
 
-  const isEphemeralProd = !isVercel && (process.env.NODE_ENV === 'production' || !!process.env.RENDER_EXTERNAL_HOSTNAME);
-  if (isEphemeralProd) {
+  if (isRender) {
     try {
       const dataUri = await fileToBase64DataUri(optimizedPath);
       try { fs.unlinkSync(file.path); } catch (e) { /* noop */ }
       if (optimizedPath !== file.path) {
         try { fs.unlinkSync(optimizedPath); } catch (e) { /* noop */ }
       }
+      console.log('[Upload] Fallback base64 para Render (producción efímera)');
       return { url: dataUri, filename, cloudinary_public_id: '', isCloudinary: false, isBlob: false };
     } catch (e) {
-      logger.warn({ err: e.message, stack: e.stack }, 'Error convirtiendo imagen a base64 para fallback persistente, usando URL local');
+      console.warn({ err: e.message, stack: e.stack }, '[Upload] Error convirtiendo imagen a base64 para fallback persistente, usando URL local');
     }
   }
 
+  console.log('[Upload] URL generada:', absoluteUrl);
   return { url: absoluteUrl, filename, cloudinary_public_id: '', isCloudinary: false, isBlob: false };
 }
 

@@ -9,6 +9,7 @@ const readline = require('readline');
 const xlsx = require('xlsx');
 
 let productsSchemaVerified = false;
+let productImagesSchemaVerified = false;
 
 async function ensureProductsSchema() {
   if (productsSchemaVerified) return;
@@ -44,14 +45,22 @@ async function ensureProductsSchema() {
           logger.debug({ col, err: e.message }, 'No se pudo agregar columna');
         }
       }
+      const verifyResult = await query(`SELECT column_name FROM information_schema.columns WHERE table_name = 'products' AND table_schema = 'public'`);
+      const currentExisting = new Set((verifyResult.rows || []).map(r => r.column_name));
+      const stillMissing = needed.filter(c => !currentExisting.has(c));
+      if (stillMissing.length === 0) {
+        productsSchemaVerified = true;
+      }
+    } else {
+      productsSchemaVerified = true;
     }
-    productsSchemaVerified = true;
   } catch (err) {
     logger.warn({ err: err.message }, 'No se pudo verificar esquema de products');
   }
 }
 
 async function ensureProductImagesSchema() {
+  if (productImagesSchemaVerified) return;
   try {
     const colsResult = await query(`SELECT column_name FROM information_schema.columns WHERE table_name = 'product_images' AND table_schema = 'public'`);
     if (!colsResult || !Array.isArray(colsResult.rows) || colsResult.rows.length === 0) {
@@ -77,6 +86,14 @@ async function ensureProductImagesSchema() {
           logger.debug({ col, err: e.message }, 'No se pudo agregar columna en product_images');
         }
       }
+      const verifyResult = await query(`SELECT column_name FROM information_schema.columns WHERE table_name = 'product_images' AND table_schema = 'public'`);
+      const currentExisting = new Set((verifyResult.rows || []).map(r => r.column_name));
+      const stillMissing = needed.filter(c => !currentExisting.has(c));
+      if (stillMissing.length === 0) {
+        productImagesSchemaVerified = true;
+      }
+    } else {
+      productImagesSchemaVerified = true;
     }
   } catch (err) {
     logger.warn({ err: err.message }, 'No se pudo verificar esquema de product_images');
@@ -271,6 +288,7 @@ const getFeaturedProducts = async (req, res) => {
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
     const result = await query(`SELECT * FROM products WHERE active = TRUE AND deleted = FALSE AND featured = TRUE AND tenant_id = COALESCE(current_setting('app.current_tenant', TRUE), 'default') ORDER BY id ASC LIMIT 2`);
     const enriched = await attachImagesToProducts(result.rows, baseUrl);
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json(enriched);
   } catch (err) {
     logger.error({ err: err.message, stack: err.stack }, 'Error obteniendo productos destacados');
@@ -460,6 +478,7 @@ const createProduct = async (req, res) => {
       `INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, FALSE, COALESCE(current_setting('app.current_tenant', TRUE), 'default')) RETURNING *`,
       [data.name, slug, data.category, Number(data.price), data.description || '', data.emoji || '📿', data.image || '', data.badge || '', Number(data.stock), data.featured || false, data.active !== false, data.sku || '']
     );
+    logger.info({ productId: result.rows[0].id, name: data.name, slug }, 'createProduct: producto creado');
     res.status(201).json(result.rows[0]);
     try { syncBus.emit('products_updated', { id: result.rows[0].id }); } catch (e) { /* noop */ }
   } catch (err) {
@@ -483,13 +502,15 @@ const updateProduct = async (req, res) => {
       }
     }
 
-    const fields = Object.keys(data);
+    const rawFields = Object.keys(data);
+    const fields = rawFields.filter(f => f !== 'image' || data[f]);
     if (!fields.length) return res.status(400).json({ error: 'Sin datos para actualizar' });
     const setClause = fields.map((_, i) => `${fields[i]} = $${i + 1}`).join(', ');
     const values = fields.map(f => (['price', 'stock'].includes(f) ? Number(data[f]) : data[f]));
     values.push(id);
     const result = await query(`UPDATE products SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = $${values.length} AND deleted = FALSE RETURNING *`, values);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
+    logger.info({ productId: id, fields }, 'updateProduct: producto actualizado');
     res.json(result.rows[0]);
     try { syncBus.emit('products_updated', { id: Number(req.params.id) }); } catch (e) { /* noop */ }
   } catch (err) {
@@ -544,6 +565,7 @@ const deleteProduct = async (req, res) => {
     }
 
     res.json({ ok: true, logical: hasHistoricalOrders });
+    logger.info({ productId: id, logical: hasHistoricalOrders }, 'deleteProduct: producto eliminado');
     try { syncBus.emit('products_updated', { id: Number(req.params.id) }); } catch (e) { /* noop */ }
   } catch (err) {
     logger.error({ err: err.message, stack: err.stack }, 'Error eliminando producto');

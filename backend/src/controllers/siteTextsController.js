@@ -39,6 +39,27 @@ function sanitizeText(text) {
   return result;
 }
 
+function sanitizeHtml(html) {
+  if (typeof html !== 'string') return html;
+  let result = html;
+  result = result.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+  result = result.replace(/\s(on\w+)=/gi, ' ');
+  result = result.replace(/href\s*=\s*["']\s*javascript:[^"']*["']/gi, 'href="#"');
+  const allowedTags = ['P', 'BR', 'STRONG', 'EM', 'B', 'I', 'U', 'UL', 'OL', 'LI', 'A', 'DIV', 'SPAN'];
+  const tagRegex = /<\/?([a-zA-Z0-9]+)([^>]*)>/g;
+  result = result.replace(tagRegex, function(match, tag, attrs) {
+    const upperTag = tag.toUpperCase();
+    if (!allowedTags.includes(upperTag)) {
+      if (match.startsWith('</')) return '';
+      return attrs ? '<' + tag + '>' : '';
+    }
+    if (match.startsWith('</')) return match;
+    const cleanAttrs = attrs.replace(/\s+on\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+    return '<' + tag + cleanAttrs + '>';
+  });
+  return result;
+}
+
 const getSiteTexts = async (req, res) => {
   try {
     const result = await query('SELECT key, value, updated_at FROM site_texts WHERE tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')');
@@ -53,6 +74,7 @@ const getSiteTexts = async (req, res) => {
     if (maxUpdated) {
       map.__updatedAt = maxUpdated;
     }
+    console.log('[SiteTexts] GET /site-texts keys:', Object.keys(map).length, 'updatedAt:', maxUpdated);
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json(map);
   } catch (err) {
@@ -80,6 +102,7 @@ const syncTextsToNeon = async (req, res) => {
     const texts = req.body && typeof req.body === 'object' ? req.body : {};
     const keys = Object.keys(texts);
     const results = { saved: 0, errors: 0 };
+    console.log('[SyncTexts] Iniciando sync de', keys.length, 'campos. Keys:', keys);
 
     let existingMap = {};
     try {
@@ -91,8 +114,12 @@ const syncTextsToNeon = async (req, res) => {
 
     for (const key of keys) {
       try {
-        const newValue = String(texts[key] || '');
+        let newValue = String(texts[key] || '');
+        if (key === 'about_text') {
+          newValue = sanitizeHtml(newValue);
+        }
         const oldValue = existingMap[key] || '';
+        console.log('[SyncTexts] Guardando key:', key, 'oldValue:', oldValue ? (oldValue.substring(0, 80) + '...') : '(vacío)', 'newValue:', newValue ? (newValue.substring(0, 80) + '...') : '(vacío)');
 
         if ((key === 'hero_image_url' || key === 'featured_product_image_url') && oldValue && !newValue) {
           try {
@@ -110,6 +137,8 @@ const syncTextsToNeon = async (req, res) => {
         await query('INSERT INTO site_texts (key, value, tenant_id) VALUES ($1, $2, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = CURRENT_TIMESTAMP, tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')', [key, newValue]);
         results.saved += 1;
       } catch (err) {
+        console.error('[SyncTexts] Error guardando key:', key, err.message);
+        logger.error({ key, err: err.message }, 'Error guardando texto individual');
         results.errors += 1;
       }
     }
@@ -117,6 +146,7 @@ const syncTextsToNeon = async (req, res) => {
     try {
       const maxResult = await query('SELECT MAX(updated_at) as max_updated FROM site_texts WHERE tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')');
       const maxUpdated = maxResult.rows[0]?.max_updated || null;
+      logger.info({ keys: keys.length, saved: results.saved, errors: results.errors, updatedAt: maxUpdated }, 'syncTextsToNeon: textos sincronizados');
       try { syncBus.emit('site_texts_updated', { updatedAt: maxUpdated }); } catch (e) { /* noop */ }
       res.json({ ok: true, results, updatedAt: maxUpdated });
     } catch (err) {

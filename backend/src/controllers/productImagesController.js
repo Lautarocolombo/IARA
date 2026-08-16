@@ -48,6 +48,8 @@ async function uploadProductImages(req, res) {
       }
     }
 
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+
     for (let i = 0; i < imageUrls.length; i++) {
       const url = imageUrls[i];
       const result = await query(
@@ -56,12 +58,11 @@ async function uploadProductImages(req, res) {
       );
       uploaded.push({
         ...result.rows[0],
-        url: getPublicUrl(result.rows[0].url)
+        url: getPublicUrl(result.rows[0].url, baseUrl)
       });
     }
 
     if (req.files && req.files.length > 0) {
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
       for (let i = 0; i < req.files.length; i++) {
         const file = req.files[i];
         const processed = await processFile(file, baseUrl);
@@ -71,7 +72,7 @@ async function uploadProductImages(req, res) {
         );
         uploaded.push({
           ...result.rows[0],
-          url: getPublicUrl(processed.url)
+          url: getPublicUrl(processed.url, baseUrl)
         });
       }
     }
