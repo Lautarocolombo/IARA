@@ -202,12 +202,21 @@ async function adminFetch(url, opts = {}, isRetry = false) {
     if (!res.ok) {
       let errorMsg = res.statusText;
       const contentType = res.headers.get('content-type') || '';
+      let responseBodyForLog = null;
       if (contentType.includes('application/json')) {
         const data = await res.json().catch(() => null);
         errorMsg = (data && data.error) || data?.message || errorMsg;
+        responseBodyForLog = data;
       } else {
         errorMsg = await res.text().catch(() => res.statusText);
+        responseBodyForLog = errorMsg;
       }
+      console.error('[adminFetch] Error response:', {
+        status: res.status,
+        statusText: res.statusText,
+        url: fullUrl,
+        body: responseBodyForLog
+      });
       throw new Error(errorMsg || `Error ${res.status}`);
     }
     return res;

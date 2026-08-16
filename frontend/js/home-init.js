@@ -94,8 +94,15 @@ if (typeof loadTestimonials === 'function') {
         for (var i = 1; i <= 5; i++) {
           var raw = texts['about_image_' + i] || '';
           if (raw) {
-            var m = String(raw).match(/\/uploads\/imagenes\/([^/?]+)/);
-            window.__aboutImages['about_image_' + i] = m ? '/uploads/imagenes/' + m[1] : raw;
+            var url = String(raw);
+            if (url.startsWith('data:')) {
+              window.__aboutImages['about_image_' + i] = url;
+            } else if (url.startsWith('http://localhost') || url.startsWith('http://127.0.0.1')) {
+              window.__aboutImages['about_image_' + i] = '';
+            } else {
+              var m = url.match(/\/uploads\/imagenes\/([^/?]+)/);
+              window.__aboutImages['about_image_' + i] = m ? '/uploads/imagenes/' + m[1] : url;
+            }
           } else {
             window.__aboutImages['about_image_' + i] = '';
           }

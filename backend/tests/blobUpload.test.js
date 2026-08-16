@@ -67,7 +67,7 @@ describe('Vercel Blob helpers', () => {
     expect(opts.token).toBe('token-falso-para-test');
   });
 
-  test('processFile usa fallback con URL local cuando no hay token de Blob', async () => {
+  test('processFile usa fallback con URL relativa en dev cuando no hay token de Blob', async () => {
     const tmpFile = makeTmpFile('test2.png');
 
     const result = await upload.processFile({
@@ -78,7 +78,7 @@ describe('Vercel Blob helpers', () => {
     });
 
     expect(result.isBlob).toBe(false);
-    expect(result.url).toMatch(/^http:\/\/localhost:10000\/uploads\/imagenes\/test2\.webp$/);
+    expect(result.url).toBe('/uploads/imagenes/test2.webp');
     expect(put).not.toHaveBeenCalled();
   });
 

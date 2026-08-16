@@ -252,6 +252,11 @@ async function processFile(file, baseUrl) {
     }
   }
 
+  if (!isProduction) {
+    console.log('[Upload] URL relativa (dev):', relativeUrl);
+    return { url: relativeUrl, filename, cloudinary_public_id: '', isCloudinary: false, isBlob: false };
+  }
+
   console.log('[Upload] URL generada:', absoluteUrl);
   return { url: absoluteUrl, filename, cloudinary_public_id: '', isCloudinary: false, isBlob: false };
 }

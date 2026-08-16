@@ -702,6 +702,12 @@
             }).catch(function (err) {
               aboutUploadErrors[index] = err.message || 'Error al subir imagen ' + index;
               console.error('[Content] Error subiendo imagen carrusel ' + index + ':', err);
+              console.error('[Content] ERROR COMPLETO (carrusel ' + index + '):', JSON.stringify({
+                name: err.name,
+                message: err.message,
+                stack: err.stack,
+                cause: err.cause
+              }));
               throw err;
             });
             aboutUploadPromises.push(promise);

@@ -126,17 +126,40 @@ const defaultOrigins = [
 ];
 const allowedOrigins = envOrigins.length ? envOrigins : defaultOrigins;
 
+function isOriginAllowed(origin) {
+  if (!origin) return true;
+  return allowedOrigins.some(allowed => {
+    if (allowed === origin) return true;
+    if (allowed.includes('*')) {
+      const pattern = allowed.replace(/\*/g, '.*');
+      return new RegExp('^' + pattern + '$').test(origin);
+    }
+    return false;
+  });
+}
+
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    const origin = req.headers.origin;
+    if (isOriginAllowed(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin || '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Accept-Language, Origin, X-Requested-With, X-Request-ID');
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Access-Control-Max-Age', '86400');
+      console.log('[CORS] Preflight respondido para:', req.path, 'origin:', origin);
+      return res.status(204).send();
+    }
+    console.log('[CORS] Preflight rechazado para:', req.path, 'origin:', origin);
+    return res.status(403).json({ error: 'Origen no permitido' });
+  }
+  next();
+});
+
 const corsOptions = allowedOrigins.length
   ? {
       origin: function(origin, callback) {
-        const allowed = allowedOrigins.some(allowed => {
-          if (allowed === origin) return true;
-          if (allowed.includes('*')) {
-            const pattern = allowed.replace(/\*/g, '.*');
-            return new RegExp('^' + pattern + '$').test(origin);
-          }
-          return false;
-        });
+        const allowed = isOriginAllowed(origin);
         console.log('[CORS] Preflight/request origin:', origin, 'allowed:', allowed, 'allowedOrigins:', allowedOrigins.join(','));
         callback(null, allowed);
       },
@@ -158,19 +181,6 @@ const corsOptions = allowedOrigins.length
     };
 
 app.use(cors(corsOptions));
-app.use((req, res, next) => {
-  if (req.method === 'OPTIONS') {
-    const origin = req.headers.origin || '*';
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Accept-Language, Origin, X-Requested-With, X-Request-ID');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Max-Age', '86400');
-    console.log('[CORS] Preflight respondido para:', req.path, 'origin:', origin);
-    return res.status(204).send();
-  }
-  next();
-});
 app.use(require('cookie-parser')());
 app.use(tenantContext);
 // app.options('*', cors(corsOptions)); // Reemplazado por middleware manual arriba para garantizar 204 en todas las rutas
@@ -402,6 +412,12 @@ app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUplo
     });
   } catch (err) {
     console.error('[Upload] Error procesando imagen:', err.message, err.stack);
+    console.error('[Upload] Error completo:', {
+      name: err.name,
+      message: err.message,
+      stack: err.stack,
+      code: err.code
+    });
     const message = err.message || 'Error al procesar la imagen';
     res.status(500).json({ error: message });
   }
