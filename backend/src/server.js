@@ -124,7 +124,7 @@ const defaultOrigins = [
   'http://127.0.0.1:3000',
   'http://127.0.0.1:5173'
 ];
-const allowedOrigins = envOrigins.length ? envOrigins : defaultOrigins;
+const allowedOrigins = [...new Set([...defaultOrigins, ...envOrigins])];
 
 function isOriginAllowed(origin) {
   if (!origin) return true;
