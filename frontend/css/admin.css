@@ -263,97 +263,210 @@ body {
   }
 }
 
+/* ==================== BUTTONS SYSTEM ==================== */
+/* Sistema de botones profesional con jerarquía clara */
+
 .btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.6rem 1rem;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
   border-radius: 10px;
   font-family: var(--font-body);
   font-weight: var(--weight-semibold);
   font-size: var(--admin-btn);
   border: none;
   cursor: pointer;
-  transition: all .2s;
+  transition: all 0.2s ease;
   text-decoration: none;
   line-height: var(--leading-tight);
+  white-space: nowrap;
+  min-height: 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(0);
+}
+
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none !important;
 }
 
 .btn-primary {
   background: var(--accent);
   color: #fff;
-  font-family: var(--font-body);
-  font-weight: var(--weight-semibold);
-  font-size: var(--admin-btn);
+  box-shadow: 0 2px 6px rgba(212, 112, 144, 0.25);
 }
 
-.btn-primary:hover {
+.btn-primary:hover:not(:disabled) {
   background: var(--accent-hover);
-  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(212, 112, 144, 0.35);
+  transform: translateY(-2px);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(212, 112, 144, 0.25);
 }
 
 .btn-secondary {
   background: var(--white);
-  color: #334155;
-  border: 1px solid var(--border);
-  font-family: var(--font-body);
-  font-weight: var(--weight-semibold);
-  font-size: var(--admin-btn);
+  color: var(--text-body);
+  border: 1.5px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
 }
 
-.btn-secondary:hover {
+.btn-secondary:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  transform: translateY(-1px);
+}
+
+.btn-secondary:active:not(:disabled) {
+  transform: translateY(0);
   background: #f1f5f9;
 }
 
 .btn-success {
   background: #dcfce7;
   color: #15803d;
-  font-family: var(--font-body);
-  font-weight: var(--weight-semibold);
-  font-size: var(--admin-btn);
+  border: 1.5px solid #86efac;
+  font-weight: var(--weight-bold);
 }
 
-.btn-success:hover {
+.btn-success:hover:not(:disabled) {
   background: #bbf7d0;
+  border-color: #4ade80;
+  transform: translateY(-1px);
+}
+
+.btn-success:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .btn-danger {
   background: #fee2e2;
   color: #dc2626;
-  font-family: var(--font-body);
-  font-weight: var(--weight-semibold);
-  font-size: var(--admin-btn);
+  border: 1.5px solid #fecaca;
+  font-weight: var(--weight-bold);
 }
 
-.btn-danger:hover {
+.btn-danger:hover:not(:disabled) {
   background: #fecaca;
+  border-color: #fca5a5;
+  transform: translateY(-1px);
 }
 
-.btn-neon {
-  background: #1f2937;
-  color: #fff;
-  border: 1px solid #ec4899;
-  box-shadow: 0 0 0 0 rgba(236, 72, 153, 0);
-  transition: all 0.2s ease;
-  font-family: var(--font-body);
-  font-weight: var(--weight-semibold);
-  font-size: var(--admin-btn);
+.btn-danger:active:not(:disabled) {
+  transform: translateY(0);
 }
 
-.btn-neon:hover:not(:disabled) {
-  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.25);
-  background: #111827;
+.btn-warning {
+  background: #fef9c3;
+  color: #92400e;
+  border: 1.5px solid #fcd34d;
+  font-weight: var(--weight-bold);
 }
 
-.btn-neon:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  box-shadow: none;
+.btn-warning:hover:not(:disabled) {
+  background: #fde68a;
+  border-color: #fbbf24;
+  transform: translateY(-1px);
+}
+
+.btn-warning:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--text-body);
+  border: 1.5px solid var(--border);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: var(--white);
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.btn-outline:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .btn-sm {
-  padding: 0.4rem 0.75rem;
+  padding: 0.45rem 0.85rem;
   font-size: var(--admin-btn-sm);
+  min-height: 34px;
+  border-radius: 8px;
+}
+
+.btn-lg {
+  padding: 0.8rem 1.75rem;
+  font-size: var(--text-md);
+  min-height: 48px;
+  border-radius: 12px;
+}
+
+.btn-icon {
+  padding: 0.65rem;
+  min-width: 40px;
+  min-height: 40px;
+  justify-content: center;
+}
+
+.btn-full {
+  width: 100%;
+  justify-content: center;
+}
+
+/* Loading state */
+.btn.is-saving {
+  opacity: 0.7;
+  pointer-events: none;
+  position: relative;
+}
+
+.btn.is-saving::after {
+  content: '';
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: btn-spin 0.8s linear infinite;
+  margin-left: 8px;
+}
+
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Button group */
+.btn-group {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.btn-group--sm {
+  gap: 0.35rem;
+}
+
+.btn-group--lg {
+  gap: 0.75rem;
 }
 
 .card {
@@ -393,10 +506,6 @@ body {
 
 .card-controls--filters {
   gap: 0.75rem;
-}
-
-.card-body {
-  padding: 1.25rem;
 }
 
 .card-body--flush {
@@ -1046,13 +1155,13 @@ tr:last-child td {
   opacity: 0.8;
 }
 
-.form-group + .hero-card-edit-item .hero-card-edit-item .hero-card-thumb img {
+.form-group + .hero-card-edit-item .hero-card-thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.hero-card-edit-item .hero-card-edit-item .hero-card-info .hero-card-edit-item .hero-card-info .hero-card-edit-item /* ==================== PRODUCT IMAGES MODULE ==================== */
+/* ==================== PRODUCT IMAGES MODULE ==================== */
 .product-image-dropzone:hover,
 .product-image-dropzone input[type="file"] {
   position: absolute;
@@ -3209,10 +3318,6 @@ textarea.hero-slot-input {
   margin-top: 1.5rem;
 }
 
-.card-body {
-  padding: 1.25rem;
-}
-
 /* ==================== RESPONSIVE SIDEBAR ==================== */
 
 @media (max-width: 768px) {
@@ -3368,7 +3473,7 @@ textarea.hero-slot-input {
 .charts-row .chart-container {
   flex: 2;
   min-width: 280px;
-  height: 320px;
+  height: 260px;
 }
 .charts-row .chart-container:last-child {
   flex: 1;

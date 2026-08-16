@@ -74,7 +74,7 @@ const getSiteTexts = async (req, res) => {
     if (maxUpdated) {
       map.__updatedAt = maxUpdated;
     }
-    console.log('[SiteTexts] GET /site-texts keys:', Object.keys(map).length, 'updatedAt:', maxUpdated);
+    console.log('[SiteTexts] GET /site-texts keys:', Object.keys(map).length, 'updatedAt:', maxUpdated, 'about images:', [1,2,3,4,5].map(function(i){ return map['about_image_'+i] ? 'has-image' : 'empty'; }).join(', '));
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json(map);
   } catch (err) {

@@ -65,7 +65,7 @@ async function migrate() {
     'CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)',
     'CREATE INDEX IF NOT EXISTS idx_webhook_events_event_id ON webhook_events(event_id)',
     `INSERT INTO site_texts (key, value) VALUES
-      ('hero_title', 'Regalos <em>artesanales</em> que cuentan historias'),
+      ('hero_title', 'Regalos <em>artesanales</em><br>que cuentan historias'),
       ('hero_subtitle', 'Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es única.'),
       ('hero_cta_text', 'Explorar Catálogo'),
       ('hero_cta_url', '#catalog'),

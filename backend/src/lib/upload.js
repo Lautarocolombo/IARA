@@ -126,7 +126,7 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 200 * 1024 * 1024
+    fileSize: 5 * 1024 * 1024
   }
 });
 
@@ -166,7 +166,7 @@ const uploadSingleProof = uploadProof.single('image');
 function handleUploadError(err, req, res, next) {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
-      return res.status(400).json({ error: 'La imagen es muy grande (máximo 200MB)' });
+      return res.status(400).json({ error: 'La imagen es muy grande (máximo 5MB)' });
     }
     if (err.code === 'LIMIT_FILE_COUNT') {
       return res.status(400).json({ error: 'Máximo 10 imágenes por envío' });

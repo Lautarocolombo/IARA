@@ -75,11 +75,21 @@ if (typeof loadTestimonials === 'function') {
   loadTestimonials();
 }
 
-  function loadAboutImages() {
+  function loadAboutImages(attempt) {
+    attempt = attempt || 0;
     if (typeof fetchWithRetry !== 'function') return;
+    
+    console.log('[AboutImages] Cargando imágenes del carrusel (intento ' + attempt + ')');
     fetchWithRetry(CONFIG.API.BASE + '/api/site-texts', {}, 2, 1000).then(function(res) {
-      if (!res || !res.ok) return;
+      if (!res || !res.ok) {
+        console.warn('[AboutImages] Error cargando site-texts:', res ? res.status : 'no response');
+        if (attempt < 3) {
+          setTimeout(function() { loadAboutImages(attempt + 1); }, 3000);
+        }
+        return;
+      }
       res.json().then(function(texts) {
+        console.log('[AboutImages] Raw site-texts response keys:', Object.keys(texts).length);
         window.__aboutImages = {};
         for (var i = 1; i <= 5; i++) {
           var raw = texts['about_image_' + i] || '';
@@ -90,17 +100,19 @@ if (typeof loadTestimonials === 'function') {
             window.__aboutImages['about_image_' + i] = '';
           }
         }
+        console.log('[AboutImages] Imágenes cargadas:', window.__aboutImages);
         if (typeof window.initAboutCarousel === 'function') {
           window.initAboutCarousel();
         }
       });
     }).catch(function(err) {
-      if (typeof console !== 'undefined' && console.error) {
-        console.error('[home-init] Error cargando imágenes del carrusel:', err);
+      console.error('[AboutImages] Error:', err);
+      if (attempt < 3) {
+        setTimeout(function() { loadAboutImages(attempt + 1); }, 3000);
       }
     });
     window.loadAboutImages = loadAboutImages;
-}
+  }
 
 if (typeof loadAboutImages === 'function') {
   loadAboutImages();

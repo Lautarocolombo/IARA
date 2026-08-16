@@ -9,6 +9,13 @@ test('success: página carga con encabezado', async ({ page }) => {
 
 test('success: muestra información de transferencia', async ({ page }) => {
   await page.goto('/pages/success.html');
+  await page.evaluate(() => sessionStorage.setItem('ag_last_order', JSON.stringify({
+    id: 1, number: 'TEST-001', total: 1500,
+    items: [{ name: 'Pulsera Test', qty: 1, price: 1500 }],
+    shippingName: 'Test', shippingAddress: 'Calle Test', shippingCity: 'Gualeguay', shippingPhone: '+5491234567890'
+  })));
+  await page.reload();
+  await page.waitForTimeout(500);
   await expect(page.locator('#transferCard')).toBeVisible();
   await expect(page.locator('#successTransferAlias')).toBeVisible();
   await expect(page.locator('#successTransferTotal')).toBeVisible();
@@ -16,17 +23,38 @@ test('success: muestra información de transferencia', async ({ page }) => {
 
 test('success: muestra botón de WhatsApp', async ({ page }) => {
   await page.goto('/pages/success.html');
+  await page.evaluate(() => sessionStorage.setItem('ag_last_order', JSON.stringify({
+    id: 1, number: 'TEST-001', total: 1500,
+    items: [{ name: 'Pulsera Test', qty: 1, price: 1500 }],
+    shippingName: 'Test', shippingAddress: 'Calle Test', shippingCity: 'Gualeguay', shippingPhone: '+5491234567890'
+  })));
+  await page.reload();
+  await page.waitForTimeout(500);
   await expect(page.locator('#successWhatsappBtn')).toBeVisible();
   await expect(page.locator('#successWhatsappBtn')).toHaveAttribute('href', /wa\.me/);
 });
 
 test('success: muestra botón de subir comprobante', async ({ page }) => {
   await page.goto('/pages/success.html');
+  await page.evaluate(() => sessionStorage.setItem('ag_last_order', JSON.stringify({
+    id: 1, number: 'TEST-001', total: 1500,
+    items: [{ name: 'Pulsera Test', qty: 1, price: 1500 }],
+    shippingName: 'Test', shippingAddress: 'Calle Test', shippingCity: 'Gualeguay', shippingPhone: '+5491234567890'
+  })));
+  await page.reload();
+  await page.waitForTimeout(500);
   await expect(page.locator('#successReceiptBtn')).toBeVisible();
 });
 
 test('success: botón subir comprobante abre modal', async ({ page }) => {
   await page.goto('/pages/success.html');
+  await page.evaluate(() => sessionStorage.setItem('ag_last_order', JSON.stringify({
+    id: 1, number: 'TEST-001', total: 1500,
+    items: [{ name: 'Pulsera Test', qty: 1, price: 1500 }],
+    shippingName: 'Test', shippingAddress: 'Calle Test', shippingCity: 'Gualeguay', shippingPhone: '+5491234567890'
+  })));
+  await page.reload();
+  await page.waitForTimeout(500);
   await page.click('#successReceiptBtn');
   await expect(page.locator('#receiptModal')).toBeVisible();
   await expect(page.locator('#receiptModal h3')).toContainText('Subir comprobante');
@@ -34,6 +62,13 @@ test('success: botón subir comprobante abre modal', async ({ page }) => {
 
 test('success: modal tiene formulario de comprobante', async ({ page }) => {
   await page.goto('/pages/success.html');
+  await page.evaluate(() => sessionStorage.setItem('ag_last_order', JSON.stringify({
+    id: 1, number: 'TEST-001', total: 1500,
+    items: [{ name: 'Pulsera Test', qty: 1, price: 1500 }],
+    shippingName: 'Test', shippingAddress: 'Calle Test', shippingCity: 'Gualeguay', shippingPhone: '+5491234567890'
+  })));
+  await page.reload();
+  await page.waitForTimeout(500);
   await page.click('#successReceiptBtn');
   await expect(page.locator('#receiptForm')).toBeVisible();
   await expect(page.locator('#receiptHolderName')).toBeVisible();
@@ -43,14 +78,29 @@ test('success: modal tiene formulario de comprobante', async ({ page }) => {
 
 test('success: modal se cierra con botón cancelar', async ({ page }) => {
   await page.goto('/pages/success.html');
+  await page.evaluate(() => sessionStorage.setItem('ag_last_order', JSON.stringify({
+    id: 1, number: 'TEST-001', total: 1500,
+    items: [{ name: 'Pulsera Test', qty: 1, price: 1500 }],
+    shippingName: 'Test', shippingAddress: 'Calle Test', shippingCity: 'Gualeguay', shippingPhone: '+5491234567890'
+  })));
+  await page.reload();
+  await page.waitForTimeout(500);
   await page.click('#successReceiptBtn');
   await expect(page.locator('#receiptModal')).toBeVisible();
   await page.click('[data-action="close-receipt-modal"]');
-  await expect(page.locator('#receiptModal')).toHaveCount(0);
+  await expect(page.locator('#receiptModal')).toBeHidden();
 });
 
 test('success: copiar alias funciona', async ({ page }) => {
   await page.goto('/pages/success.html');
+  await page.evaluate(() => sessionStorage.setItem('ag_last_order', JSON.stringify({
+    id: 1, number: 'TEST-001', total: 1500,
+    items: [{ name: 'Pulsera Test', qty: 1, price: 1500 }],
+    shippingName: 'Test', shippingAddress: 'Calle Test', shippingCity: 'Gualeguay', shippingPhone: '+5491234567890'
+  })));
+  await page.reload();
+  await page.waitForTimeout(500);
+  await expect(page.locator('#successTransferAlias')).toHaveText(/.+/);
   await expect(page.locator('#copySuccessAliasBtn')).toBeVisible();
   await page.click('#copySuccessAliasBtn');
   await expect(page.locator('#copySuccessAliasBtn')).toContainText('Copiado');

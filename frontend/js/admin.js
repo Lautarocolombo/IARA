@@ -158,6 +158,7 @@ async function adminFetch(url, opts = {}, isRetry = false) {
   const isUpload = url === '/api/admin/upload';
   const directUploadOrigin = isUpload ? `${BACKEND_DIRECT_URL}${url}` : null;
   const fullUrl = directUploadOrigin || (url.startsWith('/api/') ? `${CONFIG.API.BASE}${url}` : url);
+  console.log('[adminFetch] URL:', fullUrl, 'isUpload:', isUpload, 'BACKEND_DIRECT_URL:', BACKEND_DIRECT_URL, 'CONFIG.API.BASE:', CONFIG.API.BASE);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20000);
   try {

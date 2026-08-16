@@ -64,6 +64,12 @@
       if (order.waNumber && order.waMsg) {
         const waBtn = document.getElementById('successWhatsappBtn');
         if (waBtn) waBtn.href = `https://wa.me/${order.waNumber}?text=${order.waMsg}`;
+      } else {
+        const waBtn = document.getElementById('successWhatsappBtn');
+        if (waBtn && CONFIG && CONFIG.CONTACT && CONFIG.CONTACT.WHATSAPP) {
+          const waMessage = encodeURIComponent('Hola! Quiero confirmar mi pago y enviar mi comprobante de transferencia.');
+          waBtn.href = `https://wa.me/${CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g, '')}?text=${waMessage}`;
+        }
       }
 
       const receiptBtn = document.getElementById('successReceiptBtn');
@@ -121,6 +127,7 @@
     if (btn) {
       document.getElementById('receiptModalOrderNumber').textContent = btn.dataset.orderNumber || '--';
     }
+    modal.style.display = 'flex';
     openModalScrollLock(modal, closeReceiptModal);
   }
 
@@ -153,7 +160,16 @@
       const formData = new FormData();
       formData.append('customerName', holderInput.value.trim());
       formData.append('image', fileInput.files[0]);
-      const orderToken = (sessionStorage.getItem('ag_last_order') || '').includes('"orderToken"') ? JSON.parse(sessionStorage.getItem('ag_last_order')).orderToken : '';
+      const orderToken = (() => {
+        const raw = sessionStorage.getItem('ag_last_order');
+        if (!raw) return '';
+        try {
+          const order = JSON.parse(raw);
+          return order.orderToken || '';
+        } catch {
+          return '';
+        }
+      })();
       try {
         const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/payments/proofs/${orderId}`, {
           method: 'POST',
@@ -176,10 +192,9 @@
     if (e.target && e.target.id === 'copySuccessAliasBtn') {
       const alias = document.getElementById('successTransferAlias')?.textContent;
       if (!alias) return;
-      navigator.clipboard.writeText(alias).then(() => {
-        e.target.textContent = '✅ Copiado';
-        setTimeout(() => { e.target.textContent = '📋 Copiar'; }, 2000);
-      }).catch(() => {});
+      e.target.textContent = '✅ Copiado';
+      setTimeout(() => { e.target.textContent = '📋 Copiar'; }, 2000);
+      navigator.clipboard.writeText(alias).catch(() => {});
     }
     if (e.target && e.target.matches('[data-action="close-receipt-modal"]')) {
       closeReceiptModal();

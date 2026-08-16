@@ -276,7 +276,7 @@ function initSSESync() {
     sseSource.addEventListener('site_texts_updated', () => {
       if (typeof loadSiteTexts === 'function') loadSiteTexts();
       if (typeof loadHeroCards === 'function') loadHeroCards();
-      if (typeof loadAboutImages === 'function') loadAboutImages();
+      if (typeof window.loadAboutImages === 'function') window.loadAboutImages();
       if (typeof window.initAboutCarousel === 'function') window.initAboutCarousel();
     });
 
@@ -335,9 +335,6 @@ function destroySSESync() {
 /* eslint-disable-next-line no-unused-vars */
 function startDataSync(key, fn, immediate) {
   if (SYNC_INTERVALS[key]) return;
-  if (sseSource && sseSource.readyState === EventSource.OPEN) {
-    return;
-  }
   if (immediate !== false) {
     try { fn(); } catch (e) { /* noop */ }
   }

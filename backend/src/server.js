@@ -129,9 +129,6 @@ const allowedOrigins = envOrigins.length ? envOrigins : defaultOrigins;
 const corsOptions = allowedOrigins.length
   ? {
       origin: function(origin, callback) {
-        if (!origin) {
-          return callback(null, true);
-        }
         const allowed = allowedOrigins.some(allowed => {
           if (allowed === origin) return true;
           if (allowed.includes('*')) {
@@ -140,6 +137,7 @@ const corsOptions = allowedOrigins.length
           }
           return false;
         });
+        console.log('[CORS] Preflight/request origin:', origin, 'allowed:', allowed, 'allowedOrigins:', allowedOrigins.join(','));
         callback(null, allowed);
       },
       credentials: true,
@@ -160,9 +158,22 @@ const corsOptions = allowedOrigins.length
     };
 
 app.use(cors(corsOptions));
+app.use((req, res, next) => {
+  if (req.method === 'OPTIONS') {
+    const origin = req.headers.origin || '*';
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Accept-Language, Origin, X-Requested-With, X-Request-ID');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Max-Age', '86400');
+    console.log('[CORS] Preflight respondido para:', req.path, 'origin:', origin);
+    return res.status(204).send();
+  }
+  next();
+});
 app.use(require('cookie-parser')());
 app.use(tenantContext);
-app.options('*', cors(corsOptions));
+// app.options('*', cors(corsOptions)); // Reemplazado por middleware manual arriba para garantizar 204 en todas las rutas
 
 let rateLimitStore = undefined;
 if (process.env.REDIS_URL) {
@@ -372,6 +383,9 @@ app.get('/ready', async (req, res) => {
 
 app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUploadError, uploadSingle, async (req, res) => {
   try {
+    const origin = req.headers.origin || req.headers.referer || 'unknown';
+    console.log('[Upload] CORS origin recibido:', origin);
+    console.log('[Upload] Access-Control-Allow-Origin enviado:', res.getHeader('Access-Control-Allow-Origin'));
     if (!req.file) {
       console.warn('[Upload] No se recibió imagen en /api/admin/upload');
       return res.status(400).json({ error: 'No se recibió imagen' });
@@ -379,6 +393,7 @@ app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUplo
     console.log('[Upload] Procesando imagen:', req.file.originalname, req.file.size, 'bytes');
     const processed = await processFile(req.file, `${req.protocol}://${req.get('host')}`);
     console.log('[Upload] Imagen procesada OK:', processed.url);
+    res.setHeader('Access-Control-Allow-Origin', origin);
     res.json({
       url: processed.url,
       filename: processed.filename,

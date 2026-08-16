@@ -38,12 +38,16 @@ describe('heroCardsController', () => {
   describe('getHeroCards', () => {
     test('retorna todas las hero cards', async () => {
       const req = { protocol: 'http', get: () => 'localhost' };
-      const res = { json: jest.fn() };
+      const res = {
+        setHeader: jest.fn(),
+        json: jest.fn()
+      };
 
       query.mockResolvedValueOnce({ rows: [{ id: 1, slot: 1, nombre: 'Card 1' }] });
 
       await getHeroCards(req, res);
 
+      expect(res.setHeader).toHaveBeenCalledWith('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
       expect(res.json).toHaveBeenCalledWith(expect.any(Array));
     });
 

@@ -47,9 +47,9 @@
            <span class="hero-tag-dot" aria-hidden="true"></span>
            Colección 2026
          </div>
-         <div class="hero-greeting">Buenos Días Iara 🌸</div>
-         <h1 class="hero-title">Regalos <em>artesanales</em> que cuentan historias</h1>
-        <p class="hero-subtitle">Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es unica.</p>
+         <div class="hero-greeting" id="heroGreeting">🌸</div>
+          <h1 class="hero-title">Regalos <em>artesanales</em><br>que cuentan historias</h1>
+        <p class="hero-subtitle">Regalos artesanales que cuentan historias, souvenirs y llaveros hechos a mano. Cada pieza es unica.</p>
         <div class="hero-buttons">
           <a href="#catalog" class="btn-primary reveal">Explorar Catálogo</a>
           <a href="#contact" class="btn-outline reveal">Contáctanos</a>
@@ -176,6 +176,9 @@
         <button class="filter-btn" data-filter="pulseras">Pulseras</button>
         <button class="filter-btn" data-filter="accesorios">Accesorios</button>
         <button class="filter-btn" data-filter="souvenirs">Souvenirs</button>
+        <input type="number" id="minPrice" placeholder="Precio mín." class="filter-price" min="0" />
+        <input type="number" id="maxPrice" placeholder="Precio máx." class="filter-price" min="0" />
+        <button type="button" id="clearFiltersBtn" class="btn btn-outline btn-sm">Limpiar</button>
       </div>
       <div class="search-bar">
         <input type="text" id="searchInput" placeholder="Buscar productos..." aria-label="Buscar productos" />
@@ -193,33 +196,32 @@
       </div>
 
       <div class="about-content">
-        <div class="about-left">
-          <div class="about-text reveal" id="aboutText">
-            <p>En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.</p>
-          </div>
-
-          <div class="about-stats">
-            <div class="stat reveal">
-              <div class="stat-number">500+</div>
-              <div class="stat-label">Clientes satisfechos</div>
-            </div>
-            <div class="stat reveal">
-              <div class="stat-number">1000+</div>
-              <div class="stat-label">Productos vendidos</div>
-            </div>
-            <div class="stat reveal">
-              <div class="stat-number">6+</div>
-              <div class="stat-label">Años de experiencia</div>
-            </div>
-          </div>
-        </div>
-
         <div class="about-carousel-wrap reveal" id="aboutCarouselWrap">
           <div class="about-carousel" id="aboutCarousel">
             <div class="about-carousel-track" id="aboutCarouselTrack"></div>
+            <div class="about-carousel-overlay">
+              <div class="about-text reveal" id="aboutText">
+                <p>En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.</p>
+              </div>
+            </div>
             <button class="about-carousel-btn about-carousel-btn--prev" id="aboutCarouselPrev" aria-label="Anterior">&#10094;</button>
             <button class="about-carousel-btn about-carousel-btn--next" id="aboutCarouselNext" aria-label="Siguiente">&#10095;</button>
             <div class="about-carousel-dots" id="aboutCarouselDots"></div>
+          </div>
+        </div>
+
+        <div class="about-stats">
+          <div class="stat reveal">
+            <div class="stat-number">500+</div>
+            <div class="stat-label">Clientes satisfechos</div>
+          </div>
+          <div class="stat reveal">
+            <div class="stat-number">1000+</div>
+            <div class="stat-label">Productos vendidos</div>
+          </div>
+          <div class="stat reveal">
+            <div class="stat-number">6+</div>
+            <div class="stat-label">Años de experiencia</div>
           </div>
         </div>
       </div>

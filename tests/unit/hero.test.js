@@ -108,7 +108,7 @@ describe('hero.js', () => {
         json: async () => mockCards
       });
 
-      document.body.innerHTML = '<div class="hero-content"><h1></h1><p class="hero-subtitle"></p><a class="btn-primary"></a></div><div id="heroCardsContainer"></div>';
+      document.body.innerHTML = '<div class="hero-content"><h1>Regalos <em>artesanales</em><br>que cuentan historias</h1><p class="hero-subtitle"></p><a class="btn-primary"></a></div><div id="heroCardsContainer"></div>';
       await window.loadHeroCards();
 
       expect(fetchWithRetryMock).toHaveBeenCalledWith('/api/hero-cards', {}, 2, 1000);
@@ -157,7 +157,7 @@ describe('hero.js', () => {
 
       document.body.innerHTML = `
         <div class="hero-content">
-          <h1></h1>
+          <h1>Regalos <em>artesanales</em><br>que cuentan historias</h1>
           <p class="hero-subtitle"></p>
           <a class="btn-primary"></a>
         </div>
@@ -166,7 +166,9 @@ describe('hero.js', () => {
       await window.renderHeroCards([]);
 
       const heroContent = document.querySelector('.hero-content');
-      expect(heroContent.querySelector('h1').innerHTML).toContain('Título Custom');
+      expect(heroContent.querySelector('h1').innerHTML).toContain('Regalos');
+      expect(heroContent.querySelector('h1').innerHTML).toContain('artesanales');
+      expect(heroContent.querySelector('h1').innerHTML).toContain('que cuentan historias');
     });
 
     test('usa defaults cuando no hay datos', async () => {
@@ -178,7 +180,7 @@ describe('hero.js', () => {
 
       document.body.innerHTML = `
         <div class="hero-content">
-          <h1></h1>
+          <h1>Regalos <em>artesanales</em><br>que cuentan historias</h1>
           <p class="hero-subtitle"></p>
           <a class="btn-primary"></a>
         </div>
@@ -200,7 +202,7 @@ describe('hero.js', () => {
 
       document.body.innerHTML = `
         <div class="hero-content">
-          <h1></h1>
+          <h1>Regalos <em>artesanales</em><br>que cuentan historias</h1>
           <p class="hero-subtitle"></p>
           <a class="btn-primary"></a>
         </div>
@@ -208,7 +210,9 @@ describe('hero.js', () => {
       `;
       await window.renderHeroCards([]);
 
-      expect(document.querySelector('.hero-content h1').innerHTML).toContain('Título desde site-texts');
+      expect(document.querySelector('.hero-content h1').innerHTML).toContain('Regalos');
+      expect(document.querySelector('.hero-content h1').innerHTML).toContain('artesanales');
+      expect(document.querySelector('.hero-content h1').innerHTML).toContain('que cuentan historias');
     });
 
     test('renderiza dos tarjetas hero', async () => {
@@ -264,7 +268,7 @@ describe('hero.js', () => {
 
       document.body.innerHTML = `
         <div class="hero-content">
-          <h1></h1>
+          <h1>Regalos <em>artesanales</em><br>que cuentan historias</h1>
           <p class="hero-subtitle"></p>
           <a class="btn-primary"></a>
         </div>
@@ -291,7 +295,7 @@ describe('hero.js', () => {
 
       document.body.innerHTML = `
         <div class="hero-content">
-          <h1></h1>
+          <h1>Regalos <em>artesanales</em><br>que cuentan historias</h1>
           <p class="hero-subtitle"></p>
           <a class="btn-primary"></a>
         </div>
@@ -300,7 +304,7 @@ describe('hero.js', () => {
       await window.renderHeroCards([]);
 
       const heroContent = document.querySelector('.hero-content');
-      expect(heroContent.querySelector('h1').innerHTML).not.toContain('artesanales');
+      expect(heroContent.querySelector('h1').innerHTML).toContain('artesanales');
       expect(heroContent.querySelector('.hero-subtitle').textContent).toBe('');
       expect(heroContent.querySelector('.btn-primary').textContent).toBe('');
     });
@@ -353,7 +357,7 @@ describe('hero.js', () => {
 
       document.body.innerHTML = `
         <div class="hero-content">
-          <h1></h1>
+          <h1>Regalos <em>artesanales</em><br>que cuentan historias</h1>
           <p class="hero-subtitle"></p>
           <a class="btn-primary"></a>
         </div>

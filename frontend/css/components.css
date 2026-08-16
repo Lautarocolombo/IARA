@@ -248,7 +248,7 @@ html, body { overflow-x: hidden; }
 }
 
 .hero-content h1 em {
-  color: var(--rose-mid);
+  color: var(--rose);
   font-style: italic;
 }
 
@@ -1006,44 +1006,52 @@ html, body { overflow-x: hidden; }
 
 /* ==================== ABOUT SECTION ==================== */
 .about-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
-  align-items: start;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.5rem;
   max-width: 1200px;
   margin: 0 auto;
 }
 
-.about-left {
+.about-carousel-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+}
+
+.about-carousel-overlay {
+  position: absolute;
+  inset: 0;
   display: flex;
-  flex-direction: column;
-  gap: 2rem;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: 2rem;
+  z-index: 3;
+  pointer-events: none;
 }
 
 .about-text {
-  width: 100%;
-  max-width: 100%;
   text-align: left;
+  pointer-events: auto;
 }
 
 .about-text p {
-  color: var(--text-mid);
+  color: #fff;
   margin-bottom: 0;
-  line-height: 1.8;
-  font-size: 0.95rem;
+  line-height: 1.7;
+  font-size: 1rem;
   text-align: left;
-}
-
-.about-carousel-wrap {
-  width: 100%;
-  max-width: 900px;
-  grid-column: 2;
-  grid-row: 1 / 3;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+  max-width: 600px;
 }
 
 .about-stats {
   width: 100%;
-  max-width: 100%;
+  max-width: 900px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
@@ -1698,9 +1706,8 @@ html, body { overflow-x: hidden; }
   .how-grid { grid-template-columns: repeat(2, minmax(180px, 1fr)); }
   .products-grid, .catalog-grid { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
   .about-content { gap: 2rem; }
-  .about-left { gap: 1.5rem; }
   .about-stats { grid-template-columns: 1fr; }
-  .about-carousel-wrap { grid-column: 1; grid-row: auto; }
+  .about-carousel-wrap { width: 100%; }
   .about-carousel-btn { width: 36px; height: 36px; font-size: 0.95rem; }
   .about-carousel-btn--prev { left: 0.5rem; }
   .about-carousel-btn--next { right: 0.5rem; }

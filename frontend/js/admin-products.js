@@ -316,19 +316,31 @@
   }
 
   async function uploadProductImages(productId) {
+    if (!selectedFiles.length) return;
+    
     var imageFormData = new FormData();
     selectedFiles.forEach(function (file) {
       imageFormData.append('images', file);
     });
 
+    console.log('[Products] Subiendo', selectedFiles.length, 'imágenes para producto', productId);
     var res = await window.adminFetch('/api/products/' + productId + '/images', {
       method: 'POST',
       body: imageFormData
     });
 
     if (!res || !res.ok) {
-      throw new Error('No se pudieron subir las imágenes.');
+      var errMsg = 'No se pudieron subir las imágenes.';
+      if (res) {
+        var errData = await res.json().catch(function () { return {}; });
+        errMsg = errData.error || errMsg;
+      }
+      console.error('[Products] Error subiendo imágenes:', errMsg);
+      throw new Error(errMsg);
     }
+    
+    var data = await res.json();
+    console.log('[Products] Imágenes subidas OK:', data.images ? data.images.length : 0);
   }
 
   /* ===== MODAL ===== */

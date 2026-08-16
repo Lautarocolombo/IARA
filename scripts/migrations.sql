@@ -39,7 +39,7 @@ ALTER TABLE categories ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT '';
 
 -- Nuevas claves para los bloques del home
 INSERT INTO site_texts (key, value) VALUES
-  ('hero_title', 'Regalos <em>artesanales</em> que cuentan historias'),
+  ('hero_title', 'Regalos <em>artesanales</em><br>que cuentan historias'),
   ('hero_subtitle', 'Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es única.'),
   ('hero_cta_text', 'Explorar Catálogo'),
   ('hero_cta_url', '#catalog'),

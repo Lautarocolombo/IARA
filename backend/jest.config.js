@@ -2,6 +2,7 @@
 module.exports = {
   testEnvironment: 'node',
   transform: {},
+  workers: 1,
   coverageDirectory: 'coverage',
   collectCoverageFrom: [
     'src/**/*.js',

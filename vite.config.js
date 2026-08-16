@@ -1,31 +1,35 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
+import { readdirSync } from 'fs';
 
 export default defineConfig({
   root: resolve(__dirname, 'frontend'),
-  publicDir: resolve(__dirname, 'frontend', 'assets'),
+  publicDir: resolve(__dirname, 'frontend'),
   build: {
     outDir: resolve(__dirname, 'dist'),
     emptyOutDir: true,
     rollupOptions: {
-      input: {
-        main: resolve(__dirname, 'frontend', 'index.html'),
-        ...Object.fromEntries(
-          ['cart', 'checkout', 'orders', 'wishlist', 'product', 'admin', 'admin-products', 'admin-orders', 'admin-payments', 'admin-users', 'admin-categories', 'admin-coupons', 'admin-testimonials', 'admin-content', 'admin-hero', 'admin-reports', 'admin-sales', 'admin-shipping', 'admin-media']
-            .filter(name => {
-              const path = resolve(__dirname, 'frontend', 'pages', `${name}.html`);
-              return require('fs').existsSync(path);
-            })
-            .map(name => [name, resolve(__dirname, 'frontend', 'pages', `${name}.html`)])
-        )
-      },
-      output: {
-        manualChunks: {
-          vendor: ['qrcode']
+      input: (() => {
+        const pagesDir = resolve(__dirname, 'frontend', 'pages');
+        const entries = { main: resolve(__dirname, 'frontend', 'index.html') };
+        try {
+          const files = readdirSync(pagesDir);
+          for (const file of files) {
+            if (file.endsWith('.html')) {
+              const name = file.replace(/\.html$/, '');
+              entries[name] = resolve(pagesDir, file);
+            }
+          }
+        } catch (e) {
+          // pages dir not found
         }
+        return entries;
+      })(),
+      output: {
+        manualChunks: undefined,
       }
     },
-    minify: 'terser',
+    minify: 'esbuild',
     cssCodeSplit: true,
     sourcemap: true
   },

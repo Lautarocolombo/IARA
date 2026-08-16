@@ -417,7 +417,16 @@
       document.getElementById('transferReceiptBtn').dataset.orderId = orderId;
 
       try {
-        const orderToken = (sessionStorage.getItem('ag_last_order') || '').includes('"orderToken"') ? JSON.parse(sessionStorage.getItem('ag_last_order')).orderToken : '';
+        const orderToken = (() => {
+          const raw = sessionStorage.getItem('ag_last_order');
+          if (!raw) return '';
+          try {
+            const order = JSON.parse(raw);
+            return order.orderToken || '';
+          } catch {
+            return '';
+          }
+        })();
         await window.fetchWithRetry(`${CONFIG.API.BASE}/api/payments/transfer`, {
           method: 'POST',
           headers: {

@@ -16,7 +16,7 @@ JWT_SECRET=<random 64+ chars>
 ADMIN_USER=<username>
 ADMIN_PASS_HASH=<bcrypt hash>
 SITE_URL=https://artesania-gualeguay.vercel.app
-BACKEND_URL=https://iara-backend.onrender.com
+BACKEND_URL=https://iara-os3h.onrender.com
 RESEND_API_KEY=<resend key>
 EMAIL_FROM=noreply@artesaniagualeguay.com
 ```

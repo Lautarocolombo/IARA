@@ -44,17 +44,21 @@
     isPaused = false;
 
     var images = collectImages(window.__aboutImages);
+    console.log('[AboutCarousel] build() imágenes recibidas:', images.length, images);
 
     if (!images.length) {
       wrap.style.display = '';
+      wrap.classList.add('visible');
       track.innerHTML = '<div class="about-carousel-slide active" style="display:flex;align-items:center;justify-content:center;padding:2rem;"><p style="color:var(--text-muted);text-align:center;">Próximamente nuevas imágenes</p></div>';
       if (dotsContainer) dotsContainer.innerHTML = '';
       if (prevBtn) prevBtn.style.display = 'none';
       if (nextBtn) nextBtn.style.display = 'none';
+      console.log('[AboutCarousel] Sin imágenes, mostrando placeholder');
       return;
     }
 
     wrap.style.display = '';
+    wrap.classList.add('visible');
 
     images.forEach(function (src, idx) {
       var slide = document.createElement('div');
@@ -63,6 +67,17 @@
       img.src = src;
       img.alt = 'Sobre Nosotros ' + (idx + 1);
       img.loading = idx === 0 ? 'eager' : 'lazy';
+      img.onerror = function() {
+        console.error('[about-carousel] Error cargando imagen:', src);
+        if (typeof window.imgError === 'function') {
+          window.imgError(img, '📷');
+        } else {
+          console.error('[about-carousel] Error cargando imagen:', src);
+        }
+      };
+      img.onload = function() {
+        console.log('[AboutCarousel] Imagen cargada OK:', src);
+      };
       slide.appendChild(img);
       track.appendChild(slide);
       slides.push(slide);
@@ -92,6 +107,7 @@
     wrap.ontouchend = resumeAutoplay;
 
     startAutoplay();
+    console.log('[AboutCarousel] Carousel construido con', images.length, 'slides');
   }
 
   function goTo(index) {

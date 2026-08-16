@@ -269,14 +269,23 @@ function renderFeaturedProducts() {
   renderProducts(featured);
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
-  await fetchProducts();
-  renderProducts(getProducts());
-  if (typeof renderFeaturedProducts === 'function') {
-    renderFeaturedProducts();
+  function refreshAllProducts() {
+    if (typeof fetchProducts === 'function') {
+      fetchProducts().then(() => {
+        if (typeof renderProducts === 'function') renderProducts(getProducts());
+        if (typeof renderFeaturedProducts === 'function') renderFeaturedProducts();
+      });
+    }
   }
 
-  startDataSync('products', fetchProducts);
+  document.addEventListener('DOMContentLoaded', async () => {
+    await fetchProducts();
+    renderProducts(getProducts());
+    if (typeof renderFeaturedProducts === 'function') {
+      renderFeaturedProducts();
+    }
+
+    startDataSync('products', refreshAllProducts);
 
   const filterButtons = document.querySelectorAll('.filter-btn');
   const searchInput = document.getElementById('searchInput');
