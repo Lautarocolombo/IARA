@@ -25,7 +25,6 @@
         return;
       }
       const cards = await res.json();
-      console.log('[Hero] Hero cards cargadas:', Array.isArray(cards) ? cards.length : 'no array');
       if (!Array.isArray(cards)) {
         renderHeroCards([]);
         return;
@@ -132,13 +131,6 @@
       };
 
       const data = [block1, block2];
-
-      console.log('[Hero] Datos renderizados:', JSON.stringify({
-        block1_imagen: block1.imagen,
-        block1_titulo: block1.titulo,
-        block2_imagen: block2.imagen,
-        block2_titulo: block2.titulo
-      }));
 
       const heroContent = document.querySelector('.hero-content');
       if (heroContent) {

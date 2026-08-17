@@ -109,4 +109,4 @@ Opcionalmente, podés usar Vercel Blob para almacenamiento externo:
 - Sistema de cupones de descuento (porcentaje y monto fijo) con validación en backend.
 - Externalización de URLs hardcodeadas a variables de entorno.
 - Tests unitarios ampliados para controladores críticos (orders, payments, auth).
-- Documentación de entorno de staging (`docs/staging.md`).
+- Documentación interna de staging disponible en el repositorio.

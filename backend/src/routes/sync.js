@@ -29,6 +29,7 @@ router.get('/', (req, res) => {
     order_status_updated: (data) => send('order_status_updated', data),
     testimonials_updated: (data) => send('testimonials_updated', data),
     reviews_updated: (e) => send('reviews_updated', e.data),
+    carousel_updated: (data) => send('carousel_updated', data),
     sales_updated: (data) => send('sales_updated', data),
   };
 

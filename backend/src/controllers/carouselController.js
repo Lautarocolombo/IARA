@@ -1,10 +1,12 @@
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const { getPublicUrl, deleteImageAsset, processFile } = require('../lib/upload');
+const { syncBus } = require('../routes/sync');
 
 async function getCarouselSlots(req, res) {
   try {
     const tenantId = req.tenantId || 'default';
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
     const result = await query(
       'SELECT * FROM carousel_images WHERE tenant_id = $1 ORDER BY slot ASC',
       [tenantId]
@@ -13,7 +15,12 @@ async function getCarouselSlots(req, res) {
     const slots = {};
     for (let i = 1; i <= 5; i++) {
       const row = rows.find(r => Number(r.slot) === i);
-      slots[i] = row || null;
+      if (row) {
+        row.url = getPublicUrl(row.url, baseUrl);
+        slots[i] = row;
+      } else {
+        slots[i] = null;
+      }
     }
     res.json({ slots });
   } catch (err) {
@@ -66,6 +73,7 @@ async function updateCarouselSlot(req, res) {
 
     const updated = result.rows[0];
     updated.url = getPublicUrl(updated.url, baseUrl);
+    try { syncBus.emit('carousel_updated', { slot }); } catch (e) { /* noop */ }
     res.json(updated);
   } catch (err) {
     logger.error('Error actualizando slot de carrusel:', err);
@@ -91,6 +99,7 @@ async function deleteCarouselSlot(req, res) {
       await query('DELETE FROM carousel_images WHERE slot = $1 AND tenant_id = $2', [slot, tenantId]);
     }
 
+    try { syncBus.emit('carousel_updated', { slot }); } catch (e) { /* noop */ }
     res.json({ ok: true });
   } catch (err) {
     logger.error('Error eliminando slot de carrusel:', err);

@@ -9,6 +9,7 @@ backend/node_modules/
 .env.local
 **/.env
 **/.env.*
+backend/.env
 
 # Backend data
 backend/data/
@@ -63,3 +64,6 @@ backend/test_admin_products.js
 dist/
 coverage/
 backend/coverage/
+
+.vercel
+.env*

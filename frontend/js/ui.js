@@ -308,6 +308,10 @@ function initSSESync() {
       }
     });
 
+    sseSource.addEventListener('carousel_updated', () => {
+      if (typeof window.loadAboutImages === 'function') window.loadAboutImages();
+    });
+
     sseSource.onerror = () => {
       console.warn('[SSE] Conexión perdida, reintentando...');
       sseSource.close();

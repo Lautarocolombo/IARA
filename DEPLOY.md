@@ -68,7 +68,7 @@ vercel rollback
 
 ## Staging
 
-Para probar cambios antes de producción, consultá `docs/staging.md`.
+Consultá la documentación de staging para probar cambios antes de producción.
 
 ## Comandos locales
 

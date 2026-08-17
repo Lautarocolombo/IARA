@@ -44,7 +44,6 @@
     isPaused = false;
 
     var images = collectImages(window.__aboutImages);
-    console.log('[AboutCarousel] build() imágenes recibidas:', images.length, images);
 
     if (!images.length) {
       wrap.style.display = '';
@@ -53,7 +52,6 @@
       if (dotsContainer) dotsContainer.innerHTML = '';
       if (prevBtn) prevBtn.style.display = 'none';
       if (nextBtn) nextBtn.style.display = 'none';
-      console.log('[AboutCarousel] Sin imágenes, mostrando placeholder');
       return;
     }
 
@@ -76,7 +74,6 @@
         }
       };
       img.onload = function() {
-        console.log('[AboutCarousel] Imagen cargada OK:', src);
       };
       slide.appendChild(img);
       track.appendChild(slide);
@@ -107,7 +104,6 @@
     wrap.ontouchend = resumeAutoplay;
 
     startAutoplay();
-    console.log('[AboutCarousel] Carousel construido con', images.length, 'slides');
   }
 
   function goTo(index) {

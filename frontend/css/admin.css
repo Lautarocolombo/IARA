@@ -3698,15 +3698,30 @@ textarea.hero-slot-input {
 /* ==================== CAROUSEL EDITOR ==================== */
 .carousel-editor-layout {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1.2fr 0.8fr;
   gap: 2rem;
   align-items: start;
 }
 
 .carousel-slots-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(5, 1fr);
   gap: 1rem;
+}
+
+@media (max-width: 1200px) {
+  .carousel-slots-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .carousel-slots-grid {
+    grid-template-columns: 1fr;
+  }
+  .carousel-editor-layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 .carousel-slot-card {

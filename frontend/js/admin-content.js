@@ -477,8 +477,6 @@
               errEl.style.display = 'block';
             }
             console.error('[Content] Error subiendo imagen ' + key + ':', result.reason);
-          } else {
-            console.log('[Content] Imagen ' + key + ' subida OK, URL:', key === 'hero' ? heroImageUrl : fpImageUrl);
           }
         });
         var homeFailedCount = Object.keys(uploadErrors).length;
@@ -667,7 +665,6 @@
       }
 
       var data = await res.json();
-      console.log('[About] Respuesta guardado:', res.status, JSON.stringify(data).substring(0, 300));
       textsCache = Object.assign({}, textsCache, payload);
 
       showSaveStatus(statusId, 'success', 'Cambios guardados correctamente (' + (data.results?.saved || Object.keys(payload).length) + ' campos)');

@@ -31,6 +31,5 @@
 
 - Copy `.env.example` to `.env` and fill values
 - Backend requires: `DATABASE_URL`, `JWT_SECRET`, `ADMIN_USER`, `ADMIN_PASS_HASH`
-- Default admin: `Iara` / `pulseras2026`
 
 Always run both test suites and both linters before finalizing changes.
