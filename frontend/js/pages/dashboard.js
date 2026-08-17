@@ -11,6 +11,7 @@
     if (typeof initSalesPanel === 'function') initSalesPanel();
     if (typeof initOrdersPanel === 'function') initOrdersPanel();
     if (typeof initPaymentsPanel === 'function') initPaymentsPanel();
+    if (typeof initCarouselEditor === 'function') initCarouselEditor();
 
     var sidebar = document.getElementById('adminSidebar');
     var overlay = document.getElementById('sidebarOverlay');

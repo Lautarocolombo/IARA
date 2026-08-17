@@ -6,8 +6,10 @@
 
   var SECTION_ROLES = {
     content:    ['admin', 'editor', 'viewer'],
+    carousel:   ['admin', 'editor', 'viewer'],
     products:   ['admin', 'editor', 'viewer'],
     categories: ['admin', 'editor', 'viewer'],
+    testimonials: ['admin', 'editor', 'viewer'],
     sales:      ['admin'],
     payments:   ['admin'],
     orders:     ['admin', 'editor', 'viewer']
@@ -15,8 +17,10 @@
 
   var SECTION_MAP = {
     content:    { title: 'Contenido del sitio',  breadcrumb: 'Editar textos visibles del frontend' },
+    carousel:   { title: 'Editor de Carrusel',   breadcrumb: 'Gestionar imágenes del carrusel (5 slots)' },
     products:   { title: 'Productos',          breadcrumb: 'Crear, editar y gestionar productos' },
     categories: { title: 'Categorías',         breadcrumb: 'Gestionar categorías del catálogo' },
+    testimonials: { title: 'Testimonios',      breadcrumb: 'Gestionar testimonios de clientes' },
     sales:      { title: 'Ganancias',          breadcrumb: 'Reportes de ventas e ingresos' },
     payments:   { title: 'Medio de Pago',       breadcrumb: 'Configurar alias y método de pago' },
     orders:     { title: 'Pedidos',             breadcrumb: 'Gestionar pedidos individuales' }

@@ -27,8 +27,8 @@ const productSchema = z.object({
 });
 
 const testimonialSchema = z.object({
-  name: z.string().min(1, 'Nombre es requerido').max(100),
-  comment: z.string().min(1, 'Comentario es requerido').max(1000),
+  name: z.string().min(1, 'Nombre es requerido').max(100).trim(),
+  comment: z.string().min(1, 'Comentario es requerido').max(500).trim(),
   rating: z.number().int().min(1).max(5).default(5),
   image: z.string().optional().default(''),
   active: z.boolean().default(true)
@@ -37,6 +37,12 @@ const testimonialSchema = z.object({
 const siteTextSchema = z.object({
   key: z.string().min(1, 'Clave es requerida').max(100),
   value: z.string().max(5000)
+});
+
+const sectionContentSchema = z.object({
+  sectionKey: z.string().min(1, 'sectionKey es requerido').max(100),
+  title: z.string().min(1, 'El título es requerido').max(200).trim(),
+  subtitle: z.string().max(500).trim().optional().default('')
 });
 
 const orderSchema = z.object({
@@ -84,6 +90,7 @@ module.exports = {
   productSchema,
   testimonialSchema,
   siteTextSchema,
+  sectionContentSchema,
   orderSchema,
   loginSchema,
   reviewSchema,

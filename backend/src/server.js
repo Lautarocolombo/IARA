@@ -297,6 +297,7 @@ app.use('/api', require('./routes/payments'));
 app.use('/api', require('./routes/paymentProofs'));
 app.use('/api', require('./routes/siteTexts'));
 app.use('/api', require('./routes/testimonials'));
+app.use('/api', require('./routes/sectionContent'));
 app.use('/api', require('./routes/newsletter'));
 app.use('/api', require('./routes/contact'));
 app.use('/api', require('./routes/siteConfig'));
@@ -312,6 +313,7 @@ app.use('/api', require('./routes/receipts'));
 app.use('/api', require('./routes/heroCards'));
 app.use('/api', require('./routes/sales'));
 app.use('/api', require('./routes/earnings'));
+app.use('/api', require('./routes/carousel'));
 app.use('/api/sync', require('./routes/sync'));
 
 app.use('/api', tenantContext);

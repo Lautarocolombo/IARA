@@ -758,22 +758,53 @@ function updateContactFromSettings(settings) {
 }
 
 async function loadTestimonials() {
+  const grid = document.getElementById('testimonialsGrid');
+  const skeleton = document.getElementById('testimonialsSkeleton');
+  const titleEl = document.getElementById('testimonialsTitle');
+  const subtitleEl = document.getElementById('testimonialsSubtitle');
+  const section = document.getElementById('testimonials');
+
+  if (grid) grid.innerHTML = '';
+  if (skeleton) skeleton.style.display = 'block';
+  if (titleEl) titleEl.textContent = 'Lo que dicen nuestros clientes';
+  if (subtitleEl) subtitleEl.textContent = 'Historias reales de personas que confiaron en nosotros';
+  if (section) section.style.display = '';
+
+  try {
+    const contentRes = await fetchWithRetry(`${CONFIG.API.BASE}/api/section-content/testimonials`, {}, 2, 1000);
+    if (contentRes && contentRes.ok) {
+      const content = await contentRes.json();
+      if (titleEl && content.title) titleEl.textContent = content.title;
+      if (subtitleEl && content.subtitle) subtitleEl.textContent = content.subtitle;
+    }
+  } catch (err) {
+    console.error('[Testimonials] Error cargando contenido de sección:', err);
+  }
+
   try {
     const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/testimonials`, {}, 2, 1000);
-    if (!res) return;
+    if (!res) {
+      if (skeleton) skeleton.style.display = 'none';
+      return;
+    }
     const testimonials = await res.json();
+    if (skeleton) skeleton.style.display = 'none';
     renderTestimonials(testimonials);
   } catch (err) {
     console.error('Error cargando testimonios:', err);
+    if (skeleton) skeleton.style.display = 'none';
+    if (grid) grid.innerHTML = '<p style="text-align:center;color:var(--text-muted);grid-column:1/-1;">No se pudieron cargar los testimonios.</p>';
   }
 }
 
 function renderTestimonials(testimonials) {
   const grid = document.getElementById('testimonialsGrid');
+  const section = document.getElementById('testimonials');
   if (!grid) return;
 
   if (!testimonials.length) {
     grid.innerHTML = '<p style="text-align:center;color:var(--text-muted);grid-column:1/-1;">Aún no hay testimonios.</p>';
+    if (section) section.style.display = '';
     return;
   }
 
@@ -782,12 +813,12 @@ function renderTestimonials(testimonials) {
       <div class="testimonial-header">
         <div class="testimonial-avatar">${t.avatar || '😊'}</div>
         <div>
-          <div class="testimonial-name">${t.name}</div>
-          ${t.role ? `<div style="font-size:0.8rem;color:var(--text-muted);">${t.role}</div>` : ''}
+          <div class="testimonial-name">${escapeHtml(t.name)}</div>
+          ${t.role ? `<div style="font-size:0.8rem;color:var(--text-muted);">${escapeHtml(t.role)}</div>` : ''}
         </div>
         <div class="testimonial-rating">${'⭐'.repeat(t.rating)}</div>
       </div>
-      <p class="testimonial-comment">${t.comment}</p>
+      <p class="testimonial-comment">${escapeHtml(t.comment)}</p>
     </div>
   `).join('');
 

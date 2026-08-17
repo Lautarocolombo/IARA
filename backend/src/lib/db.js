@@ -237,6 +237,14 @@ async function initDB() {
       tenant_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
+    await query(`CREATE TABLE IF NOT EXISTS section_content (
+      section_key TEXT PRIMARY KEY,
+      title TEXT DEFAULT '',
+      subtitle TEXT DEFAULT '',
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      tenant_id TEXT DEFAULT 'default'
+    )`);
+    await query("INSERT OR IGNORE INTO section_content (section_key, title, subtitle, tenant_id) VALUES ('testimonials', 'Lo que dicen nuestros clientes', 'Historias reales de personas que confiaron en nosotros', 'default')");
     await query(`CREATE TABLE IF NOT EXISTS orders (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       items TEXT NOT NULL,
@@ -799,7 +807,7 @@ async function initDB() {
     const tenantTables = [
       'products', 'categories', 'orders', 'contacts', 'reviews',
       'testimonials', 'product_images', 'subscribers', 'webhook_events',
-      'hero_cards', 'payment_config', 'payment_proofs', 'site_settings', 'site_texts'
+      'hero_cards', 'payment_config', 'payment_proofs', 'site_settings', 'site_texts', 'section_content'
     ];
     for (const table of tenantTables) {
       try {
@@ -876,6 +884,12 @@ async function initDB() {
     await query("UPDATE site_texts SET value = REPLACE(value, 'Explorar Catálogo', 'Explorar Catálogo') WHERE key = 'hero_cta_text' AND value LIKE '%Catálogo%'");
   } catch (err) {
     logger.debug({ err: err.message }, 'No se pudo corregir hero_cta_text');
+  }
+
+  try {
+    await query("INSERT INTO section_content (section_key, title, subtitle, tenant_id) VALUES ('testimonials', 'Lo que dicen nuestros clientes', 'Historias reales de personas que confiaron en nosotros', 'default') ON CONFLICT (section_key) DO NOTHING");
+  } catch (err) {
+    logger.debug({ err: err.message }, 'No se pudo seedear section_content');
   }
   }
 

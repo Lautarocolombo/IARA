@@ -2,12 +2,13 @@ const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const { saveUploadedFile } = require('../lib/upload');
 const { syncBus } = require('../routes/sync');
+const { testimonialSchema } = require('../lib/validators');
 
 const ALLOWED_TESTIMONIAL_COLUMNS = ['name', 'comment', 'rating', 'image', 'avatar', 'active', 'orden'];
 
 const getPublicTestimonials = async (req, res) => {
   try {
-    const result = await query('SELECT * FROM testimonials WHERE active = TRUE ORDER BY created_at DESC');
+    const result = await query('SELECT * FROM testimonials WHERE active = TRUE ORDER BY orden ASC, created_at DESC');
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json(result.rows);
   } catch (err) {
@@ -31,11 +32,15 @@ const createTestimonial = async (req, res) => {
   if (req.file) {
     image = await saveUploadedFile(req.file);
   }
-  if (!name || !comment) return res.status(400).json({ error: 'Nombre y comentario son requeridos' });
+  const parsed = testimonialSchema.safeParse({ name, comment, rating, image, active });
+  if (!parsed.success) {
+    return res.status(400).json({ error: parsed.error.issues[0]?.message || 'Datos inválidos' });
+  }
+  const { name: safeName, comment: safeComment, rating: safeRating } = parsed.data;
   try {
     const result = await query(
       'INSERT INTO testimonials (name, comment, rating, image, avatar, active, orden, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) RETURNING *',
-      [name, comment, Number(rating), image, image, active !== false, Number(orden)]
+      [safeName, safeComment, Number(safeRating), image, image, active !== false, Number(orden)]
     );
     res.status(201).json(result.rows[0]);
     try { syncBus.emit('testimonials_updated', { id: result.rows[0].id }); } catch (e) { /* noop */ }
@@ -79,6 +84,8 @@ const updateTestimonialOrder = async (req, res) => {
   }
 };
 
+const reorderTestimonials = updateTestimonialOrder;
+
 const updateTestimonial = async (req, res) => {
   const id = Number(req.params.id);
   const updates = req.body || {};
@@ -87,6 +94,18 @@ const updateTestimonial = async (req, res) => {
   }
   const fields = Object.keys(updates).filter(k => k !== 'id' && ALLOWED_TESTIMONIAL_COLUMNS.includes(k));
   if (!fields.length) return res.status(400).json({ error: 'Sin datos para actualizar' });
+  if (fields.includes('name')) {
+    const name = String(updates.name || '').trim();
+    if (!name) return res.status(400).json({ error: 'Nombre es requerido' });
+    if (name.length > 100) return res.status(400).json({ error: 'Nombre no puede superar 100 caracteres' });
+    updates.name = name;
+  }
+  if (fields.includes('comment')) {
+    const comment = String(updates.comment || '').trim();
+    if (!comment) return res.status(400).json({ error: 'Comentario es requerido' });
+    if (comment.length > 500) return res.status(400).json({ error: 'Comentario no puede superar 500 caracteres' });
+    updates.comment = comment;
+  }
   const values = [];
   const setParts = [];
   fields.forEach((f, i) => {
@@ -123,4 +142,4 @@ const deleteTestimonial = async (req, res) => {
   }
 };
 
-module.exports = { getPublicTestimonials, getAdminTestimonials, createTestimonial, updateTestimonial, deleteTestimonial, toggleTestimonialActive, updateTestimonialOrder };
+module.exports = { getPublicTestimonials, getAdminTestimonials, createTestimonial, updateTestimonial, deleteTestimonial, toggleTestimonialActive, updateTestimonialOrder, reorderTestimonials };

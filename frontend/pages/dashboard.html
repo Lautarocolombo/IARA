@@ -43,6 +43,10 @@
           <span>📝</span>
           <span>Contenido del sitio</span>
         </a>
+        <a href="#" data-section="carousel">
+          <span>🎠</span>
+          <span>Carrusel</span>
+        </a>
         <a href="#" data-section="products">
           <span>📦</span>
           <span>Productos</span>
@@ -50,6 +54,10 @@
         <a href="#" data-section="categories">
           <span>🏷️</span>
           <span>Categorías</span>
+        </a>
+        <a href="#" data-section="testimonials">
+          <span>💬</span>
+          <span>Testimonios</span>
         </a>
         <a href="#" data-section="sales">
           <span>📊</span>
@@ -249,119 +257,9 @@
                      <div class="form-group col-span-full">
                        <label>Texto principal <span class="required">*</span></label>
                        <div id="about_text_editor" class="quill-editor-container"></div>
-                     </div>
-                      <div class="form-group col-span-full">
-                        <label>Imágenes del carrusel (Sobre Nosotros)</label>
-                        <div class="about-images-grid" id="aboutImagesGrid">
-                          <div class="about-image-upload" data-index="1">
-                            <div class="about-image-upload-header">
-                              <span class="about-image-position-badge">Imagen 1</span>
-                            </div>
-                            <div class="about-image-preview-wrapper">
-                              <img id="aboutImagePreview1" src="" alt="Sobre Nosotros 1" class="about-image-preview hidden" />
-                              <div id="aboutImagePlaceholder1" class="about-image-placeholder">
-                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                                <span>Sin imagen</span>
-                              </div>
-                            </div>
-                            <div id="aboutImageNewPreview1" class="about-image-new-preview hidden">
-                              <img id="aboutImageNewImg1" src="" alt="Nueva imagen 1" />
-                            </div>
-                            <input type="file" id="aboutImageInput1" accept="image/jpeg,image/png,image/webp" class="hidden" />
-                            <div class="about-image-actions">
-                              <button type="button" class="btn btn-change btn-sm" id="aboutImageChangeBtn1">Cambiar imagen</button>
-                              <button type="button" class="btn btn-remove btn-sm" id="aboutImageRemoveBtn1">Quitar imagen</button>
-                            </div>
-                            <div id="aboutImageError1" class="about-image-error hidden"></div>
-                          </div>
-                          <div class="about-image-upload" data-index="2">
-                            <div class="about-image-upload-header">
-                              <span class="about-image-position-badge">Imagen 2</span>
-                            </div>
-                            <div class="about-image-preview-wrapper">
-                              <img id="aboutImagePreview2" src="" alt="Sobre Nosotros 2" class="about-image-preview hidden" />
-                              <div id="aboutImagePlaceholder2" class="about-image-placeholder">
-                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                                <span>Sin imagen</span>
-                              </div>
-                            </div>
-                            <div id="aboutImageNewPreview2" class="about-image-new-preview hidden">
-                              <img id="aboutImageNewImg2" src="" alt="Nueva imagen 2" />
-                            </div>
-                            <input type="file" id="aboutImageInput2" accept="image/jpeg,image/png,image/webp" class="hidden" />
-                            <div class="about-image-actions">
-                              <button type="button" class="btn btn-change btn-sm" id="aboutImageChangeBtn2">Cambiar imagen</button>
-                              <button type="button" class="btn btn-remove btn-sm" id="aboutImageRemoveBtn2">Quitar imagen</button>
-                            </div>
-                            <div id="aboutImageError2" class="about-image-error hidden"></div>
-                          </div>
-                          <div class="about-image-upload" data-index="3">
-                            <div class="about-image-upload-header">
-                              <span class="about-image-position-badge">Imagen 3</span>
-                            </div>
-                            <div class="about-image-preview-wrapper">
-                              <img id="aboutImagePreview3" src="" alt="Sobre Nosotros 3" class="about-image-preview hidden" />
-                              <div id="aboutImagePlaceholder3" class="about-image-placeholder">
-                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                                <span>Sin imagen</span>
-                              </div>
-                            </div>
-                            <div id="aboutImageNewPreview3" class="about-image-new-preview hidden">
-                              <img id="aboutImageNewImg3" src="" alt="Nueva imagen 3" />
-                            </div>
-                            <input type="file" id="aboutImageInput3" accept="image/jpeg,image/png,image/webp" class="hidden" />
-                            <div class="about-image-actions">
-                              <button type="button" class="btn btn-change btn-sm" id="aboutImageChangeBtn3">Cambiar imagen</button>
-                              <button type="button" class="btn btn-remove btn-sm" id="aboutImageRemoveBtn3">Quitar imagen</button>
-                            </div>
-                            <div id="aboutImageError3" class="about-image-error hidden"></div>
-                          </div>
-                          <div class="about-image-upload" data-index="4">
-                            <div class="about-image-upload-header">
-                              <span class="about-image-position-badge">Imagen 4</span>
-                            </div>
-                            <div class="about-image-preview-wrapper">
-                              <img id="aboutImagePreview4" src="" alt="Sobre Nosotros 4" class="about-image-preview hidden" />
-                              <div id="aboutImagePlaceholder4" class="about-image-placeholder">
-                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                                <span>Sin imagen</span>
-                              </div>
-                            </div>
-                            <div id="aboutImageNewPreview4" class="about-image-new-preview hidden">
-                              <img id="aboutImageNewImg4" src="" alt="Nueva imagen 4" />
-                            </div>
-                            <input type="file" id="aboutImageInput4" accept="image/jpeg,image/png,image/webp" class="hidden" />
-                            <div class="about-image-actions">
-                              <button type="button" class="btn btn-change btn-sm" id="aboutImageChangeBtn4">Cambiar imagen</button>
-                              <button type="button" class="btn btn-remove btn-sm" id="aboutImageRemoveBtn4">Quitar imagen</button>
-                            </div>
-                            <div id="aboutImageError4" class="about-image-error hidden"></div>
-                          </div>
-                          <div class="about-image-upload" data-index="5">
-                            <div class="about-image-upload-header">
-                              <span class="about-image-position-badge">Imagen 5</span>
-                            </div>
-                            <div class="about-image-preview-wrapper">
-                              <img id="aboutImagePreview5" src="" alt="Sobre Nosotros 5" class="about-image-preview hidden" />
-                              <div id="aboutImagePlaceholder5" class="about-image-placeholder">
-                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-                                <span>Sin imagen</span>
-                              </div>
-                            </div>
-                            <div id="aboutImageNewPreview5" class="about-image-new-preview hidden">
-                              <img id="aboutImageNewImg5" src="" alt="Nueva imagen 5" />
-                            </div>
-                            <input type="file" id="aboutImageInput5" accept="image/jpeg,image/png,image/webp" class="hidden" />
-                            <div class="about-image-actions">
-                              <button type="button" class="btn btn-change btn-sm" id="aboutImageChangeBtn5">Cambiar imagen</button>
-                              <button type="button" class="btn btn-remove btn-sm" id="aboutImageRemoveBtn5">Quitar imagen</button>
-                            </div>
-                            <div id="aboutImageError5" class="about-image-error hidden"></div>
-                          </div>
-                        </div>
-                     </div>
-                   </div>
-               </div>
+                      </div>
+                    </div>
+                </div>
              </div>
 
             <div class="card">
@@ -545,6 +443,35 @@
           </div>
         </section>
 
+        <!-- ===== SECCIÓN: CARRUSEL ===== -->
+        <section id="section-carousel" class="admin-section-inactive">
+          <div id="carouselRoot">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-header-title">Editor de Carrusel</h3>
+                <div class="card-header-actions">
+                  <span class="form-hint">5 slots fijos. Cada cambio se guarda automáticamente.</span>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="carousel-editor-layout">
+                  <div class="carousel-slots-grid" id="carouselSlotsGrid"></div>
+                  <div class="carousel-preview-panel">
+                    <div class="admin-section-title">Vista previa</div>
+                    <div class="carousel-preview-container" id="carouselPreviewContainer">
+                      <div class="carousel-preview-slide active" id="carouselPreviewSlide">
+                        <img src="" alt="Preview carrusel" class="carousel-preview-img" />
+                      </div>
+                    </div>
+                    <div class="carousel-preview-dots" id="carouselPreviewDots"></div>
+                  </div>
+                </div>
+                <div class="save-status" id="carouselSaveStatus"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- ===== SECCIÓN: PRODUCTOS ===== -->
         <section id="section-products" class="admin-section-inactive">
           <div id="productsRoot">
@@ -635,6 +562,120 @@
                   <div id="categoriesEmptyState" class="empty-state" class="hidden">
                     <h3>No hay categorías</h3>
                     <p>Creá la primera categoría para organizar tus productos.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== SECCIÓN: TESTIMONIOS ===== -->
+        <section id="section-testimonials" class="admin-section-inactive">
+          <div id="testimonialsRoot">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-header-title">Testimonios</h3>
+                <div class="card-header-actions">
+                  <button class="btn btn-primary btn-sm" id="createTestimonialBtn">
+                    <span id="createTestimonialBtnText">+ Nuevo testimonio</span>
+                    <span id="createTestimonialBtnLoading" class="hidden">Creando...</span>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="form-grid-2" style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-muted); border-radius: 8px;">
+                  <div class="form-group">
+                    <label>Título de la sección <span class="required">*</span></label>
+                    <input type="text" id="testimonialsSectionTitle" placeholder="Lo que dicen nuestros clientes" />
+                  </div>
+                  <div class="form-group">
+                    <label>Subtítulo</label>
+                    <input type="text" id="testimonialsSectionSubtitle" placeholder="Historias reales..." />
+                  </div>
+                  <div class="form-group col-span-full">
+                    <button class="btn btn-secondary btn-sm" id="saveSectionContentBtn">
+                      <span id="saveSectionContentBtnText">Guardar título y subtítulo</span>
+                      <span id="saveSectionContentBtnLoading" class="hidden">Guardando...</span>
+                    </button>
+                    <span class="save-status" id="sectionContentSaveStatus" style="margin-left: 0.5rem;"></span>
+                  </div>
+                </div>
+
+                <div class="form-grid-2" style="margin-bottom: 1rem;">
+                  <div class="form-group">
+                    <label>Nombre <span class="required">*</span></label>
+                    <input type="text" id="testimonialName" placeholder="Nombre del cliente" />
+                  </div>
+                  <div class="form-group">
+                    <label>Cargo / Empresa</label>
+                    <input type="text" id="testimonialRole" placeholder="Ej: Dueña de Panadería Los Hornos" />
+                  </div>
+                  <div class="form-group">
+                    <label>Rating</label>
+                    <select id="testimonialRating">
+                      <option value="5">⭐⭐⭐⭐⭐</option>
+                      <option value="4">⭐⭐⭐⭐</option>
+                      <option value="3">⭐⭐⭐</option>
+                      <option value="2">⭐⭐</option>
+                      <option value="1">⭐</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label>Foto del cliente (opcional)</label>
+                    <label class="image-upload-zone" for="testimonialPhotoFile" style="cursor:pointer;">
+                      <div class="image-upload-primary">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        <span>Subir foto</span>
+                        <small class="form-hint">JPG, PNG o WEBP. Máx 2MB.</small>
+                      </div>
+                      <input type="file" id="testimonialPhotoFile" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                    </label>
+                    <div id="testimonialPhotoPreview" style="margin-top:0.5rem;"></div>
+                  </div>
+                  <div class="form-group col-span-full">
+                    <label>Comentario <span class="required">*</span></label>
+                    <textarea id="testimonialComment" rows="3" placeholder="Comentario del cliente..."></textarea>
+                  </div>
+                  <div class="form-group">
+                    <label class="toggle-field">
+                      <span class="toggle">
+                        <input type="checkbox" id="testimonialActive" checked />
+                        <span class="toggle-slider"></span>
+                      </span>
+                      <span class="switch-label">Activo</span>
+                    </label>
+                  </div>
+                  <div class="form-group">
+                    <button class="btn btn-primary btn-sm" id="saveTestimonialBtn">Crear testimonio</button>
+                    <span class="save-status" id="testimonialSaveStatus" style="margin-left: 0.5rem;"></span>
+                  </div>
+                </div>
+
+                <div class="form-grid-2" style="margin-bottom: 1rem; display: none;" id="testimonialPreviewRow">
+                  <div style="border: 1px dashed var(--border); border-radius: 8px; padding: 1rem; background: var(--bg-muted);">
+                    <small style="color: var(--text-muted); display: block; margin-bottom: 0.5rem;">Vista previa</small>
+                    <div id="testimonialLivePreview"></div>
+                  </div>
+                </div>
+
+                <div id="testimonialsTableContainer" class="table-wrap">
+                  <table class="table-admin" id="testimonialsTable">
+                    <thead>
+                      <tr>
+                        <th style="width: 40px;"></th>
+                        <th>Nombre</th>
+                        <th>Cargo</th>
+                        <th>Comentario</th>
+                        <th class="text-center">Rating</th>
+                        <th class="text-center">Estado</th>
+                        <th class="text-center">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody id="testimonialsTableBody"></tbody>
+                  </table>
+                  <div id="testimonialsEmptyState" class="empty-state" class="hidden">
+                    <h3>No hay testimonios</h3>
+                    <p>Creá el primer testimonio con el botón de arriba.</p>
                   </div>
                 </div>
               </div>
@@ -1343,11 +1384,25 @@
               <input type="file" id="prod_images" name="images" accept="image/jpeg,image/png,image/webp" multiple />
               <div class="dropzone-content">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                <span>Seleccionar imágenes</span>
-                <small>JPG, PNG o WEBP. Máx 5MB c/u. Hasta 5 imágenes.</small>
+                <span>Agregar más imágenes</span>
+                <small>JPG, PNG o WEBP. Máx 5MB c/u. Hasta 5 imágenes en total.</small>
               </div>
             </div>
             <div id="modalImageGallery" class="modal-image-gallery"></div>
+          </div>
+
+          <div id="productExistingImagesSection" class="product-existing-images-section">
+            <div class="admin-section-title">Galería del producto</div>
+            <div id="productImageGallery" class="product-image-gallery"></div>
+            <div class="product-image-actions" style="margin-top:0.75rem;">
+              <button type="button" class="btn btn-secondary btn-sm" id="addMoreImagesBtn">+ Agregar imágenes</button>
+              <input type="file" id="addMoreImagesInput" accept="image/jpeg,image/png,image/webp" multiple class="hidden" />
+            </div>
+            <div id="productImageUploadProgress" class="product-image-upload-progress">
+              <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+              <div class="progress-text">0%</div>
+            </div>
+            <div id="productImageError" class="image-error-message" style="display:none;"></div>
           </div>
         </form>
       </div>
@@ -1357,6 +1412,23 @@
           <span id="saveProductBtnText">Guardar en Nube</span>
           <span id="saveProductBtnLoading" class="hidden">Guardando...</span>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CONFIRMACIÓN -->
+  <div class="modal-overlay confirmation-overlay" id="confirmModalOverlay">
+    <div class="modal" style="max-width:420px;">
+      <div class="modal-header">
+        <h3 id="confirmModalTitle">Confirmar</h3>
+        <button class="btn btn-secondary btn-sm" id="closeConfirmModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <p id="confirmModalMessage">¿Estás seguro?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="confirmCancelBtn">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="confirmOkBtn">Eliminar</button>
       </div>
     </div>
   </div>
@@ -1459,7 +1531,9 @@
   <script src="../js/admin-sync.js"></script>
   <script src="../js/admin-content.js"></script>
   <script src="../js/admin-products.js"></script>
+  <script src="../js/admin-carousel.js"></script>
   <script src="../js/admin-categories.js"></script>
+  <script src="../js/admin-testimonials.js"></script>
   <script src="../js/admin-sales.js"></script>
   <script src="../js/admin-orders.js"></script>
   <script src="../js/admin-payments.js"></script>

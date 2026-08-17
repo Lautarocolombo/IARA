@@ -8,6 +8,7 @@
     content: false,
     products: false,
     categories: false,
+    testimonials: false,
     sales: false
   };
 
@@ -15,6 +16,7 @@
     content: null,
     products: null,
     categories: null,
+    testimonials: null,
     sales: null
   };
 
@@ -22,6 +24,7 @@
     content: ['saveHomeBlocksBtn', 'saveAboutBtn', 'saveFeaturesBtn', 'saveProcessBtn', 'saveStatsBtn', 'saveContactBtn', 'saveFeaturedBtn'],
     products: ['saveProductBtn'],
     categories: ['editCategoryBtn', 'saveCategoryBtn'],
+    testimonials: ['saveTestimonialBtn', 'saveSectionContentBtn'],
     sales: ['saveSaleBtn']
   };
 
@@ -29,6 +32,7 @@
     'section-content': 'content',
     'section-products': 'products',
     'section-categories': 'categories',
+    'section-testimonials': 'testimonials',
     'section-sales': 'sales'
   };
 
@@ -136,6 +140,13 @@
             throw new Error('Función de guardado de categorías no disponible');
           }
           break;
+        case 'testimonials':
+          if (typeof window.reloadTestimonials === 'function') {
+            await window.reloadTestimonials();
+          } else {
+            throw new Error('Función de recarga de testimonios no disponible');
+          }
+          break;
         case 'sales':
           if (typeof window.reloadSales === 'function') {
             await window.reloadSales();
@@ -198,6 +209,13 @@
             await window.reloadCategories();
           } else {
             throw new Error('Función de recarga de categorías no disponible');
+          }
+          break;
+        case 'testimonials':
+          if (typeof window.reloadTestimonials === 'function') {
+            await window.reloadTestimonials();
+          } else {
+            throw new Error('Función de recarga de testimonios no disponible');
           }
           break;
         case 'sales':

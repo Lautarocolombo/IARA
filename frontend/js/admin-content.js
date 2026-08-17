@@ -14,18 +14,13 @@
     featured_product_cta_text: 'Ver producto',
     featured_product_cta_url: '#catalog',
     featured_product_image_url: '',
-    hero_card_1_text: 'Nose si estemos hechos el uno para el otro pero si hemos llegado hasta aquí...',
-    hero_card_2_text: 'Nose si estemos hechos el uno para el otro pero si hemos llegado hasta aquí...',
+    hero_card_1_text: '',
+    hero_card_2_text: '',
     hero_card_1_name: 'Pulsera Minimalista',
     hero_card_1_price: '$450',
     hero_card_1_cta_text: 'Ver más',
     hero_card_1_cta_url: '#catalog',
     about_text: 'En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.',
-    about_image_1: '',
-    about_image_2: '',
-    about_image_3: '',
-    about_image_4: '',
-    about_image_5: '',
     process_subtitle: 'Cinco pasos simples para comprar tu artesanía',
     process_step_1_title: '1) Elegí productos',
     process_step_1_desc: 'Filtrá por categoría y elegí tu pieza del catálogo.',
@@ -284,32 +279,6 @@
         el.value = val || '';
       }
     });
-
-    for (let i = 1; i <= 5; i++) {
-      (function(index) {
-        var key = 'about_image_' + index;
-        var url = textsCache[key] || '';
-        var upload = document.getElementById('aboutImageUpload' + index) || document.querySelector('.about-image-upload[data-index="' + index + '"]');
-        var preview = document.getElementById('aboutImagePreview' + index);
-        var placeholder = document.getElementById('aboutImagePlaceholder' + index);
-        var removeBtn = document.getElementById('aboutImageRemoveBtn' + index);
-        console.log('[Content] populateFields about_image_' + index + ':', url ? url.substring(0, 60) + '...' : '(vacío)');
-        if (preview && placeholder) {
-          if (url) {
-            preview.src = url;
-            preview.classList.remove('hidden');
-            placeholder.style.display = 'none';
-            if (upload) upload.classList.add('has-image');
-          } else {
-            preview.classList.add('hidden');
-            preview.src = '';
-            placeholder.style.display = 'flex';
-            if (upload) upload.classList.remove('has-image');
-          }
-        }
-        if (removeBtn) removeBtn.dataset.remove = 'false';
-      })(i);
-    }
 
     var featureKeys = ['feature_1_title', 'feature_1_desc', 'feature_2_title', 'feature_2_desc',
                     'feature_3_title', 'feature_3_desc', 'feature_4_title', 'feature_4_desc'];
@@ -623,7 +592,7 @@
       case 'hero':
         return ['hero_subtitle', 'hero_cta_text', 'hero_cta_url', 'hero_image_url'];
       case 'about':
-        return ['about_text', 'about_image_1', 'about_image_2', 'about_image_3', 'about_image_4', 'about_image_5'];
+        return ['about_text'];
       case 'features':
         return ['feature_1_title', 'feature_1_desc', 'feature_2_title', 'feature_2_desc',
                 'feature_3_title', 'feature_3_desc', 'feature_4_title', 'feature_4_desc'];
@@ -665,84 +634,6 @@
           payload['about_text'] = clean;
         }
       }
-
-      var aboutImageUrls = {};
-      var aboutUploadPromises = [];
-      var aboutUploadErrors = {};
-
-      for (let i = 1; i <= 5; i++) {
-        (function(index) {
-          var input = document.getElementById('aboutImageInput' + index);
-          var removeBtn = document.getElementById('aboutImageRemoveBtn' + index);
-          var removeFlag = removeBtn ? removeBtn.dataset.remove === 'true' : false;
-          var currentUrl = textsCache['about_image_' + index] || '';
-          aboutImageUrls[index] = currentUrl;
-
-          if (input && input.files && input.files[0]) {
-            console.log('[AboutImage' + index + '] Archivo seleccionado:', input.files[0].name, input.files[0].size, 'bytes');
-            var formData = new FormData();
-            formData.append('image', input.files[0]);
-            var promise = window.adminFetch('/api/admin/upload', {
-              method: 'POST',
-              body: formData
-            }).then(async function (res) {
-              console.log('[AboutImage' + index + '] Respuesta subida:', res.status, res.statusText);
-              if (!res || !res.ok) {
-                let errMsg = 'Error al subir imagen ' + index + ' del carrusel.';
-                if (res) {
-                  let errData = await res.json().catch(function () { return {}; });
-                  errMsg = errData.error || errMsg;
-                }
-                console.error('[Content] Error subiendo imagen carrusel ' + index + ':', errMsg);
-                throw new Error(errMsg);
-              }
-              var data = await res.json();
-              console.log('[AboutImage' + index + '] URL recibida del backend:', data.url);
-              aboutImageUrls[index] = data.url || '';
-            }).catch(function (err) {
-              aboutUploadErrors[index] = err.message || 'Error al subir imagen ' + index;
-              console.error('[Content] Error subiendo imagen carrusel ' + index + ':', err);
-              console.error('[Content] ERROR COMPLETO (carrusel ' + index + '):', JSON.stringify({
-                name: err.name,
-                message: err.message,
-                stack: err.stack,
-                cause: err.cause
-              }));
-              throw err;
-            });
-            aboutUploadPromises.push(promise);
-          } else if (removeFlag) {
-            aboutImageUrls[index] = '';
-          }
-        })(i);
-      }
-
-      if (aboutUploadPromises.length > 0) {
-        var aboutResults = await Promise.allSettled(aboutUploadPromises);
-        aboutResults.forEach(function(result, idx) {
-          var index = idx + 1;
-          if (result.status === 'rejected') {
-            var errMsg = result.reason?.message || ('Error al subir imagen ' + index);
-            aboutUploadErrors[index] = errMsg;
-            var errEl = document.getElementById('aboutImageError' + index);
-            if (errEl) {
-              errEl.textContent = errMsg;
-              errEl.style.display = 'block';
-            }
-            console.error('[Content] Error subiendo imagen carrusel ' + index + ':', result.reason);
-          } else {
-            console.log('[Content] Imagen carrusel ' + index + ' subida OK, URL:', aboutImageUrls[index]);
-          }
-        });
-        var aboutFailedCount = Object.keys(aboutUploadErrors).length;
-        if (aboutFailedCount > 0) {
-          window.showToast('⚠️', aboutFailedCount + ' imagen(es) del carrusel no se subieron. Revisá los errores.', 'error');
-        }
-      }
-
-      for (var a = 1; a <= 5; a++) {
-        payload['about_image_' + a] = aboutImageUrls[a] || '';
-      }
     } else {
       for (var i = 0; i < keys.length; i++) {
         var key = keys[i];
@@ -777,50 +668,7 @@
 
       var data = await res.json();
       console.log('[About] Respuesta guardado:', res.status, JSON.stringify(data).substring(0, 300));
-      console.log('[About] Payload enviado (imágenes):', JSON.stringify({about_image_1: payload.about_image_1, about_image_2: payload.about_image_2, about_image_3: payload.about_image_3, about_image_4: payload.about_image_4, about_image_5: payload.about_image_5}));
       textsCache = Object.assign({}, textsCache, payload);
-
-      if (scope === 'about') {
-        for (let a = 1; a <= 5; a++) {
-          (function(index) {
-            var input = document.getElementById('aboutImageInput' + index);
-            var removeBtn = document.getElementById('aboutImageRemoveBtn' + index);
-            var errorEl = document.getElementById('aboutImageError' + index);
-            var newPreview = document.getElementById('aboutImageNewPreview' + index);
-            var newImg = document.getElementById('aboutImageNewImg' + index);
-            var preview = document.getElementById('aboutImagePreview' + index);
-            var placeholder = document.getElementById('aboutImagePlaceholder' + index);
-            var upload = document.querySelector('.about-image-upload[data-index="' + index + '"]');
-            var url = payload['about_image_' + index] || '';
-
-            if (input) input.value = '';
-            if (removeBtn) delete removeBtn.dataset.remove;
-            if (errorEl) {
-              errorEl.style.display = 'none';
-              errorEl.textContent = '';
-            }
-            if (newPreview) {
-              newPreview.classList.add('hidden');
-              newPreview.style.display = 'none';
-            }
-            if (newImg) newImg.src = '';
-            if (preview && placeholder) {
-              if (url) {
-                preview.src = url;
-                preview.classList.remove('hidden');
-                preview.style.display = 'block';
-                placeholder.style.display = 'none';
-                if (upload) upload.classList.add('has-image');
-              } else {
-                preview.classList.add('hidden');
-                preview.src = '';
-                placeholder.style.display = 'flex';
-                if (upload) upload.classList.remove('has-image');
-              }
-            }
-          })(a);
-        }
-      }
 
       showSaveStatus(statusId, 'success', 'Cambios guardados correctamente (' + (data.results?.saved || Object.keys(payload).length) + ' campos)');
       window.showToast('✅', 'Cambios guardados correctamente', 'success');
@@ -1101,97 +949,8 @@
         if (window.markDirty) window.markDirty('content');
       });
     }
-
-    for (var i = 1; i <= 5; i++) {
-      (function(index) {
-        var changeBtn = document.getElementById('aboutImageChangeBtn' + index);
-        var input = document.getElementById('aboutImageInput' + index);
-        var errorEl = document.getElementById('aboutImageError' + index);
-        var removeBtn = document.getElementById('aboutImageRemoveBtn' + index);
-        var newPreview = document.getElementById('aboutImageNewPreview' + index);
-        var newImg = document.getElementById('aboutImageNewImg' + index);
-        var preview = document.getElementById('aboutImagePreview' + index);
-        var placeholder = document.getElementById('aboutImagePlaceholder' + index);
-
-        if (changeBtn && input) {
-          changeBtn.addEventListener('click', function () {
-            input.click();
-          });
-          input.addEventListener('change', function () {
-            if (errorEl) {
-              errorEl.style.display = 'none';
-              errorEl.textContent = '';
-            }
-            if (input.files && input.files[0]) {
-              var file = input.files[0];
-              console.log('[AboutImage' + index + '] Archivo seleccionado:', file.name, file.size, 'bytes, type:', file.type);
-              if (file.size > 5 * 1024 * 1024) {
-                var msg = 'La imagen es muy grande (máximo 5MB)';
-                window.showToast('❌', msg, 'error');
-                if (errorEl) {
-                  errorEl.textContent = msg;
-                  errorEl.style.display = 'block';
-                }
-                input.value = '';
-                console.warn('[AboutImage' + index + '] Archivo rechazado por tamaño:', file.size);
-                return;
-              }
-              if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-                var msg2 = 'Formato no soportado. Usá JPG, PNG o WEBP.';
-                window.showToast('❌', msg2, 'error');
-                if (errorEl) {
-                  errorEl.textContent = msg2;
-                  errorEl.style.display = 'block';
-                }
-                input.value = '';
-                console.warn('[AboutImage' + index + '] Archivo rechazado por tipo:', file.type);
-                return;
-              }
-                var reader = new FileReader();
-                reader.onload = function (e) {
-                  console.log('[AboutImage' + index + '] Archivo leído, tamaño DataURL:', e.target.result.length, 'bytes');
-                  var upload = document.querySelector('.about-image-upload[data-index="' + index + '"]');
-                  if (newPreview && newImg) {
-                    newImg.src = e.target.result;
-                    newPreview.classList.remove('hidden');
-                    newPreview.style.display = 'block';
-                  }
-                  if (preview && placeholder) {
-                    preview.src = e.target.result;
-                    preview.classList.remove('hidden');
-                    preview.style.display = 'block';
-                    placeholder.style.display = 'none';
-                    if (upload) upload.classList.add('has-image');
-                  }
-                  if (window.markDirty) window.markDirty('content');
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-          });
-        }
-
-        if (removeBtn) {
-          removeBtn.addEventListener('click', function () {
-            removeBtn.dataset.remove = 'true';
-            var upload = document.querySelector('.about-image-upload[data-index="' + index + '"]');
-            if (input) input.value = '';
-            if (newPreview) {
-              newPreview.classList.add('hidden');
-              newPreview.style.display = 'none';
-            }
-            if (newImg) newImg.src = '';
-            if (preview) {
-              preview.classList.add('hidden');
-              preview.src = '';
-            }
-            if (placeholder) placeholder.style.display = 'flex';
-            if (upload) upload.classList.remove('has-image');
-            if (window.markDirty) window.markDirty('content');
-          });
-        }
-      })(i);
-    }
-  } catch (err) {
+  }
+  catch (err) {
     console.error('[Content] Error inicializando editor:', err);
   }
   }

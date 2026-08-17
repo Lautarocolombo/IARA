@@ -24,10 +24,7 @@
     },
     openingHours: 'Mo-Fr 09:00-18:00',
     priceRange: '$$',
-    sameAs: [
-      'https://instagram.com/tu-cuenta',
-      'https://facebook.com/tu-pagina'
-    ]
+    sameAs: []
   };
   const script = document.createElement('script');
   script.type = 'application/ld+json';
@@ -98,13 +95,14 @@ if (typeof loadTestimonials === 'function') {
             if (url.startsWith('data:')) {
               window.__aboutImages['about_image_' + i] = url;
             } else if (url.startsWith('http://localhost') || url.startsWith('http://127.0.0.1')) {
-              window.__aboutImages['about_image_' + i] = '';
+              var m2 = url.match(/\/uploads\/imagenes\/([^/?]+)/);
+              window.__aboutImages['about_image_' + i] = m2 ? '/uploads/imagenes/' + m2[1] : url;
             } else {
               var m = url.match(/\/uploads\/imagenes\/([^/?]+)/);
               window.__aboutImages['about_image_' + i] = m ? '/uploads/imagenes/' + m[1] : url;
             }
           } else {
-            window.__aboutImages['about_image_' + i] = '';
+            window.__aboutImages['about_image_' + i] = '/imagenes/carrucel/' + i + '.jpg';
           }
         }
         console.log('[AboutImages] Imágenes cargadas:', window.__aboutImages);
@@ -143,6 +141,10 @@ onSyncMessage('site_texts_updated', (_data) => {
   if (typeof loadHeroCards === 'function') loadHeroCards();
   if (typeof loadAboutImages === 'function') loadAboutImages();
   if (typeof window.initAboutCarousel === 'function') window.initAboutCarousel();
+});
+
+onSyncMessage('section_content_updated', (_data) => {
+  if (typeof loadTestimonials === 'function') loadTestimonials();
 });
 
 onSyncMessage('settings_updated', () => {

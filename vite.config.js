@@ -1,6 +1,21 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'path';
 import { readdirSync } from 'fs';
+import { copyFileSync, mkdirSync, existsSync, readdirSync as fsReaddirSync } from 'fs';
+
+function copyRecursive(src, dest) {
+  if (!existsSync(dest)) mkdirSync(dest, { recursive: true });
+  const entries = fsReaddirSync(src, { withFileTypes: true });
+  for (const entry of entries) {
+    const srcPath = resolve(src, entry.name);
+    const destPath = resolve(dest, entry.name);
+    if (entry.isDirectory()) {
+      copyRecursive(srcPath, destPath);
+    } else {
+      copyFileSync(srcPath, destPath);
+    }
+  }
+}
 
 export default defineConfig({
   root: resolve(__dirname, 'frontend'),
@@ -33,17 +48,17 @@ export default defineConfig({
     cssCodeSplit: true,
     sourcemap: true
   },
-  server: {
-    port: 3000,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3001',
-        changeOrigin: true
-      },
-      '/uploads': {
-        target: 'http://localhost:3001',
-        changeOrigin: true
+  plugins: [
+    {
+      name: 'copy-images',
+      closeBundle() {
+        const srcDir = resolve(__dirname, 'frontend', 'imagenes');
+        const destDir = resolve(__dirname, 'dist', 'imagenes');
+        if (existsSync(srcDir)) {
+          copyRecursive(srcDir, destDir);
+          console.log('[vite] Imágenes copiadas a dist/imagenes/');
+        }
       }
     }
-  }
+  ]
 });
