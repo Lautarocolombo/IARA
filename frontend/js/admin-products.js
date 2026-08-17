@@ -305,11 +305,25 @@
       successMessage: 'Producto guardado ✅',
       action: async function () {
         var productId = await saveProductToApi();
-        if (selectedFiles.length > 0) {
+        var hasImages = selectedFiles.length > 0;
+        if (hasImages) {
           await uploadProductImages(productId);
         }
-        await loadProducts();
-        closeProductModal();
+
+        if (hasImages || editingProductId) {
+          editingProductId = productId;
+          selectedFiles = [];
+          renderImagePreviews();
+          await loadProductImages(productId);
+          var title = document.getElementById('productModalTitle');
+          if (title) title.textContent = editingProductId ? 'Editar producto' : 'Nuevo producto';
+          var btnText = document.querySelector('#saveProductBtn span') || document.getElementById('saveProductBtn');
+          if (btnText) btnText.textContent = 'Guardar Cambios';
+          window.showToast('✅', 'Producto guardado. Las imágenes se muestran abajo.', 'success');
+        } else {
+          await loadProducts();
+          closeProductModal();
+        }
       }
     });
   }
@@ -322,7 +336,6 @@
       imageFormData.append('images', file);
     });
 
-    console.log('[Products] Subiendo', selectedFiles.length, 'imágenes para producto', productId);
     var res = await window.adminFetch('/api/products/' + productId + '/images', {
       method: 'POST',
       body: imageFormData
@@ -337,14 +350,15 @@
       console.error('[Products] Error subiendo imágenes:', errMsg);
       throw new Error(errMsg);
     }
-    
-    var data = await res.json();
-    console.log('[Products] Imágenes subidas OK:', data.images ? data.images.length : 0);
-  }
 
-  /* ===== GESTIÓN DE IMÁGENES EXISTENTES ===== */
-  var productExistingImages = [];
-  var draggedImageId = null;
+    var data = await res.json().catch(function () { return {}; });
+    var images = data.images || [];
+    var emptyUrls = images.filter(function (img) { return !img.url; });
+    if (emptyUrls.length > 0) {
+      throw new Error('No se pudo obtener la URL de ' + emptyUrls.length + ' imagen(es). Verificá la conexión e intentá nuevamente.');
+    }
+    return data;
+  }
 
   async function loadProductImages(productId) {
     var gallery = document.getElementById('productImageGallery');
@@ -354,158 +368,19 @@
     try {
       var res = await window.adminFetch('/api/products/' + productId + '/images', { method: 'GET' });
       if (!res || !res.ok) throw new Error('No se pudieron cargar las imágenes');
-      var data = await res.json();
-      productExistingImages = Array.isArray(data) ? data : [];
-      renderProductImageGallery(productId);
+      var images = await res.json();
+      if (!images.length) {
+        window.showToast('⚠️', 'Aún no hay imágenes cargadas para este producto.', 'info');
+      }
+      if (window.ProductImages && typeof window.ProductImages.renderGallery === 'function') {
+        window.ProductImages.renderGallery(gallery, images, productId);
+      } else {
+        gallery.innerHTML = '<p class="text-muted">No se pudieron cargar las imágenes.</p>';
+      }
     } catch (err) {
       console.error('[Products] Error cargando imágenes:', err);
       gallery.innerHTML = '<p class="text-muted">No se pudieron cargar las imágenes.</p>';
-    }
-  }
-
-  function renderProductImageGallery(productId) {
-    var gallery = document.getElementById('productImageGallery');
-    if (!gallery) return;
-
-    if (!productExistingImages.length) {
-      gallery.innerHTML = '<p class="text-muted">Sin imágenes. Subí nuevas desde la sección superior.</p>';
-      return;
-    }
-
-    gallery.innerHTML = productExistingImages.map(function (img) {
-      var isMain = img.es_principal === true;
-      return '<div class="product-image-item' + (isMain ? ' es-principal' : '') + '" data-image-id="' + img.id + '" draggable="true">' +
-        '<div class="product-image-item-preview">' +
-          '<img src="' + escapeAttr(img.url) + '" alt="Producto" loading="lazy" onerror="window.imgError(this)" />' +
-          '<div class="product-image-item-actions">' +
-            '<button type="button" class="btn btn-sm btn-secondary" data-action="main" title="Marcar como principal">⭐ Principal</button>' +
-            '<button type="button" class="btn btn-sm btn-secondary" data-action="replace" title="Reemplazar imagen">🔄 Cambiar</button>' +
-            '<button type="button" class="btn btn-sm btn-danger" data-action="delete" title="Eliminar">🗑 Eliminar</button>' +
-          '</div>' +
-          '<input type="file" class="product-image-replace-input" accept="image/jpeg,image/png,image/webp" data-image-id="' + img.id + '" style="display:none" />' +
-        '</div>' +
-        '<div class="product-image-replace-preview-row" style="display:none;padding:8px;">' +
-          '<img class="product-image-replace-preview" src="" alt="Preview reemplazo" />' +
-          '<div style="display:flex;gap:4px;margin-top:4px;">' +
-            '<button type="button" class="btn btn-sm btn-primary" data-action="confirm-replace" data-image-id="' + img.id + '">✓ Confirmar</button>' +
-            '<button type="button" class="btn btn-sm btn-secondary" data-action="cancel-replace" data-image-id="' + img.id + '">✕ Cancelar</button>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
-    }).join('');
-
-    bindProductImageEvents(productId);
-  }
-
-  function bindProductImageEvents(productId) {
-    var gallery = document.getElementById('productImageGallery');
-    if (!gallery) return;
-
-    var items = gallery.querySelectorAll('.product-image-item');
-    items.forEach(function (item) {
-      item.addEventListener('dragstart', function (e) {
-        draggedImageId = item.dataset.imageId;
-        item.classList.add('dragging');
-        e.dataTransfer.effectAllowed = 'move';
-      });
-      item.addEventListener('dragend', function () {
-        item.classList.remove('dragging');
-        draggedImageId = null;
-      });
-      item.addEventListener('dragover', function (e) {
-        e.preventDefault();
-        if (!draggedImageId || draggedImageId === item.dataset.imageId) return;
-        var rect = item.getBoundingClientRect();
-        var mid = rect.top + rect.height / 2;
-        if (e.clientY < mid) {
-          item.parentNode.insertBefore(document.querySelector('.product-image-item.dragging'), item);
-        } else {
-          item.parentNode.insertBefore(document.querySelector('.product-image-item.dragging'), item.nextSibling);
-        }
-      });
-      item.addEventListener('drop', async function (e) {
-        e.preventDefault();
-        var ordered = Array.from(gallery.querySelectorAll('.product-image-item')).map(function (el) { return Number(el.dataset.imageId); });
-        await syncImageOrder(productId, ordered);
-        await loadProductImages(productId);
-      });
-    });
-
-    gallery.querySelectorAll('[data-action="main"]').forEach(function (btn) {
-      btn.addEventListener('click', async function () {
-        var item = btn.closest('.product-image-item');
-        var imageId = item ? item.dataset.imageId : null;
-        if (!imageId) return;
-        await setMainProductImage(productId, imageId);
-        await loadProductImages(productId);
-      });
-    });
-
-    gallery.querySelectorAll('[data-action="replace"]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var item = btn.closest('.product-image-item');
-        var input = item ? item.querySelector('.product-image-replace-input') : null;
-        if (input) input.click();
-      });
-    });
-
-    gallery.querySelectorAll('.product-image-replace-input').forEach(function (input) {
-      input.addEventListener('change', async function (e) {
-        var file = e.target.files[0];
-        if (!file) return;
-        var imageId = input.dataset.imageId;
-        await previewReplaceImage(productId, imageId, file, input);
-        e.target.value = '';
-      });
-    });
-
-    gallery.querySelectorAll('[data-action="confirm-replace"]').forEach(function (btn) {
-      btn.addEventListener('click', async function () {
-        var imageId = btn.dataset.imageId;
-        var item = btn.closest('.product-image-item');
-        var previewImg = item ? item.querySelector('.product-image-replace-preview') : null;
-        var src = previewImg ? previewImg.getAttribute('data-temp-src') : '';
-        if (!src) return;
-        await confirmReplaceImage(productId, imageId, src, item);
-      });
-    });
-
-    gallery.querySelectorAll('[data-action="cancel-replace"]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var item = btn.closest('.product-image-item');
-        var row = item ? item.querySelector('.product-image-replace-preview-row') : null;
-        var input = item ? item.querySelector('.product-image-replace-input') : null;
-        if (row) row.style.display = 'none';
-        if (input) input.value = '';
-      });
-    });
-
-    gallery.querySelectorAll('[data-action="delete"]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var item = btn.closest('.product-image-item');
-        var imageId = item ? item.dataset.imageId : null;
-        if (!imageId) return;
-        showConfirmModal('Eliminar imagen', '¿Estás seguro de eliminar esta imagen? Esta acción no se puede deshacer.', function () {
-          deleteProductImage(productId, imageId);
-        });
-      });
-    });
-  }
-
-  async function syncImageOrder(productId, orderedIds) {
-    try {
-      var res = await window.adminFetch('/api/products/' + productId + '/images/sync-order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orden: orderedIds })
-      });
-      if (!res || !res.ok) {
-        var errData = await res.json().catch(function () { return {}; });
-        throw new Error(errData.error || 'Error al sincronizar orden');
-      }
-    } catch (err) {
-      console.error('[Products] Error sincronizando orden:', err);
-      window.showToast('❌', err.message || 'Error al sincronizar orden', 'error');
+      window.showToast('❌', err.message || 'No se pudieron cargar las imágenes.', 'error');
     }
   }
 
@@ -525,7 +400,7 @@
     }
   }
 
-  function showImageSpinner(productId) {
+  function showImageSpinner(_productId) {
     var container = document.getElementById('productImageUploadProgress');
     if (container) {
       container.style.display = 'block';
@@ -542,144 +417,10 @@
     }
   }
 
-  function hideImageSpinner(productId) {
+  function hideImageSpinner(_productId) {
     var container = document.getElementById('productImageUploadProgress');
     if (container) {
       container.style.display = 'none';
-    }
-  }
-
-  function addSpinnerToImageItem(item) {
-    var existing = item.querySelector('.product-image-spinner');
-    if (existing) return existing;
-    var spinner = document.createElement('div');
-    spinner.className = 'product-image-spinner';
-    item.querySelector('.product-image-item-preview').appendChild(spinner);
-    return spinner;
-  }
-
-  function removeSpinnerFromImageItem(item) {
-    var spinner = item.querySelector('.product-image-spinner');
-    if (spinner) spinner.remove();
-  }
-
-  async function previewReplaceImage(productId, imageId, file, input) {
-    var item = input ? input.closest('.product-image-item') : null;
-    if (!item) return;
-
-    clearImageError();
-    var allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    var maxSize = 5 * 1024 * 1024;
-    if (!allowedTypes.includes(file.type)) {
-      showImageError(productId, 'Formato no permitido (solo JPG, PNG, WEBP)');
-      return;
-    }
-    if (file.size > maxSize) {
-      showImageError(productId, 'Imagen muy grande (máximo 5MB)');
-      return;
-    }
-
-    var reader = new FileReader();
-    reader.onload = function (e) {
-      var row = item.querySelector('.product-image-replace-preview-row');
-      var preview = item.querySelector('.product-image-replace-preview');
-      if (row && preview) {
-        preview.setAttribute('src', e.target.result);
-        preview.setAttribute('data-temp-src', e.target.result);
-        row.style.display = 'block';
-      }
-    };
-    reader.readAsDataURL(file);
-  }
-
-  async function confirmReplaceImage(productId, imageId, tempDataUrl, item) {
-    clearImageError();
-    addSpinnerToImageItem(item);
-
-    try {
-      var blob = await (await fetch(tempDataUrl)).blob();
-      var formData = new FormData();
-      formData.append('image', blob, 'replace_' + imageId + '.webp');
-
-      var xhr = new XMLHttpRequest();
-      var url = CONFIG.API.BASE + '/api/products/' + productId + '/images/' + imageId + '/replace';
-      var token = window.getAuthToken();
-
-      await new Promise(function (resolve, reject) {
-        xhr.upload.addEventListener('progress', function (e) {
-          if (e.lengthComputable) {
-            var pct = Math.round((e.loaded / e.total) * 100);
-            updateImageProgress(productId, pct);
-          }
-        });
-        xhr.addEventListener('load', function () {
-          removeSpinnerFromImageItem(item);
-          hideImageSpinner(productId);
-          var data = {};
-          try { data = JSON.parse(xhr.responseText || '{}'); } catch (e) { data = { error: xhr.responseText }; }
-          if (xhr.status < 200 || xhr.status >= 300) {
-            reject(new Error(data.error || 'Error al reemplazar imagen'));
-            return;
-          }
-          resolve(data);
-        });
-        xhr.addEventListener('error', function () {
-          removeSpinnerFromImageItem(item);
-          hideImageSpinner(productId);
-          reject(new Error('Error de red'));
-        });
-        xhr.open('PUT', url);
-        xhr.withCredentials = true;
-        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-        xhr.send(formData);
-      });
-
-      var row = item.querySelector('.product-image-replace-preview-row');
-      if (row) row.style.display = 'none';
-      await loadProductImages(productId);
-      window.showToast('✅', 'Imagen reemplazada correctamente', 'success');
-    } catch (err) {
-      showImageError(productId, err.message || 'Error al reemplazar imagen');
-      window.showToast('❌', err.message || 'Error al reemplazar imagen', 'error');
-    }
-  }
-
-  async function deleteProductImage(productId, imageId) {
-    try {
-      var res = await window.adminFetch('/api/products/' + productId + '/images/' + imageId, {
-        method: 'DELETE',
-        headers: { Authorization: 'Bearer ' + window.getAuthToken() },
-        credentials: 'include'
-      });
-      if (!res || !res.ok) {
-        var errData = await res.json().catch(function () { return {}; });
-        throw new Error(errData.error || 'Error al eliminar');
-      }
-      await loadProductImages(productId);
-      window.showToast('✅', 'Imagen eliminada', 'success');
-    } catch (err) {
-      window.showToast('❌', err.message || 'Error al eliminar', 'error');
-    }
-  }
-
-  async function setMainProductImage(productId, imageId) {
-    try {
-      var res = await window.adminFetch('/api/products/' + productId + '/images/' + imageId, {
-        method: 'PATCH',
-        headers: {
-          Authorization: 'Bearer ' + window.getAuthToken(),
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ es_principal: true })
-      });
-      if (!res || !res.ok) {
-        var errData = await res.json().catch(function () { return {}; });
-        throw new Error(errData.error || 'Error al actualizar');
-      }
-      window.showToast('✅', 'Imagen principal actualizada', 'success');
-    } catch (err) {
-      window.showToast('❌', err.message || 'Error al actualizar', 'error');
     }
   }
 
@@ -731,45 +472,6 @@
     }
   }
 
-  /* ===== MODAL DE CONFIRMACIÓN ===== */
-  var confirmCallback = null;
-
-  function showConfirmModal(title, message, onConfirm) {
-    var overlay = document.getElementById('confirmModalOverlay');
-    var titleEl = document.getElementById('confirmModalTitle');
-    var msgEl = document.getElementById('confirmModalMessage');
-    if (!overlay || !titleEl || !msgEl) return;
-
-    confirmCallback = onConfirm;
-    titleEl.textContent = title || 'Confirmar';
-    msgEl.textContent = message || '¿Estás seguro?';
-    overlay.style.display = 'flex';
-  }
-
-  function hideConfirmModal() {
-    var overlay = document.getElementById('confirmModalOverlay');
-    if (overlay) overlay.style.display = 'none';
-    confirmCallback = null;
-  }
-
-  if (document.getElementById('confirmOkBtn')) {
-    document.getElementById('confirmOkBtn').addEventListener('click', function () {
-      if (typeof confirmCallback === 'function') confirmCallback();
-      hideConfirmModal();
-    });
-  }
-  if (document.getElementById('confirmCancelBtn')) {
-    document.getElementById('confirmCancelBtn').addEventListener('click', hideConfirmModal);
-  }
-  if (document.getElementById('closeConfirmModal')) {
-    document.getElementById('closeConfirmModal').addEventListener('click', hideConfirmModal);
-  }
-  if (document.getElementById('confirmModalOverlay')) {
-    document.getElementById('confirmModalOverlay').addEventListener('click', function (e) {
-      if (e.target === document.getElementById('confirmModalOverlay')) hideConfirmModal();
-    });
-  }
-
   /* ===== MODAL ===== */
 
   function openProductModal() {
@@ -795,8 +497,6 @@
   function resetProductForm() {
     editingProductId = null;
     selectedFiles = [];
-    productExistingImages = [];
-    draggedImageId = null;
 
     var form = document.getElementById('productEditForm');
     if (form) form.reset();

@@ -55,7 +55,7 @@ async function uploadToBlob(file) {
 
     return { url: blob.url, filename: blobName, blobName, isCloudinary: false, isBlob: true };
   } catch (err) {
-    logger.error('Error subiendo a Vercel Blob:', err.message);
+    logger.error({ err: err.message, stack: err.stack }, 'Error subiendo a Vercel Blob - fallback a storage local');
     return null;
   }
 }
@@ -197,7 +197,8 @@ async function processFile(file, _baseUrl) {
       console.log('[Upload] Subido a Vercel Blob:', blobResult.url);
       return { url: blobResult.url, filename: blobResult.filename, cloudinary_public_id: '', isCloudinary: false, isBlob: true };
     }
-    console.warn('[Upload] Upload a Vercel Blob falló, intentando fallback...');
+    console.warn('[Upload] Upload a Vercel Blob falló, intentando fallback a storage local');
+    logger.warn('Usando fallback de storage local para imagen (blob upload falló)');
   }
 
   const optimizedPath = await optimizeImage(file.path, { format: 'webp' });

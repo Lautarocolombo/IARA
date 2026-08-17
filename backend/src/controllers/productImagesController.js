@@ -62,17 +62,21 @@ async function uploadProductImages(req, res) {
       });
     }
 
-    if (req.files && req.files.length > 0) {
+     if (req.files && req.files.length > 0) {
       for (let i = 0; i < req.files.length; i++) {
         const file = req.files[i];
         const processed = await processFile(file, baseUrl);
+        const publicUrl = getPublicUrl(processed.url, baseUrl);
+        if (!publicUrl) {
+          logger.error({ filename: processed.filename, isBlob: processed.isBlob }, 'Imagen procesada pero URL pública vacía');
+        }
         const result = await query(
           'INSERT INTO product_images (product_id, url, filename, cloudinary_public_id, orden, es_principal, descripcion, categoria, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) RETURNING *',
           [productId, processed.url, processed.filename, processed.cloudinary_public_id || '', startOrden + imageUrls.length + i, false, req.body.descripcion || '', req.body.categoria || '']
         );
         uploaded.push({
           ...result.rows[0],
-          url: getPublicUrl(processed.url, baseUrl)
+          url: publicUrl
         });
       }
     }
