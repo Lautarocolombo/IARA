@@ -1,10 +1,10 @@
 /* ==================== ADMIN CAROUSEL.JS ==================== */
-/* Editor de carrusel de 5 slots fijos */
+/* Editor de carrusel de 5 slots fijos - Panel admin */
 
 (function () {
   'use strict';
 
-  var carouselSlots = [];
+  var carouselSlots = {};
   var currentPreviewIndex = 0;
   var previewTimer = null;
 
@@ -85,9 +85,9 @@
     grid.querySelectorAll('[data-action="delete-slot"]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var slot = Number(btn.dataset.slot);
-        showConfirmModal('Eliminar imagen', '¿Estás seguro de eliminar la imagen del slot ' + slot + '?', function () {
+        if (confirm('¿Estás seguro de eliminar la imagen del slot ' + slot + '?')) {
           deleteCarouselSlot(slot);
-        });
+        }
       });
     });
 
@@ -104,7 +104,6 @@
   async function uploadCarouselSlot(slot, file, inputEl) {
     var statusEl = document.getElementById('carouselSlotSave_' + slot);
     var card = inputEl ? inputEl.closest('.carousel-slot-card') : null;
-    var previewContainer = card ? card.querySelector('.carousel-slot-preview') : null;
 
     if (statusEl) {
       statusEl.style.display = 'block';
@@ -124,7 +123,7 @@
       var url = CONFIG.API.BASE + '/api/carousel/' + slot;
       var token = window.getAuthToken();
 
-      var result = await new Promise(function (resolve, reject) {
+       await new Promise(function (resolve, reject) {
         xhr.addEventListener('load', function () {
           var data = {};
           try { data = JSON.parse(xhr.responseText || '{}'); } catch (e) { data = { error: xhr.responseText }; }
@@ -149,6 +148,9 @@
 
       await loadCarouselSlots();
       window.showToast('✅', 'Imagen del slot ' + slot + ' guardada', 'success');
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('carousel_updated'));
+      }
     } catch (err) {
       if (statusEl) {
         statusEl.className = 'carousel-slot-save-indicator visible error';
@@ -273,39 +275,6 @@
     return String(str).replace(/[&'"<>]/g, function (c) {
       var m = { '&': '&amp;', '"': '&quot;', '\'': '&#39;', '<': '&lt;', '>': '&gt;' };
       return m[c] || c;
-    });
-  }
-
-  /* ===== MODAL DE CONFIRMACIÓN (reutiliza el existente) ===== */
-  var confirmCallback = null;
-
-  function showConfirmModal(title, message, onConfirm) {
-    var overlay = document.getElementById('confirmModalOverlay');
-    var titleEl = document.getElementById('confirmModalTitle');
-    var msgEl = document.getElementById('confirmModalMessage');
-    if (!overlay || !titleEl || !msgEl) return;
-
-    confirmCallback = onConfirm;
-    titleEl.textContent = title || 'Confirmar';
-    msgEl.textContent = message || '¿Estás seguro?';
-    overlay.style.display = 'flex';
-  }
-
-  if (document.getElementById('confirmOkBtn')) {
-    document.getElementById('confirmOkBtn').addEventListener('click', function () {
-      if (typeof confirmCallback === 'function') confirmCallback();
-      confirmCallback = null;
-    });
-  }
-  if (document.getElementById('confirmCancelBtn')) {
-    document.getElementById('confirmCancelBtn').addEventListener('click', function () { confirmCallback = null; });
-  }
-  if (document.getElementById('closeConfirmModal')) {
-    document.getElementById('closeConfirmModal').addEventListener('click', function () { confirmCallback = null; });
-  }
-  if (document.getElementById('confirmModalOverlay')) {
-    document.getElementById('confirmModalOverlay').addEventListener('click', function (e) {
-      if (e.target === document.getElementById('confirmModalOverlay')) confirmCallback = null;
     });
   }
 

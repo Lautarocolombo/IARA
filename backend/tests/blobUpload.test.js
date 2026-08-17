@@ -82,23 +82,43 @@ describe('Vercel Blob helpers', () => {
     expect(put).not.toHaveBeenCalled();
   });
 
-  test('processFile lanza error claro en producción si no hay Blob configurado', async () => {
+  test('processFile usa fallback con URL relativa en producción si no hay Blob configurado', async () => {
     const originalNodeEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
     delete process.env.BLOB_READ_WRITE_TOKEN;
 
     const tmpFile = makeTmpFile('test3.png');
 
-    await expect(
-      upload.processFile({
-        path: tmpFile,
-        originalname: 'test3.png',
-        mimetype: 'image/png',
-        size: Buffer.from(TINY_PNG_BASE64, 'base64').length
-      })
-    ).rejects.toThrow('Storage de imágenes no configurado');
+    const result = await upload.processFile({
+      path: tmpFile,
+      originalname: 'test3.png',
+      mimetype: 'image/png',
+      size: Buffer.from(TINY_PNG_BASE64, 'base64').length
+    });
+
+    expect(result.isBlob).toBe(false);
+    expect(result.url).toBe('/uploads/imagenes/test3.webp');
+    expect(put).not.toHaveBeenCalled();
 
     process.env.NODE_ENV = originalNodeEnv;
+  });
+
+  test('processFile no borra el archivo optimizado en fallback local', async () => {
+    const tmpFile = makeTmpFile('test4.png');
+    const optimizedPath = path.join(path.dirname(tmpFile), 'test4.webp');
+
+    const result = await upload.processFile({
+      path: tmpFile,
+      originalname: 'test4.png',
+      mimetype: 'image/png',
+      size: Buffer.from(TINY_PNG_BASE64, 'base64').length
+    });
+
+    expect(result.isBlob).toBe(false);
+    expect(result.url).toBe('/uploads/imagenes/test4.webp');
+    expect(fs.existsSync(optimizedPath)).toBe(true);
+    expect(fs.existsSync(tmpFile)).toBe(false);
+    fs.unlinkSync(optimizedPath);
   });
 
   test('deleteFromBlob ignora URLs que no son de Blob', async () => {

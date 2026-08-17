@@ -81,8 +81,14 @@ async function deleteImageAsset(image) {
   }
 
   if (image.filename && !isBlobUrl(image.url)) {
-    const localPath = path.join(__dirname, '..', '..', 'uploads', 'imagenes', image.filename);
-    try { if (fs.existsSync(localPath)) { fs.unlinkSync(localPath); deleted = true; } } catch (e) { /* noop */ }
+    const localPath = path.join(uploadsDir, image.filename);
+    try {
+      if (fs.existsSync(localPath)) {
+        fs.unlinkSync(localPath);
+        fileExistsCache.delete(`/uploads/imagenes/${image.filename}`);
+        deleted = true;
+      }
+    } catch (e) { /* noop */ }
   }
 
   return deleted;
@@ -179,36 +185,7 @@ function handleUploadError(err, req, res, next) {
   next();
 }
 
-async function fileToBase64DataUri(filePath) {
-  const ext = path.extname(filePath).toLowerCase();
-  const mimeMap = {
-    '.jpg': 'image/jpeg',
-    '.jpeg': 'image/jpeg',
-    '.png': 'image/png',
-    '.webp': 'image/webp',
-    '.gif': 'image/gif',
-    '.avif': 'image/avif'
-  };
-  const mimeType = mimeMap[ext] || 'image/jpeg';
-  const buffer = fs.readFileSync(filePath);
-  const base64 = buffer.toString('base64');
-  return `data:${mimeType};base64,${base64}`;
-}
-
-let sharpAvailable = false;
-try {
-  require('sharp');
-  sharpAvailable = true;
-} catch (e) {
-  // noop
-}
-if (sharpAvailable) {
-  logger.info('Sharp: disponible para optimización de imágenes');
-} else {
-  logger.warn('Sharp: NO disponible. Las imágenes no se optimizarán a WebP.');
-}
-
-async function processFile(file, baseUrl) {
+async function processFile(file, _baseUrl) {
   const useBlob = isBlobConfigured();
   console.log('[Upload] processFile start:', { useBlob, filename: file.originalname, size: file.size, NODE_ENV: process.env.NODE_ENV, isRender: !!process.env.RENDER_EXTERNAL_HOSTNAME });
 
@@ -222,43 +199,16 @@ async function processFile(file, baseUrl) {
     console.warn('[Upload] Upload a Vercel Blob falló, intentando fallback...');
   }
 
-  const isProduction = process.env.NODE_ENV === 'production';
-  const isRender = !!process.env.RENDER_EXTERNAL_HOSTNAME;
-
-  if (!useBlob && isProduction && !isRender) {
-    const err = new Error('Storage de imágenes no configurado. Necesitás configurar BLOB_READ_WRITE_TOKEN en Render para subir imágenes.');
-    console.error({ err: err.message }, '[Upload] Bloqueado: falta configuración de storage persistente');
-    throw err;
-  }
-
   const optimizedPath = await optimizeImage(file.path, { format: 'webp' });
   const filename = path.basename(optimizedPath);
   const relativeUrl = `/uploads/imagenes/${filename}`;
 
-  const resolvedBaseUrl = baseUrl || process.env.SITE_URL || process.env.BACKEND_URL || (process.env.RENDER_EXTERNAL_HOSTNAME ? `https://${process.env.RENDER_EXTERNAL_HOSTNAME}` : 'http://localhost:10000');
-  const absoluteUrl = `${resolvedBaseUrl}${relativeUrl}`;
-
-  if (isRender) {
-    try {
-      const dataUri = await fileToBase64DataUri(optimizedPath);
-      try { fs.unlinkSync(file.path); } catch (e) { /* noop */ }
-      if (optimizedPath !== file.path) {
-        try { fs.unlinkSync(optimizedPath); } catch (e) { /* noop */ }
-      }
-      console.log('[Upload] Fallback base64 para Render (producción efímera)');
-      return { url: dataUri, filename, cloudinary_public_id: '', isCloudinary: false, isBlob: false };
-    } catch (e) {
-      console.warn({ err: e.message, stack: e.stack }, '[Upload] Error convirtiendo imagen a base64 para fallback persistente, usando URL local');
-    }
+  if (optimizedPath !== file.path) {
+    try { fs.unlinkSync(file.path); } catch (e) { /* noop */ }
   }
 
-  if (!isProduction) {
-    console.log('[Upload] URL relativa (dev):', relativeUrl);
-    return { url: relativeUrl, filename, cloudinary_public_id: '', isCloudinary: false, isBlob: false };
-  }
-
-  console.log('[Upload] URL generada:', absoluteUrl);
-  return { url: absoluteUrl, filename, cloudinary_public_id: '', isCloudinary: false, isBlob: false };
+  console.log('[Upload] URL generada:', relativeUrl);
+  return { url: relativeUrl, filename, cloudinary_public_id: '', isCloudinary: false, isBlob: false };
 }
 
 async function saveFile(req, res) {
@@ -285,9 +235,12 @@ function getPublicUrl(relativePath, baseUrl) {
   const prefix = baseUrl || process.env.BACKEND_URL || process.env.SITE_URL || '';
   const withPrefix = prefix ? `${prefix}${relativePath}` : relativePath;
   if (relativePath.startsWith('/uploads/')) {
-    if (fileMissingCache.has(relativePath)) return '';
     if (fileExistsCache.has(relativePath)) return withPrefix;
-    const filePath = path.join(__dirname, '..', '..', relativePath);
+    const isVercel = process.env.VERCEL === 'true';
+    const isRender = !!process.env.RENDER_EXTERNAL_HOSTNAME;
+    const isEphemeralProd = !isVercel && process.env.NODE_ENV === 'production';
+    const baseDir = (isVercel || isRender || isEphemeralProd) ? '/tmp' : path.join(__dirname, '..', '..');
+    const filePath = path.join(baseDir, relativePath);
     if (fs.existsSync(filePath)) {
       fileExistsCache.add(relativePath);
       return withPrefix;

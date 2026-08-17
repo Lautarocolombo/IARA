@@ -76,42 +76,29 @@ if (typeof loadTestimonials === 'function') {
     attempt = attempt || 0;
     if (typeof fetchWithRetry !== 'function') return;
     
-    console.log('[AboutImages] Cargando imágenes del carrusel (intento ' + attempt + ')');
-    fetchWithRetry(CONFIG.API.BASE + '/api/site-texts', {}, 2, 1000).then(function(res) {
+    fetchWithRetry(CONFIG.API.BASE + '/api/carousel', {}, 2, 1000).then(function(res) {
       if (!res || !res.ok) {
-        console.warn('[AboutImages] Error cargando site-texts:', res ? res.status : 'no response');
         if (attempt < 3) {
           setTimeout(function() { loadAboutImages(attempt + 1); }, 3000);
         }
         return;
       }
-      res.json().then(function(texts) {
-        console.log('[AboutImages] Raw site-texts response keys:', Object.keys(texts).length);
+      res.json().then(function(data) {
         window.__aboutImages = {};
+        var slots = data.slots || {};
         for (var i = 1; i <= 5; i++) {
-          var raw = texts['about_image_' + i] || '';
-          if (raw) {
-            var url = String(raw);
-            if (url.startsWith('data:')) {
-              window.__aboutImages['about_image_' + i] = url;
-            } else if (url.startsWith('http://localhost') || url.startsWith('http://127.0.0.1')) {
-              var m2 = url.match(/\/uploads\/imagenes\/([^/?]+)/);
-              window.__aboutImages['about_image_' + i] = m2 ? '/uploads/imagenes/' + m2[1] : url;
-            } else {
-              var m = url.match(/\/uploads\/imagenes\/([^/?]+)/);
-              window.__aboutImages['about_image_' + i] = m ? '/uploads/imagenes/' + m[1] : url;
-            }
+          var slot = slots[i];
+          if (slot && slot.url) {
+            window.__aboutImages['about_image_' + i] = slot.url;
           } else {
             window.__aboutImages['about_image_' + i] = '/imagenes/carrucel/' + i + '.jpg';
           }
         }
-        console.log('[AboutImages] Imágenes cargadas:', window.__aboutImages);
         if (typeof window.initAboutCarousel === 'function') {
           window.initAboutCarousel();
         }
       });
-    }).catch(function(err) {
-      console.error('[AboutImages] Error:', err);
+    }).catch(function() {
       if (attempt < 3) {
         setTimeout(function() { loadAboutImages(attempt + 1); }, 3000);
       }
@@ -135,6 +122,12 @@ onSyncMessage('products_updated', () => {
     });
   }
 });
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('carousel_updated', function() {
+    if (typeof loadAboutImages === 'function') loadAboutImages();
+  });
+}
 
 onSyncMessage('site_texts_updated', (_data) => {
   if (typeof loadSiteTexts === 'function') loadSiteTexts();
