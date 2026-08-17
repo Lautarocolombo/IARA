@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const logger = require('./logger');
 const { optimizeImage } = require('./imageOptimizer');
+// Force Render redeploy: BLOB_READ_WRITE_TOKEN env var is now set via render.yaml
 
 const BLOB_URL_RE = /^https?:\/\/[^/]+\.blob\.vercel-storage\.com/;
 
