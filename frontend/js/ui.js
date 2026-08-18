@@ -487,9 +487,11 @@ window.addEventListener('unhandledrejection', (event) => {
 });
 
 window.addEventListener('error', (event) => {
-  if (event.target && event.target.tagName === 'IMG') {
-    if (typeof window.imgError === 'function') {
-      window.imgError(event.target);
+  const target = event.target;
+  if (target && (target.tagName === 'IMG' || target.tagName === 'SCRIPT' || target.tagName === 'LINK' || target.tagName === 'VIDEO' || target.tagName === 'AUDIO')) {
+    console.error('[ResourceError]', target.tagName, target.src || target.href);
+    if (typeof showToast === 'function') {
+      showToast('⚠️', 'No se pudo cargar un recurso. Verificá tu conexión.', 'error', { duration: 3000 });
     }
     event.preventDefault();
   }
@@ -902,13 +904,6 @@ async function loadHeroCards() {
     }
     return false;
   };
-
-  window.addEventListener('unhandledrejection', function(event) {
-    console.error('[UnhandledRejection]', event.reason);
-    if (typeof showToast === 'function') {
-      showToast('⚠️', 'Error de conexión. Intentá nuevamente.', 'error', { duration: 4000 });
-    }
-  });
 })();
 
 if (typeof module !== 'undefined' && module.exports) {

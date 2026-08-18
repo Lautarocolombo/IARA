@@ -9,6 +9,7 @@
     "start": "node src/server.js",
     "test": "jest --config jest.config.js",
     "test:ci": "jest --config jest.config.js --coverage",
+    "test:coverage": "jest --config jest.config.js --coverage",
     "lint": "eslint src --ext .js",
     "format": "prettier --write \"**/*.{js,json}\"",
     "lint:fix": "eslint src --ext .js --fix",

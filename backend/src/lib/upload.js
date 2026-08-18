@@ -231,7 +231,10 @@ const fileMissingCache = new Set();
 
 function getPublicUrl(relativePath, baseUrl) {
   if (!relativePath) return '';
-  if (relativePath.startsWith('data:')) return relativePath;
+  if (relativePath.startsWith('data:')) {
+    logger.warn('Se encontró una imagen en base64 en la base de datos. Ejecutá backend/src/scripts/migrateImages.js para convertirla a URL.');
+    return relativePath;
+  }
   if (relativePath.startsWith('http')) return relativePath;
   const prefix = baseUrl || process.env.BACKEND_URL || process.env.SITE_URL || '';
   const withPrefix = prefix ? `${prefix}${relativePath}` : relativePath;

@@ -100,6 +100,11 @@ app.use(helmet({
   }
 }));
 
+// Nota: crossOriginEmbedderPolicy se mantiene en false porque el proyecto no usa
+// SharedArrayBuffer ni features que lo requieran. Forzarlo a true podría romper
+// la carga de recursos externos (Google Fonts, Analytics, Vercel Insights) si
+// dichos CDNs no envían los headers CORS requeridos por COEP.
+
 app.use(nonceMiddleware);
 app.use(cspMiddleware);
 
