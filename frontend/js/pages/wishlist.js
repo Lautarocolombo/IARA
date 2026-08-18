@@ -39,7 +39,11 @@
   }
 
   function init() {
-    document.addEventListener('DOMContentLoaded', renderWishlist);
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', renderWishlist);
+    } else {
+      renderWishlist();
+    }
 
     document.getElementById('wishlistGrid')?.addEventListener('click', (e) => {
       const removeBtn = e.target.closest('[data-action="remove-from-wishlist"]');

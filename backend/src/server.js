@@ -19,6 +19,8 @@ const { sanitizeBody } = require('./middleware/xssClean');
 const { nonceMiddleware } = require('./middleware/nonce');
 const { cspMiddleware } = require('./middleware/csp');
 
+const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
+
 let Sentry = null;
 if (process.env.SENTRY_DSN) {
   try {
@@ -32,8 +34,6 @@ if (process.env.SENTRY_DSN) {
     logger.warn('Sentry no disponible:', err.message);
   }
 }
-
-const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
 
 process.on('SIGTERM', gracefulShutdown);
 process.on('SIGINT', gracefulShutdown);

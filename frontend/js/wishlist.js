@@ -13,6 +13,9 @@ function getWishlist() {
 function saveWishlist(wishlist) {
   localStorage.setItem(WISHLIST_KEY, JSON.stringify(wishlist));
   updateWishlistBadge();
+  if (typeof emitSync === 'function') {
+    emitSync('wishlist_updated');
+  }
 }
 
 function isInWishlist(productId) {
