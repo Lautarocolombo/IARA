@@ -322,7 +322,6 @@
       imageFormData.append('images', file);
     });
 
-    console.log('[Products] Subiendo', selectedFiles.length, 'imágenes para producto', productId);
     var res = await window.adminFetch('/api/products/' + productId + '/images', {
       method: 'POST',
       body: imageFormData
@@ -339,7 +338,6 @@
     }
     
     var data = await res.json();
-    console.log('[Products] Imágenes subidas OK:', data.images ? data.images.length : 0);
 
     if (data.images && data.images.length) {
       var emptyUrls = data.images.filter(function (img) { return !img.url; });
@@ -537,7 +535,7 @@
     }
   }
 
-  function showImageSpinner(productId) {
+  function showImageSpinner(_productId) {
     var container = document.getElementById('productImageUploadProgress');
     if (container) {
       container.style.display = 'block';
@@ -554,7 +552,7 @@
     }
   }
 
-  function hideImageSpinner(productId) {
+  function hideImageSpinner(_productId) {
     var container = document.getElementById('productImageUploadProgress');
     if (container) {
       container.style.display = 'none';

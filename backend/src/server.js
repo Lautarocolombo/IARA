@@ -92,6 +92,7 @@ app.set('trust proxy', 1);
 
 app.use(helmet({
   crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
   hsts: {
     maxAge: 31536000,
     includeSubDomains: true,
@@ -429,14 +430,14 @@ const isVercel = process.env.VERCEL === 'true';
 const isRender = !!process.env.RENDER_EXTERNAL_HOSTNAME;
 const uploadsStaticDir = isVercel || isRender ? '/tmp/uploads' : path.join(__dirname, '..', '..', 'uploads');
 
-app.use('/uploads', cors(corsOptions), express.static(uploadsStaticDir, { maxAge: '1h' }));
+app.use('/uploads', cors(corsOptions), express.static(uploadsStaticDir, { maxAge: '7d', etag: true, lastModified: true }));
 const staticDir = path.join(__dirname, '..', '..', 'frontend');
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(staticDir, 'index.html'));
 });
 
-app.use(express.static(staticDir));
+app.use(express.static(staticDir, { maxAge: '1h', etag: true, lastModified: true }));
 
 app.use((req, res, next) => {
   if (res.getHeader('Content-Type')?.includes('text/html') && !res.getHeader('Content-Type')?.includes('charset')) {
