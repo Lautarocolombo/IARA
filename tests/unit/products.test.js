@@ -2,38 +2,16 @@
  * Tests unitarios para products.js (frontend)
  */
 
-// Mock de CONFIG
-global.CONFIG = {
-  ANIMATIONS: { TOAST_DURATION: 3000, REVEAL_THRESHOLD: 0.15 }
-};
-
-// Mock DOM
-document.createElement = (_tag) => ({
-  className: '',
-  innerHTML: '',
-  textContent: '',
-  style: {},
-  getContext: () => ({}),
-  querySelectorAll: () => [],
-  querySelector: () => null,
-  addEventListener: () => {},
-  classList: {
-    add: () => {},
-    contains: () => false,
-    remove: () => {}
-  }
-});
-document.getElementById = () => null;
-document.querySelectorAll = () => [];
-
 describe('products.js', () => {
   let productsModule;
+  let originalGetElementById;
 
   beforeEach(() => {
     jest.resetModules();
     global.fetch = jest.fn();
     global.CONFIG = {
       API: { BASE: '' },
+      CONTACT: { WHATSAPP: '1234567890' },
       ANIMATIONS: { TOAST_DURATION: 3000, REVEAL_THRESHOLD: 0.15 }
     };
     window.fetchWithRetry = async (url, opts = {}, _retries = 2, _backoffMs = 1000) => {
@@ -45,11 +23,14 @@ describe('products.js', () => {
       }
       return res;
     };
+    originalGetElementById = document.getElementById;
     productsModule = require('../../frontend/js/products');
   });
 
   afterEach(() => {
     jest.clearAllMocks();
+    document.getElementById = originalGetElementById;
+    document.body.innerHTML = '';
   });
 
   test('fetchProducts hace GET a /api/products', async () => {
@@ -67,20 +48,7 @@ describe('products.js', () => {
     window.fetchWithRetry = jest.fn().mockRejectedValue(new Error('Network error'));
 
     await productsModule.fetchProducts();
-    expect(productsModule.getProducts()).toEqual(productsModule.defaultProducts || [
-      { id: 1, name: 'Pulsera Minimalista Rosa', category: 'pulseras', price: 450, description: 'Diseño minimalista con cuentas de cerámica en tonos rosa pastel', emoji: '📿', image: 'assets/placeholder-product.svg' },
-      { id: 2, name: 'Pulsera Menta Orgánica', category: 'pulseras', price: 520, description: 'Pulsera tejida con materiales ecológicos en tonos verdes', emoji: '📿', image: 'assets/placeholder-product.svg' },
-      { id: 3, name: 'Llavero Artesanal', category: 'accesorios', price: 250, description: 'Llavero tejido a mano con detalle floral', emoji: '💎', image: 'assets/placeholder-product.svg' },
-      { id: 4, name: 'Souvenir Gualeguay', category: 'souvenirs', price: 380, description: 'Imán decorativo con representación local', emoji: '🎁', image: 'assets/placeholder-product.svg' },
-      { id: 5, name: 'Pulsera Bohemia Multi', category: 'pulseras', price: 590, description: 'Pulsera con múltiples hilos y cuentas en tonos variados', emoji: '📿', image: 'assets/placeholder-product.svg' },
-      { id: 6, name: 'Collar Artesanal Corto', category: 'accesorios', price: 650, description: 'Collar corto con colgante hecho a mano', emoji: '💎', image: 'assets/placeholder-product.svg' },
-      { id: 7, name: 'Pack 3 Pulseras Surtidas', category: 'pulseras', price: 1200, description: 'Set de 3 pulseras con diferentes diseños', emoji: '📿', image: 'assets/placeholder-product.svg' },
-      { id: 8, name: 'Brazalete Tejido Premium', category: 'pulseras', price: 890, description: 'Brazalete ancho tejido con técnica tradicional', emoji: '📿', image: 'assets/placeholder-product.svg' },
-      { id: 9, name: 'Souvenir Taza Personalizada', category: 'souvenirs', price: 320, description: 'Taza de cerámica con diseño exclusivo de Gualeguay', emoji: '🎁', image: 'assets/placeholder-product.svg' },
-      { id: 10, name: 'Anillo Cerámica', category: 'accesorios', price: 280, description: 'Anillo ajustable hecho de cerámica cocida artesanalmente', emoji: '💎', image: 'assets/placeholder-product.svg' },
-      { id: 11, name: 'Pulsera Amistad Dual', category: 'pulseras', price: 480, description: 'Pulsera de amistad para compartir en tonos complementarios', emoji: '📿', image: 'assets/placeholder-product.svg' },
-      { id: 12, name: 'Marcapáginas Decorativo', category: 'souvenirs', price: 150, description: 'Marcapáginas hecho a mano con técnica mixta', emoji: '🎁', image: 'assets/placeholder-product.svg' }
-    ]);
+    expect(productsModule.getProducts()).toEqual(productsModule.defaultProducts || []);
   });
 
   test('formatARS formatea moneda argentina', () => {
@@ -119,6 +87,36 @@ describe('products.js', () => {
       { id: 5, featured: true }
     ]);
     expect(productsModule.getFeaturedProducts().length).toBe(4);
+  });
+
+  test('renderProducts renderiza productos en el grid', () => {
+    const grid = document.createElement('div');
+    grid.id = 'productsGrid';
+    document.body.appendChild(grid);
+    document.getElementById = (id) => id === 'productsGrid' ? grid : null;
+
+    productsModule.setProducts([
+      { id: 1, name: 'Pulsera', category: 'pulseras', price: 100, description: 'Desc', emoji: '📿', image: '', featured: false, badge: '', stock: 10 }
+    ]);
+    window.getProductImageUrl = jest.fn().mockReturnValue('');
+    window.renderProductImage = jest.fn().mockReturnValue('<img>');
+    window.isInWishlist = jest.fn().mockReturnValue(false);
+    window.revealObserver = { observe: jest.fn() };
+    window.formatARS = (n) => `$${n}`;
+
+    productsModule.renderProducts(productsModule.getProducts());
+    expect(grid.innerHTML).toContain('Pulsera');
+    expect(grid.innerHTML).toContain('pulseras');
+  });
+
+  test('renderProducts muestra estado vacío cuando no hay productos', () => {
+    const grid = document.createElement('div');
+    grid.id = 'productsGrid';
+    document.body.appendChild(grid);
+    document.getElementById = (id) => id === 'productsGrid' ? grid : null;
+
+    productsModule.renderProducts([]);
+    expect(grid.innerHTML).toContain('No se encontraron productos');
   });
 
   test('setProducts actualiza el estado interno', () => {

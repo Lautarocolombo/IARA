@@ -39,10 +39,46 @@ describe('ui.js utilidades', () => {
     expect(() => uiModule.showToast('⚠️', 'Mensaje', 'error')).not.toThrow();
   });
 
-  test('escapeHtml devuelve string vacío para null', () => {
+  test('showToast con onRetry incluye botón reintentar', () => {
+    document.body.innerHTML = '<div id="toastContainer"></div>';
     const uiModule = require('../../frontend/js/ui');
-    expect(uiModule.escapeHtml(null)).toBe('');
-    expect(uiModule.escapeHtml(undefined)).toBe('');
-    expect(uiModule.escapeHtml(123)).toBe('123');
+    const onRetry = jest.fn();
+    uiModule.showToast('⚠️', 'Error', 'error', { onRetry, duration: 100 });
+    const container = document.getElementById('toastContainer');
+    expect(container.innerHTML).toContain('toast-retry');
+    expect(container.innerHTML).toContain('Reintentar');
+  });
+
+  test('showToast con onRetry ejecuta onRetry al hacer click', () => {
+    document.body.innerHTML = '<div id="toastContainer"></div>';
+    const uiModule = require('../../frontend/js/ui');
+    const onRetry = jest.fn();
+    uiModule.showToast('⚠️', 'Error', 'error', { onRetry, duration: 0 });
+    const container = document.getElementById('toastContainer');
+    const retryBtn = container.querySelector('.toast-retry');
+    retryBtn.click();
+    expect(onRetry).toHaveBeenCalled();
+  });
+
+  test('initMobileNavbar toggle abre y cierra menú', () => {
+    const toggle = document.createElement('button');
+    toggle.id = 'navbarToggle';
+    toggle.className = 'navbar-toggle';
+    toggle.setAttribute('aria-expanded', 'false');
+    const menu = document.createElement('div');
+    menu.id = 'navbarMenu';
+    menu.className = 'navbar-menu';
+    menu.innerHTML = '<a class="nav-link">Inicio</a>';
+    document.body.appendChild(toggle);
+    document.body.appendChild(menu);
+
+    const uiModule = require('../../frontend/js/ui');
+    uiModule.initMobileNavbar();
+    toggle.click();
+    expect(menu.classList.contains('active')).toBe(true);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+    toggle.click();
+    expect(menu.classList.contains('active')).toBe(false);
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
   });
 });

@@ -44,6 +44,14 @@
       overlay.addEventListener('click', closeSidebar);
     }
 
+    document.querySelectorAll('#adminNav a[data-section]').forEach(function(link) {
+      link.addEventListener('click', function() {
+        if (window.innerWidth <= 768) {
+          closeSidebar();
+        }
+      });
+    });
+
     document.getElementById('logoutBtn')?.addEventListener('click', function() {
       if (typeof doLogout === 'function') doLogout();
     });

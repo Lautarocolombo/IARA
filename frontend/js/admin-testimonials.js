@@ -7,6 +7,7 @@
   var testimonials = [];
   var editingId = null;
   var draggedId = null;
+  var _testimonialsInit = false;
   var sectionContent = { title: '', subtitle: '' };
 
   function escapeHtml(str) {
@@ -327,7 +328,7 @@
     if (ratingEl) ratingEl.value = t.rating || 5;
     if (activeEl) activeEl.checked = t.active !== false;
     if (saveBtn) {
-      saveBtn.textContent = 'Actualizar testimonio';
+      saveBtn.textContent = 'Guardar cambios';
       saveBtn.dataset.editingId = id;
     }
     if (photoPreview) photoPreview.innerHTML = '';
@@ -379,6 +380,7 @@
     var ratingEl = document.getElementById('testimonialRating');
     var activeEl = document.getElementById('testimonialActive');
     var statusEl = document.getElementById('testimonialSaveStatus');
+    var saveBtn = document.getElementById('saveTestimonialBtn');
 
     var name = nameEl ? nameEl.value.trim() : '';
     var role = roleEl ? roleEl.value.trim() : '';
@@ -395,6 +397,10 @@
     var url = isEdit ? '/api/admin/testimonials/' + editingId : '/api/admin/testimonials';
     var method = isEdit ? 'PUT' : 'POST';
 
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Guardando...';
+    }
     if (statusEl) { statusEl.textContent = 'Guardando...'; statusEl.style.color = ''; }
 
     try {
@@ -428,17 +434,23 @@
         testimonials.push(saved);
         editingId = saved.id;
       }
-      var saveBtn = document.getElementById('saveTestimonialBtn');
       if (saveBtn) {
-        saveBtn.textContent = 'Actualizar testimonio';
+        saveBtn.textContent = 'Guardar cambios';
         saveBtn.dataset.editingId = isEdit ? editingId : saved.id;
       }
-      if (statusEl) { statusEl.textContent = 'Guardado correctamente'; statusEl.style.color = 'green'; }
+      if (statusEl) { statusEl.textContent = 'Testimonio actualizado'; statusEl.style.color = 'green'; }
       setTimeout(function () { if (statusEl) statusEl.textContent = ''; }, 3000);
       renderTestimonials();
+      window.showToast('✅', 'Testimonio actualizado', 'success');
       if (window.markDirty) window.markDirty('testimonials');
     } catch (err) {
       if (statusEl) { statusEl.textContent = err.message; statusEl.style.color = 'red'; }
+      window.showToast('❌', err.message || 'Error al guardar testimonio', 'error');
+    } finally {
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = editingId ? 'Guardar cambios' : 'Crear testimonio';
+      }
     }
   }
 
@@ -470,6 +482,8 @@
   /* ===== INIT ===== */
 
   function initTestimonials() {
+    if (_testimonialsInit) return;
+    _testimonialsInit = true;
     var createBtn = document.getElementById('createTestimonialBtn');
     var saveBtn = document.getElementById('saveTestimonialBtn');
     var sectionContentBtn = document.getElementById('saveSectionContentBtn');
