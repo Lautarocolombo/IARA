@@ -99,4 +99,31 @@ describe('products.js', () => {
     expect(productsModule.getProductsByCategory('accesorios').length).toBe(1);
     expect(productsModule.getProductsByCategory('all').length).toBe(2);
   });
+
+  test('escapeHtml escapa caracteres especiales', () => {
+    const uiModule = require('../../frontend/js/ui');
+    expect(uiModule.escapeHtml('<script>alert(1)</script>')).toBe('&lt;script&gt;alert(1)&lt;/script&gt;');
+    expect(uiModule.escapeHtml('a & b')).toBe('a &amp; b');
+    expect(uiModule.escapeHtml('"hola"')).toBe('&quot;hola&quot;');
+    expect(uiModule.escapeHtml('it\'s')).toBe('it&#39;s');
+    expect(uiModule.escapeHtml('')).toBe('');
+    expect(uiModule.escapeHtml(null)).toBe('');
+  });
+
+  test('getFeaturedProducts retorna hasta 4 productos destacados', () => {
+    productsModule.setProducts([
+      { id: 1, featured: true },
+      { id: 2, featured: true },
+      { id: 3, featured: true },
+      { id: 4, featured: true },
+      { id: 5, featured: true }
+    ]);
+    expect(productsModule.getFeaturedProducts().length).toBe(4);
+  });
+
+  test('setProducts actualiza el estado interno', () => {
+    const newProducts = [{ id: 99, name: 'Nuevo', category: 'test', price: 1 }];
+    productsModule.setProducts(newProducts);
+    expect(productsModule.getProducts()).toEqual(newProducts);
+  });
 });

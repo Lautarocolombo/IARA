@@ -339,4 +339,113 @@ describe('productImages.js', () => {
       expect(typeof window.ProductImages.removePendingFile).toBe('function');
     });
   });
+
+  describe('uploadPending', () => {
+    test('retorna 0 si no hay archivos pendientes', async () => {
+      window.fetchWithRetry = jest.fn();
+      require('../../frontend/js/productImages');
+      const result = await window.ProductImages.uploadPending('123');
+      expect(result).toBe(0);
+      expect(window.fetchWithRetry).not.toHaveBeenCalled();
+    });
+
+    test('retorna 0 si no hay productId', async () => {
+      window.fetchWithRetry = jest.fn();
+      require('../../frontend/js/productImages');
+      const result = await window.ProductImages.uploadPending('');
+      expect(result).toBe(0);
+    });
+
+    test('maneja error de red al subir', async () => {
+      window.fetchWithRetry = jest.fn().mockRejectedValue(new Error('Error de red'));
+      require('../../frontend/js/productImages');
+      const result = await window.ProductImages.uploadPending('123');
+      expect(result).toBe(0);
+    });
+  });
+
+  describe('deleteImage', () => {
+    test('elimina imagen exitosamente', async () => {
+      window.fetchWithRetry = jest.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+      require('../../frontend/js/productImages');
+      await window.ProductImages.deleteImage('123', '1');
+      expect(window.fetchWithRetry).toHaveBeenCalledWith(
+        expect.stringContaining('/api/products/123/images/1'),
+        expect.objectContaining({ method: 'DELETE' }),
+        2,
+        1000
+      );
+    });
+
+    test('maneja error al eliminar', async () => {
+      window.fetchWithRetry = jest.fn().mockResolvedValue({ ok: false, json: async () => ({ error: 'No encontrado' }) });
+      require('../../frontend/js/productImages');
+      await window.ProductImages.deleteImage('123', '1');
+    });
+  });
+
+  describe('replaceImage', () => {
+    test('reemplaza imagen exitosamente', async () => {
+      window.fetchWithRetry = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ url: 'new.jpg' }) });
+      require('../../frontend/js/productImages');
+      const file = { type: 'image/jpeg', size: 1024 };
+      await window.ProductImages.replaceImage('123', '1', file);
+      expect(window.fetchWithRetry).toHaveBeenCalledWith(
+        expect.stringContaining('/api/products/123/images/1/replace'),
+        expect.objectContaining({ method: 'PUT' }),
+        2,
+        1000
+      );
+    });
+
+    test('rechaza formato no permitido', async () => {
+      window.fetchWithRetry = jest.fn();
+      require('../../frontend/js/productImages');
+      const file = { type: 'image/bmp', size: 1024 };
+      await window.ProductImages.replaceImage('123', '1', file);
+      expect(window.fetchWithRetry).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('markPrincipal', () => {
+    test('marca imagen como principal', async () => {
+      window.fetchWithRetry = jest.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+      require('../../frontend/js/productImages');
+      await window.ProductImages.markPrincipal('123', '1');
+      expect(window.fetchWithRetry).toHaveBeenCalledWith(
+        expect.stringContaining('/api/products/123/images/1'),
+        expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ es_principal: true }) }),
+        2,
+        1000
+      );
+    });
+  });
+
+  describe('updateImageMeta', () => {
+    test('actualiza metadatos de imagen', async () => {
+      window.fetchWithRetry = jest.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+      require('../../frontend/js/productImages');
+      await window.ProductImages.updateImageMeta('123', '1', { descripcion: 'Nueva desc', categoria: 'pulseras' });
+      expect(window.fetchWithRetry).toHaveBeenCalledWith(
+        expect.stringContaining('/api/products/123/images/1'),
+        expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ descripcion: 'Nueva desc', categoria: 'pulseras' }) }),
+        2,
+        1000
+      );
+    });
+  });
+
+  describe('syncOrder', () => {
+    test('sincroniza orden de imágenes', async () => {
+      window.fetchWithRetry = jest.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+      require('../../frontend/js/productImages');
+      await window.ProductImages.syncOrder('123', [1, 2, 3]);
+      expect(window.fetchWithRetry).toHaveBeenCalledWith(
+        expect.stringContaining('/api/products/123/images/sync-order'),
+        expect.objectContaining({ method: 'POST', body: JSON.stringify({ orden: [1, 2, 3] }) }),
+        2,
+        1000
+      );
+    });
+  });
 });
