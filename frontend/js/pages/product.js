@@ -263,8 +263,8 @@
     });
 
     if (typeof initSSESync === 'function') initSSESync();
-    startDataSync('product-detail', loadProduct);
-    onSyncMessage('products_updated', () => {
+    if (typeof startDataSync === 'function') startDataSync('product-detail', loadProduct);
+    if (typeof onSyncMessage === 'function') onSyncMessage('products_updated', () => {
       const params = new URLSearchParams(window.location.search);
       const productId = params.get('id');
       if (productId) {
@@ -272,15 +272,15 @@
       }
     });
 
-    onSyncMessage('hero_updated', () => {
+    if (typeof onSyncMessage === 'function') onSyncMessage('hero_updated', () => {
       if (typeof loadHeroCards === 'function') loadHeroCards();
     });
 
-    onSyncMessage('wishlist_updated', () => {
+    if (typeof onSyncMessage === 'function') onSyncMessage('wishlist_updated', () => {
       if (typeof renderWishlist === 'function') renderWishlist();
     });
 
-    onSyncMessage('reviews_updated', () => {
+    if (typeof onSyncMessage === 'function') onSyncMessage('reviews_updated', () => {
       const params = new URLSearchParams(window.location.search);
       const productId = params.get('id');
       if (productId) {
