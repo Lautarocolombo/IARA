@@ -144,15 +144,18 @@ async function attachImagesToProducts(products, baseUrl) {
     byProduct[img.product_id].push(resolved);
   });
 
+const BLOB_URL_RE = /^https?:\/\/[^/]+\.blob\.vercel-storage\.com/;
+
   return products.map(p => {
     const imgs = byProduct[p.id] || [];
-    const principal = imgs.find(i => i.es_principal) || imgs[0];
+    const principal = imgs.find(i => i.es_principal) || imgs.find(i => BLOB_URL_RE.test(i.url)) || imgs[0];
     const principalUrl = principal ? (principal.url || getPublicUrl(principal.url, resolvedBaseUrl)) : '';
     const legacyImage = p.image ? getPublicUrl(p.image, resolvedBaseUrl) : '';
+    const blobImage = imgs.find(i => BLOB_URL_RE.test(i.url));
     return {
       ...p,
       images: imgs,
-      image: principalUrl || legacyImage
+      image: principalUrl || (blobImage ? blobImage.url : legacyImage)
     };
   });
 }

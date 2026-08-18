@@ -81,7 +81,12 @@ async function uploadProductImages(req, res) {
       }
     }
 
-    res.status(201).json({ ok: true, images: uploaded });
+     res.status(201).json({ ok: true, images: uploaded });
+
+    if (uploaded.length > 0) {
+      const mainUrl = uploaded[0].url;
+      await query('UPDATE products SET image = $1 WHERE id = $2', [mainUrl, productId]);
+    }
   } catch (err) {
     logger.error({ err: err.message }, 'Error subiendo imágenes');
     res.status(500).json({ error: 'Error interno del servidor' });
