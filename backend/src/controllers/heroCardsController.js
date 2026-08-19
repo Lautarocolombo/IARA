@@ -2,6 +2,7 @@ const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const { getPublicUrl, deleteImageAsset, processFile } = require('../lib/upload');
 const { syncBus } = require('../routes/sync');
+const { logAudit } = require('../lib/audit');
 
 function mapRow(r, baseUrl) {
   return {
@@ -102,6 +103,15 @@ const upsertHeroCard = async (req, res) => {
     const result = await query('SELECT * FROM hero_cards WHERE tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\') ORDER BY slot ASC, id ASC');
     res.json(result.rows.map(r => mapRow(r, baseUrl)));
     try { syncBus.emit('hero_updated', {}); } catch (e) { /* noop */ }
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: id ? 'update' : 'create',
+      entityType: 'hero_card',
+      entityId: id || result.rows[0]?.id || 0,
+      details: `Hero card ${id ? 'actualizada' : 'creada'} slot ${Number(slot) || 0}`,
+      ip: req.ip || '',
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     logger.error('Error guardando hero card:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -115,6 +125,15 @@ const deleteHeroCard = async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Card no encontrada' });
     logger.info({ heroCardId: id }, 'deleteHeroCard: hero card eliminada');
     res.json({ ok: true });
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'delete',
+      entityType: 'hero_card',
+      entityId: id,
+      details: 'Hero card eliminada',
+      ip: req.ip || '',
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     logger.error('Error eliminando hero card:', err);
     res.status(500).json({ error: 'Error interno del servidor' });

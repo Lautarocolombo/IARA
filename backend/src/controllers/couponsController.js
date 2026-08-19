@@ -30,7 +30,7 @@ const createCoupon = async (req, res) => {
       entityId: result.rows[0].id,
       details: `Cupón creado: ${code}`,
       ip: req.ip || '',
-      tenantId: req.headers['x-tenant-id'] || req.user?.tenant_id || 'default'
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
     }).catch(() => {});
   } catch (err) {
     logger.error('Error creando cupón:', err);
@@ -55,7 +55,7 @@ const updateCoupon = async (req, res) => {
       entityId: id,
       details: `Cupón actualizado: ${code}`,
       ip: req.ip || '',
-      tenantId: req.headers['x-tenant-id'] || req.user?.tenant_id || 'default'
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
     }).catch(() => {});
   } catch (err) {
     logger.error('Error actualizando cupón:', err);
@@ -74,9 +74,9 @@ const deleteCoupon = async (req, res) => {
       action: 'delete',
       entityType: 'coupon',
       entityId: id,
-      details: `Cupón eliminado: ${code}`,
+      details: `Cupón eliminado id=${id}`,
       ip: req.ip || '',
-      tenantId: req.headers['x-tenant-id'] || req.user?.tenant_id || 'default'
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
     }).catch(() => {});
   } catch (err) {
     logger.error('Error eliminando cupón:', err);

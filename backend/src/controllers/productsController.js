@@ -492,7 +492,7 @@ const createProduct = async (req, res) => {
       entityId: result.rows[0].id,
       details: `Producto creado: ${data.name}`,
       ip: req.ip || '',
-      tenantId: req.headers['x-tenant-id'] || req.user?.tenant_id || 'default'
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
     }).catch(() => {});
   } catch (err) {
     if (err.name === 'ZodError') {
@@ -533,7 +533,7 @@ const updateProduct = async (req, res) => {
       entityId: id,
       details: `Producto actualizado: ${fields.join(', ')}`,
       ip: req.ip || '',
-      tenantId: req.headers['x-tenant-id'] || req.user?.tenant_id || 'default'
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
     }).catch(() => {});
   } catch (err) {
     if (err.name === 'ZodError') {
@@ -561,7 +561,7 @@ const toggleProductStatus = async (req, res) => {
       entityId: id,
       details: `Producto ${result.rows[0].active ? 'activado' : 'desactivado'}`,
       ip: req.ip || '',
-      tenantId: req.headers['x-tenant-id'] || req.user?.tenant_id || 'default'
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
     }).catch(() => {});
   } catch (err) {
     logger.error('Error cambiando estado del producto:', err);
@@ -605,7 +605,7 @@ const deleteProduct = async (req, res) => {
       entityId: id,
       details: `Producto eliminado (lógico: ${hasHistoricalOrders})`,
       ip: req.ip || '',
-      tenantId: req.headers['x-tenant-id'] || req.user?.tenant_id || 'default'
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
     }).catch(() => {});
   } catch (err) {
     logger.error({ err: err.message, stack: err.stack }, 'Error eliminando producto');

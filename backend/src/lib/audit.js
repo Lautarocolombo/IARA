@@ -1,7 +1,7 @@
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 
-async function logAudit({ user, action, entityType, entityId, details, ip, tenantId = 'default', status = 'success' }) {
+async function logAudit({ user, action, entityType, entityId, details, ip, tenantId = 'default' }) {
   try {
     await query(
       `INSERT INTO activity_log (username, action, entity_type, entity_id, details, ip, tenant_id, related_order_id)

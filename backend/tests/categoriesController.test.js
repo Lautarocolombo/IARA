@@ -30,7 +30,10 @@ describe('categoriesController', () => {
   describe('getCategories', () => {
     test('retorna todas las categorías', async () => {
       const req = { query: {} };
-      const res = { json: jest.fn() };
+      const res = {
+        status: jest.fn(() => res),
+        json: jest.fn()
+      };
 
       query.mockResolvedValueOnce({ rows: [{ id: 1, name: 'Pulseras', product_count: 5 }] });
 

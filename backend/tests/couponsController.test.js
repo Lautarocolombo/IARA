@@ -126,9 +126,15 @@ describe('couponsController', () => {
     test('actualiza cupón exitosamente', async () => {
       const req = {
         params: { id: 1 },
-        body: { code: 'DESC20', type: 'fixed', value: 200 }
+        body: { code: 'DESC20', type: 'fixed', value: 200 },
+        user: { user: 'admin', tenant_id: 'default' },
+        ip: '127.0.0.1',
+        headers: {}
       };
-      const res = { json: jest.fn() };
+      const res = {
+        status: jest.fn(() => res),
+        json: jest.fn()
+      };
 
       query.mockResolvedValueOnce({
         rows: [{ id: 1, code: 'DESC20', type: 'fixed', value: 200, min_amount: 0, max_uses: 0, expires_at: null, active: true }]
@@ -181,7 +187,10 @@ describe('couponsController', () => {
   describe('deleteCoupon', () => {
     test('elimina cupón exitosamente', async () => {
       const req = { params: { id: 1 } };
-      const res = { json: jest.fn() };
+      const res = {
+        status: jest.fn(() => res),
+        json: jest.fn()
+      };
 
       query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
 

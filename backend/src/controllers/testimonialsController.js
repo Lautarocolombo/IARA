@@ -52,7 +52,7 @@ const createTestimonial = async (req, res) => {
       entityId: result.rows[0].id,
       details: `Testimonio creado: ${safeName}`,
       ip: req.ip || '',
-      tenantId: req.headers['x-tenant-id'] || req.user?.tenant_id || 'default'
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
     }).catch(() => {});
   } catch (err) {
     logger.error('Error creando testimonio:', err);
@@ -71,6 +71,15 @@ const toggleTestimonialActive = async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Testimonio no encontrado' });
     res.json(result.rows[0]);
     try { syncBus.emit('testimonials_updated', { id: Number(req.params.id) }); } catch (e) { /* noop */ }
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'toggle_status',
+      entityType: 'testimonial',
+      entityId: id,
+      details: `Testimonio ${active !== false ? 'activado' : 'desactivado'}`,
+      ip: req.ip || '',
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     logger.error('Error actualizando estado del testimonio:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -133,6 +142,15 @@ const updateTestimonial = async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Testimonio no encontrado' });
     res.json(result.rows[0]);
     try { syncBus.emit('testimonials_updated', { id: Number(req.params.id) }); } catch (e) { /* noop */ }
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'update',
+      entityType: 'testimonial',
+      entityId: id,
+      details: `Testimonio actualizado: ${fields.join(', ')}`,
+      ip: req.ip || '',
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     logger.error('Error actualizando testimonio:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -146,6 +164,15 @@ const deleteTestimonial = async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Testimonio no encontrado' });
     res.json({ ok: true });
     try { syncBus.emit('testimonials_updated', { id: Number(req.params.id) }); } catch (e) { /* noop */ }
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'delete',
+      entityType: 'testimonial',
+      entityId: id,
+      details: 'Testimonio eliminado',
+      ip: req.ip || '',
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     logger.error('Error eliminando testimonio:', err);
     res.status(500).json({ error: 'Error interno del servidor' });

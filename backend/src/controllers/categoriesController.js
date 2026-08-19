@@ -14,7 +14,6 @@ const getCategories = async (req, res) => {
        GROUP BY c.id
        ORDER BY c.orden ASC, c.active DESC, c.name ASC`
     );
-    res.setHeader('Cache-Control', 'public, max-age=300');
     res.json(result.rows);
   } catch (err) {
     logger.error('Error obteniendo categorías:', err);
@@ -62,7 +61,7 @@ const createCategory = async (req, res) => {
       entityId: result.rows[0].id,
       details: `Categoría creada: ${name}`,
       ip: req.ip || '',
-      tenantId: req.headers['x-tenant-id'] || req.user?.tenant_id || 'default'
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
     }).catch(() => {});
   } catch (err) {
     if (err.code === '23505' || err.code === 'SQLITE_CONSTRAINT') {
@@ -106,7 +105,7 @@ const updateCategory = async (req, res) => {
       entityId: id,
       details: `Categoría actualizada: ${fields.join(', ')}`,
       ip: req.ip || '',
-      tenantId: req.headers['x-tenant-id'] || req.user?.tenant_id || 'default'
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
     }).catch(() => {});
   } catch (err) {
     if (err.code === '23505' || err.code === 'SQLITE_CONSTRAINT') {
@@ -164,7 +163,7 @@ const deleteCategory = async (req, res) => {
       entityId: id,
       details: `Categoría eliminada: ${slug}`,
       ip: req.ip || '',
-      tenantId: req.headers['x-tenant-id'] || req.user?.tenant_id || 'default'
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
     }).catch(() => {});
   } catch (err) {
     logger.error('Error eliminando categoría:', err);
