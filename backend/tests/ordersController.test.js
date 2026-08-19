@@ -462,7 +462,7 @@ describe('ordersController', () => {
       await updateOrderStatus(req, res);
 
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ id: 1, status: 'cancelled' }));
-      expect(query).toHaveBeenCalledWith('UPDATE products SET stock = stock + $1 WHERE id = $2', [2, 1]);
+      expect(query).toHaveBeenCalledWith('UPDATE products SET stock = stock + $1 WHERE id = $2 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [2, 1]);
     });
 
     test('maneja error de base de datos', async () => {
@@ -514,7 +514,7 @@ describe('ordersController', () => {
       await deleteOrder(req, res);
 
       expect(res.json).toHaveBeenCalledWith({ ok: true });
-      expect(query).toHaveBeenCalledWith('DELETE FROM orders WHERE id = $1', [1]);
+      expect(query).toHaveBeenCalledWith('DELETE FROM orders WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [1]);
     });
   });
 
@@ -563,7 +563,7 @@ describe('ordersController', () => {
       await batchDeleteOrders(req, res);
 
       expect(res.json).toHaveBeenCalledWith({ ok: true, deleted: 2 });
-      expect(query).toHaveBeenCalledWith('DELETE FROM orders WHERE status = $1', ['cancelled']);
+      expect(query).toHaveBeenCalledWith('DELETE FROM orders WHERE status = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', ['cancelled']);
     });
 
     test('maneja error de base de datos', async () => {

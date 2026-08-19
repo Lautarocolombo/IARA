@@ -32,6 +32,7 @@ function showToast(icon, message, type = 'default', options = {}) {
 
 // Reveal Animation on Scroll
 function initRevealAnimation() {
+  if (!('IntersectionObserver' in window)) return;
   const revealElements = document.querySelectorAll('.reveal');
 
   window.revealObserver = new IntersectionObserver((entries) => {
@@ -451,7 +452,7 @@ function initSakuraInteraction() {
 }
 
 // Initialize Everything on DOM Ready
-document.addEventListener('DOMContentLoaded', () => {
+function initUI() {
   initRevealAnimation();
   initNavbarScroll();
   initMobileNavbar();
@@ -461,7 +462,13 @@ document.addEventListener('DOMContentLoaded', () => {
   initProductFilters();
   if (typeof updateCartBadge === 'function') updateCartBadge();
   initSakuraInteraction();
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initUI);
+} else {
+  initUI();
+}
 
 // Detectar cambios en el carrito y wishlist (para actualizar en tiempo real entre pestañas y en la misma página)
 window.addEventListener('storage', (e) => {

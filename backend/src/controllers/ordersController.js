@@ -25,7 +25,7 @@ const VALID_STATUSES = ['pending', 'confirmed', 'preparing', 'shipped', 'deliver
 const getOrders = async (req, res) => {
   try {
     const { status, start_date, end_date, page, limit, q } = req.query;
-    let where = 'WHERE TRUE';
+    let where = 'WHERE (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')';
     const params = [];
 
     if (status) { params.push(status); where += ` AND status = $${params.length}`; }
@@ -208,7 +208,7 @@ const createOrder = async (req, res) => {
           throw new Error(`Stock insuficiente para el producto ${item.id}. Disponible: ${currentStock}, solicitado: ${item.quantity}`);
         }
         await query(
-          'UPDATE products SET stock = stock - $1 WHERE id = $2',
+          'UPDATE products SET stock = stock - $1 WHERE id = $2 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')',
           [Number(item.quantity), Number(item.id)],
           client
         );
@@ -243,7 +243,7 @@ const createOrder = async (req, res) => {
         finalCouponDiscount = Math.min(finalCouponDiscount, calculatedSubtotal);
 
         await query(
-          'UPDATE coupons SET used_count = used_count + 1 WHERE code = $1',
+          'UPDATE coupons SET used_count = used_count + 1 WHERE code = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')',
           [finalCouponCode],
           client
         );
@@ -299,7 +299,7 @@ async function restoreStockForOrder(items) {
   for (const item of itemsArr) {
     const productId = Number(item.id);
     const qty = Number(item.quantity || 1);
-    await query('UPDATE products SET stock = stock + $1 WHERE id = $2', [qty, productId]);
+          await query('UPDATE products SET stock = stock + $1 WHERE id = $2 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [qty, productId]);
   }
 }
 
@@ -334,14 +334,14 @@ const updateOrderStatus = async (req, res) => {
 
   try {
     if (status === 'cancelled') {
-      const existing = await query('SELECT items, status FROM orders WHERE id = $1', [id]);
+      const existing = await query('SELECT items, status FROM orders WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [id]);
       if (existing.rows.length > 0 && existing.rows[0].status !== 'cancelled') {
         await restoreStockForOrder(existing.rows[0].items);
         logMsgs.push('Stock restaurado');
       }
     }
 
-    const result = await query(`UPDATE orders SET ${setClause} WHERE id = $${values.length} RETURNING *`, values);
+    const result = await query(`UPDATE orders SET ${setClause} WHERE id = $${values.length} AND (tenant_id = current_setting('app.current_tenant', TRUE) OR tenant_id = 'default') RETURNING *`, values);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
     const user = req.user?.user || 'admin';
     await logActivity(user, 'update', 'order', id, logMsgs.join('; '), req.ip || '', id, req.headers['x-tenant-id'] || req.user?.tenant_id || 'default');
@@ -356,7 +356,7 @@ const updateOrderStatus = async (req, res) => {
 const deleteOrder = async (req, res) => {
   const id = Number(req.params.id);
   try {
-    const orderResult = await query('SELECT * FROM orders WHERE id = $1', [id]);
+    const orderResult = await query('SELECT * FROM orders WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [id]);
     if (orderResult.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
     const order = orderResult.rows[0];
     const items = safeJsonParse(order.items, []);
@@ -365,7 +365,7 @@ const deleteOrder = async (req, res) => {
     }
     const user = req.user?.user || 'admin';
     await logActivity(user, 'delete', 'order', id, `Pedido #${id} eliminado`, req.ip || '', id, req.headers['x-tenant-id'] || req.user?.tenant_id || 'default');
-    await query('DELETE FROM orders WHERE id = $1', [id]);
+    await query('DELETE FROM orders WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [id]);
     res.json({ ok: true });
   } catch (err) {
     logger.error({ err: err.message }, 'Error eliminando pedido');
@@ -379,7 +379,7 @@ const batchDeleteOrders = async (req, res) => {
     return res.status(400).json({ error: 'Estado inválido para eliminación en lote' });
   }
   try {
-    const result = await query('SELECT id, items, status FROM orders WHERE status = $1', [status]);
+    const result = await query('SELECT id, items, status FROM orders WHERE status = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [status]);
     const orders = result.rows;
     for (const order of orders) {
       const items = safeJsonParse(order.items, []);
@@ -389,7 +389,7 @@ const batchDeleteOrders = async (req, res) => {
       const user = req.user?.user || 'admin';
       await logActivity(user, 'batch_delete', 'order', order.id, `Pedido #${order.id} eliminado en lote (estado: ${status})`, req.ip || '', order.id, req.headers['x-tenant-id'] || req.user?.tenant_id || 'default');
     }
-    const deleteResult = await query('DELETE FROM orders WHERE status = $1', [status]);
+    const deleteResult = await query('DELETE FROM orders WHERE status = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [status]);
     res.json({ ok: true, deleted: deleteResult.rowCount });
   } catch (err) {
     logger.error({ err: err.message }, 'Error eliminando pedidos en lote');
@@ -402,7 +402,7 @@ const updateOrderNotes = async (req, res) => {
   const { notes } = req.body || {};
   try {
     const result = await query(
-      'UPDATE orders SET notes = $1 WHERE id = $2 RETURNING *',
+      'UPDATE orders SET notes = $1 WHERE id = $2 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') RETURNING *',
       [notes || '', id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
@@ -449,19 +449,19 @@ const updateOrder = async (req, res) => {
 
   try {
     if (status === 'cancelled') {
-      const existing = await query('SELECT items, status FROM orders WHERE id = $1', [id]);
+      const existing = await query('SELECT items, status FROM orders WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [id]);
       if (existing.rows.length > 0 && existing.rows[0].status !== 'cancelled') {
         const items = safeJsonParse(existing.rows[0].items, []);
         for (const item of items) {
           const productId = Number(item.id);
           const qty = Number(item.quantity || 1);
-          await query('UPDATE products SET stock = stock + $1 WHERE id = $2', [qty, productId]);
+    await query('UPDATE products SET stock = stock + $1 WHERE id = $2 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [qty, productId]);
         }
         logMsgs.push('Stock restaurado');
       }
     }
 
-    const result = await query(`UPDATE orders SET ${setClause} WHERE id = $${values.length} RETURNING *`, values);
+    const result = await query(`UPDATE orders SET ${setClause} WHERE id = $${values.length} AND (tenant_id = current_setting('app.current_tenant', TRUE) OR tenant_id = 'default') RETURNING *`, values);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
     const user = req.user?.user || 'admin';
     await logActivity(user, 'update', 'order', id, logMsgs.join('; '), req.ip || '', id, req.headers['x-tenant-id'] || req.user?.tenant_id || 'default');
@@ -476,7 +476,7 @@ const updateOrder = async (req, res) => {
 const getOrderReceipt = async (req, res) => {
   const orderId = Number(req.params.id);
   try {
-    const result = await query('SELECT * FROM receipts WHERE order_id = $1', [orderId]);
+    const result = await query('SELECT r.* FROM receipts r JOIN orders o ON r.order_id = o.id WHERE r.order_id = $1 AND (o.tenant_id = current_setting(\'app.current_tenant\', TRUE) OR o.tenant_id = \'default\')', [orderId]);
     if (result.rows.length === 0) return res.json({});
     res.json(result.rows[0]);
   } catch (err) {
@@ -488,7 +488,7 @@ const getOrderReceipt = async (req, res) => {
 const getOrderDetail = async (req, res) => {
   const id = Number(req.params.id);
   try {
-    const result = await query('SELECT * FROM orders WHERE id = $1', [id]);
+    const result = await query('SELECT * FROM orders WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
     res.json(result.rows[0]);
   } catch (err) {

@@ -5,7 +5,8 @@ jest.mock('../src/lib/db', () => ({
 jest.mock('../src/lib/logger', () => ({
   error: jest.fn(),
   warn: jest.fn(),
-  info: jest.fn()
+  info: jest.fn(),
+  debug: jest.fn()
 }));
 
 jest.mock('../src/lib/upload', () => ({
@@ -71,7 +72,8 @@ describe('heroCardsController', () => {
       const req = { protocol: 'http', get: () => 'localhost' };
       const res = {
         setHeader: jest.fn(),
-        json: jest.fn()
+        json: jest.fn(),
+        status: jest.fn(() => res)
       };
 
       query.mockResolvedValueOnce({ rows: [{ id: 1, activo: true }] });

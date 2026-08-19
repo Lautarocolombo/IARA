@@ -3,6 +3,7 @@ const { productSchema } = require('../lib/validators');
 const logger = require('../lib/logger');
 const { deleteImageAsset, getPublicUrl } = require('../lib/upload');
 const { syncBus } = require('../routes/sync');
+const { logAudit } = require('../lib/audit');
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
@@ -484,6 +485,15 @@ const createProduct = async (req, res) => {
     logger.info({ productId: result.rows[0].id, name: data.name, slug }, 'createProduct: producto creado');
     res.status(201).json(result.rows[0]);
     try { syncBus.emit('products_updated', { id: result.rows[0].id }); } catch (e) { /* noop */ }
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'create',
+      entityType: 'product',
+      entityId: result.rows[0].id,
+      details: `Producto creado: ${data.name}`,
+      ip: req.ip || '',
+      tenantId: req.headers['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     if (err.name === 'ZodError') {
       return res.status(400).json({ error: err.issues[0]?.message || 'Datos inválidos' });
@@ -499,7 +509,7 @@ const updateProduct = async (req, res) => {
     const data = productSchema.partial().parse(req.body);
 
     if (data.slug) {
-      const existingSlug = await query('SELECT id FROM products WHERE slug = $1 AND id != $2 AND deleted = FALSE', [data.slug, id]);
+      const existingSlug = await query('SELECT id FROM products WHERE slug = $1 AND id != $2 AND deleted = FALSE AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [data.slug, id]);
       if (existingSlug.rows.length > 0) {
         return res.status(409).json({ error: `Ya existe un producto con el slug "${data.slug}"` });
       }
@@ -511,11 +521,20 @@ const updateProduct = async (req, res) => {
     const setClause = fields.map((_, i) => `${fields[i]} = $${i + 1}`).join(', ');
     const values = fields.map(f => (['price', 'stock'].includes(f) ? Number(data[f]) : data[f]));
     values.push(id);
-    const result = await query(`UPDATE products SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = $${values.length} AND deleted = FALSE RETURNING *`, values);
+    const result = await query(`UPDATE products SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = $${values.length} AND deleted = FALSE AND (tenant_id = current_setting('app.current_tenant', TRUE) OR tenant_id = 'default') RETURNING *`, values);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
     logger.info({ productId: id, fields }, 'updateProduct: producto actualizado');
     res.json(result.rows[0]);
     try { syncBus.emit('products_updated', { id: Number(req.params.id) }); } catch (e) { /* noop */ }
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'update',
+      entityType: 'product',
+      entityId: id,
+      details: `Producto actualizado: ${fields.join(', ')}`,
+      ip: req.ip || '',
+      tenantId: req.headers['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     if (err.name === 'ZodError') {
       return res.status(400).json({ error: err.issues[0]?.message || 'Datos inválidos' });
@@ -529,12 +548,21 @@ const toggleProductStatus = async (req, res) => {
   const id = Number(req.params.id);
   try {
     const result = await query(
-      'UPDATE products SET active = NOT active, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted = FALSE RETURNING id, active',
+      'UPDATE products SET active = NOT active, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted = FALSE AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') RETURNING id, active',
       [id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
     res.json({ ok: true, active: result.rows[0].active });
     try { syncBus.emit('products_updated', { id: Number(req.params.id) }); } catch (e) { /* noop */ }
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'toggle_status',
+      entityType: 'product',
+      entityId: id,
+      details: `Producto ${result.rows[0].active ? 'activado' : 'desactivado'}`,
+      ip: req.ip || '',
+      tenantId: req.headers['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     logger.error('Error cambiando estado del producto:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -544,10 +572,10 @@ const toggleProductStatus = async (req, res) => {
 const deleteProduct = async (req, res) => {
   const id = Number(req.params.id);
   try {
-    const orderCheck = await query('SELECT COUNT(*) as count FROM orders WHERE CAST(items AS TEXT) LIKE $1', [`%${id}%`]);
+    const orderCheck = await query('SELECT COUNT(*) as count FROM orders WHERE CAST(items AS TEXT) LIKE $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [`%${id}%`]);
     const hasHistoricalOrders = Number(orderCheck.rows[0]?.count || 0) > 0;
 
-    const imagesResult = await query('SELECT url, cloudinary_public_id, filename FROM product_images WHERE product_id = $1', [id]);
+    const imagesResult = await query('SELECT url, cloudinary_public_id, filename FROM product_images WHERE product_id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [id]);
     for (const img of imagesResult.rows) {
       try {
         await deleteImageAsset(img);
@@ -555,21 +583,30 @@ const deleteProduct = async (req, res) => {
         logger.warn({ err: imgErr.message }, 'Error eliminando imagen individual al borrar producto');
       }
     }
-    await query('DELETE FROM product_images WHERE product_id = $1', [id]);
+    await query('DELETE FROM product_images WHERE product_id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [id]);
 
     if (hasHistoricalOrders) {
       await query(
-        'UPDATE products SET deleted = TRUE, active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING id',
+        'UPDATE products SET deleted = TRUE, active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') RETURNING id',
         [id]
       );
     } else {
-      const result = await query('DELETE FROM products WHERE id = $1 RETURNING id', [id]);
+      const result = await query('DELETE FROM products WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') RETURNING id', [id]);
       if (result.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
     }
 
     res.json({ ok: true, logical: hasHistoricalOrders });
     logger.info({ productId: id, logical: hasHistoricalOrders }, 'deleteProduct: producto eliminado');
     try { syncBus.emit('products_updated', { id: Number(req.params.id) }); } catch (e) { /* noop */ }
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'delete',
+      entityType: 'product',
+      entityId: id,
+      details: `Producto eliminado (lógico: ${hasHistoricalOrders})`,
+      ip: req.ip || '',
+      tenantId: req.headers['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     logger.error({ err: err.message, stack: err.stack }, 'Error eliminando producto');
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -579,7 +616,7 @@ const deleteProduct = async (req, res) => {
 const duplicateProduct = async (req, res) => {
   const id = Number(req.params.id);
   try {
-    const original = await query('SELECT * FROM products WHERE id = $1 AND deleted = FALSE', [id]);
+    const original = await query('SELECT * FROM products WHERE id = $1 AND deleted = FALSE AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [id]);
     if (original.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
 
     const p = original.rows[0];

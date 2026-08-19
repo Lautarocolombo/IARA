@@ -5,13 +5,14 @@
 ### Vercel
 
 ```env
-VITE_API_BASE=https://tu-backend.onrender.com
+# CONFIG.API.BASE se configura en frontend/js/config.js
+# Para apuntar a un backend externo (ej: Render), cambiá BASE de '' a la URL completa
 ```
 
 ## Build settings
 
 - **Framework Preset**: Vite
-- **Build Command**: `npm run build` (o `vite build`)
+- **Build Command**: `npm run build`
 - **Output Directory**: `dist`
 - **Install Command**: `npm install`
 
@@ -19,11 +20,12 @@ VITE_API_BASE=https://tu-backend.onrender.com
 
 1. Conectar repo de GitHub a Vercel
 2. Framework: Vite
-3. Configurar `VITE_API_BASE` con la URL del backend
-4. Deploy
+3. Deploy
 
 ## Notas
 
-- El frontend consume la API del backend via `VITE_API_BASE`
-- Las imágenes se sirven desde el backend (`/uploads`) o Cloudinary CDN
-- No requiere base de datos ni servicios adicionales
+- El frontend consume la API via `CONFIG.API.BASE` en `frontend/js/config.js`
+- Por defecto usa rutas relativas (`BASE: ''`), lo que aprovecha el rewrite de Vercel a serverless backend
+- Si el backend está en Render, cambiar `BASE` a `https://iara-os3h.onrender.com`
+- Las imágenes se sirven desde el backend (`/uploads`) o Vercel Blob
+- No requiere base de datos ni servicios adicionales en el frontend

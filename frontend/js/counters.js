@@ -37,9 +37,15 @@
           observer.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.5 });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
 
-    counters.forEach(el => observer.observe(el));
+    counters.forEach(el => {
+      observer.observe(el);
+      if (el.getBoundingClientRect().top < window.innerHeight && el.getBoundingClientRect().bottom > 0) {
+        window.animateCount(el);
+        observer.unobserve(el);
+      }
+    });
   } else {
     counters.forEach(el => window.animateCount(el));
   }

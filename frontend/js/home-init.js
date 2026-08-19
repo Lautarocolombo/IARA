@@ -8,6 +8,7 @@
     description: 'Pulseras, souvenirs y accesorios hechos a mano en Gualeguay, Entre Ríos',
     url: window.location.origin,
     telephone: '+5493444634444',
+    // TODO: reemplazar por email real
     email: 'chicafittargentina@gmail.com',
     address: {
       '@type': 'PostalAddress',
@@ -24,40 +25,15 @@
     },
     openingHours: 'Mo-Fr 09:00-18:00',
     priceRange: '$$',
-    sameAs: []
+    sameAs: [
+      'https://instagram.com/tu-cuenta',
+      'https://facebook.com/tu-pagina'
+    ]
   };
   const script = document.createElement('script');
   script.type = 'application/ld+json';
   script.text = JSON.stringify(schema);
   document.head.appendChild(script);
-})();
-
-(function() {
-  var mapWrapper = document.getElementById('locationMap');
-  if (!mapWrapper) return;
-  var iframe = mapWrapper.querySelector('iframe');
-  var fallback = document.getElementById('mapFallback');
-  if (!iframe || !fallback) return;
-
-  var loaded = false;
-  var timeout = setTimeout(function() {
-    if (!loaded) {
-      iframe.style.display = 'none';
-      fallback.style.display = 'flex';
-    }
-  }, 10000);
-
-  iframe.addEventListener('load', function() {
-    loaded = true;
-    clearTimeout(timeout);
-  });
-
-  iframe.addEventListener('error', function() {
-    if (!loaded) {
-      iframe.style.display = 'none';
-      fallback.style.display = 'flex';
-    }
-  });
 })();
 
 if (typeof initSSESync === 'function') initSSESync();
@@ -72,17 +48,10 @@ if (typeof loadTestimonials === 'function') {
   loadTestimonials();
 }
 
-  function loadAboutImages(attempt) {
-    attempt = attempt || 0;
+  function loadAboutImages() {
     if (typeof fetchWithRetry !== 'function') return;
-    
     fetchWithRetry(CONFIG.API.BASE + '/api/carousel', {}, 2, 1000).then(function(res) {
-      if (!res || !res.ok) {
-        if (attempt < 3) {
-          setTimeout(function() { loadAboutImages(attempt + 1); }, 3000);
-        }
-        return;
-      }
+      if (!res || !res.ok) return;
       res.json().then(function(data) {
         window.__aboutImages = {};
         var slots = data.slots || {};
@@ -98,9 +67,16 @@ if (typeof loadTestimonials === 'function') {
           window.initAboutCarousel();
         }
       });
-    }).catch(function() {
-      if (attempt < 3) {
-        setTimeout(function() { loadAboutImages(attempt + 1); }, 3000);
+    }).catch(function(err) {
+      if (typeof console !== 'undefined' && console.error) {
+        console.error('[home-init] Error cargando imágenes del carrusel:', err);
+      }
+      window.__aboutImages = {};
+      for (var i = 1; i <= 5; i++) {
+        window.__aboutImages['about_image_' + i] = '/imagenes/carrucel/' + i + '.jpg';
+      }
+      if (typeof window.initAboutCarousel === 'function') {
+        window.initAboutCarousel();
       }
     });
     window.loadAboutImages = loadAboutImages;
@@ -123,21 +99,11 @@ onSyncMessage('products_updated', () => {
   }
 });
 
-if (typeof window !== 'undefined') {
-  window.addEventListener('carousel_updated', function() {
-    if (typeof loadAboutImages === 'function') loadAboutImages();
-  });
-}
-
 onSyncMessage('site_texts_updated', (_data) => {
   if (typeof loadSiteTexts === 'function') loadSiteTexts();
   if (typeof loadHeroCards === 'function') loadHeroCards();
   if (typeof loadAboutImages === 'function') loadAboutImages();
   if (typeof window.initAboutCarousel === 'function') window.initAboutCarousel();
-});
-
-onSyncMessage('section_content_updated', (_data) => {
-  if (typeof loadTestimonials === 'function') loadTestimonials();
 });
 
 onSyncMessage('settings_updated', () => {

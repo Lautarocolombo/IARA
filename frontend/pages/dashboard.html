@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Dashboard | Artesanía Gualeguay</title>
   <meta name="description" content="Panel de administración de Artesanía Gualeguay" />
-  <link rel="canonical" href="https://iara-ivory.vercel.app/pages/dashboard.html" />
+  <link rel="canonical" href="https://artesania-gualeguay-v3.vercel.app/pages/dashboard.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
@@ -126,11 +126,10 @@
                 <div class="admin-section-title">Bloque 1 - Hero Principal</div>
                 <div class="home-block">
                   <div class="form-grid-2">
-                     <div class="form-group">
-                       <label>Título <span class="required">*</span></label>
-                       <input type="text" id="hero_title" placeholder="Regalos artesanales que cuentan historias" disabled />
-                       <small class="form-hint">Este texto es fijo y no editable.</small>
-                     </div>
+                      <div class="form-group">
+                        <label>Título <span class="required">*</span></label>
+                        <input type="text" id="hero_title" placeholder="Regalos artesanales que cuentan historias" />
+                      </div>
                      <div class="form-group">
                        <label>Descripción</label>
                        <input type="text" id="hero_subtitle" placeholder="Regalos artesanales que cuentan historias, souvenirs y llaveros hechos a mano. Cada pieza es única." />
@@ -258,10 +257,84 @@
                      <div class="form-group col-span-full">
                        <label>Texto principal <span class="required">*</span></label>
                        <div id="about_text_editor" class="quill-editor-container"></div>
+                       </div>
+                      </div>
+                    </div>
+
+                    <div class="form-grid-2">
+                      <div class="form-group col-span-full">
+                        <label>Imágenes del carrusel (Sobre Nosotros)</label>
+                        <div class="about-images-grid" id="aboutImagesGrid">
+                          <div class="about-image-upload" data-index="1">
+                            <img id="aboutImagePreview1" src="" alt="Sobre Nosotros 1" style="display:none; max-width:100%; border-radius:8px; margin-bottom:0.5rem;" />
+                            <div id="aboutImageNewPreview1" style="display:none; max-width:100%; border-radius:8px; margin-bottom:0.5rem; border: 2px dashed #d4a0b5; padding: 4px; background:#fff0f6;">
+                              <img id="aboutImageNewImg1" src="" alt="Nueva imagen 1" style="width:100%; border-radius:6px; display:block;" />
+                            </div>
+                            <div id="aboutImagePlaceholder1" style="width:100%; aspect-ratio:16/9; background:#fde8ef; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#be6b82; font-size:0.85rem; margin-bottom:0.5rem;">Imagen 1</div>
+                            <input type="file" id="aboutImageInput1" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                            <div class="about-image-actions">
+                              <button type="button" class="btn btn-secondary btn-sm" id="aboutImageChangeBtn1">Cambiar</button>
+                              <button type="button" class="btn btn-outline btn-sm" id="aboutImageRemoveBtn1">Quitar</button>
+                            </div>
+                            <div id="aboutImageError1" class="image-error-message" style="display:none; margin-top:0.5rem; color:#ef4444; font-size:0.85rem;"></div>
+                          </div>
+                          <div class="about-image-upload" data-index="2">
+                            <img id="aboutImagePreview2" src="" alt="Sobre Nosotros 2" style="display:none; max-width:100%; border-radius:8px; margin-bottom:0.5rem;" />
+                            <div id="aboutImageNewPreview2" style="display:none; max-width:100%; border-radius:8px; margin-bottom:0.5rem; border: 2px dashed #d4a0b5; padding: 4px; background:#fff0f6;">
+                              <img id="aboutImageNewImg2" src="" alt="Nueva imagen 2" style="width:100%; border-radius:6px; display:block;" />
+                            </div>
+                            <div id="aboutImagePlaceholder2" style="width:100%; aspect-ratio:16/9; background:#fde8ef; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#be6b82; font-size:0.85rem; margin-bottom:0.5rem;">Imagen 2</div>
+                            <input type="file" id="aboutImageInput2" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                            <div class="about-image-actions">
+                              <button type="button" class="btn btn-secondary btn-sm" id="aboutImageChangeBtn2">Cambiar</button>
+                              <button type="button" class="btn btn-outline btn-sm" id="aboutImageRemoveBtn2">Quitar</button>
+                            </div>
+                            <div id="aboutImageError2" class="image-error-message" style="display:none; margin-top:0.5rem; color:#ef4444; font-size:0.85rem;"></div>
+                          </div>
+                          <div class="about-image-upload" data-index="3">
+                            <img id="aboutImagePreview3" src="" alt="Sobre Nosotros 3" style="display:none; max-width:100%; border-radius:8px; margin-bottom:0.5rem;" />
+                            <div id="aboutImageNewPreview3" style="display:none; max-width:100%; border-radius:8px; margin-bottom:0.5rem; border: 2px dashed #d4a0b5; padding: 4px; background:#fff0f6;">
+                              <img id="aboutImageNewImg3" src="" alt="Nueva imagen 3" style="width:100%; border-radius:6px; display:block;" />
+                            </div>
+                            <div id="aboutImagePlaceholder3" style="width:100%; aspect-ratio:16/9; background:#fde8ef; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#be6b82; font-size:0.85rem; margin-bottom:0.5rem;">Imagen 3</div>
+                            <input type="file" id="aboutImageInput3" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                            <div class="about-image-actions">
+                              <button type="button" class="btn btn-secondary btn-sm" id="aboutImageChangeBtn3">Cambiar</button>
+                              <button type="button" class="btn btn-outline btn-sm" id="aboutImageRemoveBtn3">Quitar</button>
+                            </div>
+                            <div id="aboutImageError3" class="image-error-message" style="display:none; margin-top:0.5rem; color:#ef4444; font-size:0.85rem;"></div>
+                          </div>
+                          <div class="about-image-upload" data-index="4">
+                            <img id="aboutImagePreview4" src="" alt="Sobre Nosotros 4" style="display:none; max-width:100%; border-radius:8px; margin-bottom:0.5rem;" />
+                            <div id="aboutImageNewPreview4" style="display:none; max-width:100%; border-radius:8px; margin-bottom:0.5rem; border: 2px dashed #d4a0b5; padding: 4px; background:#fff0f6;">
+                              <img id="aboutImageNewImg4" src="" alt="Nueva imagen 4" style="width:100%; border-radius:6px; display:block;" />
+                            </div>
+                            <div id="aboutImagePlaceholder4" style="width:100%; aspect-ratio:16/9; background:#fde8ef; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#be6b82; font-size:0.85rem; margin-bottom:0.5rem;">Imagen 4</div>
+                            <input type="file" id="aboutImageInput4" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                            <div class="about-image-actions">
+                              <button type="button" class="btn btn-secondary btn-sm" id="aboutImageChangeBtn4">Cambiar</button>
+                              <button type="button" class="btn btn-outline btn-sm" id="aboutImageRemoveBtn4">Quitar</button>
+                            </div>
+                            <div id="aboutImageError4" class="image-error-message" style="display:none; margin-top:0.5rem; color:#ef4444; font-size:0.85rem;"></div>
+                          </div>
+                          <div class="about-image-upload" data-index="5">
+                            <img id="aboutImagePreview5" src="" alt="Sobre Nosotros 5" style="display:none; max-width:100%; border-radius:8px; margin-bottom:0.5rem;" />
+                            <div id="aboutImageNewPreview5" style="display:none; max-width:100%; border-radius:8px; margin-bottom:0.5rem; border: 2px dashed #d4a0b5; padding: 4px; background:#fff0f6;">
+                              <img id="aboutImageNewImg5" src="" alt="Nueva imagen 5" style="width:100%; border-radius:6px; display:block;" />
+                            </div>
+                            <div id="aboutImagePlaceholder5" style="width:100%; aspect-ratio:16/9; background:#fde8ef; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#be6b82; font-size:0.85rem; margin-bottom:0.5rem;">Imagen 5</div>
+                            <input type="file" id="aboutImageInput5" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                            <div class="about-image-actions">
+                              <button type="button" class="btn btn-secondary btn-sm" id="aboutImageChangeBtn5">Cambiar</button>
+                              <button type="button" class="btn btn-outline btn-sm" id="aboutImageRemoveBtn5">Quitar</button>
+                            </div>
+                            <div id="aboutImageError5" class="image-error-message" style="display:none; margin-top:0.5rem; color:#ef4444; font-size:0.85rem;"></div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                 </div>
-             </div>
+              </div>
 
             <div class="card">
               <div class="card-header">

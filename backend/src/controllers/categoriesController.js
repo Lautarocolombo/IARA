@@ -1,6 +1,7 @@
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const { saveUploadedFile } = require('../lib/upload');
+const { logAudit } = require('../lib/audit');
 
 const ALLOWED_CATEGORY_COLUMNS = ['name', 'slug', 'description', 'active', 'orden', 'emoji', 'image', 'parent_id', 'image_url'];
 
@@ -13,6 +14,7 @@ const getCategories = async (req, res) => {
        GROUP BY c.id
        ORDER BY c.orden ASC, c.active DESC, c.name ASC`
     );
+    res.setHeader('Cache-Control', 'public, max-age=300');
     res.json(result.rows);
   } catch (err) {
     logger.error('Error obteniendo categorías:', err);
@@ -53,6 +55,15 @@ const createCategory = async (req, res) => {
     );
     logger.info({ categoryId: result.rows[0].id, name, slug }, 'createCategory: categoría creada');
     res.status(201).json(result.rows[0]);
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'create',
+      entityType: 'category',
+      entityId: result.rows[0].id,
+      details: `Categoría creada: ${name}`,
+      ip: req.ip || '',
+      tenantId: req.headers['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     if (err.code === '23505' || err.code === 'SQLITE_CONSTRAINT') {
       return res.status(409).json({ error: 'Ya existe una categoría con ese nombre o slug' });
@@ -88,6 +99,15 @@ const updateCategory = async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Categoría no encontrada' });
     logger.info({ categoryId: id, fields }, 'updateCategory: categoría actualizada');
     res.json(result.rows[0]);
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'update',
+      entityType: 'category',
+      entityId: id,
+      details: `Categoría actualizada: ${fields.join(', ')}`,
+      ip: req.ip || '',
+      tenantId: req.headers['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     if (err.code === '23505' || err.code === 'SQLITE_CONSTRAINT') {
       return res.status(409).json({ error: 'Ya existe una categoría con ese nombre o slug' });
@@ -137,6 +157,15 @@ const deleteCategory = async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Categoría no encontrada' });
     logger.info({ categoryId: id, slug, productCount }, 'deleteCategory: categoría eliminada');
     res.json({ ok: true, reassigned: productCount, productCount });
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'delete',
+      entityType: 'category',
+      entityId: id,
+      details: `Categoría eliminada: ${slug}`,
+      ip: req.ip || '',
+      tenantId: req.headers['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     logger.error('Error eliminando categoría:', err);
     res.status(500).json({ error: 'Error interno del servidor' });

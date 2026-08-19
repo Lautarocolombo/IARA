@@ -153,10 +153,10 @@ app.use((req, res, next) => {
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Accept-Language, Origin, X-Requested-With, X-Request-ID');
       res.setHeader('Access-Control-Allow-Credentials', 'true');
       res.setHeader('Access-Control-Max-Age', '86400');
-      console.log('[CORS] Preflight respondido para:', req.path, 'origin:', origin);
+      logger.info('[CORS] Preflight respondido para:', { path: req.path, origin });
       return res.status(204).send();
     }
-    console.log('[CORS] Preflight rechazado para:', req.path, 'origin:', origin);
+    logger.warn('[CORS] Preflight rechazado para:', { path: req.path, origin });
     return res.status(403).json({ error: 'Origen no permitido' });
   }
   next();
@@ -166,7 +166,7 @@ const corsOptions = allowedOrigins.length
   ? {
       origin: function(origin, callback) {
         const allowed = isOriginAllowed(origin);
-        console.log('[CORS] Preflight/request origin:', origin, 'allowed:', allowed, 'allowedOrigins:', allowedOrigins.join(','));
+        logger.debug('[CORS] Preflight/request origin:', origin, 'allowed:', allowed, 'allowedOrigins:', allowedOrigins.join(','));
         callback(null, allowed);
       },
       credentials: true,
@@ -235,9 +235,19 @@ const ordersLimiter = rateLimit({
   message: { error: 'Demasiadas solicitudes de pedidos, intentá de nuevo en unos minutos' }
 });
 
+const adminLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: rateLimitStore,
+  message: { error: 'Demasiadas solicitudes al panel admin, intentá de nuevo en unos minutos' }
+});
+
 app.use('/api/auth/login', authLimiter);
 app.use('/api/contact', contactLimiter);
 app.use('/api/orders', ordersLimiter);
+app.use('/api/admin', adminLimiter);
 
 app.use((req, res, next) => {
   res.setHeader('X-Request-ID', req.headers['x-request-id'] || crypto.randomUUID());
@@ -402,15 +412,15 @@ app.get('/ready', async (req, res) => {
 app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUploadError, uploadSingle, async (req, res) => {
   try {
     const origin = req.headers.origin || req.headers.referer || 'unknown';
-    console.log('[Upload] CORS origin recibido:', origin);
-    console.log('[Upload] Access-Control-Allow-Origin enviado:', res.getHeader('Access-Control-Allow-Origin'));
+    logger.debug('[Upload] CORS origin recibido:', origin);
+    logger.debug('[Upload] Access-Control-Allow-Origin enviado:', res.getHeader('Access-Control-Allow-Origin'));
     if (!req.file) {
-      console.warn('[Upload] No se recibió imagen en /api/admin/upload');
+      logger.warn('[Upload] No se recibió imagen en /api/admin/upload');
       return res.status(400).json({ error: 'No se recibió imagen' });
     }
-    console.log('[Upload] Procesando imagen:', req.file.originalname, req.file.size, 'bytes');
+    logger.info('[Upload] Procesando imagen:', { filename: req.file.originalname, size: req.file.size });
     const processed = await processFile(req.file, `${req.protocol}://${req.get('host')}`);
-    console.log('[Upload] Imagen procesada OK:', processed.url);
+    logger.info('[Upload] Imagen procesada OK:', { url: processed.url });
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.json({
       url: processed.url,
@@ -419,13 +429,8 @@ app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUplo
       isCloudinary: processed.isCloudinary
     });
   } catch (err) {
-    console.error('[Upload] Error procesando imagen:', err.message, err.stack);
-    console.error('[Upload] Error completo:', {
-      name: err.name,
-      message: err.message,
-      stack: err.stack,
-      code: err.code
-    });
+    logger.error('[Upload] Error procesando imagen:', { message: err.message, stack: err.stack });
+    logger.error('[Upload] Error completo:', { name: err.name, message: err.message, stack: err.stack, code: err.code });
     const message = err.message || 'Error al procesar la imagen';
     res.status(500).json({ error: message });
   }

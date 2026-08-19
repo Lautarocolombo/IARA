@@ -9,12 +9,13 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌸</text></svg>" />
   <meta property="og:title" content="Artesanía Gualeguay | Pulseras & Souvenirs Artesanales" />
   <meta property="og:description" content="Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es unica." />
+  <!-- TODO: reemplazar por imagen real de producto 1200x630 para compartir en redes -->
   <meta property="og:image" content="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%221200%22 height=%22630%22><rect width=%221200%22 height=%22630%22 fill=%22%23e8a0b5%22/><text x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-size=%2280%22 fill=%22white%22>🌸 Artesanía Gualeguay 🌸</text></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@400;500;600&display=swap" as="style">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="canonical" href="https://iara-ivory.vercel.app/" />
+  <link rel="canonical" href="https://artesania-gualeguay-v3.vercel.app/" />
   <link rel="stylesheet" href="css/variables.css" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/components.css" />
@@ -30,11 +31,11 @@
     "@context": "https://schema.org",
     "@type": "WebSite",
     "name": "Artesanía Gualeguay",
-    "url": "https://iara-ivory.vercel.app",
+    "url": "https://artesania-gualeguay-v3.vercel.app",
     "description": "Pulseras, souvenirs y accesorios hechos a mano. Cada pieza es única.",
     "potentialAction": {
       "@type": "SearchAction",
-      "target": "https://iara-ivory.vercel.app/?q={search_term_string}",
+      "target": "https://artesania-gualeguay-v3.vercel.app/?q={search_term_string}",
       "query-input": "required name=search_term_string"
     }
   }
@@ -44,8 +45,8 @@
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "Artesanía Gualeguay",
-    "url": "https://iara-ivory.vercel.app",
-    "logo": "https://iara-ivory.vercel.app/favicon.ico",
+    "url": "https://artesania-gualeguay-v3.vercel.app",
+    "logo": "https://artesania-gualeguay-v3.vercel.app/favicon.ico",
     "sameAs": [
       "https://www.instagram.com/",
       "https://www.facebook.com/"
@@ -214,6 +215,16 @@
       <div class="products-grid" id="productsGrid"></div>
     </section>
 
+    <!-- ============== FEATURED PRODUCTS SECTION ============== -->
+    <section class="catalog" id="featured">
+      <div class="section-header">
+        <span class="section-tag reveal">Destacados</span>
+        <h2 class="section-title reveal">Productos Destacados</h2>
+        <p class="section-subtitle reveal">Nuestras piezas más elegidas</p>
+      </div>
+      <div class="products-grid" id="featuredGrid"></div>
+    </section>
+
     <!-- ============== ABOUT SECTION ============== -->
     <section class="about" id="about">
       <div class="section-header">
@@ -314,8 +325,9 @@
           <div class="info-item">
             <div class="info-icon" aria-hidden="true">📧</div>
             <div>
-              <h4>Email</h4>
-              <a href="mailto:chicafittargentina@gmail.com">chicafittargentina@gmail.com</a>
+               <h4>Email</h4>
+               <!-- TODO: reemplazar por email real -->
+               <a href="mailto:chicafittargentina@gmail.com">chicafittargentina@gmail.com</a>
             </div>
           </div>
           <div class="info-item">
@@ -468,60 +480,16 @@
    <script src="js/cart.js"></script>
    <script src="js/products.js"></script>
    <script src="js/hero.js"></script>
-  <script>
-    (function() {
-      const counters = document.querySelectorAll('.stat-number[data-target]');
-      if (!counters.length) return;
-
-      function animateCount(el) {
-        const target = parseInt(el.getAttribute('data-target'), 10);
-        if (isNaN(target)) return;
-        const suffix = el.getAttribute('data-suffix') || '';
-        const duration = 1400;
-        const start = performance.now();
-
-        function tick(now) {
-          const elapsed = now - start;
-          const progress = Math.min(elapsed / duration, 1);
-          const eased = 1 - Math.pow(1 - progress, 3);
-          const current = Math.floor(eased * target);
-          el.textContent = current + suffix;
-          if (progress < 1) {
-            requestAnimationFrame(tick);
-          } else {
-            el.textContent = target + suffix;
-          }
-        }
-
-        requestAnimationFrame(tick);
-      }
-
-      if ('IntersectionObserver' in window) {
-        const observer = new IntersectionObserver((entries) => {
-          entries.forEach(entry => {
-            if (entry.isIntersecting) {
-              animateCount(entry.target);
-              observer.unobserve(entry.target);
-            }
-          });
-        }, { threshold: 0.5 });
-
-        counters.forEach(el => observer.observe(el));
-      } else {
-        counters.forEach(el => animateCount(el));
-      }
-
-      window.animateCount = animateCount;
-    })();
-
-    (function() {
-      const schema = {
+   <script src="js/counters.js"></script>
+   <script>
+       const schema = {
         '@context': 'https://schema.org',
         '@type': 'Store',
         name: 'Artesanía Gualeguay',
         description: 'Pulseras, souvenirs y accesorios hechos a mano en Gualeguay, Entre Ríos',
         url: window.location.origin,
         telephone: '+5493444634444',
+        <!-- TODO: reemplazar por email real -->
         email: 'chicafittargentina@gmail.com',
         address: {
           '@type': 'PostalAddress',
@@ -560,7 +528,7 @@
           iframe.style.display = 'none';
           fallback.style.display = 'flex';
         }
-      }, 10000);
+      }, 20000);
 
       iframe.addEventListener('load', function() {
         loaded = true;
@@ -584,9 +552,6 @@
     if (typeof loadHeroCards === 'function') {
       loadHeroCards();
     }
-    if (typeof loadHeroImage === 'function') {
-      loadHeroImage();
-    }
     if (typeof loadTestimonials === 'function') {
       loadTestimonials();
     }
@@ -606,7 +571,6 @@
     onSyncMessage('site_texts_updated', (data) => {
       if (typeof loadSiteTexts === 'function') loadSiteTexts();
       if (typeof loadHeroCards === 'function') loadHeroCards();
-      if (typeof loadHeroImage === 'function') loadHeroImage();
     });
 
     onSyncMessage('settings_updated', () => {

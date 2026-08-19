@@ -44,7 +44,7 @@ const getPublicHeroCards = async (req, res) => {
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
     const result = await query('SELECT * FROM hero_cards WHERE activo = TRUE AND tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\') ORDER BY slot ASC, id ASC');
     const mapped = result.rows.map(r => mapRow(r, baseUrl));
-    console.log('[HeroCards] GET /hero-cards public count:', mapped.length, mapped.map(function(c) { return { slot: c.slot, imagen: c.imagen ? 'has-image' : 'empty' }; }));
+    logger.debug('[HeroCards] GET /hero-cards public count:', mapped.length, mapped.map(function(c) { return { slot: c.slot, imagen: c.imagen ? 'has-image' : 'empty' }; }));
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json(mapped);
   } catch (err) {

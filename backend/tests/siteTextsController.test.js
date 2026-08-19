@@ -6,7 +6,8 @@ jest.mock('../src/lib/db', () => ({
 jest.mock('../src/lib/logger', () => ({
   error: jest.fn(),
   warn: jest.fn(),
-  info: jest.fn()
+  info: jest.fn(),
+  debug: jest.fn()
 }));
 
 jest.mock('../src/routes/sync', () => ({
@@ -32,7 +33,8 @@ describe('siteTextsController', () => {
       const req = {};
       const res = {
         setHeader: jest.fn(),
-        json: jest.fn()
+        json: jest.fn(),
+        status: jest.fn(() => res)
       };
 
       query.mockResolvedValueOnce({

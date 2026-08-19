@@ -65,7 +65,13 @@
       img.src = src;
       img.alt = 'Sobre Nosotros ' + (idx + 1);
       img.loading = idx === 0 ? 'eager' : 'lazy';
+      img.dataset.fallback = '/imagenes/carrucel/' + (idx + 1) + '.jpg';
       img.onerror = function() {
+        var fb = img.dataset.fallback;
+        if (fb && img.src.indexOf(fb) === -1) {
+          img.src = fb;
+          return;
+        }
         console.error('[about-carousel] Error cargando imagen:', src);
         if (typeof window.imgError === 'function') {
           window.imgError(img, '📷');

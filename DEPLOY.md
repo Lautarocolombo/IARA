@@ -25,18 +25,25 @@ EMAIL_FROM=noreply@artesaniagualeguay.com
 
 1. Conectar repo en Vercel
 2. Configurar variables en Vercel Dashboard
-3. Build command: `echo 'Build complete'`
-4. Output directory: `frontend`
-5. Install command: `npm ci && cd backend && npm ci`
-6. Configurar rewrite de `/api/*` hacia `https://iara-backend.onrender.com/api/$1`
+3. Build command: `npm run build`
+4. Output directory: `dist`
+5. Install command: `npm install`
+6. El backend se despliega como serverless function en Vercel (`/api/*` → `backend/api.js`)
 
 ## Deploy en Render
 
 1. Conectar repo en Render
-2. Build command: `npm ci && cd backend && npm ci`
-3. Start command: `cd backend && npm start`
-4. Configurar variables de entorno
-5. Configurar dominio personalizado `api.artesaniagualeguay.com` (opcional pero recomendado)
+2. Root directory: `backend`
+3. Build command: `npm install`
+4. Start command: `npm start`
+5. Configurar variables de entorno
+6. Health check: `/health`
+
+## Notas
+
+- Frontend: Vercel (estático + serverless backend)
+- Backend alternativo: Render (standalone, para migración futura)
+- Si usás Render como backend primario, configurar `CONFIG.API.BASE` en `frontend/js/config.js` con la URL de Render
 
 ## Health checks
 

@@ -27,8 +27,6 @@ BLOB_READ_WRITE_TOKEN=<token de Vercel Blob>
 # Redis / BullMQ (recomendado para colas)
 REDIS_URL=rediss://default:gQAAAAAAAjJ0AAIgcDIyZDg4NGEwNjVkY2I0YmZkODlmMWRhY2E3YWY4NmU3Zg@witty-troll-143988.upstash.io:6379
 
-# remove.bg (opcional - para remoción de fondo)
-REMOVE_BG_API_KEY=<tu api key de remove.bg>
 
 # SMTP (opcional - para envío de comprobantes por email)
 SMTP_HOST=smtp.tu-servidor.com
@@ -84,15 +82,6 @@ Pasos:
 
 El worker se inicia automáticamente al arrancar el servidor. Si Redis no está disponible, el sistema continúa funcionando en modo síncrono (fallback).
 
-### 3. remove.bg (Opcional)
-
-1. Crear cuenta en https://www.remove.bg
-2. Obtener API key
-3. Configurar `REMOVE_BG_API_KEY` en Render
-4. El botón "Remover fondo" aparecerá en el admin
-
-**Sin API key**: el botón no aparecerá o mostrará error al intentar usarlo.
-
 ### 4. SMTP (Opcional - Emails)
 
 1. Configurar servicio SMTP (Gmail, SendGrid, Mailgun, etc.)
@@ -146,11 +135,6 @@ Los backups se guardan en `/backups/` con retención de 7 días.
 - No disponible en modo base64
 - Disponible con Vercel Blob si se configura
 
-### Background removal
-- Procesado via API remove.bg
-- Requiere `REMOVE_BG_API_KEY` configurada
-- Resultado: PNG con fondo transparente
-
 ### Comprobantes (Receipts)
 - Generación de PDF con PDFKit
 - Envío por WhatsApp (link directo)
@@ -181,7 +165,6 @@ Los backups se guardan en `/backups/` con retención de 7 días.
 | Vercel (frontend) | Free | $0 |
 | Neon (PostgreSQL) | Free | $0 |
 | Vercel Blob | Free tier | $0 |
-| remove.bg | Free (50 imágenes/mes) | $0 |
 | SMTP (Gmail/Resend) | Free tier | $0 |
 
 **Total inicial: $0** (hasta ~1000 visitas/mes, 50-100 productos)

@@ -187,17 +187,16 @@ function handleUploadError(err, req, res, next) {
 
 async function processFile(file, _baseUrl) {
   const useBlob = isBlobConfigured();
-  console.log('[Upload] processFile start:', { useBlob, filename: file.originalname, size: file.size, NODE_ENV: process.env.NODE_ENV, isRender: !!process.env.RENDER_EXTERNAL_HOSTNAME });
+  logger.info('[Upload] processFile start:', { useBlob, filename: file.originalname, size: file.size, NODE_ENV: process.env.NODE_ENV, isRender: !!process.env.RENDER_EXTERNAL_HOSTNAME });
 
   if (useBlob) {
     const blobResult = await uploadToBlob(file);
     if (blobResult) {
       try { fs.unlinkSync(file.path); } catch (e) { /* noop */ }
-      console.log('[Upload] Subido a Vercel Blob:', blobResult.url);
+      logger.info('[Upload] Subido a Vercel Blob:', { url: blobResult.url });
       return { url: blobResult.url, filename: blobResult.filename, cloudinary_public_id: '', isCloudinary: false, isBlob: true };
     }
-    console.warn('[Upload] Upload a Vercel Blob falló, intentando fallback a storage local');
-    logger.warn('Usando fallback de storage local para imagen (blob upload falló)');
+    logger.warn('[Upload] Upload a Vercel Blob falló, intentando fallback a storage local');
   }
 
   const optimizedPath = await optimizeImage(file.path, { format: 'webp' });
@@ -208,7 +207,7 @@ async function processFile(file, _baseUrl) {
     try { fs.unlinkSync(file.path); } catch (e) { /* noop */ }
   }
 
-  console.log('[Upload] URL generada:', relativeUrl);
+  logger.info('[Upload] URL generada:', { url: relativeUrl });
   return { url: relativeUrl, filename, cloudinary_public_id: '', isCloudinary: false, isBlob: false };
 }
 

@@ -5,7 +5,8 @@
   'use strict';
 
   var DEFAULT_TEXTS = {
-    hero_subtitle: 'Regalos artesanales que cuentan historias, souvenirs y llaveros hechos a mano. Cada pieza es única.',
+    hero_title: 'Regalos <em>artesanales</em> que cuentan historias',
+    hero_subtitle: 'Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es única.',
     hero_cta_text: 'Explorar Catálogo',
     hero_cta_url: '#catalog',
     hero_image_url: '',
@@ -14,13 +15,18 @@
     featured_product_cta_text: 'Ver producto',
     featured_product_cta_url: '#catalog',
     featured_product_image_url: '',
-    hero_card_1_text: '',
-    hero_card_2_text: '',
+    hero_card_1_text: 'Nose si estemos hechos el uno para el otro pero si hemos llegado hasta aquí...',
+    hero_card_2_text: 'Nose si estemos hechos el uno para el otro pero si hemos llegado hasta aquí...',
     hero_card_1_name: 'Pulsera Minimalista',
     hero_card_1_price: '$450',
     hero_card_1_cta_text: 'Ver más',
     hero_card_1_cta_url: '#catalog',
     about_text: 'En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.',
+    about_image_1: '',
+    about_image_2: '',
+    about_image_3: '',
+    about_image_4: '',
+    about_image_5: '',
     process_subtitle: 'Cinco pasos simples para comprar tu artesanía',
     process_step_1_title: '1) Elegí productos',
     process_step_1_desc: 'Filtrá por categoría y elegí tu pieza del catálogo.',
@@ -48,6 +54,7 @@
   };
 
   var DEFAULT_SETTINGS = {
+    // TODO: reemplazar por email real
     email: 'chicafittargentina@gmail.com',
     phone: '+54 (3444) 634-4444',
     whatsapp: '+5493444634444',
@@ -204,7 +211,7 @@
   }
 
   function populateFields() {
-    var heroKeys = ['hero_subtitle', 'hero_cta_text', 'hero_cta_url'];
+    var heroKeys = ['hero_title', 'hero_subtitle', 'hero_cta_text', 'hero_cta_url'];
     heroKeys.forEach(function (key) {
       var el = document.getElementById(key);
       if (!el) return;
@@ -242,11 +249,10 @@
     if (heroPreviewImg && heroPlaceholder) {
       if (heroImageUrl) {
         heroPreviewImg.src = heroImageUrl;
-        heroPreviewImg.classList.remove('hidden');
+        heroPreviewImg.style.display = 'block';
         heroPlaceholder.style.display = 'none';
       } else {
-        heroPreviewImg.classList.add('hidden');
-        heroPreviewImg.src = '';
+        heroPreviewImg.style.display = 'none';
         heroPlaceholder.style.display = 'flex';
       }
     }
@@ -257,11 +263,10 @@
     if (fpPreviewImg && fpPlaceholder) {
       if (fpImageUrl) {
         fpPreviewImg.src = fpImageUrl;
-        fpPreviewImg.classList.remove('hidden');
+        fpPreviewImg.style.display = 'block';
         fpPlaceholder.style.display = 'none';
       } else {
-        fpPreviewImg.classList.add('hidden');
-        fpPreviewImg.src = '';
+        fpPreviewImg.style.display = 'none';
         fpPlaceholder.style.display = 'flex';
       }
     }
@@ -279,6 +284,27 @@
         el.value = val || '';
       }
     });
+
+    for (let i = 1; i <= 5; i++) {
+      (function(index) {
+        var key = 'about_image_' + index;
+        var url = textsCache[key] || '';
+        var preview = document.getElementById('aboutImagePreview' + index);
+        var placeholder = document.getElementById('aboutImagePlaceholder' + index);
+        var removeBtn = document.getElementById('aboutImageRemoveBtn' + index);
+        if (preview && placeholder) {
+          if (url) {
+            preview.src = url;
+            preview.style.display = 'block';
+            placeholder.style.display = 'none';
+          } else {
+            preview.style.display = 'none';
+            placeholder.style.display = 'flex';
+          }
+        }
+        if (removeBtn) removeBtn.dataset.remove = 'false';
+      })(i);
+    }
 
     var featureKeys = ['feature_1_title', 'feature_1_desc', 'feature_2_title', 'feature_2_desc',
                     'feature_3_title', 'feature_3_desc', 'feature_4_title', 'feature_4_desc'];
@@ -364,6 +390,7 @@
     var loadingId = 'saveHomeBlocksBtnLoading';
     var statusId = 'saveHomeBlocksStatus';
 
+    var heroTitle = document.getElementById('hero_title')?.value.trim() || '';
     var heroSubtitle = document.getElementById('hero_subtitle')?.value.trim() || '';
     var heroCtaText = document.getElementById('hero_cta_text')?.value.trim() || '';
     var heroCtaUrl = document.getElementById('hero_cta_url')?.value.trim() || '';
@@ -379,6 +406,11 @@
     var heroCard1CtaUrl = document.getElementById('hero_card_1_cta_url')?.value.trim() || '';
     var heroCard2Text = document.getElementById('hero_card_2_text')?.value.trim() || '';
 
+    if (!heroTitle) {
+      showSaveStatus(statusId, 'error', 'El título del Hero es obligatorio');
+      window.showToast('❌', 'El título del Hero es obligatorio', 'error');
+      return;
+    }
     if (!fpName) {
       showSaveStatus(statusId, 'error', 'El nombre del producto es obligatorio');
       window.showToast('❌', 'El nombre del producto es obligatorio', 'error');
@@ -419,7 +451,6 @@
               let errData = await res.json().catch(function () { return {}; });
               errMsg = errData.error || errMsg;
             }
-            console.error('[Content] Error subiendo imagen hero:', errMsg);
             throw new Error(errMsg);
           }
           var data = await res.json();
@@ -427,7 +458,6 @@
           uploadMap.hero = heroImageUrl;
         }).catch(function (err) {
           uploadErrors.hero = err.message || 'Error al subir imagen del hero';
-          console.error('[Content] Error subiendo imagen hero:', err);
           throw err;
         });
         uploadPromises.push(heroPromise);
@@ -448,7 +478,6 @@
               let errData = await res.json().catch(function () { return {}; });
               errMsg = errData.error || errMsg;
             }
-            console.error('[Content] Error subiendo imagen producto destacado:', errMsg);
             throw new Error(errMsg);
           }
           var data = await res.json();
@@ -456,7 +485,6 @@
           uploadMap.fp = fpImageUrl;
         }).catch(function (err) {
           uploadErrors.fp = err.message || 'Error al subir imagen del producto';
-          console.error('[Content] Error subiendo imagen producto destacado:', err);
           throw err;
         });
         uploadPromises.push(fpPromise);
@@ -465,27 +493,25 @@
       }
 
       if (uploadPromises.length > 0) {
-        var uploadResults = await Promise.allSettled(uploadPromises);
-        uploadResults.forEach(function(result, idx) {
-          var key = idx === 0 ? 'hero' : 'fp';
-          if (result.status === 'rejected') {
-            var errMsg = result.reason?.message || ('Error al subir imagen de ' + key);
-            uploadErrors[key] = errMsg;
-            var errEl = document.getElementById(key === 'hero' ? 'heroImageError' : 'fpImageError');
-            if (errEl) {
-              errEl.textContent = errMsg;
-              errEl.style.display = 'block';
-            }
-            console.error('[Content] Error subiendo imagen ' + key + ':', result.reason);
+        try {
+          await Promise.all(uploadPromises);
+        } catch (err) {
+          var heroImageErrorEl = document.getElementById('heroImageError');
+          var fpImageErrorEl = document.getElementById('fpImageError');
+          if (heroImageErrorEl && uploadErrors.hero) {
+            heroImageErrorEl.textContent = uploadErrors.hero;
+            heroImageErrorEl.style.display = 'block';
           }
-        });
-        var homeFailedCount = Object.keys(uploadErrors).length;
-        if (homeFailedCount > 0) {
-          window.showToast('⚠️', homeFailedCount + ' imagen(es) del home no se subieron. Revisá los errores.', 'error');
+          if (fpImageErrorEl && uploadErrors.fp) {
+            fpImageErrorEl.textContent = uploadErrors.fp;
+            fpImageErrorEl.style.display = 'block';
+          }
+          throw new Error(uploadErrors.hero || uploadErrors.fp || 'Error al subir imágenes');
         }
       }
 
       var payload = {
+        hero_title: heroTitle,
         hero_subtitle: heroSubtitle,
         hero_cta_text: heroCtaText,
         hero_cta_url: heroCtaUrl,
@@ -530,20 +556,16 @@
       }
       var heroNewPreview = document.getElementById('heroImageNewPreview');
       var heroNewImg = document.getElementById('heroImageNewImg');
-      if (heroNewPreview) {
-        heroNewPreview.classList.add('hidden');
-        heroNewPreview.style.display = 'none';
-      }
+      if (heroNewPreview) heroNewPreview.style.display = 'none';
       if (heroNewImg) heroNewImg.src = '';
       var heroImgPreview = document.getElementById('heroImagePreview');
       var heroPlaceholder = document.getElementById('heroImagePlaceholder');
       if (heroImgPreview && heroPlaceholder && payload['hero_image_url']) {
         heroImgPreview.src = payload['hero_image_url'];
-        heroImgPreview.classList.remove('hidden');
+        heroImgPreview.style.display = 'block';
         heroPlaceholder.style.display = 'none';
       } else if (heroImgPreview && heroPlaceholder) {
-        heroImgPreview.classList.add('hidden');
-        heroImgPreview.src = '';
+        heroImgPreview.style.display = 'none';
         heroPlaceholder.style.display = 'flex';
       }
 
@@ -556,20 +578,16 @@
       }
       var fpNewPreview = document.getElementById('fpImageNewPreview');
       var fpNewImg = document.getElementById('fpImageNewImg');
-      if (fpNewPreview) {
-        fpNewPreview.classList.add('hidden');
-        fpNewPreview.style.display = 'none';
-      }
+      if (fpNewPreview) fpNewPreview.style.display = 'none';
       if (fpNewImg) fpNewImg.src = '';
       var fpImgPreview = document.getElementById('fpImagePreview');
       var fpPlaceholder = document.getElementById('fpImagePlaceholder');
       if (fpImgPreview && fpPlaceholder && payload['featured_product_image_url']) {
         fpImgPreview.src = payload['featured_product_image_url'];
-        fpImgPreview.classList.remove('hidden');
+        fpImgPreview.style.display = 'block';
         fpPlaceholder.style.display = 'none';
       } else if (fpImgPreview && fpPlaceholder) {
-        fpImgPreview.classList.add('hidden');
-        fpImgPreview.src = '';
+        fpImgPreview.style.display = 'none';
         fpPlaceholder.style.display = 'flex';
       }
 
@@ -588,9 +606,9 @@
   function collectTextKeys(prefix) {
     switch (prefix) {
       case 'hero':
-        return ['hero_subtitle', 'hero_cta_text', 'hero_cta_url', 'hero_image_url'];
+        return ['hero_title', 'hero_subtitle', 'hero_cta_text', 'hero_cta_url', 'hero_image_url'];
       case 'about':
-        return ['about_text'];
+        return ['about_text', 'about_image_1', 'about_image_2', 'about_image_3', 'about_image_4', 'about_image_5'];
       case 'features':
         return ['feature_1_title', 'feature_1_desc', 'feature_2_title', 'feature_2_desc',
                 'feature_3_title', 'feature_3_desc', 'feature_4_title', 'feature_4_desc'];
@@ -632,6 +650,66 @@
           payload['about_text'] = clean;
         }
       }
+
+      var aboutImageUrls = {};
+      var aboutUploadPromises = [];
+      var aboutUploadErrors = {};
+
+      for (let i = 1; i <= 5; i++) {
+        (function(index) {
+          var input = document.getElementById('aboutImageInput' + index);
+          var removeBtn = document.getElementById('aboutImageRemoveBtn' + index);
+          var removeFlag = removeBtn ? removeBtn.dataset.remove === 'true' : false;
+          var currentUrl = textsCache['about_image_' + index] || '';
+
+          if (input && input.files && input.files[0]) {
+            var formData = new FormData();
+            formData.append('image', input.files[0]);
+            var promise = window.adminFetch('/api/admin/upload', {
+              method: 'POST',
+              body: formData
+            }).then(async function (res) {
+              if (!res || !res.ok) {
+                let errMsg = 'Error al subir imagen ' + index + ' del carrusel.';
+                if (res) {
+                  let errData = await res.json().catch(function () { return {}; });
+                  errMsg = errData.error || errMsg;
+                }
+                throw new Error(errMsg);
+              }
+              var data = await res.json();
+              aboutImageUrls[index] = data.url || '';
+            }).catch(function (err) {
+              aboutUploadErrors[index] = err.message || 'Error al subir imagen ' + index;
+              throw err;
+            });
+            aboutUploadPromises.push(promise);
+          } else if (removeFlag) {
+            aboutImageUrls[index] = '';
+          } else {
+            aboutImageUrls[index] = currentUrl;
+          }
+        })(i);
+      }
+
+      if (aboutUploadPromises.length > 0) {
+        try {
+          await Promise.all(aboutUploadPromises);
+        } catch (err) {
+          for (var j = 1; j <= 5; j++) {
+            var errEl = document.getElementById('aboutImageError' + j);
+            if (errEl && aboutUploadErrors[j]) {
+              errEl.textContent = aboutUploadErrors[j];
+              errEl.style.display = 'block';
+            }
+          }
+          throw new Error(aboutUploadErrors[1] || 'Error al subir imágenes del carrusel');
+        }
+      }
+
+      for (var a = 1; a <= 5; a++) {
+        payload['about_image_' + a] = aboutImageUrls[a] || '';
+      }
     } else {
       for (var i = 0; i < keys.length; i++) {
         var key = keys[i];
@@ -666,6 +744,40 @@
 
       var data = await res.json();
       textsCache = Object.assign({}, textsCache, payload);
+
+      if (scope === 'about') {
+        for (let a = 1; a <= 5; a++) {
+          (function(index) {
+            var input = document.getElementById('aboutImageInput' + index);
+            var removeBtn = document.getElementById('aboutImageRemoveBtn' + index);
+            var errorEl = document.getElementById('aboutImageError' + index);
+            var newPreview = document.getElementById('aboutImageNewPreview' + index);
+            var newImg = document.getElementById('aboutImageNewImg' + index);
+            var preview = document.getElementById('aboutImagePreview' + index);
+            var placeholder = document.getElementById('aboutImagePlaceholder' + index);
+            var url = payload['about_image_' + index] || '';
+
+            if (input) input.value = '';
+            if (removeBtn) delete removeBtn.dataset.remove;
+            if (errorEl) {
+              errorEl.style.display = 'none';
+              errorEl.textContent = '';
+            }
+            if (newPreview) newPreview.style.display = 'none';
+            if (newImg) newImg.src = '';
+            if (preview && placeholder) {
+              if (url) {
+                preview.src = url;
+                preview.style.display = 'block';
+                placeholder.style.display = 'none';
+              } else {
+                preview.style.display = 'none';
+                placeholder.style.display = 'flex';
+              }
+            }
+          })(a);
+        }
+      }
 
       showSaveStatus(statusId, 'success', 'Cambios guardados correctamente (' + (data.results?.saved || Object.keys(payload).length) + ' campos)');
       window.showToast('✅', 'Cambios guardados correctamente', 'success');
@@ -793,7 +905,7 @@
       });
     });
 
-    var heroInputs = document.querySelectorAll('#hero_subtitle, #hero_cta_text, #hero_cta_url');
+    var heroInputs = document.querySelectorAll('#hero_title, #hero_subtitle, #hero_cta_text, #hero_cta_url');
     heroInputs.forEach(function (input) {
       input.addEventListener('input', function () {
         if (window.markDirty) window.markDirty('content');
@@ -853,7 +965,6 @@
             var newImg = document.getElementById('heroImageNewImg');
             if (newPreview && newImg) {
               newImg.src = e.target.result;
-              newPreview.classList.remove('hidden');
               newPreview.style.display = 'block';
             }
             if (window.markDirty) window.markDirty('content');
@@ -871,10 +982,7 @@
         if (heroImageInput) heroImageInput.value = '';
         var newPreview = document.getElementById('heroImageNewPreview');
         var newImg = document.getElementById('heroImageNewImg');
-        if (newPreview) {
-          newPreview.classList.add('hidden');
-          newPreview.style.display = 'none';
-        }
+        if (newPreview) newPreview.style.display = 'none';
         if (newImg) newImg.src = '';
         if (window.markDirty) window.markDirty('content');
       });
@@ -920,7 +1028,6 @@
             var newImg = document.getElementById('fpImageNewImg');
             if (newPreview && newImg) {
               newImg.src = e.target.result;
-              newPreview.classList.remove('hidden');
               newPreview.style.display = 'block';
             }
             if (window.markDirty) window.markDirty('content');
@@ -938,16 +1045,84 @@
         if (fpImageInput) fpImageInput.value = '';
         var newPreview = document.getElementById('fpImageNewPreview');
         var newImg = document.getElementById('fpImageNewImg');
-        if (newPreview) {
-          newPreview.classList.add('hidden');
-          newPreview.style.display = 'none';
-        }
+        if (newPreview) newPreview.style.display = 'none';
         if (newImg) newImg.src = '';
         if (window.markDirty) window.markDirty('content');
       });
     }
-  }
-  catch (err) {
+
+    for (var i = 1; i <= 5; i++) {
+      (function(index) {
+        var changeBtn = document.getElementById('aboutImageChangeBtn' + index);
+        var input = document.getElementById('aboutImageInput' + index);
+        var errorEl = document.getElementById('aboutImageError' + index);
+        var removeBtn = document.getElementById('aboutImageRemoveBtn' + index);
+        var newPreview = document.getElementById('aboutImageNewPreview' + index);
+        var newImg = document.getElementById('aboutImageNewImg' + index);
+        var preview = document.getElementById('aboutImagePreview' + index);
+        var placeholder = document.getElementById('aboutImagePlaceholder' + index);
+
+        if (changeBtn && input) {
+          changeBtn.addEventListener('click', function () {
+            input.click();
+          });
+          input.addEventListener('change', function () {
+            if (errorEl) {
+              errorEl.style.display = 'none';
+              errorEl.textContent = '';
+            }
+            if (input.files && input.files[0]) {
+              var file = input.files[0];
+              if (file.size > 5 * 1024 * 1024) {
+                var msg = 'La imagen es muy grande (máximo 5MB)';
+                window.showToast('❌', msg, 'error');
+                if (errorEl) {
+                  errorEl.textContent = msg;
+                  errorEl.style.display = 'block';
+                }
+                input.value = '';
+                return;
+              }
+              if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                var msg2 = 'Formato no soportado. Usá JPG, PNG o WEBP.';
+                window.showToast('❌', msg2, 'error');
+                if (errorEl) {
+                  errorEl.textContent = msg2;
+                  errorEl.style.display = 'block';
+                }
+                input.value = '';
+                return;
+              }
+               var reader = new FileReader();
+               reader.onload = function (e) {
+                 if (newPreview && newImg) {
+                   newImg.src = e.target.result;
+                   newPreview.style.display = 'block';
+                 }
+                 if (preview && placeholder) {
+                   preview.src = e.target.result;
+                   preview.style.display = 'block';
+                   placeholder.style.display = 'none';
+                 }
+                 if (window.markDirty) window.markDirty('content');
+               };
+               reader.readAsDataURL(input.files[0]);
+            }
+          });
+        }
+
+        if (removeBtn) {
+          removeBtn.addEventListener('click', function () {
+            removeBtn.dataset.remove = 'true';
+            if (input) input.value = '';
+            if (newPreview) newPreview.style.display = 'none';
+            if (newImg) newImg.src = '';
+            if (window.markDirty) window.markDirty('content');
+          });
+        }
+      })(i);
+    }
+  } catch (err) {
     console.error('[Content] Error inicializando editor:', err);
   }
   }

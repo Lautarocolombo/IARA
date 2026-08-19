@@ -1,9 +1,10 @@
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
+const { logAudit } = require('../lib/audit');
 
 const getCoupons = async (req, res) => {
   try {
-    const result = await query('SELECT * FROM coupons ORDER BY created_at DESC');
+    const result = await query('SELECT * FROM coupons WHERE (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') ORDER BY created_at DESC');
     res.json(result.rows);
   } catch (err) {
     logger.error('Error obteniendo cupones:', err);
@@ -18,10 +19,19 @@ const createCoupon = async (req, res) => {
       return res.status(400).json({ error: 'Código, tipo y valor son requeridos' });
     }
     const result = await query(
-      'INSERT INTO coupons (code, type, value, min_amount, max_uses, expires_at, active) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
+      'INSERT INTO coupons (code, type, value, min_amount, max_uses, expires_at, active, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) RETURNING *',
       [code, type, Number(value), Number(min_amount || 0), Number(max_uses || 0), expires_at || null, active !== false]
     );
     res.status(201).json(result.rows[0]);
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'create',
+      entityType: 'coupon',
+      entityId: result.rows[0].id,
+      details: `Cupón creado: ${code}`,
+      ip: req.ip || '',
+      tenantId: req.headers['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     logger.error('Error creando cupón:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -33,11 +43,20 @@ const updateCoupon = async (req, res) => {
     const id = Number(req.params.id);
     const { code, type, value, min_amount, max_uses, expires_at, active } = req.body || {};
     const result = await query(
-      'UPDATE coupons SET code = $1, type = $2, value = $3, min_amount = $4, max_uses = $5, expires_at = $6, active = $7 WHERE id = $8 RETURNING *',
+      'UPDATE coupons SET code = $1, type = $2, value = $3, min_amount = $4, max_uses = $5, expires_at = $6, active = $7 WHERE id = $8 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') RETURNING *',
       [code, type, Number(value), Number(min_amount || 0), Number(max_uses || 0), expires_at || null, active !== false, id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Cupón no encontrado' });
     res.json(result.rows[0]);
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'update',
+      entityType: 'coupon',
+      entityId: id,
+      details: `Cupón actualizado: ${code}`,
+      ip: req.ip || '',
+      tenantId: req.headers['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     logger.error('Error actualizando cupón:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -47,9 +66,18 @@ const updateCoupon = async (req, res) => {
 const deleteCoupon = async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const result = await query('DELETE FROM coupons WHERE id = $1 RETURNING id', [id]);
+    const result = await query('DELETE FROM coupons WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') RETURNING id', [id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Cupón no encontrado' });
     res.json({ ok: true });
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'delete',
+      entityType: 'coupon',
+      entityId: id,
+      details: `Cupón eliminado: ${code}`,
+      ip: req.ip || '',
+      tenantId: req.headers['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     logger.error('Error eliminando cupón:', err);
     res.status(500).json({ error: 'Error interno del servidor' });

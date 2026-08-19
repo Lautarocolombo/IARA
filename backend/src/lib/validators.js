@@ -29,9 +29,9 @@ const productSchema = z.object({
 const testimonialSchema = z.object({
   name: z.string().min(1, 'Nombre es requerido').max(100).trim(),
   comment: z.string().min(1, 'Comentario es requerido').max(500).trim(),
-  rating: z.number().int().min(1).max(5).default(5),
+  rating: z.coerce.number().int().min(1).max(5).default(5),
   image: z.string().optional().default(''),
-  active: z.boolean().default(true)
+  active: z.preprocess(toBoolean, z.boolean().default(true))
 });
 
 const siteTextSchema = z.object({

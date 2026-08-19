@@ -3,8 +3,9 @@ const logger = require('../lib/logger');
 const { saveUploadedFile } = require('../lib/upload');
 const { syncBus } = require('../routes/sync');
 const { testimonialSchema } = require('../lib/validators');
+const { logAudit } = require('../lib/audit');
 
-const ALLOWED_TESTIMONIAL_COLUMNS = ['name', 'comment', 'rating', 'image', 'avatar', 'active', 'orden'];
+const ALLOWED_TESTIMONIAL_COLUMNS = ['name', 'comment', 'rating', 'image', 'avatar', 'active', 'orden', 'role'];
 
 const getPublicTestimonials = async (req, res) => {
   try {
@@ -44,6 +45,15 @@ const createTestimonial = async (req, res) => {
     );
     res.status(201).json(result.rows[0]);
     try { syncBus.emit('testimonials_updated', { id: result.rows[0].id }); } catch (e) { /* noop */ }
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'create',
+      entityType: 'testimonial',
+      entityId: result.rows[0].id,
+      details: `Testimonio creado: ${safeName}`,
+      ip: req.ip || '',
+      tenantId: req.headers['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     logger.error('Error creando testimonio:', err);
     res.status(500).json({ error: 'Error interno del servidor' });

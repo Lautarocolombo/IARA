@@ -20,7 +20,6 @@
     try {
       const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/hero-cards`, {}, 2, 1000);
       if (!res) {
-        console.warn('[Hero] No se pudo cargar hero-cards (res null)');
         renderHeroCards([]);
         return;
       }
@@ -31,7 +30,7 @@
       }
       renderHeroCards(cards);
     } catch (err) {
-      console.error('[Hero] Error cargando hero cards:', err);
+      console.error('[loadHeroCards] Error:', err);
       renderHeroCards([]);
     }
   }
@@ -85,8 +84,8 @@
       const defaults = [
         {
           imagen: '',
-          titulo: 'Regalos <em>artesanales</em><br>que cuentan historias',
-          subtitulo: 'Regalos artesanales que cuentan historias, souvenirs y llaveros hechos a mano. Cada pieza es única.',
+          titulo: 'Regalos <em>artesanales</em> que cuentan historias',
+          subtitulo: 'Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es única.',
           cta_texto: 'Explorar Catálogo',
           cta_url: '#catalog',
           polaroid_text: 'Hecho con alma en Gualeguay 🌸'
@@ -122,7 +121,7 @@
       };
 
       const block2 = {
-        imagen: featured2 ? featured2.image : (siteTexts.featured_product_image_url || card2.imagen || ''),
+        imagen: featured2 ? featured2.image : (featured1 ? '' : (siteTexts.featured_product_image_url || card2.imagen || '')),
         titulo: siteText('featured_product_name', card2.titulo || defaults[1].titulo),
         subtitulo: siteText('featured_product_description', card2.subtitulo || defaults[1].subtitulo),
         cta_texto: siteText('featured_product_cta_text', card2.cta_texto || defaults[1].cta_texto),
@@ -136,7 +135,6 @@
       if (heroContent) {
         const subtitleEl = heroContent.querySelector('.hero-subtitle');
         const primaryBtn = heroContent.querySelector('.btn-primary');
-
         if (subtitleEl && data[0].subtitulo) subtitleEl.textContent = data[0].subtitulo;
         if (primaryBtn && data[0].cta_texto) {
           primaryBtn.textContent = data[0].cta_texto;
