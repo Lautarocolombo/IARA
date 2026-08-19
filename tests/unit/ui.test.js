@@ -61,6 +61,7 @@ describe('ui.js utilidades', () => {
   });
 
   test('initMobileNavbar toggle abre y cierra menú', () => {
+    const uiModule = require('../../frontend/js/ui');
     const toggle = document.createElement('button');
     toggle.id = 'navbarToggle';
     toggle.className = 'navbar-toggle';
@@ -72,7 +73,6 @@ describe('ui.js utilidades', () => {
     document.body.appendChild(toggle);
     document.body.appendChild(menu);
 
-    const uiModule = require('../../frontend/js/ui');
     uiModule.initMobileNavbar();
     toggle.click();
     expect(menu.classList.contains('active')).toBe(true);
