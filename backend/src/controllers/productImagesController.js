@@ -1,6 +1,8 @@
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const { getPublicUrl, deleteImageAsset, processFile } = require('../lib/upload');
+const { logAudit } = require('../lib/audit');
+const { applyETag } = require('../lib/etag');
 
 async function getProductImages(req, res) {
   try {
@@ -14,6 +16,7 @@ async function getProductImages(req, res) {
       ...img,
       url: getPublicUrl(img.url, baseUrl)
     }));
+    if (applyETag(req, res, images)) return;
     res.json(images);
   } catch (err) {
     logger.error('Error obteniendo imágenes:', err);
@@ -81,12 +84,21 @@ async function uploadProductImages(req, res) {
       }
     }
 
-     res.status(201).json({ ok: true, images: uploaded });
+    res.status(201).json({ ok: true, images: uploaded });
 
     if (uploaded.length > 0) {
       const mainUrl = uploaded[0].url;
       await query('UPDATE products SET image = $1 WHERE id = $2', [mainUrl, productId]);
     }
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'upload',
+      entityType: 'product_image',
+      entityId: productId,
+      details: `${uploaded.length} imágenes subidas para producto ${productId}`,
+      ip: req.ip || '',
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     logger.error({ err: err.message }, 'Error subiendo imágenes');
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -143,6 +155,15 @@ async function updateProductImage(req, res) {
     }
 
     res.json(updated);
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'update',
+      entityType: 'product_image',
+      entityId: Number(req.params.imageId),
+      details: `Imagen de producto actualizada: producto ${productId}`,
+      ip: req.ip || '',
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     logger.error('Error actualizando imagen:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -184,6 +205,15 @@ async function deleteProductImage(req, res) {
     }
 
     res.json({ ok: true });
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'delete',
+      entityType: 'product_image',
+      entityId: imageId,
+      details: `Imagen eliminada de producto ${productId}`,
+      ip: req.ip || '',
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     logger.error('Error eliminando imagen:', err);
     res.status(500).json({ error: 'Error interno del servidor' });

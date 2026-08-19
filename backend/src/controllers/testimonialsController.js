@@ -4,13 +4,14 @@ const { saveUploadedFile } = require('../lib/upload');
 const { syncBus } = require('../routes/sync');
 const { testimonialSchema } = require('../lib/validators');
 const { logAudit } = require('../lib/audit');
+const { applyETag } = require('../lib/etag');
 
 const ALLOWED_TESTIMONIAL_COLUMNS = ['name', 'comment', 'rating', 'image', 'avatar', 'active', 'orden', 'role'];
 
 const getPublicTestimonials = async (req, res) => {
   try {
     const result = await query('SELECT * FROM testimonials WHERE active = TRUE ORDER BY orden ASC, created_at DESC');
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    if (applyETag(req, res, result.rows)) return;
     res.json(result.rows);
   } catch (err) {
     logger.error('Error obteniendo testimonios:', err);

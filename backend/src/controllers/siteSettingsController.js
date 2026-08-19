@@ -1,6 +1,7 @@
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const { syncBus } = require('../routes/sync');
+const { logAudit } = require('../lib/audit');
 
 const getSiteSettings = async (req, res) => {
   try {
@@ -131,6 +132,15 @@ const updateSiteSettings = async (req, res) => {
     logger.info({ settingsKeys: Object.keys(settings), hasPayment }, 'updateSiteSettings: configuración actualizada');
     res.json({ ok: true });
     try { syncBus.emit('settings_updated', {}); } catch (e) { /* noop */ }
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'update',
+      entityType: 'site_settings',
+      entityId: 0,
+      details: `Configuración del sitio actualizada: ${Object.keys(settings).length} claves`,
+      ip: req.ip || '',
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     logger.error('Error actualizando settings:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -218,6 +228,15 @@ const updateAdminPaymentConfig = async (req, res) => {
       notifyClientRejected: notifyClientRejected !== false
     });
     try { syncBus.emit('settings_updated', {}); } catch (e) { /* noop */ }
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'update',
+      entityType: 'payment_config',
+      entityId: 0,
+      details: `Configuración de pago actualizada: ${mpAlias || 'n/a'}`,
+      ip: req.ip || '',
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     logger.error('Error guardando config de pago:', err);
     res.status(500).json({ error: 'Error interno del servidor' });

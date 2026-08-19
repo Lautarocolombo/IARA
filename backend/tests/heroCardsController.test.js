@@ -80,7 +80,8 @@ describe('heroCardsController', () => {
 
       await getPublicHeroCards(req, res);
 
-      expect(res.setHeader).toHaveBeenCalledWith('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+      expect(res.setHeader).toHaveBeenCalledWith('ETag', expect.any(String));
+      expect(res.setHeader).toHaveBeenCalledWith('Cache-Control', 'public, max-age=300');
       expect(res.json).toHaveBeenCalled();
     });
 

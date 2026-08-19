@@ -90,7 +90,8 @@ describe('productsController', () => {
       const req = { query: {}, protocol: 'http', get: () => 'localhost' };
       const res = {
         setHeader: jest.fn(),
-        json: jest.fn()
+        json: jest.fn(),
+        status: jest.fn(() => res)
       };
 
       query.mockResolvedValueOnce({ rows: [] });
@@ -107,7 +108,8 @@ describe('productsController', () => {
       const req = { query: { category: 'pulseras', minPrice: '100', maxPrice: '500' }, protocol: 'http', get: () => 'localhost' };
       const res = {
         setHeader: jest.fn(),
-        json: jest.fn()
+        json: jest.fn(),
+        status: jest.fn(() => res)
       };
 
       query.mockResolvedValueOnce({ rows: [] });

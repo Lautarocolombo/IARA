@@ -37,7 +37,8 @@ describe('reviewsController', () => {
       const req = { params: { productId: 1 } };
       const res = {
         setHeader: jest.fn(),
-        json: jest.fn()
+        json: jest.fn(),
+        status: jest.fn(() => res)
       };
 
       query.mockResolvedValueOnce({
@@ -48,7 +49,8 @@ describe('reviewsController', () => {
 
       await getProductReviews(req, res);
 
-      expect(res.setHeader).toHaveBeenCalledWith('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+      expect(res.setHeader).toHaveBeenCalledWith('ETag', expect.any(String));
+      expect(res.setHeader).toHaveBeenCalledWith('Cache-Control', 'public, max-age=300');
       expect(res.json).toHaveBeenCalledWith([
         { id: 1, product_id: 1, rating: 5, comment: 'Excelente', name: 'Juan', avatar: '', created_at: '2024-01-01' }
       ]);

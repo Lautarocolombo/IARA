@@ -1,6 +1,7 @@
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const { syncBus } = require('../routes/sync');
+const { logAudit } = require('../lib/audit');
 
 const getSales = async (req, res) => {
   try {
@@ -95,6 +96,15 @@ const createManualSale = async (req, res) => {
       }
     });
     logger.info({ saleId: created.id, productId: Number(product_id), qty, total }, 'Venta manual registrada');
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'create',
+      entityType: 'sale',
+      entityId: created.id,
+      details: `Venta manual: ${qty}x ${product.name} = $${total}`,
+      ip: req.ip || '',
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     logger.error({ err: err.message, stack: err.stack }, 'Error creando venta manual');
     res.status(500).json({ error: 'Error interno del servidor' });

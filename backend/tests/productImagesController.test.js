@@ -32,7 +32,11 @@ describe('productImagesController', () => {
   describe('getProductImages', () => {
     test('retorna imágenes del producto', async () => {
       const req = { params: { id: '1' }, protocol: 'http', get: () => 'localhost' };
-      const res = { json: jest.fn() };
+      const res = {
+        setHeader: jest.fn(),
+        json: jest.fn(),
+        status: jest.fn(() => res)
+      };
 
       query.mockResolvedValueOnce({ rows: [{ id: 1, url: '/uploads/img.webp' }] });
 

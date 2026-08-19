@@ -3,6 +3,7 @@ const { reviewSchema } = require('../lib/validators');
 const logger = require('../lib/logger');
 const { saveUploadedFile } = require('../lib/upload');
 const { syncBus } = require('../routes/sync');
+const { applyETag } = require('../lib/etag');
 
 const getProductReviews = async (req, res) => {
   try {
@@ -11,7 +12,7 @@ const getProductReviews = async (req, res) => {
       'SELECT * FROM reviews WHERE product_id = $1 AND tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\') ORDER BY created_at DESC',
       [productId]
     );
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    if (applyETag(req, res, result.rows)) return;
     res.json(result.rows);
   } catch (err) {
     logger.error('Error obteniendo reseñas:', err);

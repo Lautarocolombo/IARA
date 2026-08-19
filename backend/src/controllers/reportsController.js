@@ -1,6 +1,7 @@
 const { query, transaction } = require('../lib/db');
 const logger = require('../lib/logger');
 const { safeJsonParse } = require('../lib/parser');
+const { logAudit } = require('../lib/audit');
 
 const WEEKLY_BAJA_THRESHOLD = 300;
 const WEEKLY_MEDIA_THRESHOLD = 800;
@@ -166,6 +167,15 @@ const resetMetrics = async (req, res) => {
     });
 
     res.json({ ok: true, deleted: result });
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'reset',
+      entityType: 'reports',
+      entityId: 0,
+      details: `Métricas reiniciadas: ${result.deletedOrders} pedidos, ${result.deletedSales} ventas, ${result.deletedProofs} comprobantes`,
+      ip: req.ip || '',
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     logger.error({ err: err.message }, 'Error reiniciando métricas');
     res.status(500).json({ error: 'Error interno del servidor' });

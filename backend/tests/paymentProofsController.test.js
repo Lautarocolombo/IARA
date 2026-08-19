@@ -96,7 +96,8 @@ describe('paymentProofsController', () => {
         file: { path: '/uploads/comprobantes/proof.jpg' },
         body: { customerName: 'Juan' },
         headers: { 'x-tenant-id': 'default' },
-        user: {}
+        user: {},
+        ip: '127.0.0.1'
       };
       const res = {
         status: jest.fn(() => res),
@@ -111,6 +112,9 @@ describe('paymentProofsController', () => {
 
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ ok: true }));
+      const lastCall = query.mock.calls[query.mock.calls.length - 1];
+      expect(lastCall[0]).toContain('INSERT INTO activity_log');
+      expect(lastCall[1]).toEqual(['cliente', 'upload', 'payment_proof', 1, 'Comprobante subido para pedido #1', '127.0.0.1', 'default']);
     });
 
     test('retorna 400 si el ID de pedido es inválido', async () => {
@@ -169,9 +173,13 @@ describe('paymentProofsController', () => {
       const req = {
         params: { id: '1' },
         user: { user: 'admin' },
-        headers: { 'x-tenant-id': 'default' }
+        headers: { 'x-tenant-id': 'default' },
+        ip: '127.0.0.1'
       };
-      const res = { json: jest.fn() };
+      const res = {
+        json: jest.fn(),
+        status: jest.fn(() => res)
+      };
 
       query.mockResolvedValueOnce({ rows: [{ id: 1, status: 'pending', order_id: 1 }] });
       query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
@@ -182,6 +190,9 @@ describe('paymentProofsController', () => {
 
       expect(res.json).toHaveBeenCalledWith({ ok: true });
       expect(query).toHaveBeenCalledWith('UPDATE orders SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', ['confirmed', 1]);
+      const approveCall = query.mock.calls[query.mock.calls.length - 1];
+      expect(approveCall[0]).toContain('INSERT INTO activity_log');
+      expect(approveCall[1]).toEqual(['admin', 'approve', 'payment_proof', 1, 'Comprobante aprobado para pedido #1', '127.0.0.1', 'default']);
     });
 
     test('retorna 404 si el comprobante no existe', async () => {
@@ -219,9 +230,13 @@ describe('paymentProofsController', () => {
         params: { id: '1' },
         body: { reason: 'Monto incorrecto' },
         user: { user: 'admin' },
-        headers: { 'x-tenant-id': 'default' }
+        headers: { 'x-tenant-id': 'default' },
+        ip: '127.0.0.1'
       };
-      const res = { json: jest.fn() };
+      const res = {
+        json: jest.fn(),
+        status: jest.fn(() => res)
+      };
 
       query.mockResolvedValueOnce({ rows: [{ id: 1, status: 'pending', order_id: 1 }] });
       query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
@@ -230,7 +245,10 @@ describe('paymentProofsController', () => {
       await rejectPaymentProof(req, res);
 
       expect(res.json).toHaveBeenCalledWith({ ok: true });
-      expect(query).toHaveBeenCalledWith('UPDATE payment_proofs SET status = $1, rejection_reason = $2, reviewed_at = CURRENT_TIMESTAMP WHERE id = $3', ['rejected', 'Monto incorrecto', 1]);
+      expect(query).toHaveBeenCalledWith('UPDATE payment_proofs SET status = $1, rejection_reason = $2, reviewed_at = CURRENT_TIMESTAMP WHERE id = $3 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', ['rejected', 'Monto incorrecto', 1]);
+      const rejectCall = query.mock.calls[query.mock.calls.length - 1];
+      expect(rejectCall[0]).toContain('INSERT INTO activity_log');
+      expect(rejectCall[1]).toEqual(['admin', 'reject', 'payment_proof', 1, 'Comprobante rechazado para pedido #1. Motivo: Monto incorrecto', '127.0.0.1', 'default']);
     });
 
     test('retorna 404 si el comprobante no existe', async () => {

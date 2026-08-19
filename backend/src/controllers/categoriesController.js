@@ -2,6 +2,7 @@ const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const { saveUploadedFile } = require('../lib/upload');
 const { logAudit } = require('../lib/audit');
+const { applyETag } = require('../lib/etag');
 
 const ALLOWED_CATEGORY_COLUMNS = ['name', 'slug', 'description', 'active', 'orden', 'emoji', 'image', 'parent_id', 'image_url'];
 
@@ -31,7 +32,7 @@ const getPublicCategories = async (req, res) => {
        GROUP BY c.id
        ORDER BY c.orden ASC, c.name ASC`
     );
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    if (applyETag(req, res, result.rows)) return;
     res.json(result.rows);
   } catch (err) {
     logger.error('Error obteniendo categorías públicas:', err);

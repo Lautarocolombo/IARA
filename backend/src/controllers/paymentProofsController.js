@@ -2,6 +2,7 @@ const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const { safeJsonParse } = require('../lib/parser');
 const { syncBus } = require('../routes/sync');
+const { logAudit } = require('../lib/audit');
 const path = require('path');
 const fs = require('fs');
 
@@ -18,7 +19,7 @@ function ensureComprobantesDir() {
 async function getAdminPaymentProofs(req, res) {
   try {
     const { status, search, page, limit } = req.query;
-    let where = 'WHERE TRUE';
+    let where = 'WHERE (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')';
     const params = [];
 
     if (status) { params.push(status); where += ` AND status = $${params.length}`; }
@@ -93,6 +94,15 @@ async function uploadPaymentProof(req, res) {
     try { syncBus.emit('payment_proof_uploaded', { orderId: orderIdNum, proofId: proof.id }); } catch (e) { /* noop */ }
 
     res.status(201).json({ ok: true, proof });
+    logAudit({
+      user: req.user?.user || 'cliente',
+      action: 'upload',
+      entityType: 'payment_proof',
+      entityId: proof.id,
+      details: `Comprobante subido para pedido #${orderIdNum}`,
+      ip: req.ip || '',
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     logger.error({ err: err.message }, 'Error subiendo comprobante');
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -102,7 +112,7 @@ async function uploadPaymentProof(req, res) {
 async function approvePaymentProof(req, res) {
   try {
     const proofId = Number(req.params.id);
-    const result = await query('SELECT * FROM payment_proofs WHERE id = $1', [proofId]);
+    const result = await query('SELECT * FROM payment_proofs WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [proofId]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Comprobante no encontrado' });
 
     const proof = result.rows[0];
@@ -111,7 +121,7 @@ async function approvePaymentProof(req, res) {
     }
 
     const orderId = proof.order_id;
-    await query('UPDATE payment_proofs SET status = $1, reviewed_at = CURRENT_TIMESTAMP WHERE id = $2', ['approved', proofId]);
+    await query('UPDATE payment_proofs SET status = $1, reviewed_at = CURRENT_TIMESTAMP WHERE id = $2 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', ['approved', proofId]);
     await query('UPDATE orders SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', ['confirmed', orderId]);
 
     const user = req.user?.user || 'admin';
@@ -124,6 +134,15 @@ async function approvePaymentProof(req, res) {
     try { syncBus.emit('order_status_updated', { id: orderId, status: 'confirmed' }); } catch (e) { /* noop */ }
 
     res.json({ ok: true });
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'approve',
+      entityType: 'payment_proof',
+      entityId: proofId,
+      details: `Comprobante aprobado para pedido #${orderId}`,
+      ip: req.ip || '',
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     logger.error({ err: err.message }, 'Error aprobando comprobante');
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -134,7 +153,7 @@ async function rejectPaymentProof(req, res) {
   try {
     const proofId = Number(req.params.id);
     const { reason } = req.body || {};
-    const result = await query('SELECT * FROM payment_proofs WHERE id = $1', [proofId]);
+    const result = await query('SELECT * FROM payment_proofs WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [proofId]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Comprobante no encontrado' });
 
     const proof = result.rows[0];
@@ -143,7 +162,7 @@ async function rejectPaymentProof(req, res) {
     }
 
     const orderId = proof.order_id;
-    await query('UPDATE payment_proofs SET status = $1, rejection_reason = $2, reviewed_at = CURRENT_TIMESTAMP WHERE id = $3', ['rejected', reason || '', proofId]);
+    await query('UPDATE payment_proofs SET status = $1, rejection_reason = $2, reviewed_at = CURRENT_TIMESTAMP WHERE id = $3 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', ['rejected', reason || '', proofId]);
 
     const user = req.user?.user || 'admin';
     await query(
@@ -154,6 +173,15 @@ async function rejectPaymentProof(req, res) {
     try { syncBus.emit('payment_proof_rejected', { orderId, proofId, reason }); } catch (e) { /* noop */ }
 
     res.json({ ok: true });
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'reject',
+      entityType: 'payment_proof',
+      entityId: proofId,
+      details: `Comprobante rechazado para pedido #${orderId}. Motivo: ${reason || 'Sin motivo'}`,
+      ip: req.ip || '',
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     logger.error({ err: err.message }, 'Error rechazando comprobante');
     res.status(500).json({ error: 'Error interno del servidor' });

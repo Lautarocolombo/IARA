@@ -37,14 +37,16 @@ describe('testimonialsController', () => {
       const req = { query: {} };
       const res = {
         setHeader: jest.fn(),
-        json: jest.fn()
+        json: jest.fn(),
+        status: jest.fn(() => res)
       };
 
       query.mockResolvedValueOnce({ rows: [{ id: 1, active: true, name: 'Juan' }] });
 
       await getPublicTestimonials(req, res);
 
-      expect(res.setHeader).toHaveBeenCalledWith('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+      expect(res.setHeader).toHaveBeenCalledWith('ETag', expect.any(String));
+      expect(res.setHeader).toHaveBeenCalledWith('Cache-Control', 'public, max-age=300');
       expect(res.json).toHaveBeenCalledWith(expect.any(Array));
     });
 

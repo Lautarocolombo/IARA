@@ -3,6 +3,7 @@ const logger = require('../lib/logger');
 const { getPublicUrl, deleteImageAsset, processFile } = require('../lib/upload');
 const { syncBus } = require('../routes/sync');
 const { logAudit } = require('../lib/audit');
+const { applyETag } = require('../lib/etag');
 
 function mapRow(r, baseUrl) {
   return {
@@ -46,7 +47,7 @@ const getPublicHeroCards = async (req, res) => {
     const result = await query('SELECT * FROM hero_cards WHERE activo = TRUE AND tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\') ORDER BY slot ASC, id ASC');
     const mapped = result.rows.map(r => mapRow(r, baseUrl));
     logger.debug('[HeroCards] GET /hero-cards public count:', mapped.length, mapped.map(function(c) { return { slot: c.slot, imagen: c.imagen ? 'has-image' : 'empty' }; }));
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    if (applyETag(req, res, mapped)) return;
     res.json(mapped);
   } catch (err) {
     logger.error('Error obteniendo hero cards públicos:', err);

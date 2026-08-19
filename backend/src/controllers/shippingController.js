@@ -1,5 +1,6 @@
 const { query, transaction } = require('../lib/db');
 const logger = require('../lib/logger');
+const { logAudit } = require('../lib/audit');
 
 const getShippingDiff = async (req, res) => {
   try {
@@ -61,6 +62,15 @@ const updateShippingRates = async (req, res) => {
       }
     });
     res.json({ ok: true });
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'update',
+      entityType: 'shipping_rates',
+      entityId: 0,
+      details: `Tarifas de envío actualizadas: ${rates.length} provincias`,
+      ip: req.ip || '',
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
   } catch (err) {
     logger.error({ err: err.message }, 'Error guardando tarifas');
     res.status(500).json({ error: 'Error interno del servidor' });

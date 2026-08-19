@@ -4,6 +4,7 @@ const logger = require('../lib/logger');
 const { deleteImageAsset, getPublicUrl } = require('../lib/upload');
 const { syncBus } = require('../routes/sync');
 const { logAudit } = require('../lib/audit');
+const { applyETag } = require('../lib/etag');
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
@@ -292,7 +293,7 @@ const getFeaturedProducts = async (req, res) => {
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
     const result = await query(`SELECT * FROM products WHERE active = TRUE AND deleted = FALSE AND featured = TRUE AND tenant_id = COALESCE(current_setting('app.current_tenant', TRUE), 'default') ORDER BY id ASC LIMIT 2`);
     const enriched = await attachImagesToProducts(result.rows, baseUrl);
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    if (applyETag(req, res, enriched)) return;
     res.json(enriched);
   } catch (err) {
     logger.error({ err: err.message, stack: err.stack }, 'Error obteniendo productos destacados');
@@ -329,7 +330,7 @@ const getPublicProducts = async (req, res) => {
     }
     const result = await query(`SELECT * FROM products ${where} ORDER BY id ASC`, params);
     const enriched = await attachImagesToProducts(result.rows, baseUrl);
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    if (applyETag(req, res, enriched)) return;
     res.json(enriched);
     try { syncBus.emit('products_updated', {}); } catch (e) { /* noop */ }
   } catch (err) {
@@ -459,7 +460,7 @@ const getProductById = async (req, res) => {
     const result = await query('SELECT * FROM products WHERE id = $1 AND deleted = FALSE AND tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')', [id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
     const enriched = await attachImagesToProducts(result.rows, baseUrl);
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    if (applyETag(req, res, enriched[0])) return;
     res.json(enriched[0]);
     try { syncBus.emit('products_updated', { id: Number(req.params.id) }); } catch (e) { /* noop */ }
   } catch (err) {

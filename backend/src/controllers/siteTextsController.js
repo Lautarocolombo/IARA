@@ -4,6 +4,7 @@ const { deleteFromBlob } = require('../lib/upload');
 const path = require('path');
 const fs = require('fs');
 const { syncBus } = require('../routes/sync');
+const { applyETag } = require('../lib/etag');
 
 function sanitizeText(text) {
   if (typeof text !== 'string') return text;
@@ -75,7 +76,7 @@ const getSiteTexts = async (req, res) => {
       map.__updatedAt = maxUpdated;
     }
     logger.debug('[SiteTexts] GET /site-texts keys:', Object.keys(map).length, 'updatedAt:', maxUpdated, 'about images:', [1,2,3,4,5].map(function(i){ return map['about_image_'+i] ? 'has-image' : 'empty'; }).join(', '));
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+    if (applyETag(req, res, map)) return;
     res.json(map);
   } catch (err) {
     logger.error('Error obteniendo textos:', err);
