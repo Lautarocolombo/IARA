@@ -54,7 +54,6 @@
   };
 
   var DEFAULT_SETTINGS = {
-    // TODO: reemplazar por email real
     email: 'chicafittargentina@gmail.com',
     phone: '+54 (3444) 634-4444',
     whatsapp: '+5493444634444',
