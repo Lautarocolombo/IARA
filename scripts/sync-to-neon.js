@@ -34,7 +34,10 @@ function mapRow(table, row) {
 
   if (table === 'testimonials') {
     if (mapped.created_at && String(mapped.created_at).length > 10) {
-      mapped.created_at = new Date(Number(mapped.created_at)).toISOString();
+      const ts = Number(mapped.created_at);
+      if (!Number.isNaN(ts)) {
+        mapped.created_at = new Date(ts).toISOString();
+      }
     }
     if (mapped.orden !== undefined && mapped.orden === 0) {
       mapped.orden = null;
