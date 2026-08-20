@@ -30,10 +30,12 @@ async function fetchProducts(filters = {}) {
     if (res) {
       products = await res.json();
     }
+    return true;
   } catch (err) {
     console.error('Error cargando productos:', err);
     products = defaultProducts;
-    if (typeof renderProducts === 'function') renderProducts(getProducts());
+    showProductsError(err);
+    return false;
   }
 }
 
@@ -56,26 +58,47 @@ async function searchProducts(query, filters = {}) {
     }
   } catch (err) {
     console.error('Error buscando productos:', err);
-    showToast('', window.getFetchErrorMessage(err), 'error');
+    showProductsError(err);
   }
 }
 
 async function applyFilters(filters = {}) {
   const category = filters.category || 'all';
   if (category === 'all' && !filters.minPrice && !filters.maxPrice) {
-    await fetchProducts();
+    const ok = await fetchProducts();
+    if (ok) renderProducts(getProducts());
   } else {
-    await fetchProducts({
+    const ok = await fetchProducts({
       category: category === 'all' ? '' : category,
       minPrice: filters.minPrice,
       maxPrice: filters.maxPrice
     });
+    if (ok) renderProducts(getProducts());
   }
-  renderProducts(getProducts());
 }
 
 function getProducts() {
   return products;
+}
+
+function showProductsError(err) {
+  const grid = document.getElementById('productsGrid');
+  if (!grid) return;
+  const msg = (err && err.message) ? err.message : 'No se pudieron cargar los productos.';
+  grid.innerHTML = `
+    <div class="products-error-state" style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
+      <p style="font-size: 1.1rem; color: #ef4444; margin-bottom: 1rem;">${escapeHtml(msg)}</p>
+      <button id="retryProductsBtn" class="btn btn-primary">Reintentar</button>
+    </div>
+  `;
+  const retryBtn = document.getElementById('retryProductsBtn');
+  if (retryBtn) {
+    retryBtn.addEventListener('click', async () => {
+      grid.innerHTML = '';
+      await fetchProducts();
+      renderProducts(getProducts());
+    });
+  }
 }
 
 function getProductsByCategory(category) {
@@ -103,13 +126,17 @@ function renderProducts(productsToRender) {
       : window.renderProductImage('', product.name, { className: 'product-card-img', placeholder: product.emoji || '📿' });
     const catClass = product.category ? `cat-${product.category}` : '';
     const badgeHtml = product.badge ? `<span class="product-badge">${product.badge}</span>` : '';
+    const stock = Number(product.stock || 0);
+    const outOfStockHtml = stock <= 0 ? `<span class="product-badge product-badge--out">Agotado</span>` : '';
     const waMessage = encodeURIComponent(`Hola! Me interesa el producto: ${product.name} - ${formatARS(product.price)}`);
     const waLink = `https://wa.me/${CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g, '')}?text=${waMessage}`;
+    const cartDisabled = stock <= 0 ? 'disabled' : '';
+    const cartTitle = stock <= 0 ? 'Producto agotado' : `Agregar ${escapeHtml(product.name)} al carrito`;
 return `
     <div class="product-card reveal" data-product-id="${product.id}">
       <a href="pages/product.html?id=${product.id}" style="text-decoration:none;color:inherit;">
         <div class="product-image ${catClass}" aria-hidden="true">${imageHtml}</div>
-        ${badgeHtml}
+        ${badgeHtml}${outOfStockHtml}
       </a>
       <div class="product-info">
         <span class="product-category">${product.category}</span>
@@ -123,7 +150,7 @@ return `
         </div>
       </div>
       <div class="product-actions">
-        <button class="btn-add-cart" data-product-id="${product.id}" data-product-name="${escapeHtml(product.name)}" data-product-price="${product.price}" data-product-emoji="${escapeHtml(product.emoji||'📿')}" data-product-image="${escapeHtml(product.image||'')}" data-product-stock="${product.stock||0}" aria-label="Agregar ${escapeHtml(product.name)} al carrito"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+        <button class="btn-add-cart" ${cartDisabled} data-product-id="${product.id}" data-product-name="${escapeHtml(product.name)}" data-product-price="${product.price}" data-product-emoji="${escapeHtml(product.emoji||'📿')}" data-product-image="${escapeHtml(product.image||'')}" data-product-stock="${stock}" aria-label="${cartTitle}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
         <button class="btn-wishlist" data-product-id="${product.id}" data-product-name="${escapeHtml(product.name)}" data-product-price="${product.price}" data-product-emoji="${escapeHtml(product.emoji||'📿')}" data-product-image="${escapeHtml(product.image||'')}" aria-label="Agregar a favoritos">${window.isInWishlist(product.id) ? '❤️' : '🤍'}</button>
         <a href="${waLink}" target="_blank" class="btn-outline btn-sm" rel="noopener" title="Consultar por WhatsApp">💬</a>
       </div>
@@ -161,8 +188,8 @@ function renderFeaturedProducts() {
   }
 
   async function initProducts() {
-    await fetchProducts();
-    renderProducts(getProducts());
+    const ok = await fetchProducts();
+    if (ok) renderProducts(getProducts());
     if (typeof renderFeaturedProducts === 'function') {
       renderFeaturedProducts();
     }
@@ -236,7 +263,7 @@ function renderFeaturedProducts() {
 
     document.getElementById('productsGrid')?.addEventListener('click', (e) => {
       const btn = e.target.closest('.btn-add-cart');
-      if (!btn) return;
+      if (!btn || btn.disabled) return;
       e.preventDefault();
       e.stopPropagation();
       const product = {

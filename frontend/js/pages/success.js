@@ -20,6 +20,7 @@
     try {
       const order = JSON.parse(raw);
       sessionStorage.removeItem('ag_last_order');
+      try { localStorage.removeItem('ag_pending_order'); } catch (e) {}
       if (order.number) {
         document.getElementById('successOrderNumber').textContent = order.number;
       }
@@ -161,7 +162,9 @@
       formData.append('customerName', holderInput.value.trim());
       formData.append('image', fileInput.files[0]);
       const orderToken = (() => {
-        const raw = sessionStorage.getItem('ag_last_order');
+        const rawSession = sessionStorage.getItem('ag_last_order');
+        const rawLocal = localStorage.getItem('ag_pending_order');
+        const raw = rawLocal || rawSession;
         if (!raw) return '';
         try {
           const order = JSON.parse(raw);
@@ -182,6 +185,8 @@
         showToast('', 'Comprobante enviado correctamente. Te avisaremos cuando sea verificado.', 'success');
         closeReceiptModal();
         receiptForm.reset();
+        try { localStorage.removeItem('ag_pending_order'); } catch (e) {}
+        try { sessionStorage.removeItem('ag_last_order'); } catch (e) {}
       } catch (err) {
         showToast('', window.getFetchErrorMessage(err) || 'Error al enviar el comprobante', 'error');
       }

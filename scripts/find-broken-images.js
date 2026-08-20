@@ -125,7 +125,7 @@ async function run() {
     console.log('product_images rotas (path local o base64):');
     console.log("  SELECT id, product_id, url FROM product_images");
     console.log("   WHERE url LIKE '/uploads/%' OR url LIKE 'data:image%'");
-    console.log("     OR url LIKE 'https://iara-uxcu.onrender.com/uploads/%';");
+    console.log("     OR url LIKE 'https://api.artesaniagualeguay.com/uploads/%';");
     console.log('');
     console.log('hero_cards / categories / testimonials con storage efímero:');
     console.log("  SELECT id, imagen FROM hero_cards WHERE imagen LIKE '/uploads/%' OR imagen LIKE 'data:image%';");

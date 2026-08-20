@@ -74,7 +74,7 @@ if ($LASTEXITCODE -eq 0) {
 
 # Generar nuevo token
 Write-Step "Generando nuevo token..."
-$newToken = vercel tokens create iara-rotate-$(Get-Date -Format 'yyyyMMdd-HHmmss') --scope "deploy" 2>&1 | Out-String
+$newToken = vercel tokens create artesaniagualeguay-rotate-$(Get-Date -Format 'yyyyMMdd-HHmmss') --scope "deploy" 2>&1 | Out-String
 if ($LASTEXITCODE -ne 0) {
     Write-Err "Error generando token: $newToken"
     exit 1

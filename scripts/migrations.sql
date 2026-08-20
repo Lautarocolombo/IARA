@@ -1,4 +1,4 @@
--- IARA - Migraciones SQL para Neon (PostgreSQL)
+-- Artesania Gualeguay - Migraciones SQL para Neon (PostgreSQL)
 -- Ejecutar en la base de datos de producción
 
 -- Índices de rendimiento

@@ -385,6 +385,28 @@
         subtotal: subtotal,
         orderToken: orderData.order_token || ''
       }));
+      try {
+        localStorage.setItem('ag_pending_order', JSON.stringify({
+          id: orderId,
+          number: orderNumber,
+          total: total,
+          items: items.map(i => ({ name: i.name, qty: i.qty, price: i.price })),
+          waNumber,
+          waMsg,
+          shippingName: shipping.name,
+          shippingAddress: shipping.address,
+          shippingCity: shipping.city,
+          shippingProvince: shipping.province,
+          shippingPhone: shipping.phone,
+          shippingEmail: shipping.email,
+          shippingCost: shippingCost,
+          subtotal: subtotal,
+          orderToken: orderData.order_token || '',
+          savedAt: Date.now()
+        }));
+      } catch (e) {
+        console.warn('[checkout] No se pudo guardar pedido pendiente en localStorage:', e);
+      }
 
       document.getElementById('paymentOrderId').textContent = orderNumber;
       document.getElementById('paymentOrderTotal').textContent = formatARS(total);
@@ -460,7 +482,19 @@
   window.addEventListener('storage', updateSummary);
 
   function restoreOrderFromSession() {
-    const raw = sessionStorage.getItem('ag_last_order');
+    const sources = [
+      { key: 'ag_pending_order', storage: localStorage },
+      { key: 'ag_last_order', storage: sessionStorage }
+    ];
+    let raw = null;
+    for (const src of sources) {
+      try {
+        raw = src.storage.getItem(src.key);
+        if (raw) break;
+      } catch (e) {
+        continue;
+      }
+    }
     if (!raw) return;
     try {
       const order = JSON.parse(raw);
@@ -498,6 +532,11 @@
     } catch (e) {
       console.error('Error restaurando pedido desde sesión:', e);
     }
+  }
+
+  function clearSavedOrder() {
+    try { sessionStorage.removeItem('ag_last_order'); } catch (e) {}
+    try { localStorage.removeItem('ag_pending_order'); } catch (e) {}
   }
 
     if (document.readyState === 'loading') {
@@ -622,7 +661,8 @@
     copyTransferField,
     showFieldError,
     clearFieldError,
-    restoreOrderFromSession
+    restoreOrderFromSession,
+    clearSavedOrder
   };
 
   if (typeof module !== 'undefined' && module.exports) {

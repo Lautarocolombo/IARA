@@ -10,7 +10,7 @@ if (fs.existsSync(envPath)) {
 }
 
 const NEON_URL = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
-const LOCAL_DB_PATH = path.join(__dirname, '..', 'backend', 'data', 'iara.db');
+const LOCAL_DB_PATH = path.join(__dirname, '..', 'backend', 'data', 'artesaniagualeguay.db');
 
 function mapRow(table, row) {
   const mapped = { ...row };

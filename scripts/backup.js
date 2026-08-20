@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 
 const DB_DIR = process.env.VERCEL ? '/tmp/ag-data' : path.join(__dirname, '..', '..', 'data');
-const DB_PATH = path.join(DB_DIR, 'iara.db');
+const DB_PATH = path.join(DB_DIR, 'artesaniagualeguay.db');
 const BACKUP_DIR = path.join(DB_DIR, 'backups');
 
 if (!fs.existsSync(BACKUP_DIR)) {
@@ -12,7 +12,7 @@ if (!fs.existsSync(BACKUP_DIR)) {
 
 function backup() {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const backupPath = path.join(BACKUP_DIR, `iara-backup-${timestamp}.db`);
+  const backupPath = path.join(BACKUP_DIR, `artesaniagualeguay-backup-${timestamp}.db`);
   try {
     if (fs.existsSync(DB_PATH)) {
       fs.copyFileSync(DB_PATH, backupPath);
