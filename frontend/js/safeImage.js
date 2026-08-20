@@ -130,10 +130,10 @@
          if (u) return u;
        }
      }
-     if (product.image) {
-       var p = String(product.image).trim();
-       if (p) return p;
-     }
+      if (product.image) {
+        var p = String(product.image).trim();
+        if (p && p !== 'null') return p;
+      }
      return '';
    };
 

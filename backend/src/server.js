@@ -123,7 +123,6 @@ const defaultOrigins = [
   'https://www.artesaniagualeguay.com',
   'https://artesania-gualeguay.vercel.app',
   'https://artesania-gualeguay-v3.vercel.app',
-  'https://iara-ivory.vercel.app',
   'http://localhost:3000',
   'http://localhost:3001',
   'http://localhost:5173',

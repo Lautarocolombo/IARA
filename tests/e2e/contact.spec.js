@@ -53,7 +53,7 @@ test('contact: muestra información de contacto', async ({ page }) => {
   await page.goto('/pages/contact.html');
   await expect(page.locator('.contact-info')).toBeVisible();
   await expect(page.locator('a[href^="tel:"]')).toContainText('+54 (3444) 634-4444');
-  await expect(page.locator('a[href^="mailto:"]')).toContainText('chicafittargentina@gmail.com');
+  await expect(page.locator('a[href^="mailto:"]')).toContainText('CONFIGURAR_EMAIL');
 });
 
 test('contact: mapa está presente', async ({ page }) => {

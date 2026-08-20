@@ -54,7 +54,7 @@
   };
 
   var DEFAULT_SETTINGS = {
-    email: 'chicafittargentina@gmail.com',
+    email: 'CONFIGURAR_EMAIL',
     phone: '+54 (3444) 634-4444',
     whatsapp: '+5493444634444',
     address: 'San Antonio Norte 473, Gualeguay, Entre Ríos, Argentina',

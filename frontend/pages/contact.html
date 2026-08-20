@@ -62,7 +62,7 @@
             <div class="info-icon" aria-hidden="true">📧</div>
             <div>
                <h4>Email</h4>
-               <a href="mailto:chicafittargentina@gmail.com">chicafittargentina@gmail.com</a>
+                <a href="mailto:CONFIGURAR_EMAIL">CONFIGURAR_EMAIL</a>
             </div>
           </div>
           <div class="info-item">
@@ -78,7 +78,8 @@
               <span>San Antonio Norte 473, Gualeguay, Entre Ríos, Argentina</span>
             </div>
             <iframe
-              src="https://www.google.com/maps?q=San+Antonio+Norte+473,+Gualeguay,+Entre+R%C3%ADos,+Argentina&output=embed"
+              id="mapIframe"
+              src="https://www.google.com/maps?q=San+Antonio+Norte+473,+Gualeguay,+Entre+R%C3%ADos,+Argentina&output=embed&hl=es"
               width="100%"
               height="300"
               loading="lazy"
@@ -178,7 +179,7 @@
           iframe.style.display = 'none';
           fallback.style.display = 'flex';
         }
-      }, 20000);
+      }, 30000);
 
       iframe.addEventListener('load', function() {
         loaded = true;
@@ -191,6 +192,11 @@
           fallback.style.display = 'flex';
         }
       });
+
+      var apiKey = (typeof CONFIG !== 'undefined' && CONFIG.CONTACT && CONFIG.CONTACT.GOOGLE_MAPS_API_KEY) ? CONFIG.CONTACT.GOOGLE_MAPS_API_KEY : '';
+      if (apiKey) {
+        iframe.src = 'https://www.google.com/maps/embed/v1/place?key=' + encodeURIComponent(apiKey) + '&q=San+Antonio+Norte+473,+Gualeguay,+Entre+R%C3%ADos,+Argentina&language=es';
+      }
     })();
   </script>
 </body>

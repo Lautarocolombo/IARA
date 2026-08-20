@@ -2,12 +2,12 @@ function cspMiddleware(req, res, next) {
   const nonce = req.nonce || '';
   const csp = [
     "default-src 'self'",
-    `script-src 'self' https://cdn.jsdelivr.net https://cdn.vercel-insights.com https://www.googletagmanager.com https://*.googletagmanager.com https://*.google-analytics.com 'nonce-${nonce}'`,
+    `script-src 'self' https://cdn.jsdelivr.net https://cdn.vercel-insights.com https://www.googletagmanager.com https://*.googletagmanager.com https://*.google-analytics.com https://maps.googleapis.com 'nonce-${nonce}'`,
     "style-src 'self' https://fonts.googleapis.com https://cdn.jsdelivr.net 'unsafe-inline'",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https: blob:",
-    "connect-src 'self' https://api.resend.com https://vitals.vercel-insights.com https://*.googleanalytics.com https://*.google-analytics.com https://stats.g.doubleclick.net https://iara-os3h.onrender.com",
-    "frame-src 'self' https://maps.google.com https://www.google.com",
+    "connect-src 'self' https://api.resend.com https://vitals.vercel-insights.com https://*.googleanalytics.com https://*.google-analytics.com https://stats.g.doubleclick.net https://iara-os3h.onrender.com https://maps.googleapis.com https://maps.gstatic.com",
+    "frame-src 'self' https://maps.google.com https://www.google.com https://www.google.com/maps",
     "frame-ancestors 'none'",
     "worker-src 'self' blob:",
     "object-src 'none'",

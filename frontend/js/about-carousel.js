@@ -69,6 +69,7 @@
       img.onerror = function() {
         var fb = img.dataset.fallback;
         if (fb && img.src.indexOf(fb) === -1) {
+          console.warn('[about-carousel] Primary image failed, trying fallback:', fb);
           img.src = fb;
           return;
         }

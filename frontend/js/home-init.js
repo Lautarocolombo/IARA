@@ -8,7 +8,7 @@
     description: 'Pulseras, souvenirs y accesorios hechos a mano en Gualeguay, Entre Ríos',
     url: window.location.origin,
     telephone: '+5493444634444',
-    email: 'chicafittargentina@gmail.com',
+    email: 'CONFIGURAR_EMAIL',
     address: {
       '@type': 'PostalAddress',
       streetAddress: 'San Antonio Norte 473',
