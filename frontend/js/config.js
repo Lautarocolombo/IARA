@@ -15,7 +15,7 @@ const CONFIG = {
   // Información de contacto
   CONTACT: {
     WHATSAPP: '+5493444634444',
-    WHATSAPP_ALIAS: 'iara-salgueiro',
+    WHATSAPP_ALIAS: 'artesaniagualeguay',
     PHONE: '+54 (3444) 634-4444',
     EMAIL: 'noreply@artesaniagualeguay.com',
     ADDRESS: 'San Antonio Norte 473, Gualeguay, Entre Ríos, Argentina',

@@ -4,8 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Panel Admin | Artesanía Gualeguay</title>
-  <meta name="description" content="Panel de administración de Artesanía Gualeguay. Accedé para gestionar el sitio." />
+  <meta name="description" content="Panel de administración de Artesanía Gualeguay. Gestioná productos, pedidos y configuración del sitio." />
   <link rel="canonical" href="https://artesania-gualeguay-v3.vercel.app/pages/admin.html" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" sizes="any" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
@@ -14,15 +15,22 @@
   <link rel="stylesheet" href="../css/components.css" />
   <link rel="stylesheet" href="../css/animations.css" />
   <link rel="stylesheet" href="../css/admin.css" />
+  <link rel="stylesheet" href="../css/admin-dashboard.css" />
   <link rel="stylesheet" href="../css/pages.css" />
-  <script src="../js/config.js" type="module"></script>
-  <script src="../js/safeImage.js" type="module"></script>
-  <script src="../js/theme.js" type="module"></script>
-  <script src="../js/ui.js" type="module"></script>
+  <script src="../js/config.js"></script>
+  <script src="../js/safeImage.js"></script>
+  <script src="../js/theme.js"></script>
+  <script src="../js/ui.js"></script>
+  <script>
+    if (typeof initNavbarScroll === 'function') initNavbarScroll();
+    if (typeof initMobileNavbar === 'function') initMobileNavbar();
+  </script>
   <script src="../js/connection.js?v=2026080614"></script>
-  <script src="../js/admin.js?v=2026081220"></script>
+  <script src="../js/productImages.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
+  <a href="#adminMain" class="skip-link">Saltar al contenido principal</a>
   <div class="login-overlay" id="loginOverlay">
     <div class="login-card">
       <h2>🌸 Artesanía Admin</h2>
@@ -42,22 +50,717 @@
           </button>
         </div>
       </div>
-      <button type="submit" class="btn btn-primary btn-full" id="loginBtn">Ingresar</button>
+      <button type="submit" class="btn btn-primary" id="loginBtn">Ingresar</button>
       </form>
-      <p class="login-hint" id="loginHint">Verificando...</p>
-      <button class="btn btn-secondary btn-sm hidden retry-health-btn" id="retryHealthBtn">Reintentar conexión</button>
-      <p id="loginError" class="login-error login-error-muted"></p>
-      <a href="../index.html" class="btn btn-secondary btn-full login-back-link">← Volver al sitio</a>
+      <p class="login-hint" id="loginHint">Verificando conexión con el servidor...</p>
+      <button class="btn btn-secondary btn-sm hidden" id="retryHealthBtn" style="margin-top:0.5rem;" onclick="checkServerHealth()">Reintentar conexión</button>
+      <p id="loginError" class="login-error" style="display:none;color:var(--accent, #d47090);text-align:center;font-size:0.85rem;margin-top:0.5rem;"></p>
+      <a href="../index.html" class="btn btn-secondary" style="width:100%;margin-top:0.75rem;">← Volver al sitio</a>
     </div>
   </div>
 
-  <div class="connection-indicator" id="connectionIndicator" title="Estado de conexión">
-    <span class="dot"></span>
-    <span class="connection-text">Verificando...</span>
+    <aside class="sidebar" id="adminSidebar">
+      <div class="sidebar-brand">
+        <span>🌸</span>
+        <span>Artesanía Admin</span>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#products" class="active" data-section="products">📦 Productos</a>
+        <a href="#categories" data-section="categories">🏷 Categorías</a>
+        <a href="#orders" data-section="orders">🧾 Pedidos</a>
+        <a href="#reports" data-section="reports">📈 Reportes</a>
+        <a href="#testimonials" data-section="testimonials">💬 Testimonios</a>
+        <a href="#texts" data-section="texts">📝 Textos del Sitio</a>
+        <a href="#heroImages" data-section="heroImages">🖼 Imágenes del Hero</a>
+        <a href="#settings" data-section="settings">⚙️ Configuración</a>
+      </nav>
+      <div class="sidebar-footer">
+        <a href="../index.html" target="_blank" class="btn btn-secondary btn-full">← Ver sitio</a>
+        <button class="btn btn-danger btn-full" onclick="doLogout()" style="margin-top: 0.5rem;">Cerrar sesión</button>
+      </div>
+    </aside>
+
+  <main class="main" id="adminMain">
+    <div class="header">
+      <div class="header-left">
+        <a href="../index.html" class="btn btn-secondary btn-sm">← Volver</a>
+        <div>
+          <h1 id="sectionTitle">Productos</h1>
+          <p class="header-subtitle" id="sectionSubtitle">Gestioná productos, fotos y precios</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="connection-indicator checking" id="connectionIndicator" title="Estado de conexión">
+          <span class="dot"></span>
+          <span class="connection-text">Verificando...</span>
+        </div>
+        <button class="btn btn-primary" id="sectionAction" onclick="openSectionModal()">+ Nuevo Producto</button>
+      </div>
+    </div>
+
+
+    <div class="card" id="categoriesSection">
+      <div class="card-header">
+        <h3 class="card-header-title">Categorías</h3>
+        <div class="card-controls">
+          <button class="btn btn-primary btn-sm" onclick="openCategoryModal()">+ Nueva Categoría</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <table>
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Slug</th>
+              <th>Descripción</th>
+              <th>Productos</th>
+              <th>Estado</th>
+              <th>Orden</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="categoriesTableBody">
+            <tr><td colspan="7" class="empty-state">Cargando categorías...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+<div class="card" id="reportsSection" style="display:none;">
+       <div class="card-header">
+         <h3 class="card-header-title">Reportes y Analíticas</h3>
+         <div class="card-controls card-controls--filters">
+           <button class="btn btn-secondary btn-sm quick-date-btn" onclick="setReportPreset('today')">Hoy</button>
+           <button class="btn btn-secondary btn-sm quick-date-btn" onclick="setReportPreset('7d')">Últimos 7 días</button>
+           <button class="btn btn-secondary btn-sm quick-date-btn" onclick="setReportPreset('30d')">Últimos 30 días</button>
+           <button class="btn btn-secondary btn-sm quick-date-btn" onclick="setReportPreset('month')">Mes actual</button>
+            <input type="date" id="reportStartDate" class="card-filter" />
+            <input type="date" id="reportEndDate" class="card-filter" />
+            <button class="btn btn-primary btn-sm" onclick="loadSalesReport()">Filtrar</button>
+            <button class="btn btn-danger btn-sm" onclick="resetMetrics()">Reiniciar métricas</button>
+         </div>
+       </div>
+       <div class="card-body">
+         <div id="reportMetrics"></div>
+         <div class="chart-container"><canvas id="salesChart"></canvas></div>
+         <div id="reportContent"></div>
+         <div class="chart-container"><canvas id="trendChart"></canvas></div>
+          <div id="trendContent" style="margin-top:1.5rem;"></div>
+          <div id="weeklySummary" style="margin-top:1.5rem;"></div>
+       </div>
+     </div>
+    <div class="card" id="productsSection">
+      <div class="card-header">
+        <h3 class="card-header-title">Catálogo de productos</h3>
+        <div class="card-controls card-controls--filters">
+          <div class="filter-input">
+            <svg class="filter-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="productSearchInput" placeholder="Buscar producto..." class="card-filter" oninput="renderProductsTable()" />
+          </div>
+          <select id="categoryFilter" class="card-filter" onchange="renderProductsTable()">
+            <option value="">Todas las categorías</option>
+            <option value="pulseras">Pulseras</option>
+            <option value="accesorios">Accesorios</option>
+            <option value="souvenirs">Souvenirs</option>
+          </select>
+                          <button class="btn btn-secondary btn-sm" onclick="exportCSV('products')">📥 Exportar CSV</button>
+                          <input type="file" id="bulkImportFile" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleBulkImport(this)" />
+                          <button class="btn btn-secondary btn-sm" onclick="document.getElementById('bulkImportFile').click()">📂 Carga masiva CSV</button>
+                          <span id="bulkImportStatus" style="font-size:0.8rem;margin-left:0.5rem;"></span>
+        </div>
+      </div>
+      <div class="card-body">
+<table>
+           <thead>
+             <tr>
+              <th>Slug</th>
+              <th>Producto</th>
+              <th>Categoría</th>
+              <th>SKU</th>
+              <th>Precio</th>
+              <th>Stock</th>
+              <th>Imagen</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+             </tr>
+           </thead>
+             <tbody id="tableBody">
+               <tr><td colspan="9" class="empty-state">Cargando productos...</td></tr>
+             </tbody>
+          </table>
+          <div id="productsPagination" class="pagination-bar" style="display:none;"></div>
+        </div>
+      </div>
+    </div>
+
+<div class="card" id="ordersSection" style="display:none;">
+            <div class="card-header">
+          <h3 class="card-header-title">Pedidos</h3>
+          <div class="card-controls card-controls--filters">
+            <input type="text" id="orderSearchInput" placeholder="Buscar pedido..." class="card-filter" oninput="renderOrdersTable()" />
+            <select id="orderStatusFilter" class="card-filter" onchange="ordersCurrentPage=1;loadOrders()">
+              <option value="">Todos los estados</option>
+              <option value="pending">Pendiente</option>
+              <option value="confirmed">Confirmado</option>
+              <option value="preparing">Preparando</option>
+              <option value="shipped">Enviado</option>
+              <option value="delivered">Entregado</option>
+              <option value="cancelled">Cancelado</option>
+            </select>
+            <button class="btn btn-secondary btn-sm" onclick="exportOrdersCSV()">📥 CSV</button>
+            <button class="btn btn-secondary btn-sm" onclick="exportOrdersPDF()">📄 PDF</button>
+            <span id="orderPageInfo" style="font-size:0.8rem;color:#64748b;margin-left:0.5rem;"></span>
+          </div>
+        </div>
+       <div class="card-body">
+         <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Cliente</th>
+                <th>Total</th>
+                <th>Estado</th>
+                <th>Pago</th>
+                <th>Fecha</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+           <tbody id="ordersTableBody">
+             <tr><td colspan='7' class='empty-state'>Cargando pedidos...</td></tr>
+          </tbody>
+          </table>
+          <div id="ordersPagination" class="pagination-bar" style="display:none;"></div>
+        </div>
+      </div>
+
+     <div class="card" id="testimonialsSection" style="display:none;">
+      <div class="card-header">
+        <h3 class="card-header-title">Testimonios de clientes</h3>
+        <div class="card-controls">
+          <button class="btn btn-primary btn-sm" onclick="openTestimonialModal()">+ Nuevo Testimonio</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportCSV('testimonials')">📥 Exportar CSV</button>
+          <button class="btn btn-neon btn-sm" id="saveTestimonialsBtn" onclick="saveTestimonialsChanges()" disabled>💾 Guardar cambios</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <table>
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Comentario</th>
+                <th>Valoración</th>
+                <th>Orden</th>
+                <th>Activo</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+          <tbody id="testimonialsTableBody">
+            <tr><td colspan="5" class="empty-state">Cargando testimonios...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+<div class="card" id="textsSection" style="display:none;">
+       <div class="card-header">
+         <h3 class="card-header-title">Textos del sitio</h3>
+         <div class="card-controls">
+           <button class="btn btn-primary btn-sm" onclick="openTextModal()">+ Nuevo Texto</button>
+           <button class="btn btn-primary btn-sm" id="syncTextsBtn" onclick="syncTextsToNeon()">💾 Guardar en base de datos</button>
+           <span id="syncTextsStatus" style="font-size:0.8rem;margin-left:0.5rem;"></span>
+         </div>
+       </div>
+       <div class="card-body">
+         <table>
+           <thead>
+             <tr>
+               <th>Clave</th>
+               <th>Valor</th>
+               <th>Acciones</th>
+             </tr>
+           </thead>
+           <tbody id="textsTableBody">
+             <tr><td colspan="3" class="empty-state">Cargando textos...</td></tr>
+           </tbody>
+         </table>
+       </div>
+     </div>
+
+<div class="card" id="heroImagesSection" style="display:none;">
+        <div class="card-header">
+          <h3 class="card-header-title">Imágenes del Hero</h3>
+          <div class="card-controls">
+            <button class="btn btn-neon btn-sm" id="syncHeroBtn" onclick="syncHeroCards()">💾 Guardar todo</button>
+            <span id="syncHeroStatus" style="font-size:0.8rem;margin-left:0.5rem;"></span>
+          </div>
+        </div>
+        <div class="card-body">
+           <div id="heroSlotsList"></div>
+        </div>
+      </div>
+
+<div class="card" id="settingsSection" style="display:none;">
+           <div class="card-header">
+             <h3 class="card-header-title">Configuración del sitio</h3>
+             <div class="card-controls">
+               <button class="btn btn-secondary btn-sm" onclick="togglePasswordSection()">🔑 Cambiar contraseña</button>
+             </div>
+           </div>
+          <div class="card-body">
+            <h4 class="settings-section-title">Datos del negocio</h4>
+            <div class="form-group">
+              <label>Nombre del negocio</label>
+              <input type="text" id="settingBusinessName" placeholder="Artesanía Gualeguay" />
+            </div>
+            <div class="form-group">
+              <label>URL del logo</label>
+              <input type="text" id="settingLogo" placeholder="https://..." />
+            </div>
+            <div class="form-group">
+              <label>Email de contacto</label>
+              <input type="email" id="settingEmail" placeholder="contacto@artesania.com" />
+            </div>
+            <div class="form-group">
+              <label>Teléfono / WhatsApp</label>
+              <input type="text" id="settingWhatsapp" placeholder="Ej: 5493444634444" />
+            </div>
+            <div class="form-group">
+              <label>Dirección</label>
+              <input type="text" id="settingAddress" placeholder="Ej: Belgrano 123, Gualeguay" />
+            </div>
+            <h4 class="settings-section-title">Redes sociales</h4>
+            <div class="settings-grid">
+              <div class="form-group">
+                <label>Instagram</label>
+                <input type="text" id="settingInstagram" placeholder="https://instagram.com/tucuenta" />
+              </div>
+              <div class="form-group">
+                <label>Facebook</label>
+                <input type="text" id="settingFacebook" placeholder="https://facebook.com/tucuenta" />
+              </div>
+              <div class="form-group">
+                <label>Twitter / X</label>
+                <input type="text" id="settingTwitter" placeholder="https://twitter.com/tucuenta" />
+              </div>
+              <div class="form-group">
+                <label>WhatsApp Business</label>
+                <input type="text" id="settingWhatsappBusiness" placeholder="https://wa.me/5493444634444" />
+              </div>
+            </div>
+            <h4 class="settings-section-title">Configuración de pagos</h4>
+            <div class="settings-grid">
+              <div class="form-group">
+                <label>MercadoPago habilitado</label>
+                <div class="toggle-row">
+                  <label class="toggle">
+                    <input type="checkbox" id="settingMpEnabled">
+                    <span class="toggle-slider"></span>
+                  </label>
+                  <span class="toggle-label" id="mpEnabledLabel">Off</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Efectivo habilitado</label>
+                <div class="toggle-row">
+                  <label class="toggle">
+                    <input type="checkbox" id="settingCashEnabled">
+                    <span class="toggle-slider"></span>
+                  </label>
+                  <span class="toggle-label" id="cashEnabledLabel">Off</span>
+                </div>
+              </div>
+            </div>
+             <div class="form-group">
+               <label>Alias de transferencia</label>
+                <input type="text" id="settingMpAlias" placeholder="Ej: artesaniagualeguay" />
+             <p class="form-hint">Los clientes usarán este alias para transferirte el pago.</p>
+           </div>
+          <h4 class="settings-section-title">Envíos</h4>
+          <div class="settings-grid">
+            <div class="form-group">
+              <label>Costo de envío</label>
+              <input type="number" id="settingShippingCost" value="0" min="0" step="1" />
+            </div>
+            <div class="form-group">
+              <label>Envío gratis desde ($)</label>
+              <input type="number" id="settingFreeShippingFrom" value="0" min="0" step="1" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Zonas de envío</label>
+            <div class="shipping-zones-list" id="shippingZonesList">
+              <p class="empty-state">No hay zonas configuradas. Agregá una zona para definir envíos a distintas localidades.</p>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="addShippingZone()" style="margin-top:0.5rem;">+ Agregar zona</button>
+          </div>
+            <div class="form-group">
+              <label>Titular de la cuenta</label>
+              <input type="text" id="settingHolderName" placeholder="Nombre del titular" />
+            </div>
+            <div class="form-group">
+              <label>CBU/CVU</label>
+              <input type="text" id="settingCbuCvu" placeholder="Ej: 0000000000000000000000" />
+            </div>
+            <div class="form-group">
+              <label>Mensaje de pago</label>
+              <textarea id="settingPaymentMessage" rows="3" placeholder="Mensaje que se muestra al cliente en el checkout...">Transferí el total exacto y enviá el comprobante por WhatsApp para confirmar tu pedido.</textarea>
+            </div>
+            <button class="btn btn-primary" onclick="saveSettings()">Guardar configuración</button>
+            <div class="save-status" id="settingsSaveStatus"></div>
+           </div>
+           <div id="passwordSection" style="display:none; margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+             <h4 style="font-family: 'Playfair Display', serif; margin-bottom: 1rem;">Cambiar contraseña</h4>
+             <div class="form-group">
+               <label>Contraseña actual</label>
+               <input type="password" id="currentPassword" placeholder="Contraseña actual" />
+             </div>
+             <div class="form-group">
+               <label>Nueva contraseña</label>
+               <input type="password" id="newPassword" placeholder="Mínimo 6 caracteres" />
+             </div>
+             <button class="btn btn-primary btn-sm" onclick="changePassword()">Actualizar contraseña</button>
+             <div class="save-status" id="passwordSaveStatus"></div>
+           </div>
+         </div>
+   </main>
+
+    <div class="modal-overlay" id="modalOverlay" data-modal="product">
+     <div class="modal">
+       <div class="modal-header modal-header--sticky">
+         <h3 id="modalTitle">Nuevo Producto</h3>
+         <button class="btn btn-secondary btn-sm" onclick="closeModal()">✕</button>
+       </div>
+       <div class="modal-body">
+         <div class="save-status" id="productSaveStatus"></div>
+         <div class="autosave-indicator" id="autosaveIndicator" style="display:none;font-size:0.8rem;color:#64748b;margin-bottom:0.5rem;"></div>
+
+         <div class="admin-section">
+           <div class="admin-section-title">Información básica</div>
+           <div class="form-group">
+             <label>Nombre del producto <span class="required">*</span></label>
+             <input type="text" id="pName" placeholder="Nombre del producto" required />
+           </div>
+           <div class="form-grid-2">
+             <div class="form-group">
+               <label>Categoría</label>
+               <select id="pCategory">
+                 <option value="pulseras">Pulseras</option>
+                 <option value="accesorios">Accesorios</option>
+                 <option value="souvenirs">Souvenirs</option>
+               </select>
+             </div>
+             <div class="form-group">
+               <label>SKU</label>
+               <input type="text" id="pSku" placeholder="SKU opcional" />
+             </div>
+           </div>
+         </div>
+
+         <div class="admin-section">
+           <div class="admin-section-title">Precio y stock</div>
+           <div class="form-grid-2">
+             <div class="form-group">
+               <label>Precio ($) <span class="required">*</span></label>
+               <input type="number" id="pPrice" placeholder="0" min="0" step="1" required />
+             </div>
+             <div class="form-group">
+               <label>Stock</label>
+               <input type="number" id="pStock" placeholder="0" min="0" step="1" />
+               <p class="form-hint">Dejar en 0 para indicar sin stock / producto no disponible.</p>
+             </div>
+           </div>
+         </div>
+
+         <div class="admin-section">
+           <div class="admin-section-title">Estado</div>
+           <div class="switches-row">
+             <div class="switch-card">
+               <div class="switch-card-label">Producto destacado</div>
+               <div class="toggle-row">
+                 <label class="toggle">
+                   <input type="checkbox" id="pFeatured">
+                   <span class="toggle-slider"></span>
+                 </label>
+                 <span class="toggle-label" id="featuredLabel">No</span>
+               </div>
+             </div>
+             <div class="switch-card">
+               <div class="switch-card-label">Producto activo</div>
+               <div class="toggle-row">
+                 <label class="toggle">
+                   <input type="checkbox" id="pActive" checked>
+                   <span class="toggle-slider"></span>
+                 </label>
+                 <span class="toggle-label" id="activeLabel">Sí</span>
+               </div>
+             </div>
+           </div>
+         </div>
+
+         <div class="admin-section">
+           <div class="admin-section-title">Descripción</div>
+           <div class="form-group">
+             <label>Descripción</label>
+             <textarea id="pDesc" rows="3" placeholder="Descripción corta del producto"></textarea>
+           </div>
+         </div>
+
+         <div class="admin-section">
+           <div class="admin-section-title">Imágenes del producto</div>
+           <div class="image-upload-zone" id="productImageDropzone">
+             <input type="file" id="productImageFiles" accept="image/jpeg,image/png,image/webp,image/gif" multiple style="display:none" />
+             <div class="image-upload-primary">
+               <button type="button" class="btn btn-primary" id="productImageSelectBtn" onclick="document.getElementById('productImageFiles').click()">
+                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                 Seleccionar imagen(es)
+               </button>
+               <span class="image-upload-or">o</span>
+               <div class="image-url-row">
+                 <input type="text" id="productImageUrl" placeholder="o pegá una URL de imagen externa" class="card-filter" style="flex:1;" />
+                 <button type="button" class="btn btn-secondary btn-sm" id="productImageUrlBtn" onclick="window.ProductImages.addPendingUrl()">Agregar URL</button>
+               </div>
+             </div>
+             <div class="image-upload-files" id="productImageFilesList"></div>
+             <div class="image-upload-hint">JPG, PNG, WEBP o GIF — máx 5MB c/u. También podés arrastrar archivos sobre esta zona.</div>
+           </div>
+           <div class="save-status" id="productImageUploadStatus"></div>
+           <div class="product-image-upload-progress" id="productImageUploadProgress"></div>
+           <div class="product-image-gallery" id="productImageGallery"></div>
+           <input type="hidden" id="pImage" />
+         </div>
+
+         <input type="hidden" id="pId" />
+       </div>
+       <div class="modal-footer modal-footer--sticky">
+         <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+         <button class="btn btn-primary" onclick="saveProduct()">Guardar</button>
+       </div>
+     </div>
+   </div>
+
+   <div class="modal-overlay" id="testimonialModalOverlay" data-modal="testimonial">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="testimonialModalTitle">Nuevo Testimonio</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeTestimonialModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="save-status" id="testimonialSaveStatus"></div>
+        <div class="form-group">
+          <label>Nombre del cliente</label>
+          <input type="text" id="tName" placeholder="Nombre" />
+        </div>
+        <div class="form-group">
+          <label>Comentario</label>
+          <textarea id="tComment" rows="3" placeholder="Comentario del cliente"></textarea>
+        </div>
+         <div class="form-group">
+          <label>Valoración (1-5)</label>
+          <input type="number" id="tRating" placeholder="5" min="1" max="5" value="5" />
+        </div>
+        <div class="form-group">
+          <label>Imagen del cliente</label>
+          <input type="file" id="tImageFile" accept="image/jpeg,image/png,image/webp,image/gif" />
+          <input type="hidden" id="tImage" />
+          <div class="image-preview" id="testimonialImagePreview" style="display:none;"></div>
+          <p class="form-hint">Imagen opcional del cliente.</p>
+        </div>
+        <input type="hidden" id="tId" />
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeTestimonialModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveTestimonial()">Guardar</button>
+      </div>
+    </div>
   </div>
 
+<div class="modal-overlay" id="textModalOverlay" data-modal="text">
+     <div class="modal">
+       <div class="modal-header">
+         <h3 id="textModalTitle">Editar Texto</h3>
+         <button class="btn btn-secondary btn-sm" onclick="closeTextModal()">✕</button>
+       </div>
+       <div class="modal-body">
+         <div class="save-status" id="textSaveStatus"></div>
+         <div class="form-group">
+           <label>Clave</label>
+           <input type="text" id="textKey" placeholder="hero_title" disabled />
+         </div>
+         <div class="form-group">
+           <label>Valor</label>
+           <textarea id="textValue" rows="3" placeholder="Texto del sitio"></textarea>
+         </div>
+       </div>
+       <div class="modal-footer">
+         <button class="btn btn-secondary" onclick="closeTextModal()">Cancelar</button>
+         <button class="btn btn-primary" onclick="saveText()">Guardar</button>
+       </div>
+     </div>
+   </div>
+
+  <div class="modal-overlay" id="heroSlotModalOverlay" data-modal="heroSlot">
+       <div class="modal">
+         <div class="modal-header modal-header--sticky">
+           <h3 id="heroSlotModalTitle">Editar Slot del Hero</h3>
+           <button class="btn btn-secondary btn-sm" onclick="closeHeroSlotModal()">✕</button>
+         </div>
+         <div class="modal-body">
+           <div class="save-status" id="heroSlotSaveStatus"></div>
+           <input type="hidden" id="heroSlotIndex" />
+           <div class="admin-section">
+             <div class="admin-section-title">Imagen</div>
+             <div class="hero-card-image-row">
+               <label class="hero-card-file-label">
+                 <span class="btn btn-primary btn-sm">
+                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                   Cambiar imagen
+                 </span>
+                 <input type="file" id="heroSlotImageFile" accept="image/jpeg,image/png,image/webp,image/gif" />
+               </label>
+                <button class="btn btn-danger btn-sm" id="heroSlotDeleteBtn" style="display:none;" onclick="deleteCurrentHeroSlotImage()">🗑 Quitar</button>
+             </div>
+             <div class="image-preview" id="heroSlotImagePreview" style="display:none;"></div>
+             <input type="hidden" id="heroSlotImage" />
+             <p class="form-hint">Recomendación: 1920×600px, máx 2MB. Dejar vacío para mantener la actual.</p>
+           </div>
+            <div class="admin-section">
+              <div class="admin-section-title">Texto</div>
+              <div class="form-group">
+                <label>Título</label>
+                <input type="text" id="heroSlotTitle" placeholder="Título del hero" />
+              </div>
+              <div class="form-group">
+                <label>Subtítulo</label>
+                <textarea id="heroSlotSubtitle" rows="2" placeholder="Texto descriptivo del hero"></textarea>
+              </div>
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label>Texto del botón CTA</label>
+                  <input type="text" id="heroSlotCtaText" placeholder="Ej: Ver productos" />
+                </div>
+                <div class="form-group">
+                  <label>URL del CTA</label>
+                  <input type="text" id="heroSlotCtaUrl" placeholder="Ej: /products" />
+                </div>
+              </div>
+            </div>
+         </div>
+         <div class="modal-footer modal-footer--sticky">
+           <button class="btn btn-secondary" onclick="closeHeroSlotModal()">Cancelar</button>
+           <button class="btn btn-primary" onclick="saveHeroSlot()">Guardar</button>
+         </div>
+       </div>
+     </div>
+   <div class="modal-overlay" id="categoryModalOverlay" data-modal="category">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="categoryModalTitle">Nueva Categoría</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeCategoryModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="save-status" id="categorySaveStatus"></div>
+        <div class="form-group">
+          <label>Nombre</label>
+          <input type="text" id="catName" placeholder="Nombre de la categoría" />
+        </div>
+        <div class="form-group">
+          <label>Slug</label>
+          <input type="text" id="catSlug" placeholder="slug-unico" />
+        </div>
+        <div class="form-group">
+          <label>Descripción</label>
+          <textarea id="catDescription" rows="2" placeholder="Descripción opcional"></textarea>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Orden</label>
+            <input type="number" id="catOrden" value="0" />
+          </div>
+          <div class="form-group">
+            <label>Estado</label>
+            <select id="catActive">
+              <option value="true">Activo</option>
+              <option value="false">Inactivo</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Imagen de la categoría</label>
+          <input type="file" id="catImageFile" accept="image/jpeg,image/png,image/webp,image/gif" />
+          <input type="hidden" id="catImage" />
+          <div class="image-preview" id="catImagePreview" style="display:none;"></div>
+          <p class="form-hint">Imagen opcional para la categoría.</p>
+        </div>
+        <input type="hidden" id="catId" />
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeCategoryModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveCategory()">Guardar</button>
+      </div>
+    </div>
+  </div>
+    <div class="modal-overlay" id="orderDetailModalOverlay" data-modal="order">
+    <div class="modal" style="max-width:640px">
+      <div class="modal-header">
+        <h3 id="orderDetailTitle">Detalle del Pedido</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closeOrderDetailModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="save-status" id="orderDetailSaveStatus"></div>
+        <div id="orderDetailContent"></div>
+        <div style="display:flex;gap:0.5rem;margin-top:1rem;">
+          <button class="btn btn-secondary btn-sm" onclick="generateReceipt(state.currentOrderId)">📄 Comprobante</button>
+          <button class="btn btn-primary btn-sm" onclick="sendReceiptWhatsApp(state.currentOrderId)">💬 Enviar por WhatsApp</button>
+        </div>
+        <div class="form-group" style="margin-top:1rem">
+          <label>Nota interna</label>
+          <textarea id="orderNotes" rows="3" placeholder="Agregá una nota interna sobre este pedido..."></textarea>
+          <button class="btn btn-primary btn-sm" onclick="saveOrderNotes()" style="margin-top:0.5rem">💾 Guardar nota</button>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="closeOrderDetailModal()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+   </div>
+
+  <div class="modal-overlay" id="deleteOrderModalOverlay" data-modal="orderDelete">
+     <div class="modal" style="max-width:420px">
+       <div class="modal-header">
+         <h3>Eliminar pedido</h3>
+         <button class="btn btn-secondary btn-sm" onclick="closeDeleteOrderModal()">✕</button>
+       </div>
+       <div class="modal-body">
+         <p id="deleteOrderModalMessage">¿Eliminar este pedido? Esta acción no se puede deshacer.</p>
+       </div>
+       <div class="modal-footer">
+         <button class="btn btn-secondary" onclick="closeDeleteOrderModal()">Cancelar</button>
+         <button class="btn btn-danger" id="confirmDeleteOrderBtn" onclick="confirmDeleteOrder()">Eliminar</button>
+       </div>
+     </div>
+   </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="../js/admin.js?v=2026080614"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script>
+    if (window.SENTRY_DSN) {
+      (function() {
+        var script = document.createElement('script');
+        script.src = 'https://browser.sentry-cdn.com/8.x.x/bundle.min.js';
+        script.crossOrigin = 'anonymous';
+        script.onload = function() {
+          Sentry.init({
+            dsn: window.SENTRY_DSN,
+            environment: 'production',
+            tracesSampleRate: 0.1,
+          });
+        };
+        document.head.appendChild(script);
+      })();
+    }
+  </script>
 </body>
 </html>
-
-

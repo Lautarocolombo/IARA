@@ -54,7 +54,7 @@
   };
 
   var DEFAULT_SETTINGS = {
-    email: 'CONFIGURAR_EMAIL',
+    email: 'info@artesaniagualeguay.com',
     phone: '+54 (3444) 634-4444',
     whatsapp: '+5493444634444',
     address: 'San Antonio Norte 473, Gualeguay, Entre Ríos, Argentina',

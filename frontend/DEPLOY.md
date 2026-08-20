@@ -26,6 +26,6 @@
 
 - El frontend consume la API via `CONFIG.API.BASE` en `frontend/js/config.js`
 - Por defecto usa rutas relativas (`BASE: ''`), lo que aprovecha el rewrite de Vercel a serverless backend
-- Si el backend está en Render, cambiar `BASE` a `https://iara-os3h.onrender.com`
+- Si el backend está en Render, cambiar `BASE` a `https://api.artesaniagualeguay.com`
 - Las imágenes se sirven desde el backend (`/uploads`) o Vercel Blob
 - No requiere base de datos ni servicios adicionales en el frontend
