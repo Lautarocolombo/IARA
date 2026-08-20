@@ -159,3 +159,12 @@ jobs:
           done
         env:
           BACKEND_URL: ${{ vars.BACKEND_URL || 'https://api.artesaniagualeguay.com' }}
+
+      - name: Sync Neon migrations (production)
+        if: secrets.NEON_DATABASE_URL != ''
+        run: |
+          cd backend
+          export NEON_DATABASE_URL="${{ secrets.NEON_DATABASE_URL }}"
+          node scripts/migrate-neon.js
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}

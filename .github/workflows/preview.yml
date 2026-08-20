@@ -103,6 +103,15 @@ jobs:
             echo "backend-url=https://api.artesaniagualeguay.com" >> $GITHUB_OUTPUT
           fi
 
+      - name: Sync Neon migrations (staging)
+        if: secrets.NEON_DATABASE_URL != ''
+        run: |
+          cd backend
+          export NEON_DATABASE_URL="${{ secrets.NEON_DATABASE_URL }}"
+          node scripts/migrate-neon.js
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+
   preview-frontend:
     needs: [test, preview-backend]
     runs-on: ubuntu-latest

@@ -20,7 +20,7 @@
     try {
       const order = JSON.parse(raw);
       sessionStorage.removeItem('ag_last_order');
-      try { localStorage.removeItem('ag_pending_order'); } catch (e) {}
+      try { localStorage.removeItem('ag_pending_order'); } catch (e) { /* noop */ }
       if (order.number) {
         document.getElementById('successOrderNumber').textContent = order.number;
       }
@@ -185,8 +185,8 @@
         showToast('', 'Comprobante enviado correctamente. Te avisaremos cuando sea verificado.', 'success');
         closeReceiptModal();
         receiptForm.reset();
-        try { localStorage.removeItem('ag_pending_order'); } catch (e) {}
-        try { sessionStorage.removeItem('ag_last_order'); } catch (e) {}
+        try { localStorage.removeItem('ag_pending_order'); } catch (e) { /* noop */ }
+        try { sessionStorage.removeItem('ag_last_order'); } catch (e) { /* noop */ }
       } catch (err) {
         showToast('', window.getFetchErrorMessage(err) || 'Error al enviar el comprobante', 'error');
       }

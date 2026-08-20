@@ -34,7 +34,15 @@ async function uploadProductImages(req, res) {
 
     const existingCountRow = await query('SELECT COUNT(*) AS count FROM product_images WHERE product_id = $1', [productId]);
     const existingCount = Number(existingCountRow.rows[0]?.count || 0);
-    const incomingUrls = Array.isArray(req.body.imageUrls) ? req.body.imageUrls : [];
+    let incomingUrls = [];
+    if (Array.isArray(req.body.imageUrls)) {
+      incomingUrls = req.body.imageUrls;
+    } else if (typeof req.body.imageUrls === 'string') {
+      try {
+        const parsed = JSON.parse(req.body.imageUrls);
+        if (Array.isArray(parsed)) incomingUrls = parsed;
+      } catch (e) { /* noop */ }
+    }
     const incomingFiles = Array.isArray(req.files) ? req.files : [];
     const totalAfter = existingCount + incomingUrls.length + incomingFiles.length;
     if (totalAfter > 5) {

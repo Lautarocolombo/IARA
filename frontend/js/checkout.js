@@ -535,8 +535,8 @@
   }
 
   function clearSavedOrder() {
-    try { sessionStorage.removeItem('ag_last_order'); } catch (e) {}
-    try { localStorage.removeItem('ag_pending_order'); } catch (e) {}
+    try { sessionStorage.removeItem('ag_last_order'); } catch (e) { /* noop */ }
+    try { localStorage.removeItem('ag_pending_order'); } catch (e) { /* noop */ }
   }
 
     if (document.readyState === 'loading') {

@@ -125,9 +125,9 @@ function renderProducts(productsToRender) {
       ? window.renderProductImage(imgUrl, product.name, { className: 'product-card-img', placeholder: product.emoji || '📿' })
       : window.renderProductImage('', product.name, { className: 'product-card-img', placeholder: product.emoji || '📿' });
     const catClass = product.category ? `cat-${product.category}` : '';
-    const badgeHtml = product.badge ? `<span class="product-badge">${product.badge}</span>` : '';
+    const badgeHtml = product.badge ? `<span class='product-badge'>${product.badge}</span>` : '';
     const stock = Number(product.stock || 0);
-    const outOfStockHtml = stock <= 0 ? `<span class="product-badge product-badge--out">Agotado</span>` : '';
+    const outOfStockHtml = stock <= 0 ? '<span class=\'product-badge product-badge--out\'>Agotado</span>' : '';
     const waMessage = encodeURIComponent(`Hola! Me interesa el producto: ${product.name} - ${formatARS(product.price)}`);
     const waLink = `https://wa.me/${CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g, '')}?text=${waMessage}`;
     const cartDisabled = stock <= 0 ? 'disabled' : '';
