@@ -1,21 +1,10 @@
 {
   "version": 2,
   "outputDirectory": "dist",
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": { "distDir": "dist" }
-    },
-    {
-      "src": "backend/api.js",
-      "use": "@vercel/node"
-    }
-  ],
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/backend/api.js"
+      "destination": "https://api.artesaniagualeguay.com/api/$1"
     },
     {
       "source": "/pages/(.*)",
