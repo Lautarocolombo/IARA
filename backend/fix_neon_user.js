@@ -14,7 +14,7 @@ async function main() {
   try {
     const result = await pool.query(
       'UPDATE users SET password_hash = $1, permissions = $2, updated_at = CURRENT_TIMESTAMP WHERE username = $3 RETURNING id, username, role, active, permissions',
-      [newHash, JSON.stringify({ all: true }), 'Iara']
+      [newHash, JSON.stringify({ all: true }), 'admin']
     );
     console.log('Updated user:', JSON.stringify(result.rows[0], null, 2));
   } catch (err) {

@@ -7,13 +7,13 @@ const fs = require('fs');
 dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 const BASE_URL = 'https://artesania-gualeguay-v3.vercel.app';
-const ADMIN_USER = process.env.ADMIN_USER || 'Iara';
+const ADMIN_USER = process.env.ADMIN_USER || 'admin';
 const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH;
 
-// We need the actual password. Since we don't know it, let's try 'admin' or 'Iara'
+// We need the actual password. Since we don't know it, let's try 'admin'
 // The password hash in .env is $2a$10$4NGeUSrAA.AqDI1NqAcWq.34Z9GEkCnFkIP5Vlgn8vUrOW2v/jFw2
 // Let's try common passwords
-const POSSIBLE_PASSWORDS = ['pulseras2026', 'test123', 'admin', 'Iara', 'password', '123456', 'admin123', 'Iara123'];
+const POSSIBLE_PASSWORDS = ['pulseras2026', 'test123', 'admin', 'admin', 'password', '123456', 'admin123', 'admin123'];
 
 async function login(password) {
   return new Promise((resolve, reject) => {

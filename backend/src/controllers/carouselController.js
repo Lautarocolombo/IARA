@@ -38,43 +38,50 @@ async function updateCarouselSlot(req, res) {
 
     const tenantId = req.tenantId || 'default';
 
-    if (!req.file) {
-      return res.status(400).json({ error: 'No se recibió imagen' });
-    }
-
     const existing = await query(
       'SELECT * FROM carousel_images WHERE slot = $1 AND tenant_id = $2',
       [slot, tenantId]
     );
 
-    if (existing.rows.length > 0) {
-      const old = existing.rows[0];
-      await deleteImageAsset(old);
-    }
-
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
-    const processed = await processFile(req.file, baseUrl);
-
     const altText = (req.body.alt_text || '').trim();
     const linkUrl = (req.body.link_url || '').trim();
 
-    const result = await query(
-      `INSERT INTO carousel_images (slot, url, public_id, alt_text, link_url, updated_at, tenant_id)
-       VALUES ($1, $2, $3, $4, $5, NOW(), $6)
-       ON CONFLICT (slot, tenant_id) DO UPDATE SET
-         url = EXCLUDED.url,
-         public_id = EXCLUDED.public_id,
-         alt_text = EXCLUDED.alt_text,
-         link_url = EXCLUDED.link_url,
-         updated_at = EXCLUDED.updated_at
-       RETURNING *`,
-      [slot, processed.url, processed.public_id || processed.blobName || '', altText, linkUrl, tenantId]
-    );
-
-    const updated = result.rows[0];
-    updated.url = getPublicUrl(updated.url, baseUrl);
-    try { syncBus.emit('carousel_updated', { slot }); } catch (e) { /* noop */ }
-    res.json(updated);
+    if (req.file) {
+      if (existing.rows.length > 0) {
+        const old = existing.rows[0];
+        await deleteImageAsset(old);
+      }
+      const processed = await processFile(req.file, baseUrl);
+      const result = await query(
+        `INSERT INTO carousel_images (slot, url, public_id, alt_text, link_url, updated_at, tenant_id)
+         VALUES ($1, $2, $3, $4, $5, NOW(), $6)
+         ON CONFLICT (slot, tenant_id) DO UPDATE SET
+           url = EXCLUDED.url,
+           public_id = EXCLUDED.public_id,
+           alt_text = EXCLUDED.alt_text,
+           link_url = EXCLUDED.link_url,
+           updated_at = EXCLUDED.updated_at
+         RETURNING *`,
+        [slot, processed.url, processed.public_id || processed.blobName || '', altText, linkUrl, tenantId]
+      );
+      const updated = result.rows[0];
+      updated.url = getPublicUrl(updated.url, baseUrl);
+      try { syncBus.emit('carousel_updated', { slot }); } catch (e) { /* noop */ }
+      res.json(updated);
+    } else {
+      if (existing.rows.length === 0) {
+        return res.status(400).json({ error: 'No se recibió imagen' });
+      }
+      const result = await query(
+        `UPDATE carousel_images SET alt_text = $1, link_url = $2, updated_at = NOW() WHERE slot = $3 AND tenant_id = $4 RETURNING *`,
+        [altText, linkUrl, slot, tenantId]
+      );
+      const updated = result.rows[0];
+      updated.url = getPublicUrl(updated.url, baseUrl);
+      try { syncBus.emit('carousel_updated', { slot }); } catch (e) { /* noop */ }
+      res.json(updated);
+    }
   } catch (err) {
     logger.error('Error actualizando slot de carrusel:', err);
     res.status(500).json({ error: 'Error interno del servidor' });

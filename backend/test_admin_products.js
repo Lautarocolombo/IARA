@@ -25,7 +25,7 @@ function makeRequest(method, path, body) {
 
 (async () => {
   try {
-    const login = await makeRequest('POST', '/api/auth/login', { username: 'Iara', password: 'pulseras2026' });
+    const login = await makeRequest('POST', '/api/auth/login', { username: 'admin', password: 'pulseras2026' });
     console.log('login status:', login.status);
     console.log('login body:', login.body);
     if (login.status === 200) {

@@ -32,6 +32,15 @@ async function uploadProductImages(req, res) {
       return res.status(404).json({ error: 'Producto no encontrado' });
     }
 
+    const existingCountRow = await query('SELECT COUNT(*) AS count FROM product_images WHERE product_id = $1', [productId]);
+    const existingCount = Number(existingCountRow.rows[0]?.count || 0);
+    const incomingUrls = Array.isArray(req.body.imageUrls) ? req.body.imageUrls : [];
+    const incomingFiles = Array.isArray(req.files) ? req.files : [];
+    const totalAfter = existingCount + incomingUrls.length + incomingFiles.length;
+    if (totalAfter > 5) {
+      return res.status(400).json({ error: 'Máximo 5 imágenes por producto' });
+    }
+
     const existingImages = await query(
       'SELECT MAX(orden) as max_orden FROM product_images WHERE product_id = $1',
       [productId]
@@ -42,7 +51,9 @@ async function uploadProductImages(req, res) {
     const imageUrls = [];
     if (req.body.imageUrls) {
       try {
-        const parsed = JSON.parse(req.body.imageUrls);
+        const parsed = typeof req.body.imageUrls === 'string'
+          ? JSON.parse(req.body.imageUrls)
+          : req.body.imageUrls;
         if (Array.isArray(parsed)) {
           imageUrls.push(...parsed);
         }

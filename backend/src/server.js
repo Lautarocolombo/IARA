@@ -77,7 +77,7 @@ if (missingEnvVars.length > 0) {
   missingEnvVars.forEach(key => {
     let hint = '';
     if (key === 'JWT_SECRET') hint = ' (generar con: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"';
-    else if (key === 'ADMIN_USER') hint = ' (ej: Iara)';
+    else if (key === 'ADMIN_USER') hint = ' (ej: admin)';
     else if (key === 'ADMIN_PASS_HASH') hint = ' (generar con: npx bcrypt-cli hash)';
     else if (key === 'DATABASE_URL') hint = ' (connection string de PostgreSQL)';
     else if (key === 'ALLOWED_ORIGINS') hint = ' (ej: https://tudominio.com,http://localhost:3000)';
@@ -122,7 +122,6 @@ const defaultOrigins = [
   'https://artesaniagualeguay.com',
   'https://www.artesaniagualeguay.com',
   'https://artesania-gualeguay.vercel.app',
-  'https://artesania-gualeguay-v3.vercel.app',
   'http://localhost:3000',
   'http://localhost:3001',
   'http://localhost:5173',

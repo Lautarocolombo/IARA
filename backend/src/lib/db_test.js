@@ -59,7 +59,7 @@ if (isLocal) {
     const dbDir = process.env.VERCEL
       ? '/tmp/ag-data'
       : path.join(__dirname, '..', '..', 'data');
-    const dbPath = path.join(dbDir, 'iara.db');
+    const dbPath = path.join(dbDir, 'artesaniagualeguay.db');
     if (!fs.existsSync(dbDir)) {
       fs.mkdirSync(dbDir, { recursive: true });
     }
@@ -197,6 +197,17 @@ async function transaction(fn) {
 
 async function initDB() {
   if (isLocal) {
+    await query(`CREATE TABLE IF NOT EXISTS carousel_images (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      slot INTEGER DEFAULT 0,
+      url TEXT DEFAULT '',
+      public_id TEXT DEFAULT '',
+      alt_text TEXT DEFAULT '',
+      link_url TEXT DEFAULT '',
+      tenant_id TEXT DEFAULT 'default',
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query('CREATE UNIQUE INDEX IF NOT EXISTS idx_carousel_images_slot ON carousel_images(slot) WHERE slot > 0');
     await query(`CREATE TABLE IF NOT EXISTS products (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
