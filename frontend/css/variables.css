@@ -15,6 +15,7 @@
   --accent-hover: #8a4058;
   --white: #ffffff;
   --surface: #ffffff;
+  --bg-muted: #fdf6f8;
   --border-color: #e9ecef;
 
   --radius-sm: 8px;
@@ -98,6 +99,7 @@
   --gold: #d4b878;
   --border: #3a2028;
   --surface: #1a1014;
+  --bg-muted: #25171e;
   --white: #1a1014;
   --border-color: #3a2a32;
   --shadow-sm: 0 4px 16px rgba(0,0,0,0.20);

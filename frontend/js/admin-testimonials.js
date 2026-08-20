@@ -8,6 +8,7 @@
   var editingId = null;
   var draggedId = null;
   var _testimonialsInit = false;
+  var pendingPhotoFile = null;
   var sectionContent = { title: '', subtitle: '' };
 
   function escapeHtml(str) {
@@ -121,14 +122,14 @@
         '<td class="text-center">' +
           '<label class="toggle-field toggle-field--sm">' +
             '<span class="toggle">' +
-              '<input type="checkbox" ' + (t.active !== false ? 'checked' : '') + ' onchange="window.updateTestimonialActive(' + t.id + ', this.checked)" />' +
+              '<input type="checkbox" ' + (t.active !== false ? 'checked' : '') + ' data-action="toggle-active" data-id="' + t.id + '" />' +
               '<span class="toggle-slider"></span>' +
             '</span>' +
           '</label>' +
         '</td>' +
         '<td class="text-center">' +
-          '<button class="btn btn-secondary btn-sm" onclick="window.editTestimonial(' + t.id + ')">Editar</button> ' +
-          '<button class="btn btn-danger btn-sm" onclick="window.deleteTestimonial(' + t.id + ')">Eliminar</button>' +
+          '<button class="btn btn-secondary btn-sm" data-action="edit" data-id="' + t.id + '">Editar</button> ' +
+          '<button class="btn btn-danger btn-sm" data-action="delete" data-id="' + t.id + '">Eliminar</button>' +
         '</td>' +
       '</tr>';
     }).join('');
@@ -186,11 +187,32 @@
           var errData = await res.json().catch(function () { return {}; });
           throw new Error(errData.error || 'Error al reordenar');
         }
-        await loadTestimonials();
-        window.showToast('✅', 'Orden actualizado', 'success');
+      await loadTestimonials();
+      window.showToast('✅', 'Orden actualizado', 'success');
       } catch (err) {
-        await loadTestimonials();
-        window.showToast('❌', err.message || 'Error al reordenar, se restauró el orden', 'error');
+      await loadTestimonials();
+      window.showToast('❌', err.message || 'Error al reordenar, se restauró el orden', 'error');
+      }
+    });
+
+    tbody.addEventListener('change', function (e) {
+      var cb = e.target.closest('input[data-action="toggle-active"]');
+      if (!cb) return;
+      var id = Number(cb.dataset.id);
+      window.updateTestimonialActive(id, cb.checked);
+    });
+
+    tbody.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-action]');
+      if (!btn) return;
+      var id = Number(btn.dataset.id);
+      switch (btn.dataset.action) {
+        case 'edit':
+          window.editTestimonial(id);
+          break;
+        case 'delete':
+          window.deleteTestimonial(id);
+          break;
       }
     });
   }
@@ -253,6 +275,26 @@
       '</div>';
   }
 
+  function renderPhotoPreview(file, imageUrl) {
+    var preview = document.getElementById('testimonialPhotoPreview');
+    if (!preview) return;
+    if (!file && !imageUrl) {
+      preview.innerHTML = '';
+      return;
+    }
+    var src = imageUrl || URL.createObjectURL(file);
+    var img = new Image();
+    img.src = src;
+    img.style.maxWidth = '100%';
+    img.style.maxHeight = '120px';
+    img.style.borderRadius = '8px';
+    if (file) {
+      img.onload = function () { URL.revokeObjectURL(src); };
+    }
+    preview.innerHTML = '';
+    preview.appendChild(img);
+  }
+
   /* ===== CRUD ===== */
 
   window.editTestimonial = function (id) {
@@ -271,7 +313,18 @@
     if (commentEl) commentEl.value = t.comment || '';
     if (ratingEl) ratingEl.value = t.rating || 5;
     if (activeEl) activeEl.checked = t.active !== false;
+
+    pendingPhotoFile = null;
+    var photoInput = document.getElementById('testimonialPhotoFile');
+    if (photoInput) photoInput.value = '';
+    if (t.image) {
+      renderPhotoPreview(null, t.image);
+    } else {
+      renderPhotoPreview(null, null);
+    }
+
     if (saveBtn) {
+      saveBtn.disabled = false;
       saveBtn.textContent = 'Guardar cambios';
       saveBtn.dataset.editingId = id;
     }
@@ -351,6 +404,9 @@
       Object.keys(payload).forEach(function (key) {
         formData.append(key, payload[key]);
       });
+      if (pendingPhotoFile) {
+        formData.append('image', pendingPhotoFile, pendingPhotoFile.name);
+      }
 
       var res = await window.adminFetch(url, {
         method: method,
@@ -390,18 +446,23 @@
 
   function resetTestimonialForm() {
     editingId = null;
+    pendingPhotoFile = null;
     var nameEl = document.getElementById('testimonialName');
     var roleEl = document.getElementById('testimonialRole');
     var commentEl = document.getElementById('testimonialComment');
     var ratingEl = document.getElementById('testimonialRating');
     var activeEl = document.getElementById('testimonialActive');
     var saveBtn = document.getElementById('saveTestimonialBtn');
+    var photoInput = document.getElementById('testimonialPhotoFile');
     if (nameEl) nameEl.value = '';
     if (roleEl) roleEl.value = '';
     if (commentEl) commentEl.value = '';
     if (ratingEl) ratingEl.value = 5;
     if (activeEl) activeEl.checked = true;
+    if (photoInput) photoInput.value = '';
+    renderPhotoPreview(null, null);
     if (saveBtn) {
+      saveBtn.disabled = false;
       saveBtn.textContent = 'Crear testimonio';
       delete saveBtn.dataset.editingId;
     }
@@ -427,6 +488,14 @@
 
     if (saveBtn) {
       saveBtn.addEventListener('click', saveTestimonial);
+    }
+
+    var photoInput = document.getElementById('testimonialPhotoFile');
+    if (photoInput) {
+      photoInput.addEventListener('change', function (e) {
+        pendingPhotoFile = e.target.files[0] || null;
+        renderPhotoPreview(pendingPhotoFile);
+      });
     }
 
     if (sectionContentBtn) {

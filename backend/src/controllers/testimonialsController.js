@@ -126,6 +126,10 @@ const updateTestimonial = async (req, res) => {
     if (comment.length > 500) return res.status(400).json({ error: 'Comentario no puede superar 500 caracteres' });
     updates.comment = comment;
   }
+  if (fields.includes('active')) {
+    const val = updates.active;
+    updates.active = val !== false && val !== 'false' && val !== '0' && val !== 0;
+  }
   const values = [];
   const setParts = [];
   fields.forEach((f, i) => {

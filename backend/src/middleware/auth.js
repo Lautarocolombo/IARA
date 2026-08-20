@@ -7,7 +7,7 @@ const ROLE_PERMISSIONS = {
   viewer: ['products:read', 'orders:read', 'categories:read', 'testimonials:read', 'reviews:read', 'contacts:read', 'settings:read']
 };
 
-function adminAuth(req, res, next) {
+async function adminAuth(req, res, next) {
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : req.headers['x-admin-token'];
 
@@ -16,7 +16,8 @@ function adminAuth(req, res, next) {
   }
 
   try {
-    if (tokenBlacklist.has(token)) {
+    const blacklisted = await tokenBlacklist.has(token);
+    if (blacklisted) {
       return res.status(401).json({ error: 'Token revocado. Iniciá sesión nuevamente.' });
     }
     const JWT_SECRET = process.env.JWT_SECRET;

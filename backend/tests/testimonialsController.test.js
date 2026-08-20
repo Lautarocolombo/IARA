@@ -160,6 +160,42 @@ describe('testimonialsController', () => {
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ id: 1, name: 'Juan Actualizado' }));
     });
 
+    test('coerce active string "false" a boolean false', async () => {
+      const req = {
+        params: { id: '1' },
+        body: { name: 'Juan', active: 'false' },
+        file: null
+      };
+      const res = { json: jest.fn() };
+
+      query.mockResolvedValueOnce({ rows: [{ id: 1, name: 'Juan', active: false }] });
+
+      await updateTestimonial(req, res);
+
+      expect(query).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE testimonials'),
+        expect.arrayContaining([false, 'Juan', 1])
+      );
+    });
+
+    test('coerce active string "true" a boolean true', async () => {
+      const req = {
+        params: { id: '1' },
+        body: { name: 'Juan', active: 'true' },
+        file: null
+      };
+      const res = { json: jest.fn() };
+
+      query.mockResolvedValueOnce({ rows: [{ id: 1, name: 'Juan', active: true }] });
+
+      await updateTestimonial(req, res);
+
+      expect(query).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE testimonials'),
+        expect.arrayContaining([true, 'Juan', 1])
+      );
+    });
+
     test('retorna 404 si el testimonio no existe', async () => {
       const req = {
         params: { id: '999' },
