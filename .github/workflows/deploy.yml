@@ -56,11 +56,39 @@ jobs:
         timeout-minutes: 10
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
+      - name: Run backend (detached)
+        run: |
+          cd backend
+          export ADMIN_USER='testadmin'
+          export JWT_SECRET='test-secret'
+          export ADMIN_PASS_HASH='$2b$10$testhashtesthashtesthas'
+          export ALLOWED_ORIGINS='http://localhost:3000'
+          export NODE_ENV='test'
+          export DATABASE_URL=''
+          export REDIS_URL='redis://localhost:6379'
+          node src/server.js > server.log 2>&1 &
+          echo $! > server.pid
+      - name: Wait for backend
+        run: |
+          max=30
+          for i in $(seq 1 $max); do
+            if curl -sSf http://localhost:3000/health > /dev/null; then
+              break
+            fi
+            sleep 1
+          done
       - name: Run Playwright E2E tests
         run: npx playwright test --config=playwright.audit.config.js
         env:
           CI: true
         continue-on-error: true
+      - name: Stop backend
+        if: always()
+        run: |
+          if [ -f backend/server.pid ]; then
+            pid=$(cat backend/server.pid)
+            kill $pid || true
+          fi
 
   security-audit:
     runs-on: ubuntu-latest
@@ -120,15 +148,14 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       - name: Smoke test
         run: |
-          $siteUrl = if ($env:FRONTEND_URL) { $env:FRONTEND_URL } else { 'https://artesaniagualeguay.com' }
-          $max = 30; $i = 0
-          while ($i -lt $max) {
-            try {
-              $r = Invoke-WebRequest -Uri "$siteUrl/health" -UseBasicParsing
-              if ($r.StatusCode -eq 200) { Write-Host "Health check OK"; break }
-            } catch {}
-            Start-Sleep -Seconds 2
-            $i++
-          }
+          backendUrl="${BACKEND_URL:-https://api.artesaniagualeguay.com}"
+          max=30
+          for i in $(seq 1 $max); do
+            if curl -sSf "$backendUrl/health" > /dev/null; then
+              echo "Health check OK"
+              break
+            fi
+            sleep 2
+          done
         env:
-          FRONTEND_URL: ${{ vars.FRONTEND_URL || 'https://artesaniagualeguay.com' }}
+          BACKEND_URL: ${{ vars.BACKEND_URL || 'https://api.artesaniagualeguay.com' }}

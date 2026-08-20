@@ -2,11 +2,11 @@ name: Frontend Checks
 
 on:
   pull_request:
-    branches: [ main, master ]
+    branches: [main]
     paths:
       - 'frontend/**'
   push:
-    branches: [ main, master ]
+    branches: [main]
     paths:
       - 'frontend/**'
 
