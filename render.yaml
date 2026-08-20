@@ -43,5 +43,5 @@ services:
       - key: LOG_LEVEL
         value: info
     autoDeploy: true
-    branch: main
-    repo: https://github.com/Lautarocolombo/artesaniagualeguay.git
+    branch: master
+    repo: https://github.com/Lautarocolombo/IARA.git
