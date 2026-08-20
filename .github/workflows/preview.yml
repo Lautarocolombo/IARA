@@ -1,0 +1,165 @@
+name: Preview Deploy
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Install backend dependencies
+        run: cd backend && npm ci --no-audit --no-fund
+      - name: Lint frontend
+        run: npm run lint
+      - name: Lint backend
+        run: cd backend && npm run lint
+      - name: Run frontend unit tests
+        run: npm test
+      - name: Run backend tests
+        run: cd backend && mkdir -p data && npm test
+        env:
+          NODE_ENV: test
+          JWT_SECRET: test-secret
+          ADMIN_USER: testadmin
+          ADMIN_PASS_HASH: $2b$10$testhashtesthashtesthas
+          DATABASE_URL: ''
+          ALLOWED_ORIGINS: http://localhost:3000
+
+  preview-backend:
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      backend-url: ${{ steps.set-output.outputs.backend-url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Render staging
+        id: deploy
+        if: secrets.RENDER_API_KEY != ''
+        run: |
+          curl -s -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            "https://api.render.com/v1/services?limit=100" \
+            > services.json
+
+          SERVICE_ID=$(node -e "
+            const fs = require('fs');
+            const data = JSON.parse(fs.readFileSync('services.json', 'utf8'));
+            const services = Array.isArray(data) ? data : (data.services || []);
+            const service = services.find(s => s.name === 'artesaniagualeguay-backend-staging');
+            if (service) process.stdout.write(service.id);
+          ")
+
+          if [ -z "$SERVICE_ID" ]; then
+            echo "Servicio staging no encontrado en Render. Crealo manualmente o configura RENDER_API_KEY."
+            echo "backend-url=" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "Service ID: $SERVICE_ID"
+
+          DEPLOY_RESPONSE=$(curl -s -X POST \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Content-Type: application/json" \
+            "https://api.render.com/v1/services/$SERVICE_ID/deploys" \
+            -d '{"clearCache":"clear"}')
+
+          DEPLOY_ID=$(node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8'));process.stdout.write(d.id||'');" <<< "$DEPLOY_RESPONSE")
+          echo "Deploy ID: $DEPLOY_ID"
+
+          for i in $(seq 1 60); do
+            STATUS=$(curl -s -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+              "https://api.render.com/v1/services/$SERVICE_ID/deploys/$DEPLOY_ID" \
+              | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8'));process.stdout.write(d.status||'');")
+            echo "Status: $STATUS"
+            if [ "$STATUS" = "live" ]; then
+              break
+            elif [ "$STATUS" = "build_failed" ] || [ "$STATUS" = "deploy_failed" ]; then
+              echo "Deploy fallido"
+              exit 1
+            fi
+            sleep 10
+          done
+
+          BACKEND_URL=$(curl -s -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            "https://api.render.com/v1/services/$SERVICE_ID" \
+            | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8'));const u=d.serviceDetails&&d.serviceDetails.url;process.stdout.write(u||'');")
+
+          echo "backend-url=$BACKEND_URL" >> $GITHUB_OUTPUT
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+      - name: Set production backend fallback
+        id: set-output
+        run: |
+          if [ -n "${{ steps.deploy.outputs.backend-url }}" ]; then
+            echo "backend-url=${{ steps.deploy.outputs.backend-url }}" >> $GITHUB_OUTPUT
+          else
+            echo "backend-url=https://api.artesaniagualeguay.com" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Sync Neon migrations (staging)
+        if: secrets.NEON_DATABASE_URL != ''
+        run: |
+          cd backend
+          export NEON_DATABASE_URL="${{ secrets.NEON_DATABASE_URL }}"
+          node scripts/migrate-neon.js
+        env:
+          NEON_DATABASE_URL: ${{ secrets.NEON_DATABASE_URL }}
+
+  preview-frontend:
+    needs: [test, preview-backend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Inject backend URL
+        run: |
+          if [ "${{ needs.preview-backend.outputs.backend-url }}" != "" ]; then
+            sed -i "s|BASE: ''|BASE: '${{ needs.preview-backend.outputs.backend-url }}'|" frontend/js/config.js
+            sed -i "s|BACKEND_URL: ''|BACKEND_URL: '${{ needs.preview-backend.outputs.backend-url }}'|" frontend/js/config.js
+          fi
+      - name: Build frontend
+        run: npm run build
+      - name: Restore config
+        run: git checkout -- frontend/js/config.js
+      - name: Install Vercel CLI
+        run: npm install -g vercel
+      - name: Deploy to Vercel preview
+        id: vercel-deploy
+        run: |
+          vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+          vercel build --preview --token=${{ secrets.VERCEL_TOKEN }}
+          vercel deploy --preview --token=${{ secrets.VERCEL_TOKEN }} --force > vercel-url.txt
+          echo "url=$(cat vercel-url.txt)" >> $GITHUB_OUTPUT
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      - name: Comment PR with preview URL
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const frontendUrl = '${{ steps.vercel-deploy.outputs.url }}';
+            const backendUrl = '${{ needs.preview-backend.outputs.backend-url }}';
+            let body = `🚀 **Preview deploy listo**\n\n`;
+            body += `Frontend: ${frontendUrl}\n`;
+            if (backendUrl && backendUrl !== '') {
+              body += `Backend staging: ${backendUrl}/health\n`;
+            } else {
+              body += `Backend: https://api.artesaniagualeguay.com (producción)\n`;
+            }
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });

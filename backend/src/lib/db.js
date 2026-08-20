@@ -59,7 +59,7 @@ if (isLocal) {
     const dbDir = process.env.VERCEL
       ? '/tmp/ag-data'
       : path.join(__dirname, '..', '..', 'data');
-    const dbPath = path.join(dbDir, 'iara.db');
+    const dbPath = path.join(dbDir, 'artesaniagualeguay.db');
     if (!fs.existsSync(dbDir)) {
       fs.mkdirSync(dbDir, { recursive: true });
     }
@@ -196,7 +196,19 @@ async function transaction(fn) {
 }
 
 async function initDB() {
+  const isProduction = process.env.NODE_ENV === 'production' && !!process.env.DATABASE_URL;
   if (isLocal) {
+    await query(`CREATE TABLE IF NOT EXISTS carousel_images (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      slot INTEGER DEFAULT 0,
+      url TEXT DEFAULT '',
+      public_id TEXT DEFAULT '',
+      alt_text TEXT DEFAULT '',
+      link_url TEXT DEFAULT '',
+      tenant_id TEXT DEFAULT 'default',
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query('CREATE UNIQUE INDEX IF NOT EXISTS idx_carousel_images_slot ON carousel_images(slot) WHERE slot > 0');
     await query(`CREATE TABLE IF NOT EXISTS products (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -726,37 +738,39 @@ async function initDB() {
       } catch (err) {
         logger.debug({ err: err.message }, 'Columna included_shipping_cost ya existe o no se pudo agregar (SQLite)');
       }
-      try {
-        await query(`CREATE TABLE IF NOT EXISTS shipping_rates_by_province (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          province TEXT UNIQUE NOT NULL,
-          shipping_cost REAL DEFAULT 0,
-          tenant_id TEXT DEFAULT 'default',
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )`);
-      } catch (err) {
-        logger.debug({ err: err.message }, 'Tabla shipping_rates_by_province ya existe o no se pudo crear (SQLite)');
-      }
-      const defaultProvinces = [
-        ['Buenos Aires', 1500], ['Catamarca', 1800], ['Chaco', 1800], ['Chubut', 2200],
-        ['Ciudad Autónoma de Buenos Aires', 1500], ['Córdoba', 1700], ['Corrientes', 1800],
-        ['Entre Ríos', 1500], ['Formosa', 2000], ['Jujuy', 2200], ['La Pampa', 1800],
-        ['La Rioja', 1800], ['Mendoza', 1900], ['Misiones', 1800], ['Neuquén', 2200],
-        ['Río Negro', 2200], ['Salta', 2200], ['San Juan', 1900], ['San Luis', 1700],
-        ['Santa Cruz', 2500], ['Santa Fe', 1600], ['Santiago del Estero', 1800],
-        ['Tierra del Fuego', 2800], ['Tucumán', 1700]
-      ];
-      for (const [prov, cost] of defaultProvinces) {
+      if (!isProduction) {
         try {
-          await query('INSERT OR IGNORE INTO shipping_rates_by_province (province, shipping_cost) VALUES ($1, $2)', [prov, cost]);
+          await query(`CREATE TABLE IF NOT EXISTS shipping_rates_by_province (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            province TEXT UNIQUE NOT NULL,
+            shipping_cost REAL DEFAULT 0,
+            tenant_id TEXT DEFAULT 'default',
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )`);
         } catch (err) {
-          logger.debug({ err: err.message }, `No se pudo insertar provincia ${prov} (SQLite)`);
+          logger.debug({ err: err.message }, 'Tabla shipping_rates_by_province ya existe o no se pudo crear (SQLite)');
         }
-      }
-      try {
-        await query("UPDATE payment_config SET included_shipping_cost = 1500 WHERE included_shipping_cost IS NULL OR included_shipping_cost = 0");
-      } catch (err) {
-        logger.debug({ err: err.message }, 'No se pudo actualizar included_shipping_cost (SQLite)');
+        const defaultProvinces = [
+          ['Buenos Aires', 1500], ['Catamarca', 1800], ['Chaco', 1800], ['Chubut', 2200],
+          ['Ciudad Autónoma de Buenos Aires', 1500], ['Córdoba', 1700], ['Corrientes', 1800],
+          ['Entre Ríos', 1500], ['Formosa', 2000], ['Jujuy', 2200], ['La Pampa', 1800],
+          ['La Rioja', 1800], ['Mendoza', 1900], ['Misiones', 1800], ['Neuquén', 2200],
+          ['Río Negro', 2200], ['Salta', 2200], ['San Juan', 1900], ['San Luis', 1700],
+          ['Santa Cruz', 2500], ['Santa Fe', 1600], ['Santiago del Estero', 1800],
+          ['Tierra del Fuego', 2800], ['Tucumán', 1700]
+        ];
+        for (const [prov, cost] of defaultProvinces) {
+          try {
+            await query('INSERT OR IGNORE INTO shipping_rates_by_province (province, shipping_cost) VALUES ($1, $2)', [prov, cost]);
+          } catch (err) {
+            logger.debug({ err: err.message }, `No se pudo insertar provincia ${prov} (SQLite)`);
+          }
+        }
+        try {
+          await query("UPDATE payment_config SET included_shipping_cost = 1500 WHERE included_shipping_cost IS NULL OR included_shipping_cost = 0");
+        } catch (err) {
+          logger.debug({ err: err.message }, 'No se pudo actualizar included_shipping_cost (SQLite)');
+        }
       }
       return;
    }
@@ -868,30 +882,161 @@ async function initDB() {
     logger.debug({ err: err.message }, 'Error reseteando sequences');
   }
 
-  try {
-    await ensureAdminUser();
-  } catch (err) {
-    logger.warn({ err: err.message }, 'No se pudo asegurar usuario admin (PostgreSQL)');
-  }
+    if (!isProduction) {
+      try {
+        const count = await query('SELECT COUNT(*) AS count FROM products');
+        if ((count.rows[0]?.count || 0) === 0) {
+          const products = [
+            ['Pulsera Minimalista', 'pulsera-minimalista', 'pulseras', 450, 'Pulsera artesanal de hilo encerado con cierre ajustable. Diseño minimalista ideal para uso diario.', '📿', 'https://api.artesaniagualeguay.com/uploads/pulsera-con-tigo-tengo.jpg', 20, true, true],
+            ['Pulsera Con Tigo Tengo', 'pulsera-con-tigo-tengo', 'pulseras', 500, 'Pulsera personalizada con detalles en colores vibrantes. Hecha a mano en Gualeguay.', '💖', 'https://api.artesaniagualeguay.com/uploads/pulsera-con-tigo-tengo.jpg', 15, true, true],
+            ['Anillo Cerámica', 'anillo-ceramica', 'accesorios', 280, 'Anillo artesanal de cerámica esmaltada. Cada pieza es única por su acabado manual.', '💎', 'https://api.artesaniagualeguay.com/assets/pulsera-con-tigo-tengo.jpg', 10, true, true],
+            ['Llavero Souvenir', 'llavero-souvenir', 'souvenirs', 150, 'Llavero de madera con grabado artesanal. Perfecto para regalar o llevar de recuerdo.', '🔑', 'https://api.artesaniagualeguay.com/assets/placeholder-product.svg', 50, true, true],
+            ['Pulsera Trenzada', 'pulsera-trenzada', 'pulseras', 350, 'Pulsera trenzada con hilos de algodón. Cómoda, resistente y con estilo propio.', '🌈', 'https://api.artesaniagualeguay.com/assets/placeholder-product.svg', 25, true, true]
+          ];
+          for (const p of products) {
+            await query('INSERT INTO products (name, slug, category, price, description, emoji, image, stock, featured, active) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)', p);
+          }
+        }
+      } catch (err) {
+        logger.debug({ err: err.message }, 'No se pudieron insertar productos demo');
+      }
 
-  try {
-    await query("UPDATE site_texts SET value = REPLACE(value, 'Cada pieza es única', 'Cada pieza es única') WHERE key = 'hero_subtitle' AND value LIKE '%única%'");
-  } catch (err) {
-    logger.debug({ err: err.message }, 'No se pudo corregir hero_subtitle');
-  }
+      try {
+        const count = await query('SELECT COUNT(*) AS count FROM categories');
+        if ((count.rows[0]?.count || 0) === 0) {
+          await query("INSERT INTO categories (name, slug, description, active, orden, emoji) VALUES ('Pulseras', 'pulseras', 'Pulseras artesanales hechas a mano', true, 1, '📿')");
+          await query("INSERT INTO categories (name, slug, description, active, orden, emoji) VALUES ('Accesorios', 'accesorios', 'Anillos y accesorios únicos', true, 2, '💎')");
+          await query("INSERT INTO categories (name, slug, description, active, orden, emoji) VALUES ('Souvenirs', 'souvenirs', 'Llaveros y recuerdos artesanales', true, 3, '🔑')");
+        }
+      } catch (err) {
+        logger.debug({ err: err.message }, 'No se pudieron insertar categorías demo');
+      }
 
-  try {
-    await query("UPDATE site_texts SET value = REPLACE(value, 'Explorar Catálogo', 'Explorar Catálogo') WHERE key = 'hero_cta_text' AND value LIKE '%Catálogo%'");
-  } catch (err) {
-    logger.debug({ err: err.message }, 'No se pudo corregir hero_cta_text');
-  }
+      try {
+        const count = await query('SELECT COUNT(*) AS count FROM site_texts');
+        if ((count.rows[0]?.count || 0) === 0) {
+          const texts = [
+            ['hero_title', 'Regalos artesanales que cuentan historias'],
+            ['hero_subtitle', 'Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es única.'],
+            ['hero_cta_text', 'Explorar Catálogo'],
+            ['feature_1_title', 'Hecho a mano'],
+            ['feature_1_desc', 'Cada pieza es artesanal y única'],
+            ['feature_2_title', 'Envío gratis'],
+            ['feature_2_desc', 'En compras mayores a ARS 2.000'],
+            ['feature_3_title', 'Materiales premium'],
+            ['feature_3_desc', 'Seleccionados con cuidado'],
+            ['feature_4_title', 'Para regalar'],
+            ['feature_4_desc', 'Empaques especiales disponibles'],
+            ['about_text', 'En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.'],
+            ['process_subtitle', 'Cinco pasos simples para comprar tu artesanía']
+          ];
+          for (const [key, value] of texts) {
+            await query('INSERT INTO site_texts (key, value, tenant_id) VALUES ($1, $2, $3)', [key, value, 'default']);
+          }
+        }
+      } catch (err) {
+        logger.debug({ err: err.message }, 'No se pudieron insertar site_texts demo');
+      }
 
-  try {
-    await query("INSERT INTO section_content (section_key, title, subtitle, tenant_id) VALUES ('testimonials', 'Lo que dicen nuestros clientes', 'Historias reales de personas que confiaron en nosotros', 'default') ON CONFLICT (section_key) DO NOTHING");
-  } catch (err) {
-    logger.debug({ err: err.message }, 'No se pudo seedear section_content');
-  }
-  }
+      try {
+        const count = await query('SELECT COUNT(*) AS count FROM hero_cards');
+        if ((count.rows[0]?.count || 0) === 0) {
+          await query("INSERT INTO hero_cards (nombre, precio, imagen, emoji, orden, activo, titulo, subtitulo, cta_texto, cta_url, slot, tipo, tenant_id) VALUES ('Pulsera Minimalista', '$450', 'https://api.artesaniagualeguay.com/assets/pulsera-con-tigo-tengo.jpg', '📿', 0, true, 'Pulsera Minimalista', 'Diseño único', 'Ver más', '#catalog', 0, 'hero', 'default')");
+          await query("INSERT INTO hero_cards (nombre, precio, imagen, emoji, orden, activo, titulo, subtitulo, cta_texto, cta_url, slot, tipo, tenant_id) VALUES ('Anillo Cerámica', '$280', 'https://api.artesaniagualeguay.com/assets/placeholder-product.svg', '💎', 1, true, 'Anillo Cerámica', 'Artesanía con alma', 'Ver más', '#catalog', 1, 'hero', 'default')");
+        }
+      } catch (err) {
+        logger.debug({ err: err.message }, 'No se pudieron insertar hero_cards demo');
+      }
+
+      try {
+        const count = await query('SELECT COUNT(*) AS count FROM testimonials');
+        if ((count.rows[0]?.count || 0) === 0) {
+          await query("INSERT INTO testimonials (name, comment, rating, image, avatar, role, active, featured, orden, tenant_id) VALUES ('María G.', 'Las pulseras son hermosas y el envío fue rapidísimo. Volveré a comprar!', 5, '', '', 'Cliente', true, true, 0, 'default')");
+          await query("INSERT INTO testimonials (name, comment, rating, image, avatar, role, active, featured, orden, tenant_id) VALUES ('Juan P.', 'Compré un regalo y quedaron encantados. La calidad es increíble.', 5, '', '', 'Cliente', true, true, 1, 'default')");
+        }
+      } catch (err) {
+        logger.debug({ err: err.message }, 'No se pudieron insertar testimonials demo');
+      }
+
+      try {
+        await query("INSERT INTO payment_config (mp_alias, transfer_alias, holder_name, cbu_cvu, whatsapp, message, active, mp_enabled, cash_enabled, shipping_cost, free_shipping_from, notify_admin_new_proof, notify_client_approved, notify_client_rejected, included_shipping_cost, tenant_id) VALUES ('artesaniagualeguay', 'artesaniagualeguay', 'Artesanía Gualeguay', '', '+5493444634444', 'Transferí el total exacto y enviá el comprobante por WhatsApp para confirmar tu pedido.', true, false, false, 200, 2000, true, true, true, 1500, 'default') ON CONFLICT DO NOTHING");
+      } catch (err) {
+        logger.debug({ err: err.message }, 'No se pudo seedear payment_config');
+      }
+
+      try {
+        await query("UPDATE site_texts SET value = REPLACE(value, 'Cada pieza es única', 'Cada pieza es única') WHERE key = 'hero_subtitle' AND value LIKE '%única%'");
+      } catch (err) {
+        logger.debug({ err: err.message }, 'No se pudo corregir hero_subtitle');
+      }
+
+      try {
+        await query("UPDATE site_texts SET value = REPLACE(value, 'Explorar Catálogo', 'Explorar Catálogo') WHERE key = 'hero_cta_text' AND value LIKE '%Catálogo%'");
+      } catch (err) {
+        logger.debug({ err: err.message }, 'No se pudo corregir hero_cta_text');
+      }
+
+      try {
+        await query("INSERT INTO section_content (section_key, title, subtitle, tenant_id) VALUES ('testimonials', 'Lo que dicen nuestros clientes', 'Historias reales de personas que confiaron en nosotros', 'default') ON CONFLICT (section_key) DO NOTHING");
+      } catch (err) {
+        logger.debug({ err: err.message }, 'No se pudo seedear section_content');
+      }
+
+      const neonMigrations = [
+        "ALTER TABLE products ADD COLUMN IF NOT EXISTS sku TEXT DEFAULT ''",
+        "ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS transfer_alias TEXT DEFAULT ''",
+        "ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS cbu_cvu TEXT DEFAULT ''",
+        "ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS mp_enabled BOOLEAN DEFAULT FALSE",
+        "ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS cash_enabled BOOLEAN DEFAULT FALSE",
+        "ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS shipping_cost REAL DEFAULT 0",
+        "ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS free_shipping_from REAL DEFAULT 0",
+        "ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method TEXT DEFAULT ''",
+        "ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS orden INTEGER DEFAULT 0",
+        "ALTER TABLE product_images ADD COLUMN IF NOT EXISTS watermark_texto TEXT DEFAULT ''",
+        "ALTER TABLE categories ADD COLUMN IF NOT EXISTS emoji TEXT DEFAULT ''",
+        "ALTER TABLE products ADD COLUMN IF NOT EXISTS featured BOOLEAN DEFAULT FALSE",
+        "ALTER TABLE products ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT TRUE",
+        "ALTER TABLE products ADD COLUMN IF NOT EXISTS slug TEXT DEFAULT ''",
+        "ALTER TABLE products ADD COLUMN IF NOT EXISTS deleted BOOLEAN DEFAULT FALSE",
+        "ALTER TABLE hero_cards ADD COLUMN IF NOT EXISTS titulo TEXT DEFAULT ''",
+        "ALTER TABLE hero_cards ADD COLUMN IF NOT EXISTS subtitulo TEXT DEFAULT ''",
+        "ALTER TABLE hero_cards ADD COLUMN IF NOT EXISTS cta_texto TEXT DEFAULT ''",
+        "ALTER TABLE hero_cards ADD COLUMN IF NOT EXISTS cta_url TEXT DEFAULT ''",
+        "ALTER TABLE hero_cards ADD COLUMN IF NOT EXISTS descripcion TEXT DEFAULT ''",
+        "ALTER TABLE hero_cards ADD COLUMN IF NOT EXISTS slot INTEGER DEFAULT 0",
+        "ALTER TABLE hero_cards ADD COLUMN IF NOT EXISTS tipo TEXT DEFAULT 'hero'",
+        "CREATE INDEX IF NOT EXISTS idx_products_category ON products(category)",
+        "CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at)",
+        "CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at)",
+        "CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)",
+        "CREATE INDEX IF NOT EXISTS idx_webhook_events_event_id ON webhook_events(event_id)"
+      ];
+
+      for (const sql of neonMigrations) {
+        try {
+          await query(sql);
+        } catch (err) {
+          logger.debug({ err: err.message }, `Migración Neon opcional falló: ${sql}`);
+        }
+      }
+
+      try {
+        await query("INSERT INTO site_texts (key, value) VALUES \
+          ('hero_title', 'Regalos <em>artesanales</em> que cuentan historias'), \
+          ('hero_subtitle', 'Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es única.'), \
+          ('hero_cta_text', 'Explorar Catálogo'), \
+          ('hero_cta_url', '#catalog'), \
+          ('hero_image_url', ''), \
+          ('featured_product_name', 'Anillo Cerámica'), \
+          ('featured_product_description', 'Artesanía con alma'), \
+          ('featured_product_cta_text', 'Ver producto'), \
+          ('featured_product_cta_url', '#catalog'), \
+          ('featured_product_image_url', '') \
+          ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value");
+      } catch (err) {
+         logger.debug({ err: err.message }, 'No se pudo seedear site_texts adicionales');
+      }
+    }
 
     async function ensureAdminUser() {
       const ADMIN_USER = process.env.ADMIN_USER;
@@ -922,11 +1067,12 @@ async function initDB() {
         const needsUpdate = existing.rows[0].password_hash !== ADMIN_PASS_HASH || existing.rows[0].permissions !== JSON.stringify({ all: true });
         if (needsUpdate) {
           await query('UPDATE users SET password_hash = $1, permissions = $2, updated_at = CURRENT_TIMESTAMP WHERE username = $3', [ADMIN_PASS_HASH, JSON.stringify({ all: true }), ADMIN_USER]);
-        }
-      }
-    }
+         }
+       }
+     }
+   }
 
- async function setTenant(tenantId) {
+  async function setTenant(tenantId) {
    if (!tenantId || typeof tenantId !== 'string') return;
    if (isLocal) return;
    try {

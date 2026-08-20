@@ -6,21 +6,16 @@
   <meta name="description" content="Artesanía Gualeguay - Pulseras, souvenirs y accesorios hechos a mano. Descubrí piezas únicas con envíos a todo el país." />
   <meta name="theme-color" content="#d47090" />
   <title>Artesanía Gualeguay | Pulseras & Souvenirs Artesanales</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" sizes="any" />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌸</text></svg>" />
   <meta property="og:title" content="Artesanía Gualeguay | Pulseras & Souvenirs Artesanales" />
-  <meta property="og:description" content="Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es unica." />
+  <meta property="og:description" content="Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es única." />
   <meta property="og:image" content="/imagenes/og-image.jpg" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@400;500;600&display=swap" as="style">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="canonical" id="canonical-link" href="/" />
-  <script>
-    (function() {
-      var canonical = document.getElementById('canonical-link');
-      if (canonical) canonical.href = window.location.origin + '/';
-    })();
-  </script>
+  <link rel="canonical" href="https://artesaniagualeguay.com/" />
   <link rel="stylesheet" href="css/variables.css" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/components.css" />
@@ -39,7 +34,7 @@
   <a href="#footer" class="skip-link">Saltar al pie de página</a>
 
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
-  <script src="js/config.js" type="module"></script>
+  <script src="js/config.js"></script>
   <script>
     (function() {
       if (typeof CONFIG !== 'undefined' && CONFIG.CONTACT && CONFIG.CONTACT.EMAIL) {
@@ -50,8 +45,8 @@
         }
       }
       var origin = window.location.origin;
-      var siteName = 'Artesanía Gualeguay';
-      var description = 'Pulseras, souvenirs y accesorios hechos a mano. Cada pieza es única.';
+      var siteName = 'Artesanias Gualeguay';
+      var description = 'Pulseras, souvenirs y accesorios hechos a mano. Cada pieza es unica.';
       var sameAs = ['https://www.instagram.com/', 'https://www.facebook.com/'];
       if (typeof CONFIG !== 'undefined' && CONFIG.LINKS) {
         if (CONFIG.LINKS.INSTAGRAM && CONFIG.LINKS.INSTAGRAM !== '#') sameAs[0] = CONFIG.LINKS.INSTAGRAM;
@@ -87,9 +82,9 @@
       });
     })();
   </script>
-  <script src="js/safeImage.js" type="module"></script>
-  <script src="js/header.js" type="module"></script>
-  <script src="js/theme.js" type="module"></script>
+  <script src="js/safeImage.js"></script>
+  <script src="js/header.js"></script>
+  <script src="js/theme.js"></script>
 
   <main>
     <!-- ============== HERO SECTION ============== -->
@@ -100,9 +95,9 @@
            <span class="hero-tag-dot" aria-hidden="true"></span>
            Colección 2026
          </div>
-         <div class="hero-greeting" id="heroGreeting">🌸</div>
-          <h1 class="hero-title">Regalos <em>artesanales</em><br>que cuentan historias</h1>
-        <p class="hero-subtitle">Regalos artesanales que cuentan historias, souvenirs y llaveros hechos a mano. Cada pieza es unica.</p>
+         <div class="hero-greeting">Buenos Días Artesanía Gualeguay 🌸</div>
+           <h1 class="hero-title">Regalos <em>artesanales</em> que cuentan historias</h1>
+        <p class="hero-subtitle">Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es unica.</p>
         <div class="hero-buttons">
           <a href="#catalog" class="btn-primary reveal">Explorar Catálogo</a>
           <a href="#contact" class="btn-outline reveal">Contáctanos</a>
@@ -229,25 +224,15 @@
         <button class="filter-btn" data-filter="pulseras">Pulseras</button>
         <button class="filter-btn" data-filter="accesorios">Accesorios</button>
         <button class="filter-btn" data-filter="souvenirs">Souvenirs</button>
-        <input type="number" id="minPrice" placeholder="Precio mín." class="filter-price" min="0" />
-        <input type="number" id="maxPrice" placeholder="Precio máx." class="filter-price" min="0" />
-        <button type="button" id="clearFiltersBtn" class="btn btn-outline btn-sm">Limpiar</button>
+        <input type="number" id="minPrice" placeholder="Precio mínimo" min="0" step="1" aria-label="Precio mínimo" />
+        <input type="number" id="maxPrice" placeholder="Precio máximo" min="0" step="1" aria-label="Precio máximo" />
+        <button id="clearFiltersBtn" class="filter-clear-btn" aria-label="Limpiar filtros">Limpiar</button>
       </div>
       <div class="search-bar">
         <input type="text" id="searchInput" placeholder="Buscar productos..." aria-label="Buscar productos" />
-        <button id="searchBtn" aria-label="Buscar">🔍</button>
+        <button id="searchBtn" aria-label="Buscar">🔝</button>
       </div>
       <div class="products-grid" id="productsGrid"></div>
-    </section>
-
-    <!-- ============== FEATURED PRODUCTS SECTION ============== -->
-    <section class="catalog" id="featured">
-      <div class="section-header">
-        <span class="section-tag reveal">Destacados</span>
-        <h2 class="section-title reveal">Productos Destacados</h2>
-        <p class="section-subtitle reveal">Nuestras piezas más elegidas</p>
-      </div>
-      <div class="products-grid" id="featuredGrid"></div>
     </section>
 
     <!-- ============== ABOUT SECTION ============== -->
@@ -283,7 +268,7 @@
             <div class="stat-label">Productos vendidos</div>
           </div>
           <div class="stat reveal">
-            <div class="stat-number">6+</div>
+            <div class="stat-number">5+</div>
             <div class="stat-label">Años de experiencia</div>
           </div>
         </div>
@@ -317,7 +302,7 @@
 
         <div class="map-wrapper reveal" id="locationMap">
           <div class="map-location-card">
-            <span aria-hidden="true">📍</span>
+            <span aria-hidden="true">📝</span>
             <span>San Antonio Norte 473, Gualeguay, Entre Ríos, Argentina</span>
           </div>
           <iframe
@@ -332,7 +317,7 @@
           ></iframe>
           <div id="mapFallback" class="map-fallback" style="display:none;">
             <div class="map-fallback-content">
-              <span aria-hidden="true">📍</span>
+              <span aria-hidden="true">📝</span>
               <p>No se pudo cargar el mapa</p>
               <a href="https://www.google.com/maps/search/?api=1&query=San+Antonio+Norte+473,+Gualeguay,+Entre+R%C3%ADos,+Argentina" target="_blank" rel="noopener" class="btn-primary map-fallback-btn">Ver en Google Maps</a>
             </div>
@@ -351,11 +336,11 @@
             <div class="info-icon" aria-hidden="true">📧</div>
             <div>
                <h4>Email</h4>
-                 <a id="contactEmailLink" href="mailto:">📧</a>
+                 <a href="mailto:info@artesaniagualeguay.com">info@artesaniagualeguay.com</a>
             </div>
           </div>
           <div class="info-item">
-            <div class="info-icon" aria-hidden="true">📍</div>
+            <div class="info-icon" aria-hidden="true">📝</div>
             <div>
               <h4>Ubicación</h4>
               <p>San Antonio Norte 473<br>Gualeguay, Entre Ríos, Argentina</p>
@@ -405,35 +390,7 @@
           <p class="section-subtitle reveal" id="testimonialsSubtitle">Historias reales de personas que confiaron en nosotros</p>
         </div>
         <div class="testimonials-grid" id="testimonialsGrid"></div>
-        <div id="testimonialsSkeleton" style="display:none;">
-          <div class="testimonials-grid">
-            <div class="testimonial-card">
-              <div class="testimonial-header">
-                <div class="testimonial-avatar loading-skeleton" style="width:40px;height:40px;border-radius:50%;"></div>
-                <div style="flex:1;"><div class="loading-skeleton" style="width:60%;"></div></div>
-              </div>
-              <div class="loading-skeleton" style="width:100%;"></div>
-              <div class="loading-skeleton" style="width:90%;"></div>
-            </div>
-            <div class="testimonial-card">
-              <div class="testimonial-header">
-                <div class="testimonial-avatar loading-skeleton" style="width:40px;height:40px;border-radius:50%;"></div>
-                <div style="flex:1;"><div class="loading-skeleton" style="width:50%;"></div></div>
-              </div>
-              <div class="loading-skeleton" style="width:100%;"></div>
-              <div class="loading-skeleton" style="width:85%;"></div>
-            </div>
-            <div class="testimonial-card">
-              <div class="testimonial-header">
-                <div class="testimonial-avatar loading-skeleton" style="width:40px;height:40px;border-radius:50%;"></div>
-                <div style="flex:1;"><div class="loading-skeleton" style="width:55%;"></div></div>
-              </div>
-              <div class="loading-skeleton" style="width:100%;"></div>
-              <div class="loading-skeleton" style="width:80%;"></div>
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
    </main>
 
   <!-- ============== FOOTER ============== -->
@@ -445,7 +402,7 @@
         <div class="social-links">
           <a href="#" id="instagramLink" title="Instagram" class="social-icon" aria-label="Instagram">📷</a>
           <a href="#" id="facebookLink" title="Facebook" class="social-icon" aria-label="Facebook">👝</a>
-          <a href="#" id="twitterLink" title="Twitter" class="social-icon" aria-label="Twitter">🐦</a>
+          <a href="#" id="twitterLink" title="Twitter" class="social-icon" aria-label="Twitter">🝦</a>
         </div>
       </div>
       <div class="footer-section">
@@ -479,7 +436,7 @@
   <div id="cookieBanner" class="cookie-banner" style="display:none;" role="dialog" aria-labelledby="cookieTitle" aria-describedby="cookieDesc">
     <div class="cookie-banner-content">
       <div class="cookie-banner-text">
-        <h3 id="cookieTitle">🍪 Cookies</h3>
+        <h3 id="cookieTitle">🝪 Cookies</h3>
         <p id="cookieDesc">Usamos cookies para mejorar tu experiencia, analizar el tráfico y personalizar contenido. Podés aceptar todas, rechazar las no esenciales o configurarlas.</p>
       </div>
       <div class="cookie-banner-actions">
@@ -494,16 +451,16 @@
   <div id="toastContainer" class="toast-container"></div>
 
     <!-- ============== SCRIPTS ============== -->
-    <script src="js/cookie-consent.js" type="module"></script>
-    <script src="js/ui.js" type="module"></script>
+    <script src="js/cookie-consent.js"></script>
+    <script src="js/ui.js"></script>
     <script>
       if (typeof initNavbarScroll === 'function') initNavbarScroll();
       if (typeof initMobileNavbar === 'function') initMobileNavbar();
     </script>
-    <script src="js/wishlist.js" type="module"></script>
-   <script src="js/cart.js" type="module"></script>
-   <script src="js/products.js" type="module"></script>
-   <script src="js/hero.js" type="module"></script>
+    <script src="js/wishlist.js"></script>
+   <script src="js/cart.js"></script>
+   <script src="js/products.js"></script>
+   <script src="js/hero.js"></script>
    <script src="js/counters.js" type="module"></script>
     <script>
       (function() {
@@ -558,7 +515,7 @@
           iframe.style.display = 'none';
           fallback.style.display = 'flex';
         }
-      }, 20000);
+      }, 10000);
 
       iframe.addEventListener('load', function() {
         loaded = true;
@@ -635,12 +592,7 @@
       });
     }
   </script>
-   <script>
-     window.__aboutImages = window.__aboutImages || {};
-   </script>
-   <script src="js/about-carousel.js" type="module"></script>
-   <script src="js/home-init.js" type="module"></script>
- </body>
+   </body>
 </html>
 
 

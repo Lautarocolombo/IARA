@@ -246,8 +246,10 @@ function getPublicUrl(relativePath, baseUrl) {
     const filePath = path.join(baseDir, relativePath);
     if (fs.existsSync(filePath)) {
       fileExistsCache.add(relativePath);
+      fileMissingCache.delete(relativePath);
       return withPrefix;
     }
+    fileExistsCache.delete(relativePath);
     fileMissingCache.add(relativePath);
     logger.warn(`Imagen no encontrada en filesystem: ${relativePath}`);
     return '';

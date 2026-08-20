@@ -37,7 +37,7 @@ global.CONFIG = {
   API: { BASE: '' },
   CONTACT: {
     WHATSAPP: '+5493444634444',
-    WHATSAPP_ALIAS: 'iara-salgueiro'
+    WHATSAPP_ALIAS: 'artesaniagualeguay'
   },
   ANIMATIONS: { TOAST_DURATION: 3000, REVEAL_THRESHOLD: 0.15 }
 };

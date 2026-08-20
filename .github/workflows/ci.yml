@@ -14,6 +14,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
       - name: Install root dependencies
         run: npm ci --no-audit --no-fund
       - name: Install backend dependencies
@@ -43,29 +44,6 @@ jobs:
   e2e-tests:
     needs: lint-and-test
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-      redis:
-        image: redis:7-alpine
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6379:6379
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -81,21 +59,23 @@ jobs:
       - name: Run backend (detached)
         run: |
           cd backend
-          $env:ADMIN_USER='testadmin'; $env:JWT_SECRET='test-jwt-secret'; $env:ADMIN_PASS_HASH='$2b$10$testhashtesthashtesthaste'; $env:ALLOWED_ORIGINS='http://localhost:3000'; $env:NODE_ENV='test'; $env:DATABASE_URL=''; node src/server.js &
+          export ADMIN_USER='testadmin'
+          export JWT_SECRET='test-jwt-secret'
+          export ADMIN_PASS_HASH='$2b$10$testhashtesthashtesthaste'
+          export ALLOWED_ORIGINS='http://localhost:3000'
+          export NODE_ENV='test'
+          export DATABASE_URL=''
+          node src/server.js > server.log 2>&1 &
           echo $! > server.pid
-        shell: powershell
       - name: Wait for backend
         run: |
-          $max = 30; $i = 0
-          while ($i -lt $max) {
-            try {
-              $r = Invoke-WebRequest -Uri 'http://localhost:3000/health' -UseBasicParsing
-              if ($r.StatusCode -eq 200) { break }
-            } catch {}
-            Start-Sleep -Seconds 1
-            $i++
-          }
-        shell: powershell
+          max=30
+          for i in $(seq 1 $max); do
+            if curl -sSf http://localhost:3000/health > /dev/null; then
+              break
+            fi
+            sleep 1
+          done
       - name: Run Playwright E2E
         run: npx playwright test --config=playwright.audit.config.js --project=chromium
         env:
@@ -103,11 +83,10 @@ jobs:
       - name: Stop backend
         if: always()
         run: |
-          if (Test-Path "backend/server.pid") {
-            $pid = Get-Content backend/server.pid
-            Stop-Process -Id $pid -Force -ErrorAction SilentlyContinue
-          }
-        shell: powershell
+          if [ -f backend/server.pid ]; then
+            pid=$(cat backend/server.pid)
+            kill $pid || true
+          fi
       - name: Upload Playwright report
         if: always()
         uses: actions/upload-artifact@v4

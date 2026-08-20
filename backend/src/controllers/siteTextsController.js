@@ -24,10 +24,9 @@ function sanitizeText(text) {
     [/Compra mayor a ARS/g, 'Compra mayor a ARS'],
     [/Lunes a domingo/g, 'Lunes a domingo'],
     [/9:00 a 20:00/g, '9:00 a 20:00'],
-    [/San Antonio Norte/g, 'San Antonio Norte'],
-    [/Gualeguay, Entre Ríos/g, 'Gualeguay, Entre Ríos'],
-    [/CONFIGURAR_EMAIL/g, 'CONFIGURAR_EMAIL'],
-    [/\+54 \(3444\) 634-4444/g, '+54 (3444) 634-4444'],
+     [/San Antonio Norte/g, 'San Antonio Norte'],
+     [/Gualeguay, Entre Ríos/g, 'Gualeguay, Entre Ríos'],
+     [/\+54 \(3444\) 634-4444/g, '+54 (3444) 634-4444'],
     [/\+5493444634444/g, '+5493444634444']
   ];
   let result = text;

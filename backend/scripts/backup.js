@@ -14,12 +14,12 @@ async function ensureBackupDir() {
 
 async function backupSqlite() {
   await ensureBackupDir();
-  const dbPath = process.env.DATABASE_PATH || path.join(__dirname, '..', 'data', 'iara.db');
+  const dbPath = process.env.DATABASE_PATH || path.join(__dirname, '..', 'data', 'artesaniagualeguay.db');
   if (!fs.existsSync(dbPath)) {
     throw new Error(`SQLite database not found at ${dbPath}`);
   }
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const dest = path.join(BACKUP_DIR, `iara-${timestamp}.db`);
+  const dest = path.join(BACKUP_DIR, `artesaniagualeguay-${timestamp}.db`);
   fs.copyFileSync(dbPath, dest);
   await pruneBackups();
   return dest;
@@ -32,7 +32,7 @@ async function backupPostgres() {
     throw new Error('DATABASE_URL is not set for PostgreSQL backup');
   }
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const dest = path.join(BACKUP_DIR, `iara-${timestamp}.sql`);
+  const dest = path.join(BACKUP_DIR, `artesaniagualeguay-${timestamp}.sql`);
   await new Promise((resolve, reject) => {
     exec(`pg_dump "${connectionString}" > "${dest}"`, (err) => {
       if (err) reject(err);
@@ -45,7 +45,7 @@ async function backupPostgres() {
 
 async function pruneBackups() {
   const files = fs.readdirSync(BACKUP_DIR)
-    .filter(f => f.startsWith('iara-') && (f.endsWith('.db') || f.endsWith('.sql')))
+    .filter(f => f.startsWith('artesaniagualeguay-') && (f.endsWith('.db') || f.endsWith('.sql')))
     .sort()
     .reverse();
   for (let i = MAX_BACKUPS; i < files.length; i++) {

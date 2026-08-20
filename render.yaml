@@ -1,10 +1,10 @@
 services:
   - type: web
-    name: iara-backend
+    name: artesaniagualeguay-backend
     env: node
     rootDirectory: backend
     plan: free
-    buildCommand: npm ci --only=production --no-audit --no-fund
+    buildCommand: npm ci --only=production --no-audit --no-fund && node scripts/migrate-neon.js
     startCommand: node src/server.js
     healthCheckPath: /health
     envVars:
@@ -15,7 +15,7 @@ services:
       - key: JWT_SECRET
         generateValue: true
       - key: ADMIN_USER
-        value: Iara
+        value: admin
       - key: ADMIN_PASS_HASH
         sync: false
       - key: DATABASE_URL
@@ -23,11 +23,11 @@ services:
       - key: BLOB_READ_WRITE_TOKEN
         generateValue: true
       - key: SITE_URL
-        value: https://artesania-gualeguay-v3.vercel.app
+        value: https://artesaniagualeguay.com
       - key: BACKEND_URL
-        value: https://iara-os3h.onrender.com
+        value: https://api.artesaniagualeguay.com
       - key: ALLOWED_ORIGINS
-        value: https://artesania-gualeguay-v3.vercel.app,https://*.vercel.app,https://artesaniagualeguay.com,http://localhost:3000,http://localhost:5173
+        value: https://artesaniagualeguay.com,https://*.vercel.app,http://localhost:3000,http://localhost:5173
       - key: SHIPPING_COST
         value: "200"
       - key: SHIPPING_THRESHOLD
@@ -44,4 +44,4 @@ services:
         value: info
     autoDeploy: true
     branch: main
-    repo: https://github.com/Lautarocolombo/IARA.git
+    repo: https://github.com/Lautarocolombo/artesaniagualeguay.git

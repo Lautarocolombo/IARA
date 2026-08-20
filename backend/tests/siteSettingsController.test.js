@@ -55,7 +55,7 @@ describe('siteSettingsController', () => {
       query.mockResolvedValueOnce({ rows: [] });
       query.mockResolvedValueOnce({ rows: [] });
       query.mockResolvedValueOnce({ rows: [] });
-      query.mockResolvedValueOnce({ rows: [{ mp_alias: 'iara-salgueiro' }] });
+      query.mockResolvedValueOnce({ rows: [{ mp_alias: 'artesaniagualeguay' }] });
 
       await getSiteSettings(req, res);
 
@@ -154,12 +154,12 @@ describe('siteSettingsController', () => {
 
       query.mockResolvedValueOnce({ rows: [] });
       query.mockResolvedValueOnce({ rows: [] });
-      query.mockResolvedValueOnce({ rows: [{ mp_alias: 'iara-salgueiro' }] });
+      query.mockResolvedValueOnce({ rows: [{ mp_alias: 'artesaniagualeguay' }] });
 
       await getAdminPaymentConfig(req, res);
 
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
-        mpAlias: 'iara-salgueiro'
+        mpAlias: 'artesaniagualeguay'
       }));
     });
 

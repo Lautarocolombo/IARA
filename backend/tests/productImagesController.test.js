@@ -75,6 +75,7 @@ describe('productImagesController', () => {
       };
 
       query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+      query.mockResolvedValueOnce({ rows: [{ count: 0 }] });
       query.mockResolvedValueOnce({ rows: [{ max_orden: 0 }] });
       query.mockResolvedValueOnce({ rows: [{ id: 1, url: 'http://example.com/img1.jpg' }] });
       query.mockResolvedValueOnce({ rows: [{ id: 2, url: 'http://localhost/uploads/processed.webp' }] });
@@ -83,6 +84,28 @@ describe('productImagesController', () => {
 
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ ok: true, images: expect.any(Array) }));
+    });
+
+    test('retorna 400 si supera el límite de 5 imágenes', async () => {
+      const req = {
+        params: { id: '1' },
+        body: { imageUrls: JSON.stringify(['http://example.com/img1.jpg', 'http://example.com/img2.jpg']) },
+        files: [{ path: '/tmp/img.jpg', mimetype: 'image/jpeg' }],
+        protocol: 'http',
+        get: () => 'localhost'
+      };
+      const res = {
+        status: jest.fn(() => res),
+        json: jest.fn()
+      };
+
+      query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+      query.mockResolvedValueOnce({ rows: [{ count: 4 }] });
+
+      await uploadProductImages(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Máximo 5 imágenes por producto' });
     });
 
     test('retorna 404 si el producto no existe', async () => {

@@ -8,7 +8,7 @@
     description: 'Pulseras, souvenirs y accesorios hechos a mano en Gualeguay, Entre Ríos',
     url: window.location.origin,
     telephone: '+5493444634444',
-    email: 'CONFIGURAR_EMAIL',
+    email: 'info@artesaniagualeguay.com',
     address: {
       '@type': 'PostalAddress',
       streetAddress: 'San Antonio Norte 473',

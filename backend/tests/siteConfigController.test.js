@@ -94,7 +94,7 @@ describe('siteConfigController', () => {
 
       query.mockResolvedValueOnce({ rows: [] });
       query.mockResolvedValueOnce({ rows: [] });
-      query.mockResolvedValueOnce({ rows: [{ mp_alias: 'iara-salgueiro', holder_name: '', whatsapp: '', message: '', active: true }] });
+      query.mockResolvedValueOnce({ rows: [{ mp_alias: 'artesaniagualeguay', holder_name: '', whatsapp: '', message: '', active: true }] });
 
       await getSiteConfig(req, res);
 

@@ -110,7 +110,7 @@ describe('API Endpoints', () => {
     test('devuelve 401 con credenciales inválidas', async () => {
       const res = await request(app)
         .post('/api/auth/login')
-        .send({ username: process.env.ADMIN_USER || 'Iara', password: 'wrongpassword' });
+        .send({ username: process.env.ADMIN_USER || 'admin', password: 'wrongpassword' });
       expect(res.statusCode).toBe(401);
     });
   });
