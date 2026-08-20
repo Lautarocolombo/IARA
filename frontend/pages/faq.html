@@ -20,13 +20,13 @@
 <body>
   <a href="#content" class="skip-link">Saltar al contenido</a>
 
-  <script src="../js/config.js"></script>
-  <script src="../js/safeImage.js"></script>
-  <script src="../js/header.js"></script>
+  <script src="../js/config.js" type="module"></script>
+  <script src="../js/safeImage.js" type="module"></script>
+  <script src="../js/header.js" type="module"></script>
   <script>
     initSiteHeader({ showBackButton: true });
   </script>
-  <script src="../js/theme.js"></script>
+  <script src="../js/theme.js" type="module"></script>
   <main id="content" class="content">
     <a href="../index.html" class="back-link">← Volver al sitio</a>
     <h1>Preguntas Frecuentes</h1>
@@ -103,12 +103,13 @@
   </footer>
   <div id="toastContainer" class="toast-container"></div>
 
-  <script src="../js/ui.js"></script>
+  <script src="../js/ui.js" type="module"></script>
   <script>
     if (typeof initNavbarScroll === 'function') initNavbarScroll();
     if (typeof initMobileNavbar === 'function') initMobileNavbar();
   </script>
-  <script src="../js/wishlist.js"></script>
-  <script src="../js/cart.js"></script>
+  <script src="../js/wishlist.js" type="module"></script>
+  <script src="../js/cart.js" type="module"></script>
 </body>
 </html>
+

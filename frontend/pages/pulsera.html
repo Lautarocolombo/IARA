@@ -20,11 +20,11 @@
 <body>
   <a href="#content" class="skip-link">Saltar al contenido principal</a>
 
-  <script src="../js/config.js"></script>
-  <script src="../js/safeImage.js"></script>
-  <script src="../js/header.js"></script>
+  <script src="../js/config.js" type="module"></script>
+  <script src="../js/safeImage.js" type="module"></script>
+  <script src="../js/header.js" type="module"></script>
 
-  <script src="../js/theme.js"></script>
+  <script src="../js/theme.js" type="module"></script>
   <main id="content" class="product-detail">
     <nav aria-label="Breadcrumb" class="breadcrumb">
       <a href="../index.html">Inicio</a> <span aria-hidden="true">/</span> <a href="../index.html#catalog">Catálogo</a> <span aria-hidden="true">/</span> <span>La Llave del Amor</span>
@@ -34,14 +34,14 @@
       <div class="loading-skeleton loading-skeleton-tall"></div>
     </div>
   </main>
-  <script src="../js/ui.js"></script>
+  <script src="../js/ui.js" type="module"></script>
   <script>
     if (typeof initNavbarScroll === 'function') initNavbarScroll();
     if (typeof initMobileNavbar === 'function') initMobileNavbar();
   </script>
-  <script src="../js/products.js"></script>
-  <script src="../js/wishlist.js"></script>
-  <script src="../js/cart.js"></script>
+  <script src="../js/products.js" type="module"></script>
+  <script src="../js/wishlist.js" type="module"></script>
+  <script src="../js/cart.js" type="module"></script>
   <script>
     async function loadPulsera() {
       const container = document.getElementById('productContent');
@@ -178,3 +178,4 @@
   <div id="toastContainer" class="toast-container"></div>
   </body>
 </html>
+

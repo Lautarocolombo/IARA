@@ -17,7 +17,7 @@ const CONFIG = {
     WHATSAPP: '+5493444634444',
     WHATSAPP_ALIAS: 'iara-salgueiro',
     PHONE: '+54 (3444) 634-4444',
-    EMAIL: 'CONFIGURAR_EMAIL',
+    EMAIL: '',
     ADDRESS: 'San Antonio Norte 473, Gualeguay, Entre Ríos, Argentina',
     COORDINATES: { lat: -33.1400009, lng: -59.3136349 },
     GOOGLE_MAPS_API_KEY: ''

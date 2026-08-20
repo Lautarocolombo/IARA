@@ -2,7 +2,9 @@
 module.exports = {
   testEnvironment: 'node',
   transform: {},
-  workers: 1,
+  maxWorkers: 1,
+  testTimeout: 30000,
+  setupFiles: ['<rootDir>/tests/jest.setup.js'],
   coverageDirectory: 'coverage',
   collectCoverageFrom: [
     'src/**/*.js',

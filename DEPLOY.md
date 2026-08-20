@@ -2,48 +2,42 @@
 
 ## Requisitos
 
-- Node.js 18+
+- Node.js 20.x LTS
 - PostgreSQL (producción) / SQLite (desarrollo)
-- Variables de entorno en `.env` (ver `.env.example`)
+- Variables de entorno en Vercel Dashboard (ver `.env.example`)
 
-## Variables obligatorias
+## Variables obligatorias en Vercel Dashboard
 
 ```env
 NODE_ENV=production
 DATABASE_URL=postgresql://user:pass@host:5432/db
-ALLOWED_ORIGINS=https://artesania-gualeguay.vercel.app,http://localhost:3000,http://localhost:5173
+ALLOWED_ORIGINS=https://artesaniagualeguay.com,https://*.vercel.app,http://localhost:3000,http://localhost:5173
 JWT_SECRET=<random 64+ chars>
 ADMIN_USER=<username>
 ADMIN_PASS_HASH=<bcrypt hash>
-SITE_URL=https://artesania-gualeguay.vercel.app
-BACKEND_URL=https://iara-os3h.onrender.com
+SITE_URL=https://artesania-gualeguay-v3.vercel.app
 RESEND_API_KEY=<resend key>
 EMAIL_FROM=noreply@artesaniagualeguay.com
+ADMIN_NOTIFICATION_EMAIL=admin@artesaniagualeguay.com
+BLOB_READ_WRITE_TOKEN=<vercel blob token>
 ```
 
 ## Deploy en Vercel
 
 1. Conectar repo en Vercel
-2. Configurar variables en Vercel Dashboard
+2. Configurar variables en Vercel Dashboard (no commitear `.env`)
 3. Build command: `npm run build`
 4. Output directory: `dist`
 5. Install command: `npm install`
-6. El backend se despliega como serverless function en Vercel (`/api/*` → `backend/api.js`)
-
-## Deploy en Render
-
-1. Conectar repo en Render
-2. Root directory: `backend`
-3. Build command: `npm install`
-4. Start command: `npm start`
-5. Configurar variables de entorno
-6. Health check: `/health`
+6. Node.js: `20.x` LTS
+7. El backend se despliega como serverless function en Vercel (`/api/*` → `backend/api.js`)
+8. Habilitar Vercel Blob para almacenamiento de imágenes
 
 ## Notas
 
-- Frontend: Vercel (estático + serverless backend)
-- Backend alternativo: Render (standalone, para migración futura)
-- Si usás Render como backend primario, configurar `CONFIG.API.BASE` en `frontend/js/config.js` con la URL de Render
+- No subir archivos `.env` al repositorio. Usar Vercel Dashboard para secrets.
+- Si necesitás Render como backend alternativo, configurar `CONFIG.API.BASE` en `frontend/js/config.js` con la URL de Render.
+- El service worker y archivos estáticos se sirven desde Vercel.
 
 ## Health checks
 
