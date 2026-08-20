@@ -59,6 +59,7 @@ backend/check_payment.js
 backend/verify_hash.js
 backend/fix_neon_user.js
 backend/test_admin_products.js
+backend/test-upload-vercel.js
 
 # Build/test artifacts
 dist/

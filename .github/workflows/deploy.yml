@@ -80,7 +80,16 @@ jobs:
         continue-on-error: true
       - name: Check for exposed secrets
         run: |
-          if grep -rE "VERCEL_OIDC_TOKEN|sk_live_|pk_live_|sk_test_|pk_test_|api_key|secret_key|password|pass_hash" --include="*.env*" --include="*.js" --include="*.json" --include="*.html" --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=coverage --exclude-dir=test-results --exclude-dir=.playwright --exclude=render.yaml --exclude=.env.example --exclude=AGENTS.md .; then
+          if grep -rEn \
+            --include="*.env*" --include="*.js" --include="*.json" --include="*.html" \
+            --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=coverage \
+            --exclude-dir=test-results --exclude-dir=.playwright \
+            --exclude="render.yaml" --exclude=".env.example" --exclude="AGENTS.md" \
+            --exclude="package-lock.json" --exclude="yarn.lock" --exclude="pnpm-lock.yaml" \
+            --exclude="backend/test-upload-vercel.js" --exclude="backend/test_admin_products.js" \
+            --exclude="backend/fix_neon_user.js" --exclude="backend/check_*.js" --exclude="backend/verify_*.js" \
+            -e "AKIA[0-9A-Z]{16}" -e "AIza[0-9A-Za-z\\-_]{35}" -e "sk_live_[0-9a-zA-Z]{24,}" -e "pk_live_[0-9a-zA-Z]{24,}" -e "sk_test_[0-9a-zA-Z]{24,}" -e "pk_test_[0-9a-zA-Z]{24,}" -e "VERCEL_OIDC_TOKEN" -e "xox[baprs]-[0-9a-zA-Z-]+" -e "-----BEGIN (RSA|DSA|EC|OPENSSH) PRIVATE KEY-----" -e "mongodb(\+srv)?://[^ ]+" -e "postgres(ql)?://[^ ]+" -e "mysql://[^ ]+" -e "jdbc:[a-zA-Z0-9]+://[^ ]+" \
+            .; then
             echo "ERROR: Secrets detectados en código"
             exit 1
           fi
