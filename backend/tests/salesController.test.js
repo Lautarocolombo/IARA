@@ -14,7 +14,7 @@ jest.mock('../src/routes/sync', () => ({
 }));
 
 const { query } = require('../src/lib/db');
-const { getSales, createManualSale } = require('../src/controllers/salesController');
+const { getSales, createManualSale, deleteSale } = require('../src/controllers/salesController');
 
 describe('salesController', () => {
   beforeEach(() => {
@@ -283,6 +283,64 @@ describe('salesController', () => {
       query.mockRejectedValueOnce(new Error('DB error'));
 
       await createManualSale(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Error interno del servidor' });
+    });
+  });
+
+  describe('deleteSale', () => {
+    test('elimina venta manual exitosamente', async () => {
+      const req = { params: { id: '5' } };
+      const res = { json: jest.fn() };
+
+      query.mockResolvedValueOnce({ rows: [{ id: 5 }] });
+
+      await deleteSale(req, res);
+
+      expect(query.mock.calls[0][0]).toContain('DELETE FROM sales');
+      expect(query.mock.calls[0][1]).toEqual([5]);
+      expect(res.json).toHaveBeenCalledWith({ ok: true, deletedId: 5 });
+    });
+
+    test('retorna 404 si la venta no existe', async () => {
+      const req = { params: { id: '999' } };
+      const res = {
+        status: jest.fn(() => res),
+        json: jest.fn()
+      };
+
+      query.mockResolvedValueOnce({ rows: [] });
+
+      await deleteSale(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(404);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Venta no encontrada' });
+    });
+
+    test('retorna 400 si el id es invalido', async () => {
+      const req = { params: { id: 'abc' } };
+      const res = {
+        status: jest.fn(() => res),
+        json: jest.fn()
+      };
+
+      await deleteSale(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith({ error: 'ID de venta inválido' });
+    });
+
+    test('retorna 500 en error de DB', async () => {
+      const req = { params: { id: '5' } };
+      const res = {
+        status: jest.fn(() => res),
+        json: jest.fn()
+      };
+
+      query.mockRejectedValueOnce(new Error('DB error'));
+
+      await deleteSale(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json).toHaveBeenCalledWith({ error: 'Error interno del servidor' });

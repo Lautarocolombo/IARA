@@ -85,23 +85,96 @@
 
       if (emptyState) emptyState.style.display = 'none';
 
-      transactions.forEach(function (t) {
+transactions.forEach(function (t) {
         var tr = document.createElement('tr');
         var dateStr = t.date ? new Date(t.date).toLocaleDateString('es-AR') : '-';
         var statusLabel = t.status === 'completed' ? 'Completada' : (t.status || 'Pendiente');
         var statusClass = t.status === 'completed' ? 'status-completed' : 'status-pending';
+        var rawId = String(t.id || '');
+        var txId = rawId;
+        var isManual = rawId.startsWith('V-');
+        if (isManual) txId = rawId.slice(2);
 
         tr.innerHTML =
-          '<td>#' + escapeAttr(t.id) + '</td>' +
+          '<td>' + escapeAttr(txId) + '</td>' +
           '<td>' + escapeAttr(dateStr) + '</td>' +
           '<td>' + escapeAttr(t.customer || '-') + '</td>' +
           '<td style="text-align:center;"><span class="' + escapeAttr(statusClass) + '">' + escapeAttr(statusLabel) + '</span></td>' +
-          '<td style="text-align:right;">$' + Number(t.total || 0).toLocaleString('es-AR') + '</td>';
+          '<td style="text-align:right;">$' + Number(t.total || 0).toLocaleString('es-AR') + '</td>' +
+          '<td style="text-align:center;">' +
+            '<button type="button" class="btn-delete-tx" data-tx-id="' + escapeAttr(rawId) + '" data-tx-type="' + (isManual ? 'manual' : 'order') + '" title="Eliminar transacción" style="background:none;border:none;color:#94a3b8;cursor:pointer;padding:0.3rem;border-radius:6px;">' +
+              '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>' +
+            '</button>' +
+          '</td>';
 
         tbody.appendChild(tr);
       });
+
+      tbody.querySelectorAll('.btn-delete-tx').forEach(function (btn) {
+        btn.addEventListener('mouseenter', function () {
+          btn.style.color = '#dc2626';
+          btn.style.background = '#fee2e2';
+        });
+        btn.addEventListener('mouseleave', function () {
+          btn.style.color = '#94a3b8';
+          btn.style.background = 'none';
+        });
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          var txId = btn.getAttribute('data-tx-id');
+          var txType = btn.getAttribute('data-tx-type');
+          deleteTransaction(txId, txType);
+        });
+      });
     } catch (err) {
       console.error('[Sales] Error cargando transacciones:', err);
+    }
+  }
+
+  function deleteTransaction(txId, txType) {
+    var modal = document.getElementById('confirmModalOverlay');
+    var msg = document.getElementById('confirmModalMessage');
+    var actionBtn = document.getElementById('confirmModalAction');
+    var cancelBtn = document.getElementById('cancelConfirmBtn');
+    if (modal) {
+      if (msg) msg.textContent = '¿Eliminar esta transacción (' + txId + ')? Esta acción no se puede deshacer.';
+      if (actionBtn) {
+        actionBtn.textContent = 'Eliminar';
+        actionBtn.className = 'btn btn-danger';
+        actionBtn.onclick = async function () {
+          if (modal) modal.classList.remove('active');
+          await processDeleteTransaction(txId, txType);
+        };
+      }
+      if (cancelBtn) {
+        cancelBtn.onclick = function () {
+          if (modal) modal.classList.remove('active');
+        };
+      }
+      modal.classList.add('active');
+    }
+  }
+
+  async function processDeleteTransaction(txId, txType) {
+    var numericId = txId.replace(/^V-/, '');
+    var url = txType === 'manual'
+      ? '/api/admin/sales/' + numericId
+      : '/api/admin/orders/' + numericId;
+
+    try {
+      var res = await window.adminFetch(url, { method: 'DELETE' });
+      if (!res || !res.ok) {
+        var errData = await res.json().catch(function () { return {}; });
+        throw new Error(errData.error || 'Error eliminando transacción');
+      }
+      window.showToast('✅', 'Transacción eliminada', 'success');
+      await loadTransactions();
+      await loadSalesSummary(currentView);
+      if (window.dispatchEvent) {
+        window.dispatchEvent(new CustomEvent('sync', { detail: { event: 'transactions_updated' } }));
+      }
+    } catch (err) {
+      window.showToast('❌', err.message || 'Error eliminando transacción', 'error');
     }
   }
 

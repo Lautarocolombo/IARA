@@ -111,7 +111,38 @@ const createManualSale = async (req, res) => {
   }
 };
 
+const deleteSale = async (req, res) => {
+  const id = Number(req.params.id);
+  if (!id || Number.isNaN(id)) {
+    return res.status(400).json({ error: 'ID de venta inválido' });
+  }
+  try {
+    const result = await query(
+      'DELETE FROM sales WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') RETURNING id',
+      [id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Venta no encontrada' });
+    }
+    try { syncBus.emit('sales_updated', { id: id }); } catch (e) { /* noop */ }
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'delete',
+      entityType: 'sale',
+      entityId: id,
+      details: `Venta manual #${id} eliminada`,
+      ip: req.ip || '',
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
+    res.json({ ok: true, deletedId: id });
+  } catch (err) {
+    logger.error({ err: err.message, stack: err.stack }, 'Error eliminando venta manual');
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
 module.exports = {
   getSales,
-  createManualSale
+  createManualSale,
+  deleteSale
 };
