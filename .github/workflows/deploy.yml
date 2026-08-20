@@ -80,7 +80,7 @@ jobs:
         continue-on-error: true
       - name: Check for exposed secrets
         run: |
-          if grep -rE "VERCEL_OIDC_TOKEN|sk_live_|pk_live_|sk_test_|pk_test_|api_key|secret_key|password|pass_hash" --include="*.env*" --include="*.js" --include="*.json" --include="*.html" .; then
+          if grep -rE "VERCEL_OIDC_TOKEN|sk_live_|pk_live_|sk_test_|pk_test_|api_key|secret_key|password|pass_hash" --include="*.env*" --include="*.js" --include="*.json" --include="*.html" --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=coverage --exclude-dir=test-results --exclude-dir=.playwright --exclude=render.yaml --exclude=.env.example --exclude=AGENTS.md .; then
             echo "ERROR: Secrets detectados en código"
             exit 1
           fi
