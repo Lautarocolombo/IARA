@@ -70,12 +70,12 @@ const CONFIG = {
     TRANSITION_SPEED: 0.4
   },
 
-    // API — usar URLs relativas para aprovechar el rewrite de Vercel
-    // (/api/* → Vercel serverless function), evitando problemas de CORS y cold starts.
+    // API — usar URLs relativas para aprovechar el rewrite de Vercel/Render
+    // (/api/* → backend), evitando problemas de CORS y cold starts.
     // Si API.BASE está vacío, se usan rutas relativas (recomendado).
     API: {
       BASE: '',
-      BACKEND_URL: ''
+      BACKEND_URL: 'https://iara-os3h.onrender.com'
     },
 
    // Imagen placeholder para productos sin imagen
