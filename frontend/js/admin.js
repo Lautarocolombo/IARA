@@ -416,7 +416,7 @@ window.getAuthToken = function() { return localStorage.getItem('ag_admin_token')
       setTimeout(checkServerHealth, 800);
     });
 
-    const state = { currentCategoryId: null, currentOrderId: null, currentCustomerId: null, currentTestimonialId: null, currentTextKey: null, currentHeroSlotIndex: null, deleteOrderId: null, deleteOrderNumber: null, dashboardLoaded: false };
+    const state = { currentCategoryId: null, currentCustomerId: null, currentTestimonialId: null, currentTextKey: null, currentHeroSlotIndex: null, dashboardLoaded: false };
 
     let activeModal = null;
 
@@ -437,8 +437,6 @@ window.getAuthToken = function() { return localStorage.getItem('ag_admin_token')
       if (overlay) overlay.classList.remove('active');
       if (activeModal === 'product') { editingId = null; clearSaveStatus('productSaveStatus'); }
       if (activeModal === 'category') { state.currentCategoryId = null; clearSaveStatus('categorySaveStatus'); }
-      if (activeModal === 'order') { state.currentOrderId = null; }
-      if (activeModal === 'orderDelete') { state.deleteOrderId = null; state.deleteOrderNumber = null; clearSaveStatus('deleteOrderSaveStatus'); }
       if (activeModal === 'testimonial') { state.currentTestimonialId = null; clearSaveStatus('testimonialSaveStatus'); }
       if (activeModal === 'text') { state.currentTextKey = null; clearSaveStatus('textSaveStatus'); }
       if (activeModal === 'heroSlot') { state.currentHeroSlotIndex = null; clearSaveStatus('heroSlotSaveStatus'); }
@@ -977,42 +975,7 @@ function setReportPreset(preset) {
       }
     }
 
-    async function generateReceipt(id) {
-      try {
-        const res = await adminFetch(`/api/admin/orders/${id}/receipt`, {
-          method: 'GET'
-        });
-        if (!res.ok) throw new Error('Error al generar comprobante');
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `comprobante-pedido-${id}.pdf`;
-        a.click();
-        URL.revokeObjectURL(url);
-        showToast('Comprobante descargado', 'success');
-      } catch (err) {
-        showToast(err.message, 'error');
-      }
-    }
-
-    async function sendReceiptWhatsApp(id) {
-      try {
-        const res = await adminFetch(`/api/admin/orders/${id}/receipt/whatsapp`, {
-          method: 'POST'
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Error al enviar');
-        if (data.whatsappUrl) {
-          window.open(data.whatsappUrl, '_blank');
-        }
-        showToast('Abriendo WhatsApp...', 'success');
-      } catch (err) {
-        showToast(err.message, 'error');
-      }
-    }
-
-      async function loadOrders() {
+       async function loadOrders() {
         try {
           const params = new URLSearchParams();
          params.set('page', ordersCurrentPage);
@@ -1057,7 +1020,7 @@ function renderOrdersTable() {
           tbody.innerHTML = '<tr><td colspan=\'8\' class=\'empty-state\'><h3>Sin resultados</h3><p>No se encontraron pedidos.</p></td></tr>';
           return;
         }
-           tbody.innerHTML = filtered.map((o, index) => {
+           tbody.innerHTML = filtered.map((o) => {
               const customer = typeof o.customer === 'string' ? safeJsonParse(o.customer, {}) : (o.customer || {});
             return `<tr>
               <td><strong>#${o.id}</strong></td>
@@ -1067,9 +1030,7 @@ function renderOrdersTable() {
               <td>${escapeHtml(o.payment_method || '—')}</td>
              <td>${new Date(o.created_at).toLocaleDateString('es-AR')}</td>
              <td><div class='actions'>
-              <button class='btn btn-secondary btn-sm' onclick='viewOrder(${o.id})'>👁 Ver</button>
-              <button class='btn btn-danger btn-sm' onclick='openDeleteOrderModal(${o.id}, ${index + 1})' title='Eliminar pedido'>🗑</button>
-              <select class='status-select' onchange='quickUpdateOrderStatus(${o.id}, this.value)' style='margin-left:0.25rem'>
+               <select class='status-select' onchange='quickUpdateOrderStatus(${o.id}, this.value)' style='margin-left:0.25rem'>
                <option value='pending' ${o.status === 'pending' ? 'selected' : ''}>⏳</option>
                <option value='confirmed' ${o.status === 'confirmed' ? 'selected' : ''}>✅</option>
                <option value='preparing' ${o.status === 'preparing' ? 'selected' : ''}>👨‍🍳</option>
@@ -1120,50 +1081,7 @@ function renderOrdersTable() {
          }
       }
 
-      function openDeleteOrderModal(realId, orderNumber) {
-         const order = orders.find(o => o.id === realId);
-         const customer = order ? (typeof order.customer === 'string' ? safeJsonParse(order.customer, {}) : (order.customer || {})) : {};
-         const customerName = customer.name || '—';
-         state.deleteOrderId = realId;
-         state.deleteOrderNumber = orderNumber;
-         const msg = document.getElementById('deleteOrderModalMessage');
-         if (msg) msg.textContent = `¿Eliminar el pedido #${orderNumber} de ${customerName}? Esta acción no se puede deshacer.`;
-         const btn = document.getElementById('confirmDeleteOrderBtn');
-         if (btn) { btn.disabled = false; btn.textContent = 'Eliminar'; }
-         setActiveModal('orderDelete');
-       }
 
-       function closeDeleteOrderModal() {
-          closeModal();
-       }
-
-      async function confirmDeleteOrder() {
-         const id = state.deleteOrderId;
-         const orderNumber = state.deleteOrderNumber;
-         if (!id) return;
-         const btn = document.getElementById('confirmDeleteOrderBtn');
-         if (btn) { btn.disabled = true; btn.textContent = 'Eliminando...'; }
-         try {
-           const res = await adminFetch(`/api/admin/orders/${id}`, { method: 'DELETE' });
-           const data = await res.json();
-           if (!res.ok) throw new Error(data.error || 'Error al eliminar el pedido');
-           orders = orders.filter(o => o.id !== id);
-           closeDeleteOrderModal();
-           if (currentSection === 'orders') {
-             if (orders.length === 0 && ordersCurrentPage > 1) {
-               ordersCurrentPage--;
-               await loadOrders();
-             } else {
-               renderOrdersTable();
-             }
-           }
-           showToast(`Pedido #${orderNumber} eliminado correctamente`, 'success');
-         } catch (err) {
-           showToast(err.message, 'error');
-         } finally {
-           if (btn) { btn.disabled = false; btn.textContent = 'Eliminar'; }
-         }
-       }
 
         async function exportOrdersCSV() {
          const params = new URLSearchParams();
@@ -1842,143 +1760,7 @@ async function saveSettings() {
       showToast('CSV exportado', 'success');
     }
 
-      async function viewOrder(id) {
-         state.currentOrderId = id;
-         const contentEl = document.getElementById('orderDetailContent');
 
-         showSaveStatus('orderDetailSaveStatus', 'saving', 'Cargando pedido...');
-         contentEl.innerHTML = '<div class="empty-state" style="padding:2rem;text-align:center;">Cargando...</div>';
-         document.getElementById('orderDetailTitle').textContent = 'Cargando pedido...';
-         document.getElementById('orderNotes').value = '';
-
-         setActiveModal('order');
-
-         try {
-           const res = await adminFetch(`/api/admin/orders/${id}`);
-           const order = await res.json();
-           if (!order || !order.id) throw new Error('No se recibieron los datos del pedido');
-
-           const customer = typeof order.customer === 'string' ? safeJsonParse(order.customer, {}) : (order.customer || {});
-           const items = Array.isArray(order.items) ? order.items : (typeof order.items === 'string' ? safeJsonParse(order.items, []) : []);
-
-           document.getElementById('orderDetailTitle').textContent = `Pedido #${order.id}`;
-           document.getElementById('orderNotes').value = order.notes || '';
-           hideSaveStatus('orderDetailSaveStatus', false);
-
-           contentEl.innerHTML = renderOrderDetail(order, customer, items);
-         } catch (err) {
-           clearSaveStatus('orderDetailSaveStatus');
-           contentEl.innerHTML = `<div class='empty-state' style='padding:2rem;text-align:center;'><h3>❌ No se pudo cargar el pedido</h3><p style='color:#dc2626;font-size:0.85rem;margin-top:0.5rem;'>${escapeHtml(err.message || 'No se pudieron cargar los datos del pedido')}</p><p style='font-size:0.8rem;color:#64748b;margin-top:0.5rem;'>Probá recargar la página o consultá la consola para más detalles.</p></div>`;
-           showToast(err.message, 'error');
-         }
-       }
-
-       function renderOrderDetail(order, customer, items) {
-         const fmt = (n) => `$${Number(n || 0).toLocaleString('es-AR')}`;
-         const subtotal = Number(order.subtotal || 0);
-         const shipping = Number(order.shipping_cost || 0);
-         const total = Number(order.total || 0);
-         const orderDate = order.created_at ? new Date(order.created_at).toLocaleString('es-AR') : '—';
-         const statusBadge = order.status === 'delivered' || order.status === 'completed' ? 'stock--ok' : (order.status === 'cancelled' ? 'stock--out' : '');
-         const itemRow = (it) => {
-           const qty = Number(it.quantity || it.qty || 1);
-           const price = Number(it.price || 0);
-           const lineTotal = price * qty;
-           const img = it.image
-             ? window.renderProductImage(it.image, it.name || 'Producto', { style: 'width:48px;height:48px;object-fit:cover;border-radius:8px;', placeholder: it.emoji || '📿', lazy: false })
-             : (it.emoji || '📿');
-           return `<div class='order-product-row'>
-             <div class='order-product-thumb'>${img}</div>
-             <div class='order-product-info'>
-               <div class='order-product-name'>${escapeHtml(it.name || 'Producto')}</div>
-               <div class='order-product-meta'>Cant: ${qty} · ${fmt(price)} c/u</div>
-             </div>
-             <div class='order-product-total'>${fmt(lineTotal)}</div>
-           </div>`;
-         };
-         const itemsHtml = items && items.length
-           ? items.map(itemRow).join('')
-           : '<div class="empty-state" style="padding:1rem;text-align:center;color:#64748b;">Sin productos</div>';
-
-         return `<div class='order-detail-content'>
-           <div class='admin-section'>
-             <div class='admin-section-title'>Datos del Cliente</div>
-             <div class='order-detail-grid'>
-               <div><strong>Nombre:</strong> ${escapeHtml(customer.name || order.shipping_name || '—')}</div>
-               <div><strong>Email:</strong> ${escapeHtml(customer.email || order.shipping_email || '—')}</div>
-               <div><strong>Teléfono:</strong> ${escapeHtml(customer.phone || order.shipping_phone || '—')}</div>
-               <div><strong>Dirección:</strong> ${escapeHtml(customer.address || order.shipping_address || '—')}</div>
-               <div><strong>Fecha:</strong> ${escapeHtml(orderDate)}</div>
-               <div><strong>Estado:</strong> <span class='badge badge-${statusBadge}'>${escapeHtml(order.status || 'pending')}</span></div>
-               <div><strong>Pago:</strong> ${escapeHtml(order.payment_method || '—')}</div>
-             </div>
-           </div>
-
-           <div class='admin-section'>
-             <div class='admin-section-title'>Productos (${items.length})</div>
-             <div class='order-products-list'>${itemsHtml}</div>
-           </div>
-
-           <div class='admin-section'>
-             <div class='admin-section-title'>Resumen</div>
-             <div class='order-totals'>
-               <div class='order-total-row'><span>Subtotal</span><span>${fmt(subtotal)}</span></div>
-               <div class='order-total-row'><span>Envío</span><span>${fmt(shipping)}</span></div>
-               <div class='order-total-row order-total-row--grand'><span>Total</span><span>${fmt(total)}</span></div>
-             </div>
-           </div>
-         </div>
-         <div class='form-group' style='margin-top:1rem'>
-           <label>Cambiar estado</label>
-           <select id='orderStatusSelect' onchange='changeOrderStatus(${order.id})'>
-             <option value='pending' ${order.status === 'pending' ? 'selected' : ''}>Pendiente</option>
-             <option value='confirmed' ${order.status === 'confirmed' ? 'selected' : ''}>Confirmado</option>
-             <option value='preparing' ${order.status === 'preparing' ? 'selected' : ''}>Preparando</option>
-             <option value='shipped' ${order.status === 'shipped' ? 'selected' : ''}>Enviado</option>
-             <option value='delivered' ${order.status === 'delivered' ? 'selected' : ''}>Entregado</option>
-             <option value='cancelled' ${order.status === 'cancelled' ? 'selected' : ''}>Cancelado</option>
-           </select>
-           </div>`;
-        }
-
-      async function changeOrderStatus(id, newStatus) {
-         const select = document.getElementById('orderStatusSelect');
-         const status = select ? select.value : newStatus;
-         if (!status) return;
-         try {
-           await adminFetch(`/api/admin/orders/${id}/status`, {
-             method: 'PATCH',
-             headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({ status })
-           });
-          showToast('Estado actualizado', 'success');
-          await loadOrders();
-          emitSync('order_status_updated');
-        } catch (err) {
-          showToast(err.message, 'error');
-        }
-      }
-
-       function closeOrderDetailModal() {
-         closeModal();
-       }
-
-     async function saveOrderNotes() {
-      if (!state.currentOrderId) return;
-      const notes = document.getElementById('orderNotes').value;
-      try {
-        await adminFetch(`/api/admin/orders/${state.currentOrderId}/notes`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ notes })
-        });
-        showSaveStatus('orderDetailSaveStatus', 'success', '✅ Nota guardada');
-        setTimeout(() => hideSaveStatus('orderDetailSaveStatus'), 2000);
-      } catch (err) {
-        showSaveStatus('orderDetailSaveStatus', 'error', '❌ ' + err.message);
-        setTimeout(() => hideSaveStatus('orderDetailSaveStatus'), 3000);
-      }
-    }
 
     async function resetMetrics() {
       if (!confirm('¿Seguro que querés reiniciar todas las métricas? Esta acción no se puede deshacer')) return;
@@ -2098,13 +1880,7 @@ async function saveSettings() {
     window.exportCSV = exportCSV;
     window.exportOrdersCSV = exportOrdersCSV;
     window.exportOrdersPDF = exportOrdersPDF;
-    window.generateReceipt = generateReceipt;
-    window.sendReceiptWhatsApp = sendReceiptWhatsApp;
-    window.viewOrder = viewOrder;
     window.quickUpdateOrderStatus = quickUpdateOrderStatus;
-    window.openDeleteOrderModal = openDeleteOrderModal;
-    window.closeDeleteOrderModal = closeDeleteOrderModal;
-    window.confirmDeleteOrder = confirmDeleteOrder;
     window.editTestimonial = editTestimonial;
     window.deleteTestimonial = deleteTestimonial;
     window.toggleTestimonialActive = toggleTestimonialActive;
@@ -2119,9 +1895,6 @@ async function saveSettings() {
         deleteHeroSlotImage(idx);
       }
     };
-    window.closeOrderDetailModal = closeOrderDetailModal;
-    window.changeOrderStatus = changeOrderStatus;
-    window.saveOrderNotes = saveOrderNotes;
     window.renderPagination = renderPagination;
 
     window.showSaveStatus = showSaveStatus;
