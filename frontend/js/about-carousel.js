@@ -11,7 +11,7 @@
   var aboutTextEl = null;
 
   var ABOUT_GROUPS = [
-    { indices: [0, 1], text: 'En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.' },
+    { indices: [0, 1], text: 'Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es única.' },
     { indices: [2, 3], text: 'Artesanía Gualeguay nació en el corazón de Entre Ríos con la misión de crear pulseras, souvenirs y accesorios únicos que capturen la esencia de nuestra tierra.' },
     { indices: [4], text: '' }
   ];
