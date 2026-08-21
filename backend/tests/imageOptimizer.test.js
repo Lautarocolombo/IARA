@@ -5,10 +5,9 @@ const os = require('os');
 
 const { optimizeImage, generateVariant, generateAllVariants } = require('../src/lib/imageOptimizer');
 
-const TEST_DIR = path.join(os.tmpdir(), 'image-optimizer-test');
+const TEST_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'image-optimizer-test-'));
 
 function makeTmpFile(name, content) {
-  if (!fs.existsSync(TEST_DIR)) fs.mkdirSync(TEST_DIR, { recursive: true });
   const filePath = path.join(TEST_DIR, name);
   fs.writeFileSync(filePath, content);
   return filePath;
@@ -21,10 +20,6 @@ function cleanup() {
 }
 
 const TINY_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
-
-beforeAll(() => {
-  cleanup();
-});
 
 afterAll(() => {
   cleanup();
