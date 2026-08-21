@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard | ArtesanÃ­a Gualeguay</title>
-  <meta name="description" content="Panel de administraciÃ³n de ArtesanÃ­a Gualeguay" />
+  <title>Dashboard | Artesanía Gualeguay</title>
+  <meta name="description" content="Panel de administración de Artesanía Gualeguay" />
   <link rel="canonical" href="https://artesania-gualeguay-v3.vercel.app/pages/dashboard.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,7 +28,7 @@
 <body>
   <div class="admin-panel">
     <!-- Mobile sidebar toggle -->
-    <button class="admin-sidebar-toggle" id="sidebarToggle" aria-label="Abrir menÃº" aria-expanded="false">
+    <button class="admin-sidebar-toggle" id="sidebarToggle" aria-label="Abrir menú" aria-expanded="false">
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
     </button>
     <div class="admin-sidebar-overlay" id="sidebarOverlay"></div>
@@ -36,40 +36,40 @@
     <!-- Sidebar -->
     <aside class="admin-sidebar" id="adminSidebar">
       <div class="sidebar-brand">
-        <span>ðŸŒ¸</span>
-        <span>ArtesanÃ­a Admin</span>
+        <span>🌸</span>
+        <span>Artesanía Admin</span>
       </div>
       <nav class="sidebar-nav" id="adminNav">
         <a href="#" class="active" data-section="content">
-          <span>ðŸ“</span>
+          <span>📝</span>
           <span>Contenido del sitio</span>
         </a>
         <a href="#" data-section="carousel">
-          <span>ðŸŽ </span>
+          <span>🎠</span>
           <span>Carrusel</span>
         </a>
         <a href="#" data-section="products">
-          <span>ðŸ“¦</span>
+          <span>📦</span>
           <span>Productos</span>
         </a>
         <a href="#" data-section="categories">
-          <span>ðŸ·ï¸</span>
-          <span>CategorÃ­as</span>
+          <span>🏷️</span>
+          <span>Categorías</span>
         </a>
         <a href="#" data-section="testimonials">
-          <span>ðŸ’¬</span>
+          <span>💬</span>
           <span>Testimonios</span>
         </a>
         <a href="#" data-section="sales">
-          <span>ðŸ“Š</span>
+          <span>📊</span>
           <span>Ganancias</span>
         </a>
         <a href="#" data-section="payments">
-          <span>ðŸ’³</span>
+          <span>💳</span>
           <span>Medio de pago</span>
         </a>
         <a href="#" data-section="orders">
-          <span>ðŸ“‹</span>
+          <span>📋</span>
           <span>Pedidos Individuales</span>
         </a>
 
@@ -77,8 +77,8 @@
       <div class="sidebar-footer">
         <span id="lowStockIndicator" class="low-stock-indicator hidden"></span>
         <button class="btn btn-secondary btn-full" id="logoutBtn">
-          <span>ðŸšª</span>
-          <span>Cerrar sesiÃ³n</span>
+          <span>🚪</span>
+          <span>Cerrar sesión</span>
         </button>
       </div>
     </aside>
@@ -109,7 +109,7 @@
       </header>
 
       <div class="admin-content">
-        <!-- ===== SECCIÃ“N: CONTENIDO DEL SITIO ===== -->
+        <!-- ===== SECCIÓN: CONTENIDO DEL SITIO ===== -->
         <section id="section-content" class="admin-section-active">
           <div id="contentEditorRoot">
             <div class="card">
@@ -127,23 +127,23 @@
                 <div class="home-block">
                   <div class="form-grid-2">
                       <div class="form-group">
-                        <label>TÃ­tulo <span class="required">*</span></label>
+                        <label>Título <span class="required">*</span></label>
                         <input type="text" id="hero_title" placeholder="Regalos artesanales que cuentan historias" />
                       </div>
                      <div class="form-group">
-                       <label>DescripciÃ³n</label>
-                       <input type="text" id="hero_subtitle" placeholder="Regalos artesanales que cuentan historias, souvenirs y llaveros hechos a mano. Cada pieza es Ãºnica." />
+                       <label>Descripción</label>
+                       <input type="text" id="hero_subtitle" placeholder="Regalos artesanales que cuentan historias, souvenirs y llaveros hechos a mano. Cada pieza es única." />
                      </div>
                      <div class="form-group">
                        <label>Frase de la tarjeta 1</label>
                        <textarea id="hero_card_1_text" rows="2" placeholder="Frases cortas para la tarjeta polaroid..."></textarea>
                      </div>
                     <div class="form-group">
-                      <label>Texto del botÃ³n</label>
-                      <input type="text" id="hero_cta_text" placeholder="Explorar CatÃ¡logo" />
+                      <label>Texto del botón</label>
+                      <input type="text" id="hero_cta_text" placeholder="Explorar Catálogo" />
                     </div>
                      <div class="form-group">
-                       <label>URL del botÃ³n</label>
+                       <label>URL del botón</label>
                        <input type="text" id="hero_cta_url" placeholder="#catalog" />
                      </div>
                      <div class="form-group">
@@ -151,15 +151,15 @@
                        <input type="text" id="hero_card_1_name" placeholder="Pulsera Minimalista" />
                      </div>
                      <div class="form-group">
-                       <label>Precio / descripciÃ³n tarjeta 1</label>
+                       <label>Precio / descripción tarjeta 1</label>
                        <input type="text" id="hero_card_1_price" placeholder="$450" />
                      </div>
                      <div class="form-group">
-                       <label>BotÃ³n CTA tarjeta 1</label>
-                       <input type="text" id="hero_card_1_cta_text" placeholder="Ver mÃ¡s" />
+                       <label>Botón CTA tarjeta 1</label>
+                       <input type="text" id="hero_card_1_cta_text" placeholder="Ver más" />
                      </div>
                      <div class="form-group">
-                       <label>URL botÃ³n CTA tarjeta 1</label>
+                       <label>URL botón CTA tarjeta 1</label>
                        <input type="text" id="hero_card_1_cta_url" placeholder="#catalog" />
                      </div>
                    </div>
@@ -194,22 +194,22 @@
                   <div class="form-grid-2">
                     <div class="form-group">
                       <label>Nombre del producto <span class="required">*</span></label>
-                      <input type="text" id="fp_name" placeholder="Anillo CerÃ¡mica" />
+                      <input type="text" id="fp_name" placeholder="Anillo Cerámica" />
                     </div>
                      <div class="form-group">
-                       <label>DescripciÃ³n corta</label>
-                       <input type="text" id="fp_description" placeholder="ArtesanÃ­a con alma" />
+                       <label>Descripción corta</label>
+                       <input type="text" id="fp_description" placeholder="Artesanía con alma" />
                      </div>
                      <div class="form-group">
                        <label>Frase de la tarjeta 2</label>
                        <textarea id="hero_card_2_text" rows="2" placeholder="Frases cortas para la tarjeta polaroid..."></textarea>
                      </div>
                     <div class="form-group">
-                      <label>Texto del botÃ³n</label>
+                      <label>Texto del botón</label>
                       <input type="text" id="fp_cta_text" placeholder="Ver producto" />
                     </div>
                     <div class="form-group">
-                      <label>URL del botÃ³n</label>
+                      <label>URL del botón</label>
                       <input type="text" id="fp_cta_url" placeholder="#catalog" />
                     </div>
                   </div>
@@ -263,7 +263,7 @@
 
                     <div class="form-grid-2">
                       <div class="form-group col-span-full">
-                        <label>ImÃ¡genes del carrusel (Sobre Nosotros)</label>
+                        <label>Imágenes del carrusel (Sobre Nosotros)</label>
                         <div class="about-images-grid" id="aboutImagesGrid">
                           <div class="about-image-upload" data-index="1">
                             <img id="aboutImagePreview1" src="" alt="Sobre Nosotros 1" style="display:none; max-width:100%; border-radius:8px; margin-bottom:0.5rem;" />
@@ -338,7 +338,7 @@
 
             <div class="card">
               <div class="card-header">
-                <h3 class="card-header-title">CaracterÃ­sticas (Highlights)</h3>
+                <h3 class="card-header-title">Características (Highlights)</h3>
                 <div class="card-header-actions">
                   <button class="btn btn-primary btn-sm" id="saveFeaturesBtn" data-scope="features">
                     <span id="saveFeaturesBtnText">Guardar cambios</span>
@@ -351,44 +351,44 @@
                   <div class="feature-sub-card">
                     <div class="feature-sub-card-label">Feature 1</div>
                     <div class="form-group">
-                      <label>TÃ­tulo</label>
+                      <label>Título</label>
                       <input type="text" id="feature_1_title" />
                     </div>
                     <div class="form-group">
-                      <label>DescripciÃ³n</label>
+                      <label>Descripción</label>
                       <textarea id="feature_1_desc" rows="2"></textarea>
                     </div>
                   </div>
                   <div class="feature-sub-card">
                     <div class="feature-sub-card-label">Feature 2</div>
                     <div class="form-group">
-                      <label>TÃ­tulo</label>
+                      <label>Título</label>
                       <input type="text" id="feature_2_title" />
                     </div>
                     <div class="form-group">
-                      <label>DescripciÃ³n</label>
+                      <label>Descripción</label>
                       <textarea id="feature_2_desc" rows="2"></textarea>
                     </div>
                   </div>
                   <div class="feature-sub-card">
                     <div class="feature-sub-card-label">Feature 3</div>
                     <div class="form-group">
-                      <label>TÃ­tulo</label>
+                      <label>Título</label>
                       <input type="text" id="feature_3_title" />
                     </div>
                     <div class="form-group">
-                      <label>DescripciÃ³n</label>
+                      <label>Descripción</label>
                       <textarea id="feature_3_desc" rows="2"></textarea>
                     </div>
                   </div>
                   <div class="feature-sub-card">
                     <div class="feature-sub-card-label">Feature 4</div>
                     <div class="form-group">
-                      <label>TÃ­tulo</label>
+                      <label>Título</label>
                       <input type="text" id="feature_4_title" />
                     </div>
                     <div class="form-group">
-                      <label>DescripciÃ³n</label>
+                      <label>Descripción</label>
                       <textarea id="feature_4_desc" rows="2"></textarea>
                     </div>
                   </div>
@@ -409,7 +409,7 @@
               <div class="card-body">
                    <div class="form-grid-2">
                      <div class="form-group col-span-full">
-                       <label>SubtÃ­tulo</label>
+                       <label>Subtítulo</label>
                        <input type="text" id="process_subtitle" />
                      </div>
                    </div>
@@ -419,7 +419,7 @@
 
             <div class="card">
               <div class="card-header">
-                <h3 class="card-header-title">Stats / NÃºmeros</h3>
+                <h3 class="card-header-title">Stats / Números</h3>
                 <div class="card-header-actions">
                   <button class="btn btn-primary btn-sm" id="saveStatsBtn" data-scope="stats">
                     <span id="saveStatsBtnText">Guardar cambios</span>
@@ -438,7 +438,7 @@
                     <input type="text" id="stat_products_sold" />
                   </div>
                   <div class="form-group">
-                    <label>AÃ±os de experiencia</label>
+                    <label>Años de experiencia</label>
                     <input type="text" id="stat_years" />
                   </div>
                   <div class="form-group">
@@ -466,7 +466,7 @@
                     <input type="email" id="contact_email" />
                   </div>
                   <div class="form-group">
-                    <label>TelÃ©fono</label>
+                    <label>Teléfono</label>
                     <input type="text" id="contact_phone" />
                   </div>
                   <div class="form-group">
@@ -482,7 +482,7 @@
                     <input type="text" id="contact_facebook" />
                   </div>
                   <div class="form-group">
-                    <label>DirecciÃ³n</label>
+                    <label>Dirección</label>
                     <input type="text" id="contact_address" />
                   </div>
                   <div class="form-group">
@@ -495,7 +495,7 @@
 
             <div class="card">
               <div class="card-header">
-                <h3 class="card-header-title">CategorÃ­as Destacadas</h3>
+                <h3 class="card-header-title">Categorías Destacadas</h3>
                 <div class="card-header-actions">
                   <button class="btn btn-primary btn-sm" id="saveFeaturedBtn" data-scope="featured">
                     <span id="saveFeaturedBtnText">Guardar cambios</span>
@@ -505,26 +505,26 @@
               </div>
               <div class="card-body">
                 <div class="form-group">
-                  <label>SeleccionÃ¡ las categorÃ­as a mostrar en la home (mantenÃ© Shift para selecciÃ³n mÃºltiple)</label>
+                  <label>Seleccioná las categorías a mostrar en la home (mantené Shift para selección múltiple)</label>
                   <select id="featured_categories" multiple>
-                    <option value="">Cargando categorÃ­as...</option>
+                    <option value="">Cargando categorías...</option>
                   </select>
                 </div>
-                <small class="form-hint">PodÃ©s seleccionar varias categorÃ­as manteniendo presionada la tecla Ctrl o Cmd. El orden de selecciÃ³n define el orden en la home.</small>
+                <small class="form-hint">Podés seleccionar varias categorías manteniendo presionada la tecla Ctrl o Cmd. El orden de selección define el orden en la home.</small>
                 <div class="save-status" id="saveFeaturedStatus"></div>
               </div>
             </div>
           </div>
         </section>
 
-        <!-- ===== SECCIÃ“N: CARRUSEL ===== -->
+        <!-- ===== SECCIÓN: CARRUSEL ===== -->
         <section id="section-carousel" class="admin-section-inactive">
           <div id="carouselRoot">
             <div class="card">
               <div class="card-header">
                 <h3 class="card-header-title">Editor de Carrusel</h3>
                 <div class="card-header-actions">
-                  <span class="form-hint">5 slots fijos. Cada cambio se guarda automÃ¡ticamente.</span>
+                  <span class="form-hint">5 slots fijos. Cada cambio se guarda automáticamente.</span>
                 </div>
               </div>
               <div class="card-body">
@@ -546,7 +546,7 @@
           </div>
         </section>
 
-        <!-- ===== SECCIÃ“N: PRODUCTOS ===== -->
+        <!-- ===== SECCIÓN: PRODUCTOS ===== -->
         <section id="section-products" class="admin-section-inactive">
           <div id="productsRoot">
             <div class="card">
@@ -556,7 +556,7 @@
             <div class="card-controls">
               <input type="text" id="productFilter" class="card-filter" placeholder="Buscar por nombre..." />
               <select id="filter_category" class="card-filter">
-                <option value="">Todas las categorÃ­as</option>
+                <option value="">Todas las categorías</option>
               </select>
               <select id="filter_active" class="card-filter">
                 <option value="">Todos</option>
@@ -591,7 +591,7 @@
                       <tr>
                         <th>Producto</th>
                         <th>Nombre</th>
-                        <th>CategorÃ­a</th>
+                        <th>Categoría</th>
                         <th class="text-right">Precio</th>
                         <th class="text-center">Stock</th>
                         <th class="text-center">Estado</th>
@@ -602,7 +602,7 @@
                   </table>
                   <div id="productsEmptyState" class="empty-state hidden">
                     <h3>No se encontraron productos</h3>
-                    <p>CreÃ¡ tu primer producto con el botÃ³n de arriba.</p>
+                    <p>Creá tu primer producto con el botón de arriba.</p>
                   </div>
                 </div>
                 <div id="productsMobileCards" class="products-mobile-cards"></div>
@@ -611,12 +611,12 @@
           </div>
         </section>
 
-        <!-- ===== SECCIÃ“N: CATEGORÃAS ===== -->
+        <!-- ===== SECCIÓN: CATEGORÍAS ===== -->
         <section id="section-categories" class="admin-section-inactive">
           <div id="categoriesRoot">
             <div class="card">
         <div class="card-header">
-          <h3 class="card-header-title">CategorÃ­as</h3>
+          <h3 class="card-header-title">Categorías</h3>
           <div class="card-header-actions">
             <div class="card-controls">
               <button class="btn btn-secondary btn-sm" id="saveCategoriesCloudBtn" data-scope="categories">
@@ -624,7 +624,7 @@
                 <span id="saveCategoriesCloudBtnLoading" class="hidden">Guardando...</span>
               </button>
               <button class="btn btn-primary btn-sm" id="createCategoryBtn">
-                <span id="createCategoryBtnText">+ Nueva categorÃ­a</span>
+                <span id="createCategoryBtnText">+ Nueva categoría</span>
                 <span id="createCategoryBtnLoading" class="hidden">Creando...</span>
               </button>
             </div>
@@ -634,8 +634,8 @@
                 <div id="categoriesListContainer" class="table-wrap">
                   <div id="categoriesTree"></div>
                   <div id="categoriesEmptyState" class="empty-state hidden">
-                    <h3>No hay categorÃ­as</h3>
-                    <p>CreÃ¡ la primera categorÃ­a para organizar tus productos.</p>
+                    <h3>No hay categorías</h3>
+                    <p>Creá la primera categoría para organizar tus productos.</p>
                   </div>
                 </div>
               </div>
@@ -643,7 +643,7 @@
           </div>
         </section>
 
-        <!-- ===== SECCIÃ“N: TESTIMONIOS ===== -->
+        <!-- ===== SECCIÓN: TESTIMONIOS ===== -->
         <section id="section-testimonials" class="admin-section-inactive">
           <div id="testimonialsRoot">
             <div class="card">
@@ -659,16 +659,16 @@
               <div class="card-body">
                 <div class="form-grid-2" style="margin-bottom: 1rem; padding: 0.75rem; background: var(--bg-muted); border-radius: 8px;">
                   <div class="form-group">
-                    <label>TÃ­tulo de la secciÃ³n <span class="required">*</span></label>
+                    <label>Título de la sección <span class="required">*</span></label>
                     <input type="text" id="testimonialsSectionTitle" placeholder="Lo que dicen nuestros clientes" />
                   </div>
                   <div class="form-group">
-                    <label>SubtÃ­tulo</label>
+                    <label>Subtítulo</label>
                     <input type="text" id="testimonialsSectionSubtitle" placeholder="Historias reales..." />
                   </div>
                   <div class="form-group col-span-full">
                     <button class="btn btn-secondary btn-sm" id="saveSectionContentBtn">
-                      <span id="saveSectionContentBtnText">Guardar tÃ­tulo y subtÃ­tulo</span>
+                      <span id="saveSectionContentBtnText">Guardar título y subtítulo</span>
                       <span id="saveSectionContentBtnLoading" class="hidden">Guardando...</span>
                     </button>
                     <span class="save-status" id="sectionContentSaveStatus" style="margin-left: 0.5rem;"></span>
@@ -682,16 +682,16 @@
                   </div>
                   <div class="form-group">
                     <label>Cargo / Empresa</label>
-                    <input type="text" id="testimonialRole" placeholder="Ej: DueÃ±a de PanaderÃ­a Los Hornos" />
+                    <input type="text" id="testimonialRole" placeholder="Ej: Dueña de Panadería Los Hornos" />
                   </div>
                   <div class="form-group">
                     <label>Rating</label>
                     <select id="testimonialRating">
-                      <option value="5">â­â­â­â­â­</option>
-                      <option value="4">â­â­â­â­</option>
-                      <option value="3">â­â­â­</option>
-                      <option value="2">â­â­</option>
-                      <option value="1">â­</option>
+                      <option value="5">⭐⭐⭐⭐⭐</option>
+                      <option value="4">⭐⭐⭐⭐</option>
+                      <option value="3">⭐⭐⭐</option>
+                      <option value="2">⭐⭐</option>
+                      <option value="1">⭐</option>
                     </select>
                   </div>
                   <div class="form-group">
@@ -700,7 +700,7 @@
                       <div class="image-upload-primary">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                         <span>Subir foto</span>
-                        <small class="form-hint">JPG, PNG o WEBP. MÃ¡x 2MB.</small>
+                        <small class="form-hint">JPG, PNG o WEBP. Máx 2MB.</small>
                       </div>
                       <input type="file" id="testimonialPhotoFile" accept="image/jpeg,image/png,image/webp" style="display:none;" />
                     </label>
@@ -749,7 +749,7 @@
                   </table>
                   <div id="testimonialsEmptyState" class="empty-state hidden">
                     <h3>No hay testimonios</h3>
-                    <p>CreÃ¡ el primer testimonio con el botÃ³n de arriba.</p>
+                    <p>Creá el primer testimonio con el botón de arriba.</p>
                   </div>
                 </div>
               </div>
@@ -757,7 +757,7 @@
           </div>
         </section>
 
-        <!-- ===== SECCIÃ“N: GANANCIAS ===== -->
+        <!-- ===== SECCIÓN: GANANCIAS ===== -->
         <section id="section-sales" class="admin-section-inactive">
           <div id="salesRoot">
             <div class="card">
@@ -768,7 +768,7 @@
                     <select id="sales_range" class="card-filter">
                       <option value="weekly">Semana actual</option>
                       <option value="monthly">Mes actual</option>
-                      <option value="6months">Ãšltimos 6 meses</option>
+                      <option value="6months">Últimos 6 meses</option>
                       <option value="custom">Personalizado</option>
                     </select>
                     <div id="customDateRange" class="date-range-row hidden">
@@ -777,14 +777,14 @@
                        <input type="date" id="sales_end_date" class="card-filter" data-event="change" data-action="loadSalesSummary" />
                     </div>
                      <select id="sales_category_filter" class="card-filter" data-event="change" data-action="loadSalesSummary">
-                      <option value="">Todas las categorÃ­as</option>
+                      <option value="">Todas las categorías</option>
                     </select>
                     <button class="btn btn-secondary btn-sm" id="syncSalesBtn">
-                      <span id="syncSalesBtnText">ðŸ”„ Actualizar datos</span>
+                      <span id="syncSalesBtnText">🔄 Actualizar datos</span>
                       <span id="syncSalesBtnLoading" class="hidden">Actualizando...</span>
                     </button>
                     <button class="btn btn-danger btn-sm" id="resetMetricsBtn">
-                      <span id="resetMetricsBtnText">ðŸ—‘ï¸ Reiniciar mÃ©tricas</span>
+                      <span id="resetMetricsBtnText">🗑️ Reiniciar métricas</span>
                       <span id="resetMetricsBtnLoading" class="hidden">Reiniciando...</span>
                     </button>
                   </div>
@@ -804,7 +804,7 @@
                       </div>
                       <div class="metric-card">
                         <div class="metric-value" id="metricOrders">0</div>
-                        <div class="metric-label">NÃºmero Total de Pedidos</div>
+                        <div class="metric-label">Número Total de Pedidos</div>
                       </div>
                       <div class="metric-card">
                         <div class="metric-value" id="metricAvg">ARS 0</div>
@@ -830,7 +830,7 @@
                       <div class="admin-section-title admin-section-title--space-between">
                        <span>Historial de Transacciones</span>
                        <button class="btn btn-danger btn-sm" id="resetSalesBtn" title="Eliminar todo el historial y empezar de 0">
-                         ðŸ—‘ï¸ Eliminar historial
+                         🗑️ Eliminar historial
                        </button>
                      </div>
                     <div class="report-section table-wrap">
@@ -889,7 +889,7 @@
           </div>
         </section>
 
-        <!-- ===== SECCIÃ“N: PEDIDOS INDIVIDUALES ===== -->
+        <!-- ===== SECCIÓN: PEDIDOS INDIVIDUALES ===== -->
         <section id="section-orders" class="admin-section-inactive">
           <div class="orders-layout">
             <!-- Columna Izquierda: Lista -->
@@ -955,54 +955,54 @@
                 </div>
                 <div class="card-body">
                   <div id="orderWizardEmpty" class="empty-state">
-                    <p>SeleccionÃ¡ un pedido de la lista para ver el detalle.</p>
+                    <p>Seleccioná un pedido de la lista para ver el detalle.</p>
                   </div>
                   <div id="orderWizardContent" class="hidden">
                     <div class="wizard-steps">
                       <div class="wizard-step" data-step="1">
-                        <div class="wizard-step-icon">âœ“</div>
-                        <div class="wizard-step-label" data-base="1. SelecciÃ³n">1. SelecciÃ³n</div>
+                        <div class="wizard-step-icon">✓</div>
+                        <div class="wizard-step-label" data-base="1. Selección">1. Selección</div>
                       </div>
-                      <div class="wizard-step-connector">â†’</div>
+                      <div class="wizard-step-connector">→</div>
                       <div class="wizard-step" data-step="2">
                         <div class="wizard-step-icon">...</div>
                         <div class="wizard-step-label" data-base="2. Obtener Datos">2. Obtener Datos</div>
                       </div>
-                      <div class="wizard-step-connector">â†’</div>
+                      <div class="wizard-step-connector">→</div>
                       <div class="wizard-step" data-step="3">
                         <div class="wizard-step-icon">...</div>
                         <div class="wizard-step-label" data-base="3. Transferencia">3. Transferencia</div>
                       </div>
-                      <div class="wizard-step-connector">â†’</div>
+                      <div class="wizard-step-connector">→</div>
                       <div class="wizard-step" data-step="4">
                         <div class="wizard-step-icon">...</div>
-                        <div class="wizard-step-label" data-base="4. VerificaciÃ³n">4. VerificaciÃ³n</div>
+                        <div class="wizard-step-label" data-base="4. Verificación">4. Verificación</div>
                       </div>
                     </div>
 
-                    <div class="admin-section-title mt-1">VerificaciÃ³n Manual</div>
+                    <div class="admin-section-title mt-1">Verificación Manual</div>
                     <div class="payment-details">
                       <div class="form-group">
                         <label>Alias Mercado Pago</label>
-                        <div id="mpAliasDisplay" class="form-readonly">â€”</div>
+                        <div id="mpAliasDisplay" class="form-readonly">—</div>
                       </div>
                       <div class="form-group">
                         <label>Titular de Cuenta</label>
-                        <div id="holderNameDisplay" class="form-readonly">â€”</div>
+                        <div id="holderNameDisplay" class="form-readonly">—</div>
                       </div>
                       <div class="form-group">
                         <label>Total a pagar</label>
-                        <div id="orderTotalDisplay" class="form-readonly">â€”</div>
+                        <div id="orderTotalDisplay" class="form-readonly">—</div>
                       </div>
                       <div class="form-group">
-                        <label>CÃ³digo QR</label>
+                        <label>Código QR</label>
                         <div id="qrCodeDisplay"></div>
                       </div>
                       <div class="form-group">
                         <label>Comprobante</label>
                         <div id="receiptActions">
                           <button class="btn btn-secondary btn-sm" id="uploadReceiptBtn">Subir Comprobante</button>
-                          <span class="text-muted" style="font-size:0.8rem;margin-left:0.5rem;">(Ver <a href="#" id="receiptGuideLink">GuÃ­a</a>)</span>
+                          <span class="text-muted" style="font-size:0.8rem;margin-left:0.5rem;">(Ver <a href="#" id="receiptGuideLink">Guía</a>)</span>
                           <button class="btn btn-secondary btn-sm hidden" id="viewReceiptBtn">Ver Comprobante</button>
                         </div>
                       </div>
@@ -1027,7 +1027,7 @@
                </div>
                <div class="card-body card-body--flush">
                  <div id="orderItemsEmpty" class="empty-state">
-                   <p>SeleccionÃ¡ un pedido para ver los productos.</p>
+                   <p>Seleccioná un pedido para ver los productos.</p>
                  </div>
                  <div id="orderItemsContent" class="hidden">
                    <table class="order-items-table">
@@ -1043,7 +1043,7 @@
                      <tfoot>
                        <tr class="order-total-row order-total-row--grand">
                          <td colspan="3">Total del pedido</td>
-                          <td class="text-right"><span id="orderItemsTotal">â€”</span></td>
+                          <td class="text-right"><span id="orderItemsTotal">—</span></td>
                        </tr>
                      </tfoot>
                    </table>
@@ -1055,7 +1055,7 @@
             <div class="orders-col orders-col-right">
               <div class="card" id="orderInfoCard">
                 <div class="card-header">
-                  <h3 class="card-header-title">Datos del Cliente y EnvÃ­o</h3>
+                  <h3 class="card-header-title">Datos del Cliente y Envío</h3>
                    <div class="card-header-actions">
                     <button class="btn btn-primary btn-sm hidden" id="saveShippingBtn">
                       <span id="saveShippingBtnText">Guardar</span>
@@ -1065,7 +1065,7 @@
                  </div>
                 <div class="card-body">
                   <div id="orderInfoEmpty" class="empty-state">
-                    <p>SeleccionÃ¡ un pedido para ver los datos.</p>
+                    <p>Seleccioná un pedido para ver los datos.</p>
                   </div>
                   <div id="orderInfoContent" class="hidden">
                     <div class="form-group">
@@ -1083,7 +1083,7 @@
                         <input type="text" id="shipName" data-field="shipping_name" />
                       </div>
                       <div class="form-group">
-                        <label>TelÃ©fono</label>
+                        <label>Teléfono</label>
                         <input type="text" id="shipPhone" data-field="shipping_phone" />
                       </div>
                       <div class="form-group">
@@ -1091,12 +1091,12 @@
                         <input type="text" id="shipEmail" data-field="shipping_email" />
                       </div>
                       <div class="form-group">
-                        <label>Calle y NÃºmero</label>
+                        <label>Calle y Número</label>
                         <input type="text" id="shipAddress" data-field="shipping_address" />
                       </div>
                       <div class="form-group">
                         <label>Provincia</label>
-                        <input type="text" id="shipCity" data-field="shipping_city" placeholder="Ej: Entre RÃ­os" />
+                        <input type="text" id="shipCity" data-field="shipping_city" placeholder="Ej: Entre Ríos" />
                       </div>
                       <div class="form-group">
                         <label>Localidad</label>
@@ -1124,14 +1124,14 @@
           </div>
          </section>
 
-        <!-- ===== SECCIÃ“N: MEDIO DE PAGO ===== -->
+        <!-- ===== SECCIÓN: MEDIO DE PAGO ===== -->
         <section id="section-payments" class="admin-section-inactive">
           <div class="payments-grid">
-            <!-- Columna Izquierda: ConfiguraciÃ³n -->
+            <!-- Columna Izquierda: Configuración -->
             <div class="payments-col payments-col-left">
               <div class="card" id="paymentConfigCard">
                 <div class="card-header">
-                  <h3 class="card-header-title">ConfiguraciÃ³n de Alias</h3>
+                  <h3 class="card-header-title">Configuración de Alias</h3>
                   <div class="card-header-actions">
                     <button class="btn btn-primary btn-sm" id="savePaymentConfigBtn">
                       <span id="savePaymentConfigBtnText">Guardar en Nube</span>
@@ -1150,20 +1150,20 @@
                 </div>
                 <div class="form-grid-2">
                   <div class="form-group">
-                    <label>Costo de envÃ­o (ARS)</label>
+                    <label>Costo de envío (ARS)</label>
                     <input type="number" id="pmShippingCost" min="0" step="10" placeholder="200" />
                   </div>
                   <div class="form-group">
-                    <label>EnvÃ­o gratis desde (ARS)</label>
+                    <label>Envío gratis desde (ARS)</label>
                     <input type="number" id="pmFreeShippingFrom" min="0" step="100" placeholder="2000" />
-                    <small class="form-hint">0 = envÃ­o pago siempre</small>
+                    <small class="form-hint">0 = envío pago siempre</small>
                   </div>
                 </div>
                 <div class="form-grid-2">
                   <div class="form-group">
-                    <label>EnvÃ­o incluido en precio (ARS)</label>
+                    <label>Envío incluido en precio (ARS)</label>
                     <input type="number" id="pmIncludedShippingCost" min="0" step="10" placeholder="1500" />
-                    <small class="form-hint">Monto de envÃ­o que ya estÃ¡ cubierto en el precio de cada producto</small>
+                    <small class="form-hint">Monto de envío que ya está cubierto en el precio de cada producto</small>
                   </div>
                 </div>
                 <div class="form-group">
@@ -1172,7 +1172,7 @@
                       <input type="checkbox" id="pmActive" checked />
                       <span class="toggle-slider"></span>
                     </span>
-                     <span class="switch-label switch-label--bold">Habilitar este mÃ©todo de pago</span>
+                     <span class="switch-label switch-label--bold">Habilitar este método de pago</span>
                   </label>
                 </div>
                   <div class="form-group">
@@ -1206,7 +1206,7 @@
 
                    <div class="card mt-1">
                      <div class="card-header">
-                       <h3 class="card-header-title">Costos de envÃ­o por provincia</h3>
+                       <h3 class="card-header-title">Costos de envío por provincia</h3>
                        <div class="card-header-actions">
                          <button class="btn btn-primary btn-sm" id="saveShippingRatesBtn">
                            <span id="saveShippingRatesBtnText">Guardar en Nube</span>
@@ -1223,46 +1223,38 @@
                   <div class="payment-preview">
                     <h4 class="payment-preview-title">Flujo de Pago del Cliente</h4>
                     <div class="payment-steps">
-                      <div class="payment-step-group">
-                        <div class="payment-step">
-                          <div class="payment-step-num">1</div>
-                          <div class="payment-step-label">Seleccionar mÃ©todo de pago</div>
-                        </div>
-                        <div class="payment-step-arrow">â†’</div>
+                      <div class="payment-step">
+                        <div class="payment-step-num">1</div>
+                        <div class="payment-step-label">Seleccionar método de pago</div>
                       </div>
-                      <div class="payment-step-group">
-                        <div class="payment-step">
-                          <div class="payment-step-num">2</div>
-                          <div class="payment-step-label">Obtener alias y monto</div>
-                        </div>
-                        <div class="payment-step-arrow">â†’</div>
+                      <div class="payment-step-arrow">→</div>
+                      <div class="payment-step">
+                        <div class="payment-step-num">2</div>
+                        <div class="payment-step-label">Obtener alias y monto</div>
                       </div>
-                      <div class="payment-step-group">
-                        <div class="payment-step">
-                          <div class="payment-step-num">3</div>
-                          <div class="payment-step-label">Hacer la transferencia</div>
-                        </div>
-                        <div class="payment-step-arrow">â†’</div>
+                      <div class="payment-step-arrow">→</div>
+                      <div class="payment-step">
+                        <div class="payment-step-num">3</div>
+                        <div class="payment-step-label">Hacer la transferencia</div>
                       </div>
-                      <div class="payment-step-group">
-                        <div class="payment-step">
-                          <div class="payment-step-num">4</div>
-                          <div class="payment-step-label">Subir comprobante</div>
-                        </div>
+                      <div class="payment-step-arrow">→</div>
+                      <div class="payment-step">
+                        <div class="payment-step-num">4</div>
+                        <div class="payment-step-label">Subir comprobante</div>
                       </div>
                     </div>
                     <div class="payment-preview-data">
                       <div class="payment-preview-row">
                         <span>Alias:</span>
-                        <strong id="pmPreviewAlias">â€”</strong>
+                        <strong id="pmPreviewAlias">—</strong>
                       </div>
                       <div class="payment-preview-row">
                         <span>Titular:</span>
-                        <strong id="pmPreviewHolder">â€”</strong>
+                        <strong id="pmPreviewHolder">—</strong>
                       </div>
                       <div class="payment-preview-row">
                         <span>Estado:</span>
-                        <strong id="pmPreviewStatus">â€”</strong>
+                        <strong id="pmPreviewStatus">—</strong>
                       </div>
                     </div>
                   </div>
@@ -1274,7 +1266,7 @@
             <div class="payments-col payments-col-center">
               <div class="card">
                 <div class="card-header">
-                  <h3 class="card-header-title">GestiÃ³n de Comprobantes</h3>
+                  <h3 class="card-header-title">Gestión de Comprobantes</h3>
                   <div class="card-header-actions">
                     <div class="card-filters">
                       <input type="text" id="pmProofSearch" class="card-filter" placeholder="Buscar..." />
@@ -1330,21 +1322,21 @@
                   <div class="kpis-grid">
                     <div class="kpi">
                       <div class="kpi-label">Pagados del Mes</div>
-                      <div class="kpi-value" id="pmKpiApprovedCount">â€”</div>
-                      <div class="kpi-trend" id="pmKpiCountTrend">â€”</div>
+                      <div class="kpi-value" id="pmKpiApprovedCount">—</div>
+                      <div class="kpi-trend" id="pmKpiCountTrend">—</div>
                     </div>
                     <div class="kpi">
                       <div class="kpi-label">Total Aprobado (Mes)</div>
-                      <div class="kpi-value" id="pmKpiApprovedTotal">â€”</div>
-                      <div class="kpi-trend" id="pmKpiTotalTrend">â€”</div>
+                      <div class="kpi-value" id="pmKpiApprovedTotal">—</div>
+                      <div class="kpi-trend" id="pmKpiTotalTrend">—</div>
                     </div>
                     <div class="kpi">
                       <div class="kpi-label">Rechazados (Mes)</div>
-                      <div class="kpi-value" id="pmKpiRejected">â€”</div>
+                      <div class="kpi-value" id="pmKpiRejected">—</div>
                     </div>
                     <div class="kpi">
                       <div class="kpi-label">Alias Activo</div>
-                      <div class="kpi-value" id="pmKpiAliasActive">â€”</div>
+                      <div class="kpi-value" id="pmKpiAliasActive">—</div>
                     </div>
                   </div>
                   <div class="chart-wrap">
@@ -1392,7 +1384,7 @@
     <div class="modal">
       <div class="modal-header">
         <h3 id="productModalTitle">Nuevo producto</h3>
-        <button class="btn btn-secondary btn-sm" id="closeProductModal">âœ•</button>
+        <button class="btn btn-secondary btn-sm" id="closeProductModal">✕</button>
       </div>
       <div class="modal-body">
         <form id="productEditForm">
@@ -1414,7 +1406,7 @@
           <div class="form-grid-3">
             <div class="form-group">
               <label>Emoji</label>
-              <input type="text" id="prod_emoji" placeholder="ðŸ“¿" />
+              <input type="text" id="prod_emoji" placeholder="📿" />
             </div>
             <div class="form-group">
               <label>Badge</label>
@@ -1422,15 +1414,15 @@
             </div>
             <div class="form-group">
               <label>SKU</label>
-              <input type="text" id="prod_sku" placeholder="CÃ³digo interno" />
+              <input type="text" id="prod_sku" placeholder="Código interno" />
             </div>
           </div>
           
           <div class="form-grid-2">
             <div class="form-group">
-              <label>CategorÃ­a</label>
+              <label>Categoría</label>
               <select id="prod_category">
-                <option value="">Sin categorÃ­a</option>
+                <option value="">Sin categoría</option>
               </select>
             </div>
             <div class="form-group">
@@ -1440,8 +1432,8 @@
           </div>
           
           <div class="form-group">
-            <label>DescripciÃ³n</label>
-            <textarea id="prod_description" rows="3" placeholder="DescripciÃ³n del producto..."></textarea>
+            <label>Descripción</label>
+            <textarea id="prod_description" rows="3" placeholder="Descripción del producto..."></textarea>
           </div>
           
           <div class="modal-toggles-row">
@@ -1462,23 +1454,23 @@
           </div>
           
           <div class="form-group">
-            <label>ImÃ¡genes (hasta 5)</label>
+            <label>Imágenes (hasta 5)</label>
             <div class="product-dropzone" id="productDropzone">
               <input type="file" id="prod_images" name="images" accept="image/jpeg,image/png,image/webp" multiple />
               <div class="dropzone-content">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                <span>Agregar mÃ¡s imÃ¡genes</span>
-                <small>JPG, PNG o WEBP. MÃ¡x 5MB c/u. Hasta 5 imÃ¡genes en total.</small>
+                <span>Agregar más imágenes</span>
+                <small>JPG, PNG o WEBP. Máx 5MB c/u. Hasta 5 imágenes en total.</small>
               </div>
             </div>
             <div id="modalImageGallery" class="modal-image-gallery"></div>
           </div>
 
           <div id="productExistingImagesSection" class="product-existing-images-section">
-            <div class="admin-section-title">GalerÃ­a del producto</div>
+            <div class="admin-section-title">Galería del producto</div>
             <div id="productImageGallery" class="product-image-gallery"></div>
             <div class="product-image-actions" style="margin-top:0.75rem;">
-              <button type="button" class="btn btn-secondary btn-sm" id="addMoreImagesBtn">+ Agregar imÃ¡genes</button>
+              <button type="button" class="btn btn-secondary btn-sm" id="addMoreImagesBtn">+ Agregar imágenes</button>
               <input type="file" id="addMoreImagesInput" accept="image/jpeg,image/png,image/webp" multiple class="hidden" />
             </div>
             <div id="productImageUploadProgress" class="product-image-upload-progress">
@@ -1499,29 +1491,29 @@
     </div>
   </div>
 
-  <!-- MODAL CONFIRMACIÃ“N -->
+  <!-- MODAL CONFIRMACIÓN -->
   <div class="modal-overlay confirmation-overlay" id="confirmModalOverlay">
     <div class="modal" style="max-width:420px;">
       <div class="modal-header">
         <h3 id="confirmModalTitle">Confirmar</h3>
-        <button class="btn btn-secondary btn-sm" id="closeConfirmModal">âœ•</button>
+        <button class="btn btn-secondary btn-sm" id="closeConfirmModal">✕</button>
       </div>
       <div class="modal-body">
-        <p id="confirmModalMessage">Â¿EstÃ¡s seguro?</p>
+        <p id="confirmModalMessage">¿Estás seguro?</p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" id="cancelConfirmBtn">Cancelar</button>
-        <button type="button" class="btn btn-danger" id="confirmModalAction">Eliminar</button>
+        <button type="button" class="btn btn-secondary" id="confirmCancelBtn">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="confirmOkBtn">Eliminar</button>
       </div>
     </div>
   </div>
 
-  <!-- MODAL CATEGORÃA -->
+  <!-- MODAL CATEGORÍA -->
   <div class="modal-overlay" id="categoryModalOverlay">
     <div class="modal" style="max-width:520px;">
       <div class="modal-header">
-        <h3 id="categoryModalTitle">Nueva categorÃ­a</h3>
-        <button class="btn btn-secondary btn-sm" id="closeCategoryModal">âœ•</button>
+        <h3 id="categoryModalTitle">Nueva categoría</h3>
+        <button class="btn btn-secondary btn-sm" id="closeCategoryModal">✕</button>
       </div>
       <div class="modal-body">
         <form id="categoryForm">
@@ -1534,13 +1526,13 @@
             <input type="text" id="cat_slug" required placeholder="pulseras" />
           </div>
           <div class="form-group">
-            <label>DescripciÃ³n</label>
-            <textarea id="cat_description" rows="2" placeholder="DescripciÃ³n breve..."></textarea>
+            <label>Descripción</label>
+            <textarea id="cat_description" rows="2" placeholder="Descripción breve..."></textarea>
           </div>
           <div class="form-group">
-            <label>CategorÃ­a Padre</label>
+            <label>Categoría Padre</label>
             <select id="cat_parent_id">
-              <option value="">Ninguna (categorÃ­a principal)</option>
+              <option value="">Ninguna (categoría principal)</option>
             </select>
           </div>
           <div class="form-group">
@@ -1549,7 +1541,7 @@
               <div class="image-upload-primary">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 <span>Subir imagen</span>
-                <small class="form-hint">JPG, PNG o WEBP. MÃ¡x 2MB.</small>
+                <small class="form-hint">JPG, PNG o WEBP. Máx 2MB.</small>
               </div>
               <input type="file" id="cat_image_file" name="image" accept="image/jpeg,image/png,image/webp" />
             </label>
@@ -1557,7 +1549,7 @@
           </div>
           <div class="form-group">
             <label>Emoji</label>
-            <input type="text" id="cat_emoji" placeholder="ðŸ“¿" />
+            <input type="text" id="cat_emoji" placeholder="📿" />
           </div>
           <div class="form-group">
             <label class="toggle-field">
@@ -1565,7 +1557,7 @@
                 <input type="checkbox" id="cat_active" checked />
                 <span class="toggle-slider"></span>
               </span>
-               <span class="switch-label switch-label--bold">CategorÃ­a activa</span>
+               <span class="switch-label switch-label--bold">Categoría activa</span>
             </label>
           </div>
           <div class="admin-section">
@@ -1581,14 +1573,14 @@
 
 
 
-  <!-- MODAL CONFIRMACIÃ“N -->
+  <!-- MODAL CONFIRMACIÓN -->
   <div class="modal-overlay confirmation-overlay" id="confirmModalOverlay">
     <div class="modal" style="max-width:400px;">
       <div class="modal-header">
-        <h3>Confirmar acciÃ³n</h3>
+        <h3>Confirmar acción</h3>
       </div>
       <div class="modal-body">
-        <p id="confirmModalMessage">Â¿EstÃ¡s seguro?</p>
+        <p id="confirmModalMessage">¿Estás seguro?</p>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" id="cancelConfirmBtn">Cancelar</button>
@@ -1597,12 +1589,12 @@
     </div>
   </div>
 
-  <!-- MODAL DETALLE DE TRANSACCIÃ“N -->
+  <!-- MODAL DETALLE DE TRANSACCIÓN -->
   <div class="modal-overlay" id="transactionDetailOverlay">
     <div class="modal" style="max-width:600px;">
       <div class="modal-header">
-        <h3 id="transactionDetailTitle">Detalle de TransacciÃ³n</h3>
-        <button class="btn btn-secondary btn-sm" id="closeTransactionDetail">âœ•</button>
+        <h3 id="transactionDetailTitle">Detalle de Transacción</h3>
+        <button class="btn btn-secondary btn-sm" id="closeTransactionDetail">✕</button>
       </div>
       <div class="modal-body">
         <div id="transactionDetailContent"></div>

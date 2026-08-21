@@ -432,7 +432,7 @@
       setTimeout(function () { if (statusEl) statusEl.textContent = ''; }, 3000);
       renderTestimonials();
       window.showToast('âœ…', 'Testimonio actualizado', 'success');
-      if (window.markDirty) window.markDirty('testimonials');
+      if (window.clearDirty) window.clearDirty('testimonials');
     } catch (err) {
       if (statusEl) { statusEl.textContent = err.message; statusEl.style.color = 'red'; }
       window.showToast('âŒ', err.message || 'Error al guardar testimonio', 'error');
@@ -551,4 +551,5 @@
     initTestimonials();
   }
 })();
+
 

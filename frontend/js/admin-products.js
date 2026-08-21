@@ -882,10 +882,26 @@
     var product = productList.find(function (p) { return p.id === id; });
     if (!product) return;
 
-    if (!confirm('Â¿EstÃ¡s seguro de eliminar el producto "' + product.name + '"?\n\nSe desactiva (soft delete) y no aparecerÃ¡ mÃ¡s en el catÃ¡logo.')) {
-      return;
-    }
+    var modal = document.getElementById('confirmModalOverlay');
+    var msg = document.getElementById('confirmModalMessage');
+    var actionBtn = document.getElementById('confirmModalAction');
+    var cancelBtn = document.getElementById('cancelConfirmBtn');
+    if (!modal || !msg || !actionBtn || !cancelBtn) return;
 
+    msg.textContent = 'Â¿EstÃ¡s seguro de eliminar el producto "' + product.name + '"?\n\nSe desactiva (soft delete) y no aparecerÃ¡ mÃ¡s en el catÃ¡logo.';
+    actionBtn.textContent = 'Eliminar';
+    actionBtn.className = 'btn btn-danger';
+    actionBtn.onclick = async function () {
+      if (modal) modal.classList.remove('active');
+      await processDeleteProduct(id);
+    };
+    cancelBtn.onclick = function () {
+      if (modal) modal.classList.remove('active');
+    };
+    modal.classList.add('active');
+  };
+
+  async function processDeleteProduct(id) {
     try {
       var res = await window.adminFetch('/api/admin/products/' + id, { method: 'DELETE' });
       if (!res || !res.ok) {
@@ -903,7 +919,7 @@
       console.error('[Products] Error eliminando:', err);
       window.showToast('âŒ', err.message || 'Error al eliminar el producto.', 'error');
     }
-  };
+  }
 
   /* HELPERS GLOBALES */
   window.removeImagePreview = function (index) {
@@ -1097,4 +1113,5 @@
   };
   window.saveAllProductChanges = window.saveAllProductsChanges;
 })();
+
 
