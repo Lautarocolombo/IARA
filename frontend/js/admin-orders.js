@@ -590,11 +590,11 @@
         actionBtn.textContent = 'Aprobar';
         actionBtn.className = 'btn btn-success';
         actionBtn.onclick = async function () {
-          if (modal) modal.classList.add('hidden');
+          if (modal) modal.classList.remove('active');
           await processApprove(selectedOrderId);
         };
       }
-      modal.classList.remove('hidden');
+      modal.classList.add('active');
     }
   }
 
@@ -645,11 +645,11 @@
         actionBtn.textContent = 'Rechazar';
         actionBtn.className = 'btn btn-danger';
         actionBtn.onclick = async function () {
-          if (modal) modal.classList.add('hidden');
+          if (modal) modal.classList.remove('active');
           await processReject(selectedOrderId, reason || '');
         };
       }
-      modal.classList.remove('hidden');
+      modal.classList.add('active');
     }
   }
 
@@ -696,11 +696,11 @@
         actionBtn.textContent = 'Eliminar';
         actionBtn.className = 'btn btn-danger';
         actionBtn.onclick = async function () {
-          if (modal) modal.classList.add('hidden');
+          if (modal) modal.classList.remove('active');
           await processDeleteOrder(id);
         };
       }
-      modal.classList.remove('hidden');
+      modal.classList.add('active');
     }
   }
 
@@ -738,11 +738,11 @@
         actionBtn.textContent = 'Eliminar ' + label;
         actionBtn.className = 'btn btn-danger';
         actionBtn.onclick = async function () {
-          if (modal) modal.classList.add('hidden');
+          if (modal) modal.classList.remove('active');
           await processBatchDelete(status);
         };
       }
-      modal.classList.remove('hidden');
+      modal.classList.add('active');
     }
   }
 
@@ -860,7 +860,7 @@
     if (cancelConfirmBtn) {
       cancelConfirmBtn.onclick = function () {
         var modal = document.getElementById('confirmModalOverlay');
-        if (modal) modal.classList.add('hidden');
+        if (modal) modal.classList.remove('active');
       };
     }
   }
@@ -901,11 +901,11 @@
         actionBtn.textContent = 'Entendido';
         actionBtn.className = 'btn btn-primary';
         actionBtn.onclick = function () {
-          if (modal) modal.classList.add('hidden');
+          if (modal) modal.classList.remove('active');
           if (msg) msg.textContent = '¿Estás seguro?';
         };
       }
-      modal.classList.remove('hidden');
+      modal.classList.add('active');
     }
   }
 

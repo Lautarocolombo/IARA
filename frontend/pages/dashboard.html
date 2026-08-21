@@ -1530,22 +1530,20 @@
 
   <!-- MODAL CONFIRMACIÓN -->
   <div class="modal-overlay confirmation-overlay" id="confirmModalOverlay">
-    <div class="modal" style="max-width:420px;">
+    <div class="modal" style="max-width:400px;">
       <div class="modal-header">
-        <h3 id="confirmModalTitle">Confirmar</h3>
+        <h3 id="confirmModalTitle">Confirmar acción</h3>
         <button class="btn btn-secondary btn-sm" id="closeConfirmModal">✕</button>
       </div>
       <div class="modal-body">
         <p id="confirmModalMessage">¿Estás seguro?</p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" id="confirmCancelBtn">Cancelar</button>
-        <button type="button" class="btn btn-danger" id="confirmOkBtn">Eliminar</button>
+        <button class="btn btn-secondary" id="cancelConfirmBtn">Cancelar</button>
+        <button class="btn btn-danger" id="confirmModalAction">Eliminar</button>
       </div>
     </div>
   </div>
-
-  <!-- MODAL CATEGORÍA -->
   <div class="modal-overlay" id="categoryModalOverlay">
     <div class="modal" style="max-width:520px;">
       <div class="modal-header">
@@ -1554,14 +1552,6 @@
       </div>
       <div class="modal-body">
         <form id="categoryForm">
-          <div class="form-group">
-            <label>Nombre <span class="required">*</span></label>
-            <input type="text" id="cat_name" required placeholder="Ej: Pulseras" />
-          </div>
-          <div class="form-group">
-            <label>Slug <span class="required">*</span></label>
-            <input type="text" id="cat_slug" required placeholder="pulseras" />
-          </div>
           <div class="form-group">
             <label>Descripción</label>
             <textarea id="cat_description" rows="2" placeholder="Descripción breve..."></textarea>
@@ -1609,22 +1599,6 @@
   </div>
 
 
-
-  <!-- MODAL CONFIRMACIÓN -->
-  <div class="modal-overlay confirmation-overlay" id="confirmModalOverlay">
-    <div class="modal" style="max-width:400px;">
-      <div class="modal-header">
-        <h3>Confirmar acción</h3>
-      </div>
-      <div class="modal-body">
-        <p id="confirmModalMessage">¿Estás seguro?</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" id="cancelConfirmBtn">Cancelar</button>
-        <button class="btn btn-danger" id="confirmModalAction">Eliminar</button>
-      </div>
-    </div>
-  </div>
 
   <!-- MODAL DETALLE DE TRANSACCIÓN -->
   <div class="modal-overlay" id="transactionDetailOverlay">

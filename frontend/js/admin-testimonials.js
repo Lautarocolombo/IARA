@@ -1,5 +1,5 @@
 ﻿/* ==================== ADMIN TESTIMONIALS.JS ==================== */
-/* CRUD + reorden drag&drop + contenido de secciÃ³n + preview en vivo */
+/* CRUD + reorden drag&drop + contenido de sección + preview en vivo */
 
 (function () {
   'use strict';
@@ -21,19 +21,19 @@
       .replace(/'/g, '&#39;');
   }
 
-  /* ===== CONTENIDO DE SECCIÃ“N ===== */
+  /* ===== CONTENIDO DE SECCIÓN ===== */
 
   async function loadSectionContent() {
     try {
       var res = await window.adminFetch('/api/section-content/testimonials', { method: 'GET' });
-      if (!res || !res.ok) throw new Error('Error cargando contenido de secciÃ³n');
+      if (!res || !res.ok) throw new Error('Error cargando contenido de sección');
       sectionContent = await res.json();
       var titleEl = document.getElementById('testimonialsSectionTitle');
       var subtitleEl = document.getElementById('testimonialsSectionSubtitle');
       if (titleEl) titleEl.value = sectionContent.title || '';
       if (subtitleEl) subtitleEl.value = sectionContent.subtitle || '';
     } catch (err) {
-      console.error('[Testimonials] Error cargando contenido de secciÃ³n:', err);
+      console.error('[Testimonials] Error cargando contenido de sección:', err);
     }
   }
 
@@ -49,7 +49,7 @@
     var subtitle = subtitleEl ? subtitleEl.value.trim() : '';
 
     if (!title) {
-      if (statusEl) { statusEl.textContent = 'El tÃ­tulo es requerido'; statusEl.style.color = 'red'; }
+      if (statusEl) { statusEl.textContent = 'El título es requerido'; statusEl.style.color = 'red'; }
       return;
     }
 
@@ -90,7 +90,7 @@
       renderTestimonials();
     } catch (err) {
       console.error('[Testimonials] Error cargando:', err);
-      window.showToast('âŒ', 'No se pudieron cargar los testimonios.', 'error');
+      window.showToast('❌', 'No se pudieron cargar los testimonios.', 'error');
     }
   }
 
@@ -189,10 +189,10 @@
           throw new Error(errData.error || 'Error al reordenar');
         }
       await loadTestimonials();
-      window.showToast('âœ…', 'Orden actualizado', 'success');
+      window.showToast('✅', 'Orden actualizado', 'success');
       } catch (err) {
       await loadTestimonials();
-      window.showToast('âŒ', err.message || 'Error al reordenar, se restaurÃ³ el orden', 'error');
+      window.showToast('❌', err.message || 'Error al reordenar, se restauró el orden', 'error');
       }
     });
 
@@ -239,13 +239,13 @@
 
     var stars = '';
     for (var i = 0; i < 5; i++) {
-      stars += i < rating ? 'â­' : 'â˜†';
+      stars += i < rating ? '⭐' : '☆';
     }
 
     container.innerHTML =
       '<div class="testimonial-card reveal" style="max-width:100%;">' +
         '<div class="testimonial-header">' +
-          '<div class="testimonial-avatar">ðŸ˜Š</div>' +
+          '<div class="testimonial-avatar">😊</div>' +
           '<div>' +
             '<div class="testimonial-name">' + escapeHtml(name || 'Nombre') + '</div>' +
             (role ? '<div style="font-size:0.8rem;color:var(--text-muted);">' + escapeHtml(role) + '</div>' : '') +
@@ -281,8 +281,14 @@
   window.editTestimonial = function (id) {
     var t = testimonials.find(function (x) { return x.id === id; });
     if (!t) return;
-    editingId = id;
-    var nameEl = document.getElementById('testimonialName');
+  editingId = id;
+  var createForm = document.getElementById('testimonialCreateForm');
+  var toggleIcon = document.getElementById('toggleTestimonialFormIcon');
+  if (createForm && !createForm.classList.contains('open')) {
+    createForm.classList.add('open');
+    if (toggleIcon) toggleIcon.classList.add('expanded');
+  }
+  var nameEl = document.getElementById('testimonialName');
     var roleEl = document.getElementById('testimonialRole');
     var commentEl = document.getElementById('testimonialComment');
     var ratingEl = document.getElementById('testimonialRating');
@@ -320,7 +326,7 @@
     var cancelBtn = document.getElementById('cancelConfirmBtn');
     if (!modal || !msg || !actionBtn || !cancelBtn) return;
 
-    msg.textContent = 'Â¿EstÃ¡s seguro de eliminar este testimonio? Esta acciÃ³n no se puede deshacer.';
+    msg.textContent = '¿Estás seguro de eliminar este testimonio? Esta acción no se puede deshacer.';
     actionBtn.textContent = 'Eliminar';
     actionBtn.className = 'btn btn-danger';
     actionBtn.onclick = async function () {
@@ -340,9 +346,9 @@
       testimonials = testimonials.filter(function (t) { return t.id !== id; });
       if (editingId === id) resetTestimonialForm();
       renderTestimonials();
-      window.showToast('âœ…', 'Testimonio eliminado', 'success');
+      window.showToast('✅', 'Testimonio eliminado', 'success');
     } catch (err) {
-      window.showToast('âŒ', err.message || 'Error al eliminar testimonio', 'error');
+      window.showToast('❌', err.message || 'Error al eliminar testimonio', 'error');
     }
   }
 
@@ -357,7 +363,7 @@
       var t = testimonials.find(function (x) { return x.id === id; });
       if (t) t.active = active;
     } catch (err) {
-      window.showToast('âŒ', err.message || 'Error al actualizar estado', 'error');
+      window.showToast('❌', err.message || 'Error al actualizar estado', 'error');
       renderTestimonials();
     }
   };
@@ -426,11 +432,11 @@
       if (statusEl) { statusEl.textContent = 'Testimonio actualizado'; statusEl.style.color = 'green'; }
       setTimeout(function () { if (statusEl) statusEl.textContent = ''; }, 3000);
       renderTestimonials();
-      window.showToast('âœ…', 'Testimonio actualizado', 'success');
+      window.showToast('✅', 'Testimonio actualizado', 'success');
       if (window.clearDirty) window.clearDirty('testimonials');
     } catch (err) {
       if (statusEl) { statusEl.textContent = err.message; statusEl.style.color = 'red'; }
-      window.showToast('âŒ', err.message || 'Error al guardar testimonio', 'error');
+      window.showToast('❌', err.message || 'Error al guardar testimonio', 'error');
     } finally {
       if (saveBtn) {
         saveBtn.disabled = false;

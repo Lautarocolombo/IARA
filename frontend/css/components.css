@@ -419,6 +419,7 @@ html, body { overflow-x: hidden; }
   font-weight: 500;
   color: var(--text-mid);
   text-align: center;
+  display: none;
 }
 
 .hero-card-cta {
