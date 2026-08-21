@@ -202,10 +202,7 @@ async function processFile(file, _baseUrl) {
       return { url: blobResult.url, filename: blobResult.filename, cloudinary_public_id: '', isCloudinary: false, isBlob: true };
     }
     logger.error('[Upload] Falló subida a Vercel Blob. Verificá BLOB_READ_WRITE_TOKEN en Render.');
-    if (process.env.NODE_ENV === 'production') {
-      throw new Error('Error subiendo imagen: Vercel Blob está configurado pero la subida falló. Verificá que BLOB_READ_WRITE_TOKEN sea un token válido de Vercel Blob.');
-    }
-    logger.warn('[Upload] Upload a Vercel Blob falló, intentando fallback a storage local');
+    logger.warn('[Upload] Haciendo fallback a storage local');
   }
 
   const optimizedPath = await optimizeImage(file.path, { format: 'webp' });

@@ -949,14 +949,33 @@ async function initDB() {
       }
     }
 
- async function setTenant(tenantId) {
-   if (!tenantId || typeof tenantId !== 'string') return;
-   if (isLocal) return;
-   try {
-     await query('SELECT set_config($1, $2, false)', ['app.current_tenant', tenantId]);
-   } catch (e) {
-     // no-op si la BD no soporta set_config
-   }
- }
+  async function setTenant(tenantId) {
+    if (!tenantId || typeof tenantId !== 'string') return;
+    if (isLocal) return;
+    try {
+      await query('SELECT set_config($1, $2, false)', ['app.current_tenant', tenantId]);
+    } catch (e) {
+      // no-op si la BD no soporta set_config
+    }
+  }
 
- module.exports = { query, initDB, pool, connectionString: !!connectionString, getClient, transaction, isLocal, setTenant };
+  async function closeDB() {
+    if (pool && typeof pool.end === 'function') {
+      try {
+        await pool.end();
+      } catch (e) {
+        // noop
+      }
+    }
+    if (isLocal && db && typeof db.close === 'function') {
+      try {
+        await new Promise((resolve, reject) => {
+          db.close((err) => err ? reject(err) : resolve());
+        });
+      } catch (e) {
+        // noop
+      }
+    }
+  }
+
+  module.exports = { query, initDB, pool, connectionString: !!connectionString, getClient, transaction, isLocal, setTenant, closeDB };

@@ -6,24 +6,21 @@ if (!fs.existsSync(dbDir)) {
   fs.mkdirSync(dbDir, { recursive: true });
 }
 
-process.on('beforeExit', () => {
+async function cleanup() {
   try {
-    const { pool } = require('../src/lib/db');
-    if (pool && typeof pool.end === 'function') {
-      pool.end().catch(() => {});
+    const { closeDB } = require('../src/lib/db');
+    if (typeof closeDB === 'function') {
+      await closeDB();
     }
   } catch (e) {
     // noop
   }
+}
+
+process.on('beforeExit', () => {
+  cleanup().catch(() => {});
 });
 
 process.on('exit', () => {
-  try {
-    const { pool } = require('../src/lib/db');
-    if (pool && typeof pool.end === 'function') {
-      pool.end().catch(() => {});
-    }
-  } catch (e) {
-    // noop
-  }
+  cleanup().catch(() => {});
 });
