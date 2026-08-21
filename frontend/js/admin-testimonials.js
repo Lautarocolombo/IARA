@@ -219,26 +219,6 @@
 
   /* ===== CONFIRM MODAL GLOBAL ===== */
 
-  var testimonialConfirmCallback = null;
-
-  function showTestimonialConfirmModal(title, message, onConfirm) {
-    var overlay = document.getElementById('confirmModalOverlay');
-    var titleEl = document.getElementById('confirmModalTitle');
-    var msgEl = document.getElementById('confirmModalMessage');
-    if (!overlay || !titleEl || !msgEl) return;
-
-    testimonialConfirmCallback = onConfirm;
-    titleEl.textContent = title || 'Confirmar';
-    msgEl.textContent = message || 'Â¿EstÃ¡s seguro?';
-    overlay.style.display = 'flex';
-  }
-
-  function hideTestimonialConfirmModal() {
-    var overlay = document.getElementById('confirmModalOverlay');
-    if (overlay) overlay.style.display = 'none';
-    testimonialConfirmCallback = null;
-  }
-
   /* ===== CRUD ===== */
 
   function updatePreview() {
@@ -333,9 +313,23 @@
   };
 
   window.deleteTestimonial = async function (id) {
-    showTestimonialConfirmModal('Eliminar testimonio', 'Â¿EstÃ¡s seguro de eliminar este testimonio? Esta acciÃ³n no se puede deshacer.', function () {
-      doDeleteTestimonial(id);
-    });
+    var modal = document.getElementById('confirmModalOverlay');
+    var msg = document.getElementById('confirmModalMessage');
+    var actionBtn = document.getElementById('confirmModalAction');
+    var cancelBtn = document.getElementById('cancelConfirmBtn');
+    if (!modal || !msg || !actionBtn || !cancelBtn) return;
+
+    msg.textContent = 'Â¿EstÃ¡s seguro de eliminar este testimonio? Esta acciÃ³n no se puede deshacer.';
+    actionBtn.textContent = 'Eliminar';
+    actionBtn.className = 'btn btn-danger';
+    actionBtn.onclick = async function () {
+      if (modal) modal.classList.remove('active');
+      await doDeleteTestimonial(id);
+    };
+    cancelBtn.onclick = function () {
+      if (modal) modal.classList.remove('active');
+    };
+    modal.classList.add('active');
   };
 
   async function doDeleteTestimonial(id) {
@@ -510,29 +504,6 @@
 
     setupDragDrop();
 
-    var okBtn = document.getElementById('confirmModalAction');
-    var cancelBtn = document.getElementById('cancelConfirmBtn');
-    var closeBtn = document.getElementById('closeConfirmModal');
-    var overlay = document.getElementById('confirmModalOverlay');
-
-    if (okBtn) {
-      okBtn.addEventListener('click', function () {
-        if (typeof testimonialConfirmCallback === 'function') testimonialConfirmCallback();
-        hideTestimonialConfirmModal();
-      });
-    }
-    if (cancelBtn) {
-      cancelBtn.addEventListener('click', hideTestimonialConfirmModal);
-    }
-    if (closeBtn) {
-      closeBtn.addEventListener('click', hideTestimonialConfirmModal);
-    }
-    if (overlay) {
-      overlay.addEventListener('click', function (e) {
-        if (e.target === overlay) hideTestimonialConfirmModal();
-      });
-    }
-
     loadSectionContent();
     loadTestimonials();
   }
@@ -551,5 +522,6 @@
     initTestimonials();
   }
 })();
+
 
 

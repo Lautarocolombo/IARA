@@ -112,6 +112,16 @@
         <!-- ===== SECCIÓN: CONTENIDO DEL SITIO ===== -->
         <section id="section-content" class="admin-section-active">
           <div id="contentEditorRoot">
+            <div class="content-tabs-nav" id="contentTabsNav">
+              <button class="content-tab active" data-content-tab="home-blocks" type="button">Bloques del Home</button>
+              <button class="content-tab" data-content-tab="about" type="button">Sobre Nosotros</button>
+              <button class="content-tab" data-content-tab="features" type="button">Características</button>
+              <button class="content-tab" data-content-tab="process" type="button">Proceso de Compra</button>
+              <button class="content-tab" data-content-tab="stats" type="button">Stats</button>
+              <button class="content-tab" data-content-tab="contact" type="button">Contacto</button>
+              <button class="content-tab" data-content-tab="featured" type="button">Categorías</button>
+            </div>
+            <div class="content-tab-panel active" data-content-tab="home-blocks">
             <div class="card">
               <div class="card-header">
                 <h3 class="card-header-title">Bloques del Home</h3>
@@ -1125,254 +1135,251 @@
          </section>
 
         <!-- ===== SECCIÓN: MEDIO DE PAGO ===== -->
-        <section id="section-payments" class="admin-section-inactive">
-          <div class="payments-grid">
-            <!-- Columna Izquierda: Configuración -->
-            <div class="payments-col payments-col-left">
-              <div class="card" id="paymentConfigCard">
-                <div class="card-header">
-                  <h3 class="card-header-title">Configuración de Alias</h3>
-                  <div class="card-header-actions">
-                    <button class="btn btn-primary btn-sm" id="savePaymentConfigBtn">
-                      <span id="savePaymentConfigBtnText">Guardar en Nube</span>
-                      <span id="savePaymentConfigBtnLoading" class="hidden">Guardando...</span>
-                    </button>
-                  </div>
-                </div>
-              <div class="card-body">
-                <div class="form-group">
-                  <label>Alias de Mercado Pago <span class="required">*</span></label>
-                  <input type="text" id="pmAlias" placeholder="Ej: arte.gualeguay.mp" />
-                </div>
-                <div class="form-group">
-                  <label>Nombre del Titular de Cuenta</label>
-                  <input type="text" id="pmHolderName" placeholder="Nombre completo del titular" />
-                </div>
-                <div class="form-grid-2">
-                  <div class="form-group">
-                    <label>Costo de envío (ARS)</label>
-                    <input type="number" id="pmShippingCost" min="0" step="10" placeholder="200" />
-                  </div>
-                  <div class="form-group">
-                    <label>Envío gratis desde (ARS)</label>
-                    <input type="number" id="pmFreeShippingFrom" min="0" step="100" placeholder="2000" />
-                    <small class="form-hint">0 = envío pago siempre</small>
-                  </div>
-                </div>
-                <div class="form-grid-2">
-                  <div class="form-group">
-                    <label>Envío incluido en precio (ARS)</label>
-                    <input type="number" id="pmIncludedShippingCost" min="0" step="10" placeholder="1500" />
-                    <small class="form-hint">Monto de envío que ya está cubierto en el precio de cada producto</small>
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label class="toggle-field">
-                    <span class="toggle">
-                      <input type="checkbox" id="pmActive" checked />
-                      <span class="toggle-slider"></span>
-                    </span>
-                     <span class="switch-label switch-label--bold">Habilitar este método de pago</span>
-                  </label>
-                </div>
-                  <div class="form-group">
-                    <label class="toggle-field">
-                      <span class="toggle">
-                        <input type="checkbox" id="pmNotifyAdmin" checked />
-                        <span class="toggle-slider"></span>
-                      </span>
-                      <span class="switch-label switch-label--bold">Notificar al admin cuando se sube un comprobante</span>
-                    </label>
-                  </div>
-                  <div class="form-group">
-                    <label class="toggle-field">
-                      <span class="toggle">
-                        <input type="checkbox" id="pmNotifyClientApproved" checked />
-                        <span class="toggle-slider"></span>
-                      </span>
-                      <span class="switch-label switch-label--bold">Notificar al cliente cuando se aprueba el pago</span>
-                    </label>
-                  </div>
-                  <div class="form-group">
-                    <label class="toggle-field">
-                      <span class="toggle">
-                        <input type="checkbox" id="pmNotifyClientRejected" checked />
-                        <span class="toggle-slider"></span>
-                      </span>
-                      <span class="switch-label switch-label--bold">Notificar al cliente cuando se rechaza el pago</span>
-                    </label>
-                  </div>
-                  <div class="save-status" id="savePaymentStatus"></div>
+         <section id="section-payments" class="admin-section-inactive">
+           <div class="payments-grid payments-grid--2col">
+             <!-- Columna Izquierda: Configuración + Costos de envío -->
+             <div class="payments-col payments-col-left">
+               <div class="card" id="paymentConfigCard">
+                 <div class="card-header">
+                   <h3 class="card-header-title">Configuración de Alias</h3>
+                   <div class="card-header-actions">
+                     <button class="btn btn-primary btn-sm" id="savePaymentConfigBtn">
+                       <span id="savePaymentConfigBtnText">Guardar en Nube</span>
+                       <span id="savePaymentConfigBtnLoading" class="hidden">Guardando...</span>
+                     </button>
+                   </div>
+                 </div>
+               <div class="card-body">
+                 <div class="form-group">
+                   <label>Alias de Mercado Pago <span class="required">*</span></label>
+                   <input type="text" id="pmAlias" placeholder="Ej: arte.gualeguay.mp" />
+                 </div>
+                 <div class="form-group">
+                   <label>Nombre del Titular de Cuenta</label>
+                   <input type="text" id="pmHolderName" placeholder="Nombre completo del titular" />
+                 </div>
+                 <div class="form-grid-2">
+                   <div class="form-group">
+                     <label>Costo de envío (ARS)</label>
+                     <input type="number" id="pmShippingCost" min="0" step="10" placeholder="200" />
+                   </div>
+                   <div class="form-group">
+                     <label>Envío gratis desde (ARS)</label>
+                     <input type="number" id="pmFreeShippingFrom" min="0" step="100" placeholder="2000" />
+                     <small class="form-hint">0 = envío pago siempre</small>
+                   </div>
+                 </div>
+                 <div class="form-grid-2">
+                   <div class="form-group">
+                     <label>Envío incluido en precio (ARS)</label>
+                     <input type="number" id="pmIncludedShippingCost" min="0" step="10" placeholder="1500" />
+                     <small class="form-hint">Monto de envío que ya está cubierto en el precio de cada producto</small>
+                   </div>
+                 </div>
+                 <div class="form-group">
+                   <label class="toggle-field">
+                     <span class="toggle">
+                       <input type="checkbox" id="pmActive" checked />
+                       <span class="toggle-slider"></span>
+                     </span>
+                      <span class="switch-label switch-label--bold">Habilitar este método de pago</span>
+                   </label>
+                 </div>
+                   <div class="form-group">
+                     <label class="toggle-field">
+                       <span class="toggle">
+                         <input type="checkbox" id="pmNotifyAdmin" checked />
+                         <span class="toggle-slider"></span>
+                       </span>
+                       <span class="switch-label switch-label--bold">Notificar al admin cuando se sube un comprobante</span>
+                     </label>
+                   </div>
+                   <div class="form-group">
+                     <label class="toggle-field">
+                       <span class="toggle">
+                         <input type="checkbox" id="pmNotifyClientApproved" checked />
+                         <span class="toggle-slider"></span>
+                       </span>
+                       <span class="switch-label switch-label--bold">Notificar al cliente cuando se aprueba el pago</span>
+                     </label>
+                   </div>
+                   <div class="form-group">
+                     <label class="toggle-field">
+                       <span class="toggle">
+                         <input type="checkbox" id="pmNotifyClientRejected" checked />
+                         <span class="toggle-slider"></span>
+                       </span>
+                       <span class="switch-label switch-label--bold">Notificar al cliente cuando se rechaza el pago</span>
+                     </label>
+                   </div>
+                   <div class="save-status" id="savePaymentStatus"></div>
 
-                   <div class="card mt-1">
-                     <div class="card-header">
-                       <h3 class="card-header-title">Costos de envío por provincia</h3>
-                       <div class="card-header-actions">
-                         <button class="btn btn-primary btn-sm" id="saveShippingRatesBtn">
-                           <span id="saveShippingRatesBtnText">Guardar en Nube</span>
-                           <span id="saveShippingRatesBtnLoading" class="hidden">Guardando...</span>
-                         </button>
+                   <div class="payment-preview">
+                     <h4 class="payment-preview-title">Flujo de Pago del Cliente</h4>
+                     <div class="payment-steps">
+                       <div class="payment-step">
+                         <div class="payment-step-num">1</div>
+                         <div class="payment-step-label">Seleccionar método de pago</div>
+                       </div>
+                       <div class="payment-step-arrow">→</div>
+                       <div class="payment-step">
+                         <div class="payment-step-num">2</div>
+                         <div class="payment-step-label">Obtener alias y monto</div>
+                       </div>
+                       <div class="payment-step-arrow">→</div>
+                       <div class="payment-step">
+                         <div class="payment-step-num">3</div>
+                         <div class="payment-step-label">Hacer la transferencia</div>
+                       </div>
+                       <div class="payment-step-arrow">→</div>
+                       <div class="payment-step">
+                         <div class="payment-step-num">4</div>
+                         <div class="payment-step-label">Subir comprobante</div>
                        </div>
                      </div>
-                    <div class="card-body">
-                      <div id="shippingRatesMap" class="shipping-rates-grid"></div>
-                      <div class="save-status" id="saveShippingRatesStatus"></div>
-                    </div>
-                  </div>
+                     <div class="payment-preview-data">
+                       <div class="payment-preview-row">
+                         <span>Alias:</span>
+                         <strong id="pmPreviewAlias">—</strong>
+                       </div>
+                       <div class="payment-preview-row">
+                         <span>Titular:</span>
+                         <strong id="pmPreviewHolder">—</strong>
+                       </div>
+                       <div class="payment-preview-row">
+                         <span>Estado:</span>
+                         <strong id="pmPreviewStatus">—</strong>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+               </div>
 
-                  <div class="payment-preview">
-                    <h4 class="payment-preview-title">Flujo de Pago del Cliente</h4>
-                    <div class="payment-steps">
-                      <div class="payment-step">
-                        <div class="payment-step-num">1</div>
-                        <div class="payment-step-label">Seleccionar método de pago</div>
-                      </div>
-                      <div class="payment-step-arrow">→</div>
-                      <div class="payment-step">
-                        <div class="payment-step-num">2</div>
-                        <div class="payment-step-label">Obtener alias y monto</div>
-                      </div>
-                      <div class="payment-step-arrow">→</div>
-                      <div class="payment-step">
-                        <div class="payment-step-num">3</div>
-                        <div class="payment-step-label">Hacer la transferencia</div>
-                      </div>
-                      <div class="payment-step-arrow">→</div>
-                      <div class="payment-step">
-                        <div class="payment-step-num">4</div>
-                        <div class="payment-step-label">Subir comprobante</div>
-                      </div>
-                    </div>
-                    <div class="payment-preview-data">
-                      <div class="payment-preview-row">
-                        <span>Alias:</span>
-                        <strong id="pmPreviewAlias">—</strong>
-                      </div>
-                      <div class="payment-preview-row">
-                        <span>Titular:</span>
-                        <strong id="pmPreviewHolder">—</strong>
-                      </div>
-                      <div class="payment-preview-row">
-                        <span>Estado:</span>
-                        <strong id="pmPreviewStatus">—</strong>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+               <div class="card">
+                 <div class="card-header">
+                   <h3 class="card-header-title">Costos de envío por provincia</h3>
+                   <div class="card-header-actions">
+                     <button class="btn btn-primary btn-sm" id="saveShippingRatesBtn">
+                       <span id="saveShippingRatesBtnText">Guardar en Nube</span>
+                       <span id="saveShippingRatesBtnLoading" class="hidden">Guardando...</span>
+                     </button>
+                   </div>
+                 </div>
+                 <div class="card-body shipping-rates-card">
+                   <div id="shippingRatesMap" class="shipping-rates-grid"></div>
+                   <div class="save-status" id="saveShippingRatesStatus"></div>
+                 </div>
+               </div>
+             </div>
 
-            <!-- Columna Centro: Comprobantes -->
-            <div class="payments-col payments-col-center">
-              <div class="card">
-                <div class="card-header">
-                  <h3 class="card-header-title">Gestión de Comprobantes</h3>
-                  <div class="card-header-actions">
-                    <div class="card-filters">
-                      <input type="text" id="pmProofSearch" class="card-filter" placeholder="Buscar..." />
-                      <select id="pmProofStatusFilter" class="card-filter">
-                        <option value="">Todos</option>
-                        <option value="pending">Pendientes</option>
-                        <option value="approved">Aprobados</option>
-                        <option value="rejected">Rechazados</option>
-                      </select>
-                      <select id="pmProofLimit" class="card-filter">
-                        <option value="15">Show 15</option>
-                        <option value="30">Show 30</option>
-                        <option value="50">Show 50</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-                <div class="card-body card-body--flush">
-                  <div id="pmProofsTableContainer" class="table-wrap">
-                    <div id="pmProofsLoading" class="empty-state hidden">
-                      <p>Cargando comprobantes...</p>
-                    </div>
-                    <table class="table-admin" id="pmProofsTable">
-                      <thead>
-                        <tr>
-                          <th>Pedido</th>
-                          <th>Fecha</th>
-                          <th>Cliente</th>
-                          <th>Comprobante</th>
-                          <th>Estado</th>
-                          <th style="width:160px;">Acciones</th>
-                        </tr>
-                      </thead>
-                      <tbody id="pmProofsTableBody"></tbody>
-                    </table>
-                    <div id="pmProofsEmpty" class="empty-state hidden">
-                      <h3>No se encontraron comprobantes</h3>
-                    </div>
-                    <div id="pmProofsPagination" class="table-pagination"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
+             <!-- Columna Derecha: Resumen + Comprobantes + Actividad -->
+             <div class="payments-col payments-col-right">
+               <div class="card" id="paymentStatsCard">
+                 <div class="card-header">
+                   <h3 class="card-header-title">Resumen de Pagos Recientes</h3>
+                   <div class="card-header-actions"></div>
+                 </div>
+                 <div class="card-body">
+                   <div class="kpis-grid">
+                     <div class="kpi">
+                       <div class="kpi-label">Pagados del Mes</div>
+                       <div class="kpi-value" id="pmKpiApprovedCount">—</div>
+                       <div class="kpi-trend" id="pmKpiCountTrend">—</div>
+                     </div>
+                     <div class="kpi">
+                       <div class="kpi-label">Total Aprobado (Mes)</div>
+                       <div class="kpi-value" id="pmKpiApprovedTotal">—</div>
+                       <div class="kpi-trend" id="pmKpiTotalTrend">—</div>
+                     </div>
+                     <div class="kpi">
+                       <div class="kpi-label">Rechazados (Mes)</div>
+                       <div class="kpi-value" id="pmKpiRejected">—</div>
+                     </div>
+                     <div class="kpi">
+                       <div class="kpi-label">Alias Activo</div>
+                       <div class="kpi-value" id="pmKpiAliasActive">—</div>
+                     </div>
+                   </div>
+                   <div class="chart-wrap">
+                     <canvas id="pmPaymentsChart"></canvas>
+                   </div>
+                 </div>
+               </div>
 
-            <!-- Columna Derecha: Resumen -->
-            <div class="payments-col payments-col-right">
-              <div class="card" id="paymentStatsCard">
-                <div class="card-header">
-                  <h3 class="card-header-title">Resumen de Pagos Recientes</h3>
-                  <div class="card-header-actions"></div>
-                </div>
-                <div class="card-body">
-                  <div class="kpis-grid">
-                    <div class="kpi">
-                      <div class="kpi-label">Pagados del Mes</div>
-                      <div class="kpi-value" id="pmKpiApprovedCount">—</div>
-                      <div class="kpi-trend" id="pmKpiCountTrend">—</div>
-                    </div>
-                    <div class="kpi">
-                      <div class="kpi-label">Total Aprobado (Mes)</div>
-                      <div class="kpi-value" id="pmKpiApprovedTotal">—</div>
-                      <div class="kpi-trend" id="pmKpiTotalTrend">—</div>
-                    </div>
-                    <div class="kpi">
-                      <div class="kpi-label">Rechazados (Mes)</div>
-                      <div class="kpi-value" id="pmKpiRejected">—</div>
-                    </div>
-                    <div class="kpi">
-                      <div class="kpi-label">Alias Activo</div>
-                      <div class="kpi-value" id="pmKpiAliasActive">—</div>
-                    </div>
-                  </div>
-                  <div class="chart-wrap">
-                    <canvas id="pmPaymentsChart"></canvas>
-                  </div>
-                </div>
-              </div>
+               <div class="card">
+                 <div class="card-header">
+                   <h3 class="card-header-title">Gestión de Comprobantes</h3>
+                   <div class="card-header-actions">
+                     <div class="card-filters">
+                       <input type="text" id="pmProofSearch" class="card-filter" placeholder="Buscar..." />
+                       <select id="pmProofStatusFilter" class="card-filter">
+                         <option value="">Todos</option>
+                         <option value="pending">Pendientes</option>
+                         <option value="approved">Aprobados</option>
+                         <option value="rejected">Rechazados</option>
+                       </select>
+                       <select id="pmProofLimit" class="card-filter">
+                         <option value="15">Show 15</option>
+                         <option value="30">Show 30</option>
+                         <option value="50">Show 50</option>
+                       </select>
+                     </div>
+                   </div>
+                 </div>
+                 <div class="card-body card-body--flush">
+                   <div id="pmProofsTableContainer" class="table-wrap">
+                     <div id="pmProofsLoading" class="empty-state hidden">
+                       <p>Cargando comprobantes...</p>
+                     </div>
+                     <table class="table-admin" id="pmProofsTable">
+                       <thead>
+                         <tr>
+                           <th>Pedido</th>
+                           <th>Fecha</th>
+                           <th>Cliente</th>
+                           <th>Comprobante</th>
+                           <th>Estado</th>
+                           <th style="width:160px;">Acciones</th>
+                         </tr>
+                       </thead>
+                       <tbody id="pmProofsTableBody"></tbody>
+                     </table>
+                     <div id="pmProofsEmpty" class="empty-state hidden">
+                       <h3>No se encontraron comprobantes</h3>
+                     </div>
+                     <div id="pmProofsPagination" class="table-pagination"></div>
+                   </div>
+                 </div>
+               </div>
 
-              <div class="card" id="activityLogCard">
-                <div class="card-header">
-                  <h3 class="card-header-title">Registro de Actividad</h3>
-                  <div class="card-header-actions"></div>
-                </div>
-                <div class="card-body card-body--flush">
-                  <div id="pmActivityTableContainer" class="table-wrap">
-                    <div id="pmActivityLoading" class="empty-state hidden">
-                      <p>Cargando actividad...</p>
-                    </div>
-                    <table class="table-admin" id="pmActivityTable">
-                      <thead>
-                        <tr>
-                          <th>Actividad</th>
-                          <th>Fecha</th>
-                        </tr>
-                      </thead>
-                      <tbody id="pmActivityTableBody"></tbody>
-                    </table>
-                    <div id="pmActivityEmpty" class="empty-state hidden">
-                      <h3>Sin actividad reciente</h3>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-         </section>
+               <div class="card" id="activityLogCard">
+                 <div class="card-header">
+                   <h3 class="card-header-title">Registro de Actividad</h3>
+                   <div class="card-header-actions"></div>
+                 </div>
+                 <div class="card-body card-body--flush">
+                   <div id="pmActivityTableContainer" class="table-wrap">
+                     <div id="pmActivityLoading" class="empty-state hidden">
+                       <p>Cargando actividad...</p>
+                     </div>
+                     <table class="table-admin" id="pmActivityTable">
+                       <thead>
+                         <tr>
+                           <th>Actividad</th>
+                           <th>Fecha</th>
+                         </tr>
+                       </thead>
+                       <tbody id="pmActivityTableBody"></tbody>
+                     </table>
+                     <div id="pmActivityEmpty" class="empty-state hidden">
+                       <h3>Sin actividad reciente</h3>
+                     </div>
+                   </div>
+                 </div>
+               </div>
+             </div>
+           </div>
+          </section>
       </div>
     </main>
   </div>

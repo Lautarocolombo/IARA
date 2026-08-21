@@ -477,7 +477,7 @@ transactions.forEach(function (t) {
     var actionBtn = document.getElementById('confirmModalAction');
     var cancelBtn = document.getElementById('cancelConfirmBtn');
     if (modal) {
-      if (msg) msg.textContent = 'Â¿EstÃ¡s seguro\? Esto no elimina pedidos ni ventas, solo reinicia el resumen visual a partir de este momento\.';
+      if (msg) msg.textContent = '¿Estás seguro? Esto no elimina pedidos ni ventas, solo reinicia el resumen visual a partir de este momento.';
       if (actionBtn) {
         actionBtn.textContent = 'SÃ­, reiniciar';
         actionBtn.className = 'btn btn-warning';
@@ -534,7 +534,7 @@ transactions.forEach(function (t) {
     var actionBtn = document.getElementById('confirmModalAction');
     var cancelBtn = document.getElementById('cancelConfirmBtn');
     if (modal) {
-      if (msg) msg.textContent = 'Â¿EstÃ¡s seguro\? Se eliminarÃ¡ todo el historial de transacciones, pedidos, ventas y comprobantes\. Esta acciÃ³n no se puede deshacer\.';
+      if (msg) msg.textContent = '¿Estás seguro? Se eliminará todo el historial de transacciones, pedidos, ventas y comprobantes. Esta acción no se puede deshacer.';
       if (actionBtn) {
         actionBtn.textContent = 'SÃ­, eliminar';
         actionBtn.className = 'btn btn-danger';
