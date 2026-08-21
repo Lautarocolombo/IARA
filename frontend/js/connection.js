@@ -38,7 +38,7 @@ Connection.checkBackend = async function () {
   Connection.setStatus({ checking: true, backend: 'checking' });
 
   const controller = new AbortController();
-  const timeoutMs = 30000;
+  const timeoutMs = 60000;
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {

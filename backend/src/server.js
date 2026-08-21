@@ -461,6 +461,9 @@ app.get('/*', (req, res) => {
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ error: 'Not Found' });
   }
+  if (req.path.startsWith('/uploads/')) {
+    return res.status(404).json({ error: 'Image not found' });
+  }
   res.sendFile(path.join(staticDir, 'index.html'));
 });
 

@@ -224,6 +224,8 @@ async function adminFetch(url, opts = {}, isRetry = false) {
     clearTimeout(timeout);
     if (err.name === 'AbortError') throw new Error('El servidor no respondió en el tiempo esperado. Verificá tu conexión e intentá nuevamente.');
     if (err.message === 'Failed to fetch' || err.message?.includes('fetch')) throw new Error('No se pudo conectar al servidor. Verificá tu conexión e intentá recargar la página.');
+    if (err.message?.includes('NetworkError')) throw new Error('Error de red. Verificá tu conexión a internet e intentá nuevamente.');
+    if (err.message?.includes('Timeout')) throw new Error('El servidor está iniciando, esperá unos segundos y volvé a intentar.');
     throw err;
   }
 }

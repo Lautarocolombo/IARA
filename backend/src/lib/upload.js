@@ -239,6 +239,7 @@ function getPublicUrl(relativePath, baseUrl) {
   const withPrefix = prefix ? `${prefix}${relativePath}` : relativePath;
   if (relativePath.startsWith('/uploads/')) {
     if (fileExistsCache.has(relativePath)) return withPrefix;
+    if (fileMissingCache.has(relativePath)) return withPrefix;
     const isVercel = process.env.VERCEL === 'true';
     const isRender = !!process.env.RENDER_EXTERNAL_HOSTNAME;
     const isEphemeralProd = !isVercel && process.env.NODE_ENV === 'production';
@@ -250,7 +251,7 @@ function getPublicUrl(relativePath, baseUrl) {
     }
     fileMissingCache.add(relativePath);
     logger.warn(`Imagen no encontrada en filesystem: ${relativePath}`);
-    return '';
+    return withPrefix;
   }
   return withPrefix;
 }

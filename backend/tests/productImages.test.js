@@ -173,8 +173,8 @@ describe('Product images on public API', () => {
     const res = await request(app).get('/api/products');
     const found = res.body.find(p => p.id === productId);
     expect(found).toBeTruthy();
-    expect(found.image).toBe('');
-    expect(found.images[0].url).toBe('');
+    expect(found.image).toBe('http://localhost:3000/uploads/products/non-existent-file.webp');
+    expect(found.images[0].url).toBe('http://localhost:3000/uploads/products/non-existent-file.webp');
 
     await cleanup(productName);
   });
