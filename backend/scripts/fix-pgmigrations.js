@@ -39,16 +39,12 @@ async function main() {
       return;
     }
 
-    const existing = await client.query('SELECT name FROM pgmigrations');
-    const existingNames = new Set(existing.rows.map(r => r.name));
+    await client.query("DELETE FROM pgmigrations WHERE name = '001_add_order_token.sql'");
+    console.log('[fix-pgmigrations] Entrada huérfana 001_add_order_token.sql eliminada');
 
-    if (existingNames.has('001_add_order_token.sql')) {
-      await client.query("DELETE FROM pgmigrations WHERE name = '001_add_order_token.sql'");
-      console.log('[fix-pgmigrations] Entrada huérfana 001_add_order_token.sql eliminada');
-    }
-
-    if (!existingNames.has('001_init_schema.sql')) {
-      await client.query("INSERT INTO pgmigrations (name) VALUES ('001_init_schema.sql') ON CONFLICT (name) DO NOTHING");
+    const exists = await client.query("SELECT COUNT(*) AS count FROM pgmigrations WHERE name = '001_init_schema.sql'");
+    if (exists.rows[0].count === 0) {
+      await client.query("INSERT INTO pgmigrations (name) SELECT '001_init_schema.sql' WHERE NOT EXISTS (SELECT 1 FROM pgmigrations WHERE name = '001_init_schema.sql')");
       console.log('[fix-pgmigrations] Entrada 001_init_schema.sql marcada como aplicada');
     }
 
