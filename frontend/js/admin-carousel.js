@@ -236,15 +236,17 @@
 
   async function saveCarouselMeta(slot) {
     var slotData = carouselSlots[slot] || {};
-    var formData = new FormData();
-    formData.append('alt_text', slotData.alt_text || '');
-    formData.append('link_url', slotData.link_url || '');
-    formData.append('caption', slotData.caption || '');
-    formData.append('about_group', String(slotData.about_group || 0));
+    var payload = {
+      alt_text: slotData.alt_text || '',
+      link_url: slotData.link_url || '',
+      caption: slotData.caption || '',
+      about_group: Number(slotData.about_group || 0)
+    };
 
     var res = await window.adminFetch('/api/carousel/' + slot + '/meta', {
       method: 'PUT',
-      body: formData
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     });
 
     if (!res || !res.ok) {
@@ -328,8 +330,9 @@
         throw new Error(errData.error || 'Error al eliminar');
       }
       carouselSlots[slot] = null;
+      carouselLastSaved[slot] = null;
       delete carouselPendingFiles[slot];
-      markDirty(slot);
+      clearDirty();
       renderCarouselSlots();
       renderCarouselPreview();
       window.showToast('✅', 'Slot ' + slot + ' eliminado', 'success');

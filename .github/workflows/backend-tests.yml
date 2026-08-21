@@ -57,7 +57,6 @@ jobs:
           ADMIN_USER: testadmin
           ADMIN_PASS_HASH: $2b$10$C5CozEuvAnfQ63ejc.a17ufz7fn8Ua9zY/sp8AK6..HLzjvzNdM9K
           DATABASE_URL: ''
-          REDIS_URL: redis://localhost:6379
           CLOUDINARY_CLOUD_NAME: test
           CLOUDINARY_API_KEY: test
           CLOUDINARY_API_SECRET: test
