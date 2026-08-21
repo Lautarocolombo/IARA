@@ -8,7 +8,6 @@
   var currentIndex = 0;
   var autoplayTimer = null;
   var isPaused = false;
-  var aboutTexts = [];
   var aboutTextEl = null;
 
   var ABOUT_GROUPS = [

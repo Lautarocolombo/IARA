@@ -3705,23 +3705,8 @@ textarea.hero-slot-input {
 
 .carousel-slots-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: 1fr;
   gap: 1rem;
-}
-
-@media (max-width: 1200px) {
-  .carousel-slots-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .carousel-slots-grid {
-    grid-template-columns: 1fr;
-  }
-  .carousel-editor-layout {
-    grid-template-columns: 1fr;
-  }
 }
 
 .carousel-slot-card {
@@ -3730,8 +3715,9 @@ textarea.hero-slot-input {
   background: var(--white);
   padding: 1rem;
   display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+  flex-direction: row;
+  gap: 1rem;
+  align-items: stretch;
   transition: all .2s;
 }
 
@@ -3775,8 +3761,9 @@ textarea.hero-slot-input {
   box-shadow: none;
 }
 
-.carousel-slot-preview {
-  width: 100%;
+.carousel-slot-thumb {
+  width: 160px;
+  flex-shrink: 0;
   aspect-ratio: 16 / 9;
   background: linear-gradient(135deg, #fce8ee, #d4ede3);
   border-radius: 10px;
@@ -3812,6 +3799,8 @@ textarea.hero-slot-input {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
 }
 
 .carousel-slot-input {
@@ -3957,9 +3946,16 @@ textarea.hero-slot-input {
   transform: scale(1.2);
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
   .carousel-editor-layout {
     grid-template-columns: 1fr;
+  }
+  .carousel-slot-card {
+    flex-direction: column;
+  }
+  .carousel-slot-thumb {
+    width: 100%;
+    aspect-ratio: 16 / 9;
   }
   .carousel-preview-panel {
     position: static;

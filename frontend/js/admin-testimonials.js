@@ -111,13 +111,14 @@
     tbody.innerHTML = testimonials.map(function (t) {
       var stars = '';
       for (var i = 0; i < 5; i++) {
-        stars += i < Number(t.rating || 0) ? 'â­' : 'â˜†';
+        stars += i < Number(t.rating || 0) ? '⭐' : '☆';
       }
+      var commentText = escapeHtml(t.comment || '');
       return '<tr data-id="' + t.id + '" draggable="true" class="testimonial-row">' +
-        '<td class="text-center" style="cursor:grab;user-select:none;">â˜°</td>' +
+        '<td class="text-center" style="cursor:grab;user-select:none;">↕</td>' +
         '<td>' + escapeHtml(t.name || '') + '</td>' +
         '<td>' + escapeHtml(t.role || '') + '</td>' +
-        '<td>' + escapeHtml((t.comment || '').substring(0, 120)) + (t.comment && t.comment.length > 120 ? '...' : '') + '</td>' +
+        '<td title="' + commentText + '">' + commentText + '</td>' +
         '<td class="text-center">' + stars + '</td>' +
         '<td class="text-center">' +
           '<label class="toggle-field toggle-field--sm">' +
@@ -471,13 +472,27 @@
     var createBtn = document.getElementById('createTestimonialBtn');
     var saveBtn = document.getElementById('saveTestimonialBtn');
     var sectionContentBtn = document.getElementById('saveSectionContentBtn');
+    var toggleBtn = document.getElementById('toggleTestimonialFormBtn');
+    var toggleIcon = document.getElementById('toggleTestimonialFormIcon');
+    var createForm = document.getElementById('testimonialCreateForm');
 
-    if (createBtn) {
-      createBtn.addEventListener('click', function () {
+    function toggleCreateForm() {
+      if (!createForm) return;
+      var isOpen = createForm.classList.toggle('open');
+      if (toggleIcon) toggleIcon.classList.toggle('expanded', isOpen);
+      if (isOpen) {
         resetTestimonialForm();
         var nameEl = document.getElementById('testimonialName');
         if (nameEl) nameEl.focus();
-      });
+      }
+    }
+
+    if (createBtn) {
+      createBtn.addEventListener('click', toggleCreateForm);
+    }
+
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', toggleCreateForm);
     }
 
     if (saveBtn) {

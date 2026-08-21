@@ -622,7 +622,7 @@
 
       showSaveStatus(statusId, 'success', 'Cambios guardados correctamente (' + (data.results?.saved || Object.keys(payload).length) + ' campos)');
       window.showToast('✅', 'Cambios guardados correctamente', 'success');
-      if (window.clearDirty) window.clearDirty('content', 'featured');
+      if (window.clearDirty) window.clearDirty('content', 'home-blocks');
     } catch (err) {
       console.error('[Content] Error guardando bloques del home:', err);
       showSaveStatus(statusId, 'error', err.message || 'Error guardando cambios');
@@ -660,6 +660,14 @@
     var btnId = 'save' + scope.charAt(0).toUpperCase() + scope.slice(1) + 'Btn';
     var loadingId = btnId + 'Loading';
     var statusId = 'save' + scope.charAt(0).toUpperCase() + scope.slice(1) + 'Status';
+
+    var scopeToTabMap = {
+      'about': 'about',
+      'features': 'features',
+      'process': 'process',
+      'stats': 'stats'
+    };
+    var contentTabId = scopeToTabMap[scope] || 'home-blocks';
 
     var keys = collectTextKeys(scope);
     if (!keys.length) return;
@@ -810,7 +818,7 @@
 
       showSaveStatus(statusId, 'success', 'Cambios guardados correctamente (' + (data.results?.saved || Object.keys(payload).length) + ' campos)');
       window.showToast('✅', 'Cambios guardados correctamente', 'success');
-      if (window.clearDirty) window.clearDirty('content', 'featured');
+      if (window.clearDirty) window.clearDirty('content', contentTabId);
     } catch (err) {
       console.error('[Content] Error guardando textos:', err);
       showSaveStatus(statusId, 'error', err.message || 'Error guardando cambios');
@@ -871,7 +879,7 @@
 
       showSaveStatus(statusId, 'success', 'Cambios guardados correctamente');
       window.showToast('✅', 'Datos de contacto guardados correctamente', 'success');
-      if (window.clearDirty) window.clearDirty('content', 'featured');
+      if (window.clearDirty) window.clearDirty('content', 'contact');
     } catch (err) {
       console.error('[Content] Error guardando settings:', err);
       showSaveStatus(statusId, 'error', err.message || 'Error guardando cambios');
@@ -920,37 +928,37 @@
     var featuredSelect = document.getElementById('featured_categories');
     if (featuredSelect) {
       featuredSelect.addEventListener('change', function () {
-        if (window.markDirty) window.markDirty('content');
+        if (window.markDirty) window.markDirty('content', 'featured');
       });
     }
 
     var contactInputs = document.querySelectorAll('#contact_email, #contact_phone, #contact_whatsapp, #contact_address, #contact_instagram, #contact_facebook, #horario');
     contactInputs.forEach(function (input) {
       input.addEventListener('input', function () {
-        if (window.markDirty) window.markDirty('content');
+        if (window.markDirty) window.markDirty('content', getContentTabId(this.id));
       });
       input.addEventListener('change', function () {
-        if (window.markDirty) window.markDirty('content');
+        if (window.markDirty) window.markDirty('content', getContentTabId(this.id));
       });
     });
 
     var heroInputs = document.querySelectorAll('#hero_title, #hero_subtitle, #hero_cta_text, #hero_cta_url');
     heroInputs.forEach(function (input) {
       input.addEventListener('input', function () {
-        if (window.markDirty) window.markDirty('content');
+        if (window.markDirty) window.markDirty('content', getContentTabId(this.id));
       });
       input.addEventListener('change', function () {
-        if (window.markDirty) window.markDirty('content');
+        if (window.markDirty) window.markDirty('content', getContentTabId(this.id));
       });
     });
 
     var fpInputs = document.querySelectorAll('#fp_name, #fp_description, #fp_cta_text, #fp_cta_url, #hero_card_1_text, #hero_card_2_text');
     fpInputs.forEach(function (input) {
       input.addEventListener('input', function () {
-        if (window.markDirty) window.markDirty('content');
+        if (window.markDirty) window.markDirty('content', getContentTabId(this.id));
       });
       input.addEventListener('change', function () {
-        if (window.markDirty) window.markDirty('content');
+        if (window.markDirty) window.markDirty('content', getContentTabId(this.id));
       });
     });
 
@@ -996,7 +1004,7 @@
               newImg.src = e.target.result;
               newPreview.style.display = 'block';
             }
-            if (window.markDirty) window.markDirty('content');
+            if (window.markDirty) window.markDirty('content', 'home-blocks');
           };
           reader.readAsDataURL(heroImageInput.files[0]);
         }
@@ -1013,7 +1021,7 @@
         var newImg = document.getElementById('heroImageNewImg');
         if (newPreview) newPreview.style.display = 'none';
         if (newImg) newImg.src = '';
-        if (window.markDirty) window.markDirty('content');
+        if (window.markDirty) window.markDirty('content', 'home-blocks');
       });
     }
 
@@ -1059,7 +1067,7 @@
               newImg.src = e.target.result;
               newPreview.style.display = 'block';
             }
-            if (window.markDirty) window.markDirty('content');
+            if (window.markDirty) window.markDirty('content', 'home-blocks');
           };
           reader.readAsDataURL(fpImageInput.files[0]);
         }
@@ -1076,7 +1084,7 @@
         var newImg = document.getElementById('fpImageNewImg');
         if (newPreview) newPreview.style.display = 'none';
         if (newImg) newImg.src = '';
-        if (window.markDirty) window.markDirty('content');
+        if (window.markDirty) window.markDirty('content', 'home-blocks');
       });
     }
 
@@ -1133,9 +1141,9 @@
                    preview.style.display = 'block';
                    placeholder.style.display = 'none';
                  }
-                 if (window.markDirty) window.markDirty('content');
-               };
-               reader.readAsDataURL(input.files[0]);
+                  if (window.markDirty) window.markDirty('content', 'about');
+                };
+                reader.readAsDataURL(input.files[0]);
             }
           });
         }
@@ -1146,7 +1154,7 @@
             if (input) input.value = '';
             if (newPreview) newPreview.style.display = 'none';
             if (newImg) newImg.src = '';
-            if (window.markDirty) window.markDirty('content');
+            if (window.markDirty) window.markDirty('content', 'about');
           });
         }
       })(i);

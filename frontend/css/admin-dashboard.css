@@ -1612,6 +1612,52 @@
   -webkit-overflow-scrolling: touch;
 }
 
+#categoriesRoot {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+/* ==================== TESTIMONIALS CREATE FORM ==================== */
+.testimonials-create-form-wrapper {
+  margin-bottom: var(--spacing-lg);
+  padding: var(--spacing-md);
+  background: var(--bg-muted);
+  border-radius: 12px;
+  border: 1px solid var(--border);
+}
+
+.testimonials-create-form {
+  display: none;
+  margin-top: var(--spacing-md);
+}
+
+.testimonials-create-form.open {
+  display: block;
+}
+
+#toggleTestimonialFormBtn {
+  width: 100%;
+  text-align: left;
+  justify-content: flex-start;
+}
+
+#toggleTestimonialFormIcon {
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+#toggleTestimonialFormIcon.expanded {
+  transform: rotate(90deg);
+}
+
+#testimonialsTable th:nth-child(4),
+#testimonialsTable td:nth-child(4) {
+  max-width: 320px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ==================== ORDERS TABLE ==================== */
 #ordersListContainer {
   overflow-x: auto;
@@ -1867,9 +1913,6 @@
 }
 
 @media (max-width: 1200px) {
-  .orders-layout {
-    grid-template-columns: minmax(220px, 1fr) 1.2fr minmax(220px, 1fr);
-  }
 }
 
 /* ==================== CONTENT SUB-TABS ==================== */
