@@ -18,12 +18,12 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
-  <script src="../js/vendor/qrcode.js" type="module"></script>
-  <script src="../js/config.js" type="module"></script>
-  <script src="../js/safeImage.js" type="module"></script>
-  <script src="../js/theme.js" type="module"></script>
-  <script src="../js/ui.js" type="module"></script>
-    <script src="../js/admin.js" type="module"></script>
+  <script src="../js/vendor/qrcode.js"></script>
+  <script src="../js/config.js"></script>
+  <script src="../js/safeImage.js"></script>
+  <script src="../js/theme.js"></script>
+  <script src="../js/ui.js"></script>
+    <script src="../js/admin.js"></script>
   </head>
 <body>
   <div class="admin-panel">
@@ -51,6 +51,10 @@
         <a href="#" data-section="products">
           <span>📦</span>
           <span>Productos</span>
+        </a>
+        <a href="#" data-section="categories">
+          <span>🏷️</span>
+          <span>Categorías</span>
         </a>
         <a href="#" data-section="testimonials">
           <span>💬</span>
@@ -602,6 +606,38 @@
                   </div>
                 </div>
                 <div id="productsMobileCards" class="products-mobile-cards"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ===== SECCIÓN: CATEGORÍAS ===== -->
+        <section id="section-categories" class="admin-section-inactive">
+          <div id="categoriesRoot">
+            <div class="card">
+        <div class="card-header">
+          <h3 class="card-header-title">Categorías</h3>
+          <div class="card-header-actions">
+            <div class="card-controls">
+              <button class="btn btn-secondary btn-sm" id="saveCategoriesCloudBtn" data-scope="categories">
+                <span id="saveCategoriesCloudBtnText">Guardar en Nube</span>
+                <span id="saveCategoriesCloudBtnLoading" class="hidden">Guardando...</span>
+              </button>
+              <button class="btn btn-primary btn-sm" id="createCategoryBtn">
+                <span id="createCategoryBtnText">+ Nueva categoría</span>
+                <span id="createCategoryBtnLoading" class="hidden">Creando...</span>
+              </button>
+            </div>
+          </div>
+        </div>
+              <div class="card-body">
+                <div id="categoriesListContainer" class="table-wrap">
+                  <div id="categoriesTree"></div>
+                  <div id="categoriesEmptyState" class="empty-state hidden">
+                    <h3>No hay categorías</h3>
+                    <p>Creá la primera categoría para organizar tus productos.</p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1472,6 +1508,71 @@
     </div>
   </div>
 
+  <!-- MODAL CATEGORÍA -->
+  <div class="modal-overlay" id="categoryModalOverlay">
+    <div class="modal" style="max-width:520px;">
+      <div class="modal-header">
+        <h3 id="categoryModalTitle">Nueva categoría</h3>
+        <button class="btn btn-secondary btn-sm" id="closeCategoryModal">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="categoryForm">
+          <div class="form-group">
+            <label>Nombre <span class="required">*</span></label>
+            <input type="text" id="cat_name" required placeholder="Ej: Pulseras" />
+          </div>
+          <div class="form-group">
+            <label>Slug <span class="required">*</span></label>
+            <input type="text" id="cat_slug" required placeholder="pulseras" />
+          </div>
+          <div class="form-group">
+            <label>Descripción</label>
+            <textarea id="cat_description" rows="2" placeholder="Descripción breve..."></textarea>
+          </div>
+          <div class="form-group">
+            <label>Categoría Padre</label>
+            <select id="cat_parent_id">
+              <option value="">Ninguna (categoría principal)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Imagen destacada</label>
+            <label class="image-upload-zone" for="cat_image_file">
+              <div class="image-upload-primary">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                <span>Subir imagen</span>
+                <small class="form-hint">JPG, PNG o WEBP. Máx 2MB.</small>
+              </div>
+              <input type="file" id="cat_image_file" name="image" accept="image/jpeg,image/png,image/webp" />
+            </label>
+            <div id="cat_image_preview" class="mt-1"></div>
+          </div>
+          <div class="form-group">
+            <label>Emoji</label>
+            <input type="text" id="cat_emoji" placeholder="📿" />
+          </div>
+          <div class="form-group">
+            <label class="toggle-field">
+              <span class="toggle">
+                <input type="checkbox" id="cat_active" checked />
+                <span class="toggle-slider"></span>
+              </span>
+               <span class="switch-label switch-label--bold">Categoría activa</span>
+            </label>
+          </div>
+          <div class="admin-section">
+            <button type="button" class="btn btn-primary" id="saveCategoryBtn">
+              <span id="saveCategoryBtnText">Guardar cambios</span>
+              <span id="saveCategoryBtnLoading" class="hidden">Guardando...</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+
   <!-- MODAL CONFIRMACIÓN -->
   <div class="modal-overlay confirmation-overlay" id="confirmModalOverlay">
     <div class="modal" style="max-width:400px;">
@@ -1501,17 +1602,17 @@
     </div>
   </div>
 
-  <script src="../js/admin-dashboard.js" type="module"></script>
-  <script src="../js/admin-sync.js" type="module"></script>
-  <script src="../js/admin-content.js" type="module"></script>
-  <script src="../js/admin-products.js" type="module"></script>
-  <script src="../js/admin-carousel.js" type="module"></script>
-  <script src="../js/admin-testimonials.js" type="module"></script>
-  <script src="../js/admin-sales.js" type="module"></script>
-  <script src="../js/admin-orders.js" type="module"></script>
-  <script src="../js/admin-payments.js" type="module"></script>
-  <script src="../js/pages/dashboard.js" type="module"></script>
+  <script src="../js/admin-dashboard.js"></script>
+  <script src="../js/admin-sync.js"></script>
+  <script src="../js/admin-content.js"></script>
+  <script src="../js/admin-products.js"></script>
+  <script src="../js/admin-carousel.js"></script>
+  <script src="../js/admin-categories.js"></script>
+  <script src="../js/admin-testimonials.js"></script>
+  <script src="../js/admin-sales.js"></script>
+  <script src="../js/admin-orders.js"></script>
+  <script src="../js/admin-payments.js"></script>
+  <script src="../js/pages/dashboard.js"></script>
 </body>
 </html>
-
 

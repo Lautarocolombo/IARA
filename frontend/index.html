@@ -14,13 +14,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@400;500;600&display=swap" as="style">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="canonical" id="canonical-link" href="/" />
-  <script>
-    (function() {
-      var canonical = document.getElementById('canonical-link');
-      if (canonical) canonical.href = window.location.origin + '/';
-    })();
-  </script>
+  <link rel="canonical" href="https://artesania-gualeguay-v3.vercel.app/" />
   <link rel="stylesheet" href="css/variables.css" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/components.css" />
@@ -31,6 +25,33 @@
 
   <!-- Analytics -->
   <script defer src="js/analytics.js"></script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Artesanía Gualeguay",
+    "url": "https://artesania-gualeguay-v3.vercel.app",
+    "description": "Pulseras, souvenirs y accesorios hechos a mano. Cada pieza es única.",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://artesania-gualeguay-v3.vercel.app/?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Artesanía Gualeguay",
+    "url": "https://artesania-gualeguay-v3.vercel.app",
+    "logo": "https://artesania-gualeguay-v3.vercel.app/favicon.ico",
+    "sameAs": [
+      "https://www.instagram.com/",
+      "https://www.facebook.com/"
+    ]
+  }
+  </script>
 </head>
 <body>
   <a href="#home" class="skip-link">Saltar al contenido principal</a>
@@ -39,57 +60,10 @@
   <a href="#footer" class="skip-link">Saltar al pie de página</a>
 
   <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
-  <script src="js/config.js" type="module"></script>
-  <script>
-    (function() {
-      if (typeof CONFIG !== 'undefined' && CONFIG.CONTACT && CONFIG.CONTACT.EMAIL) {
-        var emailLink = document.getElementById('contactEmailLink');
-        if (emailLink) {
-          emailLink.href = 'mailto:' + encodeURIComponent(CONFIG.CONTACT.EMAIL);
-          emailLink.textContent = CONFIG.CONTACT.EMAIL;
-        }
-      }
-      var origin = window.location.origin;
-      var siteName = 'Artesanía Gualeguay';
-      var description = 'Pulseras, souvenirs y accesorios hechos a mano. Cada pieza es única.';
-      var sameAs = ['https://www.instagram.com/', 'https://www.facebook.com/'];
-      if (typeof CONFIG !== 'undefined' && CONFIG.LINKS) {
-        if (CONFIG.LINKS.INSTAGRAM && CONFIG.LINKS.INSTAGRAM !== '#') sameAs[0] = CONFIG.LINKS.INSTAGRAM;
-        if (CONFIG.LINKS.FACEBOOK && CONFIG.LINKS.FACEBOOK !== '#') sameAs[1] = CONFIG.LINKS.FACEBOOK;
-      }
-      var schemas = [
-        {
-          '@context': 'https://schema.org',
-          '@type': 'WebSite',
-          name: siteName,
-          url: origin,
-          description: description,
-          potentialAction: {
-            '@type': 'SearchAction',
-            target: origin + '/?q={search_term_string}',
-            'query-input': 'required name=search_term_string'
-          }
-        },
-        {
-          '@context': 'https://schema.org',
-          '@type': 'Organization',
-          name: siteName,
-          url: origin,
-          logo: origin + '/favicon.ico',
-          sameAs: sameAs
-        }
-      ];
-      schemas.forEach(function(data) {
-        var script = document.createElement('script');
-        script.type = 'application/ld+json';
-        script.text = JSON.stringify(data);
-        document.head.appendChild(script);
-      });
-    })();
-  </script>
-  <script src="js/safeImage.js" type="module"></script>
-  <script src="js/header.js" type="module"></script>
-  <script src="js/theme.js" type="module"></script>
+  <script src="js/config.js"></script>
+  <script src="js/safeImage.js"></script>
+  <script src="js/header.js"></script>
+  <script src="js/theme.js"></script>
 
   <main>
     <!-- ============== HERO SECTION ============== -->
@@ -351,7 +325,7 @@
             <div class="info-icon" aria-hidden="true">📧</div>
             <div>
                <h4>Email</h4>
-                 <a id="contactEmailLink" href="mailto:">📧</a>
+                <a href="mailto:CONFIGURAR_EMAIL">CONFIGURAR_EMAIL</a>
             </div>
           </div>
           <div class="info-item">
@@ -494,56 +468,50 @@
   <div id="toastContainer" class="toast-container"></div>
 
     <!-- ============== SCRIPTS ============== -->
-    <script src="js/cookie-consent.js" type="module"></script>
-    <script src="js/ui.js" type="module"></script>
+    <script src="js/cookie-consent.js"></script>
+    <script src="js/ui.js"></script>
     <script>
       if (typeof initNavbarScroll === 'function') initNavbarScroll();
       if (typeof initMobileNavbar === 'function') initMobileNavbar();
     </script>
-    <script src="js/wishlist.js" type="module"></script>
-   <script src="js/cart.js" type="module"></script>
-   <script src="js/products.js" type="module"></script>
-   <script src="js/hero.js" type="module"></script>
-   <script src="js/counters.js" type="module"></script>
+    <script src="js/wishlist.js"></script>
+   <script src="js/cart.js"></script>
+   <script src="js/products.js"></script>
+   <script src="js/hero.js"></script>
+   <script src="js/counters.js"></script>
     <script>
       (function() {
-        var email = (typeof CONFIG !== 'undefined' && CONFIG.CONTACT && CONFIG.CONTACT.EMAIL) ? CONFIG.CONTACT.EMAIL : '';
-        var sameAs = ['https://www.instagram.com/', 'https://www.facebook.com/'];
-        if (typeof CONFIG !== 'undefined' && CONFIG.LINKS) {
-          if (CONFIG.LINKS.INSTAGRAM && CONFIG.LINKS.INSTAGRAM !== '#') sameAs[0] = CONFIG.LINKS.INSTAGRAM;
-          if (CONFIG.LINKS.FACEBOOK && CONFIG.LINKS.FACEBOOK !== '#') sameAs[1] = CONFIG.LINKS.FACEBOOK;
-        }
-        var schema = {
-          '@context': 'https://schema.org',
-          '@type': 'Store',
-          name: 'Artesanía Gualeguay',
-          description: 'Pulseras, souvenirs y accesorios hechos a mano en Gualeguay, Entre Ríos',
-          url: window.location.origin,
-          telephone: '+5493444634444',
-          email: email,
-          address: {
-            '@type': 'PostalAddress',
-            streetAddress: 'San Antonio Norte 473',
-            addressLocality: 'Gualeguay',
-            addressRegion: 'Entre Ríos',
-            addressCountry: 'AR',
-            postalCode: '2840'
-          },
-          geo: {
-            '@type': 'GeoCoordinates',
-            latitude: -33.15,
-            longitude: -59.32
-          },
-          openingHours: 'Mo-Fr 09:00-18:00',
-          priceRange: '$$',
-          sameAs: sameAs
-        };
-        var script = document.createElement('script');
-        script.type = 'application/ld+json';
-        script.text = JSON.stringify(schema);
-        document.head.appendChild(script);
-      })();
-    </script>
+        const schema = {
+        '@context': 'https://schema.org',
+        '@type': 'Store',
+        name: 'Artesanía Gualeguay',
+        description: 'Pulseras, souvenirs y accesorios hechos a mano en Gualeguay, Entre Ríos',
+        url: window.location.origin,
+        telephone: '+5493444634444',
+        email: 'CONFIGURAR_EMAIL',
+        address: {
+          '@type': 'PostalAddress',
+          streetAddress: 'San Antonio Norte 473',
+          addressLocality: 'Gualeguay',
+          addressRegion: 'Entre Ríos',
+          addressCountry: 'AR',
+          postalCode: '2840'
+        },
+        geo: {
+          '@type': 'GeoCoordinates',
+          latitude: -33.15,
+          longitude: -59.32
+        },
+        openingHours: 'Mo-Fr 09:00-18:00',
+        priceRange: '$$',
+        sameAs: []
+      };
+      const script = document.createElement('script');
+      script.type = 'application/ld+json';
+      script.text = JSON.stringify(schema);
+      document.head.appendChild(script);
+    })();
+  </script>
   <script>
     (function() {
       var mapWrapper = document.getElementById('locationMap');
@@ -638,10 +606,9 @@
    <script>
      window.__aboutImages = window.__aboutImages || {};
    </script>
-   <script src="js/about-carousel.js" type="module"></script>
-   <script src="js/home-init.js" type="module"></script>
+   <script src="js/about-carousel.js"></script>
+   <script src="js/home-init.js"></script>
  </body>
 </html>
-
 
 
