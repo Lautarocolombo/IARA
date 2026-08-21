@@ -233,8 +233,10 @@
     if (!tbody) return;
 
     if (!orders.length) {
+      selectedOrderId = null;
       tbody.innerHTML = '';
       if (empty) empty.style.display = 'block';
+      resetOrderDetail();
       return;
     }
     if (empty) empty.style.display = 'none';
@@ -285,6 +287,33 @@
     });
   }
 
+  function resetOrderDetail() {
+    var detailEmpty = document.getElementById('orderDetailEmpty');
+    var detailContent = document.getElementById('orderDetailContent');
+    if (detailEmpty) detailEmpty.style.display = 'block';
+    if (detailContent) detailContent.style.display = 'none';
+
+    var wizardEmpty = document.getElementById('orderWizardEmpty');
+    var wizardContent = document.getElementById('orderWizardContent');
+    if (wizardEmpty) wizardEmpty.style.display = 'block';
+    if (wizardContent) wizardContent.style.display = 'none';
+
+    var infoEmpty = document.getElementById('orderInfoEmpty');
+    var infoContent = document.getElementById('orderInfoContent');
+    if (infoEmpty) infoEmpty.style.display = 'block';
+    if (infoContent) infoContent.style.display = 'none';
+
+    var itemsEmpty = document.getElementById('orderItemsEmpty');
+    var itemsContent = document.getElementById('orderItemsContent');
+    if (itemsEmpty) itemsEmpty.style.display = 'block';
+    if (itemsContent) itemsContent.style.display = 'none';
+
+    var activityEmpty = document.getElementById('activityEmpty');
+    var activityContent = document.getElementById('activityContent');
+    if (activityEmpty) activityEmpty.style.display = 'block';
+    if (activityContent) activityContent.style.display = 'none';
+  }
+
   async function selectOrder(id) {
     selectedOrderId = id;
     renderOrdersList(ordersList);
@@ -295,6 +324,8 @@
     currentReceipt = await fetchReceipt(id);
     whatsappChecked = !isShippingComplete(order) && (!order.shipping_name && !order.shipping_email);
 
+    document.getElementById('orderDetailEmpty').style.display = 'none';
+    document.getElementById('orderDetailContent').style.display = 'block';
     document.getElementById('orderWizardEmpty').style.display = 'none';
     document.getElementById('orderWizardContent').style.display = 'block';
     document.getElementById('orderInfoEmpty').style.display = 'none';
@@ -895,6 +926,7 @@
     paymentConfig = await fetchPaymentConfig();
     bindEvents();
     await loadOrders();
+    resetOrderDetail();
 
     var saveCloudBtn = document.getElementById('saveOrdersCloudBtn');
     if (saveCloudBtn) {
