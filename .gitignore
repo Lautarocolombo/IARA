@@ -65,6 +65,12 @@ backend/test-upload-vercel.js
 dist/
 coverage/
 backend/coverage/
+frontend/assets/*.js
+frontend/assets/*.css
+frontend/assets/*.js.map
+frontend/assets/*.jpg
+frontend/assets/*.svg
+frontend/assets/*.json
 
 # Vite build artifacts inside frontend/ (if outDir is ever changed)
 frontend/assets/*.js
