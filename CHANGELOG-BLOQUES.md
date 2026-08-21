@@ -84,3 +84,55 @@
 3. Agregar más audit logging en otros controllers (shipping, siteSettings, etc.)
 4. Considerar implementar `auditMiddleware` como middleware global para admin routes
 5. Migrar `activity_log` a tabla particionada si crece mucho
+
+---
+
+## Bloque 4 — Fix migraciones Neon / 502 producción (2026-08-20)
+
+### Incidente
+El deploy en Render fallaba en el paso de migraciones con:
+`[migrations] Error ejecutando migraciones: Not run migration 001_init_schema is preceding already run migration 001_add_order_token`
+El backend no levantaba y TODOS los `/api/*` devolvían 502 en producción.
+
+### Causa raíz
+- `node-pg-migrate` valida el orden con `checkOrder(runNames, migrations)`
+  (`node_modules/node-pg-migrate/dist/bundle/index.js:3534`): exige que la lista de
+  migraciones ya ejecutadas (`pgmigrations`, ordenada por `run_on, id`) sea un **prefijo exacto**
+  de la lista de archivos (orden por nombre).
+- En producción, `pgmigrations` tenía `001_add_order_token` como primer registro (aplicado hace
+  tiempo), pero ese archivo fue **renombrado/fundido** en `001_init_schema.sql` en el repo. El nuevo
+  primer archivo `001_init_schema` nunca se registró bajo ese nombre.
+- Resultado: en la posición 0, `runNames[0]="001_add_order_token"` ≠ `migrations[0]="001_init_schema"`
+  → lanza el error.
+- `scripts/fix-pgmigrations.js` **enmascaraba** el problema: borraba `001_add_order_token.sql`
+  (con `.sql`) e insertaba `001_init_schema.sql` (con `.sql`). Pero node-pg-migrate guarda los
+  nombres **SIN extensión** (`basename(migrationPath, extname(...))` en `migration.js:106`), así que
+  el DELETE no matcheaba ninguna fila (0 rows) y el INSERT tampoco era reconocido. El error reaparecía
+  en cada deploy.
+
+### Fix aplicado
+- `backend/scripts/fix-pgmigrations.js` reescrito para:
+  1. Leer los nombres de archivo **sin extensión** (formato real de `pgmigrations`).
+  2. Eliminar entradas huérfanas (registradas sin archivo, p. ej. `001_add_order_token`).
+  3. Insertar como aplicadas las entradas faltantes, reconciliando `pgmigrations` con la lista real
+     de archivos. Así `checkOrder` pasa y `node-pg-migrate` queda en estado consistente.
+  Solo toca la tabla de control; NO modifica datos de negocio ni tablas del esquema.
+- También se puede aplicar manualmente en Neon con la transacción documentada en el PR/commit
+  (DELETE de huérfanos + INSERT de los 11 nombres actuales sin `.sql`).
+
+### Prevención
+- **Convención de nombres**: las migraciones nuevas usan timestamp `AAAAMMDDHHMMSS_descripcion.sql`
+  (ej. `20260820120000_agregar_campo.sql`). Se actualizó `npm run migrate:create` para generarlas así.
+  Esto evita colisiones de prefijos (había duplicados `003_` y `009_`) y el problema de renombrar el
+  "primer" archivo.
+- **`fix-pgmigrations.js`**: debe eliminarse del build una vez confirmado en verde, porque un script
+  que "corrige" el estado de migraciones en cada deploy es síntoma de que la causa raíz no está
+  resuelta. Dejarlo solo como red de seguridad temporal.
+- **Render**: el `render.yaml` de este repo NO incluye el paso de migración (se removió en
+  `52afcc7`). Confirmar que el deploy invoca `node scripts/migrate-neon.js` (que corre fix + migraciones)
+  antes de `node src/server.js`; si no, correr el SQL manual o reintegrar el paso.
+
+### Verificación pendiente (requiere Neon + deploy)
+- `SELECT name, run_on FROM pgmigrations ORDER BY run_on, id;` → debe listar los 11 nombres actuales.
+- Endpoints `/api/hero-cards`, `/api/site-texts`, `/api/testimonials`, `/api/products`,
+  `/api/site-settings`, `/api/payment-config`, `/api/sync` → esperados 200 (no 502).

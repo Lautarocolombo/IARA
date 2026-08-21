@@ -15,7 +15,7 @@
     "lint:fix": "eslint src --ext .js --fix",
     "migrate": "node scripts/run-migrations.js up",
     "migrate:down": "node scripts/run-migrations.js down",
-    "migrate:create": "node -e \"const fs=require('fs');const d=new Date();const n='migrations/'+['00','00',d.getMinutes(),d.getSeconds()].join('');const f=n+'_'+process.argv[2].replace(/[^a-z0-9_]/g,'_')+'.js';fs.writeFileSync(f,'\\'use strict\\';\\nmodule.exports = {\\n  name: \\''+process.argv[2]+'\\',\\n  async up(sql) {\\n    // TODO\\n  },\\n  async down(sql) {\\n    // TODO\\n  },\\n};\\n');console.log(f)\"",
+    "migrate:create": "node -e \"const fs=require('fs');const d=new Date();const p=x=>String(x).padStart(2,'0');const ts=''+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds());const name=(process.argv[2]||'change').replace(/[^a-zA-Z0-9_]/g,'_');const f='migrations/'+ts+'_'+name+'.sql';fs.writeFileSync(f,'-- '+name+'\\n');console.log(f)\"",
     "migrate:tenants": "node scripts/migrate-tenants.js",
     "backup": "node scripts/backup.js"
   },
