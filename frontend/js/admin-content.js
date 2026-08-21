@@ -66,6 +66,36 @@
   var textsCache = {};
   var settingsCache = {};
 
+  function getContentTabId(inputId) {
+    var homeBlocksIds = [
+      'hero_title', 'hero_subtitle', 'hero_cta_text', 'hero_cta_url',
+      'fp_name', 'fp_description', 'fp_cta_text', 'fp_cta_url',
+      'hero_card_1_text', 'hero_card_2_text',
+      'hero_card_1_name', 'hero_card_1_price', 'hero_card_1_cta_text', 'hero_card_1_cta_url'
+    ];
+    var aboutIds = ['about_text'];
+    var featuresIds = [
+      'feature_1_title', 'feature_1_desc',
+      'feature_2_title', 'feature_2_desc',
+      'feature_3_title', 'feature_3_desc',
+      'feature_4_title', 'feature_4_desc'
+    ];
+    var processIds = ['process_subtitle'];
+    for (var i = 1; i <= 5; i++) {
+      processIds.push('process_step_' + i + '_title', 'process_step_' + i + '_desc');
+    }
+    var statsIds = ['stat_clients', 'stat_products_sold', 'stat_years', 'stat_artesanal'];
+    var contactIds = ['contact_email', 'contact_phone', 'contact_whatsapp', 'contact_instagram', 'contact_facebook', 'contact_address', 'horario'];
+
+    if (homeBlocksIds.indexOf(inputId) !== -1) return 'home-blocks';
+    if (aboutIds.indexOf(inputId) !== -1) return 'about';
+    if (featuresIds.indexOf(inputId) !== -1) return 'features';
+    if (processIds.indexOf(inputId) !== -1) return 'process';
+    if (statsIds.indexOf(inputId) !== -1) return 'stats';
+    if (contactIds.indexOf(inputId) !== -1) return 'contact';
+    return 'home-blocks';
+  }
+
   async function loadAllContent() {
     try {
       var res = await window.adminFetch('/api/site-texts', { method: 'GET' });
@@ -135,7 +165,7 @@
       }
     });
     quillEditor.on('text-change', function () {
-      if (window.markDirty) window.markDirty('content');
+      if (window.markDirty) window.markDirty('content', 'about');
     });
   }
 
@@ -200,7 +230,7 @@
       textsCache.featured_categories = JSON.stringify(selected);
       showSaveStatus(statusId, 'success', 'Categorías destacadas guardadas');
       window.showToast('✅', 'Categorías destacadas guardadas', 'success');
-      if (window.clearDirty) window.clearDirty('content');
+      if (window.clearDirty) window.clearDirty('content', 'featured');
     } catch (err) {
       showSaveStatus(statusId, 'error', err.message || 'Error guardando cambios');
       window.showToast('❌', err.message || 'Error al guardar', 'error');
@@ -592,7 +622,7 @@
 
       showSaveStatus(statusId, 'success', 'Cambios guardados correctamente (' + (data.results?.saved || Object.keys(payload).length) + ' campos)');
       window.showToast('✅', 'Cambios guardados correctamente', 'success');
-      if (window.clearDirty) window.clearDirty('content');
+      if (window.clearDirty) window.clearDirty('content', 'featured');
     } catch (err) {
       console.error('[Content] Error guardando bloques del home:', err);
       showSaveStatus(statusId, 'error', err.message || 'Error guardando cambios');
@@ -780,7 +810,7 @@
 
       showSaveStatus(statusId, 'success', 'Cambios guardados correctamente (' + (data.results?.saved || Object.keys(payload).length) + ' campos)');
       window.showToast('✅', 'Cambios guardados correctamente', 'success');
-      if (window.clearDirty) window.clearDirty('content');
+      if (window.clearDirty) window.clearDirty('content', 'featured');
     } catch (err) {
       console.error('[Content] Error guardando textos:', err);
       showSaveStatus(statusId, 'error', err.message || 'Error guardando cambios');
@@ -841,7 +871,7 @@
 
       showSaveStatus(statusId, 'success', 'Cambios guardados correctamente');
       window.showToast('✅', 'Datos de contacto guardados correctamente', 'success');
-      if (window.clearDirty) window.clearDirty('content');
+      if (window.clearDirty) window.clearDirty('content', 'featured');
     } catch (err) {
       console.error('[Content] Error guardando settings:', err);
       showSaveStatus(statusId, 'error', err.message || 'Error guardando cambios');
@@ -1121,6 +1151,8 @@
         }
       })(i);
     }
+
+    initContentTabs();
   } catch (err) {
     console.error('[Content] Error inicializando editor:', err);
   }
@@ -1137,6 +1169,40 @@
       } else {
         await saveTexts(scope);
       }
+    }
+  }
+
+  function initContentTabs() {
+    var tabs = document.querySelectorAll('.content-tab[data-content-tab]');
+    var panels = document.querySelectorAll('.content-tab-panel[data-content-tab]');
+    var mobileSelect = document.getElementById('contentTabsMobileSelect');
+
+    function switchTab(tabName) {
+      tabs.forEach(function (tab) {
+        var isActive = tab.getAttribute('data-content-tab') === tabName;
+        tab.classList.toggle('active', isActive);
+      });
+      panels.forEach(function (panel) {
+        var isActive = panel.getAttribute('data-content-tab') === tabName;
+        panel.classList.toggle('active', isActive);
+      });
+      if (mobileSelect) {
+        mobileSelect.value = tabName;
+      }
+    }
+
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        var tabName = tab.getAttribute('data-content-tab');
+        if (tabName) switchTab(tabName);
+      });
+    });
+
+    if (mobileSelect) {
+      mobileSelect.addEventListener('change', function () {
+        var tabName = mobileSelect.value;
+        if (tabName) switchTab(tabName);
+      });
     }
   }
 

@@ -40,16 +40,16 @@
       var hasImage = slot && slot.url;
       var slotNum = String(i);
       html += '<div class="carousel-slot-card" data-slot="' + slotNum + '">' +
-        '<div class="carousel-slot-header">' +
-          '<span class="carousel-slot-label">Slot ' + slotNum + '</span>' +
-          (hasImage ? '<span class="carousel-slot-badge">Activo</span>' : '<span class="carousel-slot-badge carousel-slot-badge--empty">Vacío</span>') +
-        '</div>' +
-        '<div class="carousel-slot-preview">' +
+        '<div class="carousel-slot-thumb">' +
           (hasImage
             ? '<img src="' + escapeAttr(slot.url) + '" alt="Carrusel slot ' + slotNum + '" class="carousel-slot-img" />'
             : '<div class="carousel-slot-placeholder"><span class="carousel-slot-placeholder-icon">🖼️</span><span>Vacío</span></div>') +
         '</div>' +
-        (hasImage ? '<div class="carousel-slot-meta">' +
+        '<div class="carousel-slot-meta">' +
+          '<div class="carousel-slot-header">' +
+            '<span class="carousel-slot-label">Slot ' + slotNum + '</span>' +
+            (hasImage ? '<span class="carousel-slot-badge">Activo</span>' : '<span class="carousel-slot-badge carousel-slot-badge--empty">Vacío</span>') +
+          '</div>' +
           '<input type="text" class="carousel-slot-input" placeholder="Texto alternativo (opcional)" value="' + escapeAttr(slot.alt_text || '') + '" data-field="alt_text" />' +
           '<input type="text" class="carousel-slot-input" placeholder="URL de destino (opcional)" value="' + escapeAttr(slot.link_url || '') + '" data-field="link_url" />' +
           '<textarea class="carousel-slot-input" placeholder="Texto para el carrusel de Sobre Nosotros (opcional)" data-field="caption" rows="2">' + escapeAttr(slot.caption || '') + '</textarea>' +
@@ -59,13 +59,13 @@
             '<option value="2"' + (Number(slot.about_group || 0) === 2 ? ' selected' : '') + '>Grupo 2 (fotos 3-4)</option>' +
             '<option value="3"' + (Number(slot.about_group || 0) === 3 ? ' selected' : '') + '>Grupo 3 (foto 5)</option>' +
           '</select>' +
-        '</div>' : '') +
-        '<div class="carousel-slot-actions">' +
-          '<label class="carousel-slot-file-label">' +
-            '<input type="file" accept="image/jpeg,image/png,image/webp" class="carousel-slot-file-input" data-slot="' + slotNum + '" />' +
-            '<span class="btn btn-primary btn-sm">' + (hasImage ? 'Cambiar imagen' : 'Subir imagen') + '</span>' +
-          '</label>' +
-          (hasImage ? '<button type="button" class="btn btn-danger btn-sm" data-action="delete-slot" data-slot="' + slotNum + '">Eliminar</button>' : '') +
+          '<div class="carousel-slot-actions">' +
+            '<label class="carousel-slot-file-label">' +
+              '<input type="file" accept="image/jpeg,image/png,image/webp" class="carousel-slot-file-input" data-slot="' + slotNum + '" />' +
+              '<span class="btn btn-primary btn-sm">' + (hasImage ? 'Cambiar imagen' : 'Subir imagen') + '</span>' +
+            '</label>' +
+            (hasImage ? '<button type="button" class="btn btn-danger btn-sm" data-action="delete-slot" data-slot="' + slotNum + '">Eliminar</button>' : '') +
+          '</div>' +
         '</div>' +
         '<div class="carousel-slot-save-indicator" id="carouselSlotSave_' + slotNum + '" style="display:none;"></div>' +
       '</div>';

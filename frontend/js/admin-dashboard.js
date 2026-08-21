@@ -71,6 +71,48 @@
     });
   }
 
+  function setupContentTabs() {
+    var tabButtons = document.querySelectorAll('#contentTabsNav .content-tab');
+    tabButtons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        switchContentTab(btn.getAttribute('data-content-tab'));
+      });
+    });
+
+    var mobileSelect = document.getElementById('contentTabsMobileSelect');
+    if (mobileSelect) {
+      mobileSelect.addEventListener('change', function () {
+        switchContentTab(mobileSelect.value);
+      });
+    }
+  }
+
+  function switchContentTab(tabId) {
+    var panels = document.querySelectorAll('.content-tab-panel');
+    panels.forEach(function (panel) {
+      panel.classList.toggle('active', panel.getAttribute('data-content-tab') === tabId);
+    });
+
+    var tabButtons = document.querySelectorAll('#contentTabsNav .content-tab');
+    tabButtons.forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-content-tab') === tabId);
+    });
+
+    var mobileSelect = document.getElementById('contentTabsMobileSelect');
+    if (mobileSelect) {
+      mobileSelect.value = tabId;
+    }
+
+    if (typeof window.updateUnsavedUI === 'function') {
+      window.updateUnsavedUI();
+    }
+
+    var activePanel = document.querySelector('.content-tab-panel.active');
+    if (activePanel) {
+      activePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
   function getCurrentRole() {
     return localStorage.getItem('ag_admin_role') || 'admin';
   }
@@ -135,6 +177,7 @@
 
   function initAdminDashboard() {
     setupNavigation();
+    setupContentTabs();
     applyRoleVisibility();
 
     if (isTokenPresent()) {

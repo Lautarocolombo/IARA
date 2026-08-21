@@ -20,6 +20,16 @@
     sales: null
   };
 
+  window.__contentTabDirtyState = {
+    'home-blocks': false,
+    'about': false,
+    'features': false,
+    'process': false,
+    'stats': false,
+    'contact': false,
+    'featured': false
+  };
+
   var SECTION_SAVE_BUTTONS = {
     content: ['saveHomeBlocksBtn', 'saveAboutBtn', 'saveFeaturesBtn', 'saveProcessBtn', 'saveStatsBtn', 'saveContactBtn', 'saveFeaturedBtn'],
     products: ['saveProductBtn'],
@@ -74,16 +84,36 @@
     });
   }
 
-  window.markDirty = function (section) {
+  function updateContentTabsDirtyState() {
+    var tabs = document.querySelectorAll('.content-tab[data-content-tab]');
+    tabs.forEach(function (tab) {
+      var key = tab.getAttribute('data-content-tab');
+      var isDirty = !!window.__contentTabDirtyState[key];
+      tab.classList.toggle('has-dirty', isDirty);
+    });
+  }
+
+  window.markDirty = function (section, subSection) {
     if (!section || !Object.prototype.hasOwnProperty.call(window.__adminDirtyState, section)) return;
     window.__adminDirtyState[section] = true;
+    if (section === 'content' && subSection && Object.prototype.hasOwnProperty.call(window.__contentTabDirtyState, subSection)) {
+      window.__contentTabDirtyState[subSection] = true;
+      updateContentTabsDirtyState();
+    }
     updateUnsavedUI();
     updateSectionSaveButtons(section);
   };
 
-  window.clearDirty = function (section) {
+  window.clearDirty = function (section, subSection) {
     if (!section || !Object.prototype.hasOwnProperty.call(window.__adminDirtyState, section)) return;
-    window.__adminDirtyState[section] = false;
+    if (section === 'content' && subSection && Object.prototype.hasOwnProperty.call(window.__contentTabDirtyState, subSection)) {
+      window.__contentTabDirtyState[subSection] = false;
+      var anyDirty = Object.keys(window.__contentTabDirtyState).some(function(k){ return window.__contentTabDirtyState[k]; });
+      window.__adminDirtyState[section] = anyDirty;
+      updateContentTabsDirtyState();
+    } else {
+      window.__adminDirtyState[section] = false;
+    }
     updateUnsavedUI();
     updateSectionSaveButtons(section);
   };
