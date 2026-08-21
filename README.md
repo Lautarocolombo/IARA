@@ -102,7 +102,7 @@ npm start             # Iniciar servidor
 ## Despliegue
 
 ### URLs
-- **Frontend (Vercel):** `https://iara-ivory.vercel.app`
+- **Frontend (Vercel):** `https://artesania-gualeguay-v3.vercel.app`
 - **Backend (Render):** `https://iara-os3h.onrender.com`
 
 ### Variables de entorno en Vercel
@@ -115,9 +115,9 @@ Configurar en **Vercel Dashboard > Settings > Environment Variables**:
 | `JWT_SECRET` | string seguro aleatorio | Sí |
 | `ADMIN_USER` | tu usuario admin | Sí |
 | `ADMIN_PASS_HASH` | hash bcrypt de tu contraseña | Sí |
-| `ALLOWED_ORIGINS` | `https://iara-ivory.vercel.app,http://localhost:3000,http://localhost:5173` | Sí |
+| `ALLOWED_ORIGINS` | `https://artesania-gualeguay-v3.vercel.app,http://localhost:3000,http://localhost:5173` | Sí |
 | `DATABASE_URL` | connection string de PostgreSQL | Sí |
-| `SITE_URL` | `https://iara-ivory.vercel.app` | Sí |
+| `SITE_URL` | `https://artesania-gualeguay-v3.vercel.app` | Sí |
 | `BACKEND_URL` | `https://iara-os3h.onrender.com` | Sí |
 | `RESEND_API_KEY` | API key de Resend | No |
 | `EMAIL_FROM` | `noreply@artesaniagualeguay.com` | No |
@@ -137,8 +137,8 @@ Configurar en **Render Dashboard > Environment**:
 | `JWT_SECRET` | mismo que Vercel |
 | `ADMIN_USER` | mismo que Vercel |
 | `ADMIN_PASS_HASH` | mismo que Vercel |
-| `ALLOWED_ORIGINS` | `https://iara-ivory.vercel.app,https://artesania-gualeguay.vercel.app,http://localhost:3000,http://localhost:5173` |
-| `SITE_URL` | `https://iara-ivory.vercel.app` |
+| `ALLOWED_ORIGINS` | `https://artesania-gualeguay-v3.vercel.app,https://artesania-gualeguay.vercel.app,http://localhost:3000,http://localhost:5173` |
+| `SITE_URL` | `https://artesania-gualeguay-v3.vercel.app` |
 | `BACKEND_URL` | `https://iara-os3h.onrender.com` |
 | `BLOB_READ_WRITE_TOKEN` | (opcional) para uploads a Vercel Blob |
 
