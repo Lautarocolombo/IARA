@@ -52,7 +52,7 @@ jobs:
           ADMIN_USER: testadmin
           ADMIN_PASS_HASH: $2b$10$testhashtesthashtesthas
           DATABASE_URL: ''
-        timeout-minutes: 10
+        timeout-minutes: 15
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
       - name: Run Playwright E2E tests
