@@ -103,7 +103,7 @@ describe('reportsController', () => {
       expect(res.json).toHaveBeenCalledWith(expect.any(Array));
     });
 
-    test('usa 7 dÃ­as por defecto', async () => {
+    test('usa 7 días por defecto', async () => {
       const req = { query: {} };
       const res = { json: jest.fn() };
 
@@ -173,7 +173,7 @@ describe('reportsController', () => {
       expect(res.status).toHaveBeenCalledWith(500);
     });
 
-    test('rechaza sin confirmaciÃ³n', async () => {
+    test('rechaza sin confirmación', async () => {
       const req = { query: {}, body: {} };
       const res = {
         status: jest.fn(() => res),

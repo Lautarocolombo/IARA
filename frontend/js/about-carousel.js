@@ -9,12 +9,38 @@
   var autoplayTimer = null;
   var isPaused = false;
   var aboutTextEl = null;
+  var aboutTextCache = '';
 
-  var ABOUT_GROUPS = [
-    { indices: [0, 1], text: 'Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es única.' },
-    { indices: [2, 3], text: 'Artesanía Gualeguay nació en el corazón de Entre Ríos con la misión de crear pulseras, souvenirs y accesorios únicos que capturen la esencia de nuestra tierra.' },
-    { indices: [4], text: '' }
-  ];
+  function loadAboutText() {
+    return fetchWithRetry(CONFIG.API.BASE + '/api/site-texts', {}, 2, 1000)
+      .then(function (res) {
+        if (!res || !res.ok) throw new Error('No se pudo cargar about_text');
+        return res.json();
+      })
+      .then(function (data) {
+        if (data && data.about_text) {
+          aboutTextCache = window.sanitizeAboutText(data.about_text);
+        }
+        if (aboutTextEl && aboutTextCache) {
+          aboutTextEl.innerHTML = aboutTextCache;
+        }
+      })
+      .catch(function () {
+        if (aboutTextEl && !aboutTextEl.innerHTML.trim()) {
+          aboutTextEl.innerHTML = '<p>En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.</p>';
+        }
+      });
+  }
+
+  function refreshAboutText() {
+    if (aboutTextEl && aboutTextCache) {
+      aboutTextEl.style.opacity = '0';
+      setTimeout(function () {
+        aboutTextEl.innerHTML = aboutTextCache;
+        aboutTextEl.style.opacity = '1';
+      }, 200);
+    }
+  }
 
   function collectImages(srcMap) {
     var images = [];
@@ -24,26 +50,6 @@
       if (url) images.push(url);
     }
     return images;
-  }
-
-  function getTextForIndex(index) {
-    for (var i = 0; i < ABOUT_GROUPS.length; i++) {
-      var group = ABOUT_GROUPS[i];
-      if (group.indices.indexOf(index) !== -1) {
-        return group.text;
-      }
-    }
-    return '';
-  }
-
-  function updateAboutText(index) {
-    if (!aboutTextEl) return;
-    var text = getTextForIndex(index);
-    aboutTextEl.style.opacity = '0';
-    setTimeout(function () {
-      aboutTextEl.textContent = text;
-      aboutTextEl.style.opacity = '1';
-    }, 200);
   }
 
   function wrapIndex(index, length) {
@@ -140,9 +146,17 @@
     wrap.ontouchstart = pauseAutoplay;
     wrap.ontouchend = resumeAutoplay;
 
-    updateAboutText(0);
+    loadAboutText();
 
     startAutoplay();
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('site_texts_updated', function () {
+        loadAboutText().then(function () {
+          refreshAboutText();
+        });
+      });
+    }
   }
 
   function goTo(index) {
@@ -156,7 +170,7 @@
 
     slides[currentIndex].classList.add('active');
     dots[currentIndex].classList.add('active');
-    updateAboutText(currentIndex);
+    refreshAboutText();
   }
 
   function startAutoplay() {

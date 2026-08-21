@@ -1,4 +1,4 @@
-﻿const { query, transaction } = require('../lib/db');
+﻿const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const { safeJsonParse } = require('../lib/parser');
 const { logAudit } = require('../lib/audit');
@@ -60,7 +60,7 @@ const getSalesReport = async (req, res) => {
       for (const it of items) {
         const p = productsMap[it.id];
         const name = p ? p.name : 'Producto #' + it.id;
-        const cat = p ? p.category : 'Sin categorÃ­a';
+        const cat = p ? p.category : 'Sin categoría';
         const qty = it.quantity || 1;
         const itemTotal = Number(it.price || 0) * qty;
 
@@ -138,7 +138,7 @@ const resetMetrics = async (req, res) => {
   try {
     const { confirm } = req.body || {};
     if (!confirm) {
-      return res.status(400).json({ error: 'Falta confirmaciÃ³n. EnviÃ¡ { confirm: true } en el body para confirmar el reseteo.' });
+      return res.status(400).json({ error: 'Falta confirmación. Enviá { confirm: true } en el body para confirmar el reseteo.' });
     }
 
     const result = await query(
@@ -152,12 +152,12 @@ const resetMetrics = async (req, res) => {
       action: 'reset',
       entityType: 'reports',
       entityId: 0,
-      details: 'MÃ©tricas reiniciadas desde ' + new Date().toISOString(),
+      details: 'Métricas reiniciadas desde ' + new Date().toISOString(),
       ip: req.ip || '',
       tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
     }).catch(() => {});
   } catch (err) {
-    logger.error({ err: err.message }, 'Error reiniciando mÃ©tricas');
+    logger.error({ err: err.message }, 'Error reiniciando métricas');
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
@@ -304,7 +304,7 @@ function groupByWeek(rawData, _startDate) {
     weekStart.setDate(weekEnd.getDate() - 6);
     weekStart.setHours(0, 0, 0, 0);
 
-    const label = `${formatDate(weekStart)} â€” ${formatDate(weekEnd)}`;
+    const label = `${formatDate(weekStart)} — ${formatDate(weekEnd)}`;
     weeks.push({ label, start: weekStart, end: weekEnd, total: 0, count: 0, date: formatDate(weekStart) });
   }
 

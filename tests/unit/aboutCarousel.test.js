@@ -3,9 +3,26 @@ describe('about-carousel', () => {
     jest.resetModules();
     jest.useFakeTimers();
     window.__aboutImages = {};
+    global.fetchWithRetry = jest.fn(function () {
+      return Promise.resolve({
+        ok: true,
+        json: function () {
+          return Promise.resolve({
+            about_text: '<p>En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.</p>'
+          });
+        }
+      });
+    });
+    global.CONFIG = { API: { BASE: 'http://localhost' } };
+    global.sanitizeAboutText = function (html) { return html; };
     document.body.innerHTML =
       '<div id="aboutCarouselWrap">' +
       '<div id="aboutCarouselTrack"></div>' +
+      '<div class="about-carousel-overlay">' +
+      '<div class="about-text reveal" id="aboutText">' +
+      '<p id="aboutTextContent"></p>' +
+      '</div>' +
+      '</div>' +
       '<button id="aboutCarouselPrev" aria-label="Anterior">&#10094;</button>' +
       '<button id="aboutCarouselNext" aria-label="Siguiente">&#10095;</button>' +
       '<div id="aboutCarouselDots"></div>' +
@@ -15,6 +32,9 @@ describe('about-carousel', () => {
   afterEach(() => {
     jest.clearAllTimers();
     jest.useRealTimers();
+    delete global.fetchWithRetry;
+    delete global.CONFIG;
+    delete global.sanitizeAboutText;
     document.body.innerHTML = '';
   });
 

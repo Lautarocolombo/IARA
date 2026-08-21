@@ -1,4 +1,4 @@
-const { query, transaction } = require('../lib/db');
+const { transaction } = require('../lib/db');
 const logger = require('../lib/logger');
 const { logAudit } = require('../lib/audit');
 

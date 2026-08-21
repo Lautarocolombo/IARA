@@ -87,7 +87,7 @@ async function fixProduction() {
     }
 
     // 6. Cargar texto "Sobre Nosotros"
-    await client.query(`INSERT INTO site_texts (key, value, tenant_id) VALUES ('about_text', '<p>En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.</p><p>Artesanía Gualeguay nació en el corazón de Entre Ríos con la misión de crear pulseras, souvenirs y accesorios únicos que capturen la esencia de nuestra tierra.</p>', 'default') ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`);
+    await client.query(`INSERT INTO site_texts (key, value, tenant_id) VALUES ('about_text', '<p>En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.</p>', 'default') ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`);
     console.log('About text cargado');
 
     // 7. Cargar imágenes del about

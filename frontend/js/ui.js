@@ -642,7 +642,6 @@ async function loadSiteTexts() {
   try {
     const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-texts`, {}, 2, 1000);
     if (!res) {
-      applyAboutFallback();
       return;
     }
     const data = await res.json();
@@ -650,13 +649,6 @@ async function loadSiteTexts() {
     if (data.__updatedAt) {
       window.__siteTextsUpdatedAt = data.__updatedAt;
       delete data.__updatedAt;
-    }
-
-    const aboutEl = document.getElementById('aboutText');
-    if (aboutEl && data.about_text !== undefined && data.about_text !== null) {
-      aboutEl.innerHTML = sanitizeAboutText(data.about_text);
-    } else if (aboutEl) {
-      applyAboutFallback();
     }
 
     const featureMap = [

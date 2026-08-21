@@ -1,5 +1,5 @@
 ﻿/* ==================== ADMIN PRODUCTS.JS ==================== */
-/* Modal CRUD, soft-delete, preview de imÃ¡genes */
+/* Modal CRUD, soft-delete, preview de imágenes */
 
 (function () {
   'use strict';
@@ -26,7 +26,7 @@
     } catch (err) {
       console.error('[Products] Error:', err);
       if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="error-row">Error: ' + escapeHtml(err.message || 'desconocido') + '</td></tr>';
-      window.showToast('âŒ', 'No se pudieron cargar los productos.', 'error');
+      window.showToast('❌', 'No se pudieron cargar los productos.', 'error');
     } finally {
       if (empty) empty.style.display = productList.length ? 'none' : 'block';
     }
@@ -51,17 +51,17 @@
           return '<option value="' + escapeAttr(c.slug) + '">' + escapeAttr(name) + '</option>';
         });
 
-        if (select) select.innerHTML = '<option value="">Sin categorÃ­a</option>' + catOptions.join('');
+        if (select) select.innerHTML = '<option value="">Sin categoría</option>' + catOptions.join('');
         if (featuredSelect) featuredSelect.innerHTML = featuredOpts.join('');
 
-        var filterOpts = '<option value="">Todas las categorÃ­as</option>' + catOptions.join('');
+        var filterOpts = '<option value="">Todas las categorías</option>' + catOptions.join('');
         if (filterCategory) filterCategory.innerHTML = filterOpts;
       } else {
         throw new Error('fallback');
       }
     } catch (err) {
       if (select) select.innerHTML =
-        '<option value="">Sin categorÃ­a</option>' +
+        '<option value="">Sin categoría</option>' +
         '<option value="pulseras">Pulseras</option>' +
         '<option value="accesorios">Accesorios</option>' +
         '<option value="souvenirs">Souvenirs</option>' +
@@ -73,7 +73,7 @@
         '<option value="collares">Collares</option>';
       if (filterCategory) {
         filterCategory.innerHTML =
-          '<option value="">Todas las categorÃ­as</option>' +
+          '<option value="">Todas las categorías</option>' +
           '<option value="pulseras">Pulseras</option>' +
           '<option value="accesorios">Accesorios</option>' +
           '<option value="souvenirs">Souvenirs</option>' +
@@ -136,7 +136,7 @@
         '<td>' + thumbnail + '</td>' +
         '<td><div class="product-name">' + escapeHtml(p.name || '') + '</div>' +
           '<div class="product-desc" title="' + escapeHtml(p.description || '') + '">' + escapeHtml((p.description || '').substring(0, 60)) + '</div></td>' +
-        '<td>' + escapeHtml(p.category || 'Sin categorÃ­a') + '</td>' +
+        '<td>' + escapeHtml(p.category || 'Sin categoría') + '</td>' +
         '<td class="price-cell">$' + Number(p.price || 0).toLocaleString('es-AR') + '</td>' +
         '<td class="stock-cell">' + renderStockCell(stock) + '</td>' +
         '<td class="status-cell">' + renderStatusCell(p.active) + '</td>' +
@@ -165,7 +165,7 @@
             '</div>' +
           '</div>' +
           '<div class="product-mobile-card-meta">' +
-            '<span class="product-category">' + escapeHtml(p.category || 'Sin categorÃ­a') + '</span>' +
+            '<span class="product-category">' + escapeHtml(p.category || 'Sin categoría') + '</span>' +
             '<span class="product-price">$' + Number(p.price || 0).toLocaleString('es-AR') + '</span>' +
             renderStockBadge(stock) +
             renderStatusCell(p.active) +
@@ -181,14 +181,14 @@
 
   function renderStockCell(stock) {
     if (stock <= 5) {
-      return '<span class="badge badge-stock--low" title="Stock bajo">' + stock + ' âš ï¸</span>';
+      return '<span class="badge badge-stock--low" title="Stock bajo">' + stock + ' ⚠️</span>';
     }
     return '<span class="text-stock">' + stock + '</span>';
   }
 
   function renderStockBadge(stock) {
     if (stock <= 5) {
-      return '<span class="badge badge-stock--low" title="Stock bajo">' + stock + ' âš ï¸</span>';
+      return '<span class="badge badge-stock--low" title="Stock bajo">' + stock + ' ⚠️</span>';
     }
     return '<span class="text-stock">' + stock + '</span>';
   }
@@ -235,7 +235,7 @@
 
     if (isNaN(price) || price <= 0) {
       priceGroup?.classList.add('is-invalid');
-      if (priceError) priceError.textContent = 'IngresÃ¡ un precio mayor a 0';
+      if (priceError) priceError.textContent = 'Ingresá un precio mayor a 0';
       valid = false;
     } else {
       priceGroup?.classList.remove('is-invalid');
@@ -302,7 +302,7 @@
       loadingId: 'saveProductBtnLoading',
       defaultText: 'Guardar en Nube',
       loadingText: 'Guardando...',
-      successMessage: 'Producto guardado âœ…',
+      successMessage: 'Producto guardado ✅',
       action: async function () {
         var productId = await saveProductToApi();
         if (selectedFiles.length > 0) {
@@ -328,12 +328,12 @@
     });
 
     if (!res || !res.ok) {
-      var errMsg = 'No se pudieron subir las imÃ¡genes.';
+      var errMsg = 'No se pudieron subir las imágenes.';
       if (res) {
         var errData = await res.json().catch(function () { return {}; });
         errMsg = errData.error || errMsg;
       }
-      console.error('[Products] Error subiendo imÃ¡genes:', errMsg);
+      console.error('[Products] Error subiendo imágenes:', errMsg);
       throw new Error(errMsg);
     }
     
@@ -342,7 +342,7 @@
     if (data.images && data.images.length) {
       var emptyUrls = data.images.filter(function (img) { return !img.url; });
       if (emptyUrls.length > 0) {
-        throw new Error('No se pudo obtener la URL de ' + emptyUrls.length + ' imagen(es). VerificÃ¡ la conexiÃ³n e intentÃ¡ nuevamente.');
+        throw new Error('No se pudo obtener la URL de ' + emptyUrls.length + ' imagen(es). Verificá la conexión e intentá nuevamente.');
       }
     }
     return data;
@@ -359,17 +359,17 @@
 
     try {
       var res = await window.adminFetch('/api/products/' + productId + '/images', { method: 'GET' });
-      if (!res || !res.ok) throw new Error('No se pudieron cargar las imÃ¡genes');
+      if (!res || !res.ok) throw new Error('No se pudieron cargar las imágenes');
       var data = await res.json();
       productExistingImages = Array.isArray(data) ? data : [];
       if (!productExistingImages.length) {
-        window.showToast('âš ï¸', 'AÃºn no hay imÃ¡genes cargadas para este producto.', 'info');
+        window.showToast('⚠️', 'Aún no hay imágenes cargadas para este producto.', 'info');
       }
       renderProductImageGallery(productId);
     } catch (err) {
-      console.error('[Products] Error cargando imÃ¡genes:', err);
-      gallery.innerHTML = '<p class="text-muted">No se pudieron cargar las imÃ¡genes.</p>';
-      window.showToast('âŒ', err.message || 'No se pudieron cargar las imÃ¡genes.', 'error');
+      console.error('[Products] Error cargando imágenes:', err);
+      gallery.innerHTML = '<p class="text-muted">No se pudieron cargar las imágenes.</p>';
+      window.showToast('❌', err.message || 'No se pudieron cargar las imágenes.', 'error');
     }
   }
 
@@ -378,7 +378,7 @@
     if (!gallery) return;
 
     if (!productExistingImages.length) {
-      gallery.innerHTML = '<p class="text-muted">Sin imÃ¡genes. SubÃ­ nuevas desde la secciÃ³n superior.</p>';
+      gallery.innerHTML = '<p class="text-muted">Sin imágenes. Subí nuevas desde la sección superior.</p>';
       return;
     }
 
@@ -495,7 +495,7 @@
         var item = btn.closest('.product-image-item');
         var imageId = item ? item.dataset.imageId : null;
         if (!imageId) return;
-        showConfirmModal('Eliminar imagen', 'Â¿EstÃ¡s seguro de eliminar esta imagen? Esta acciÃ³n no se puede deshacer.', function () {
+        showConfirmModal('Eliminar imagen', '¿Estás seguro de eliminar esta imagen? Esta acción no se puede deshacer.', function () {
           deleteProductImage(productId, imageId);
         });
       });
@@ -515,7 +515,7 @@
       }
     } catch (err) {
       console.error('[Products] Error sincronizando orden:', err);
-      window.showToast('âŒ', err.message || 'Error al sincronizar orden', 'error');
+      window.showToast('❌', err.message || 'Error al sincronizar orden', 'error');
     }
   }
 
@@ -585,7 +585,7 @@
       return;
     }
     if (file.size > maxSize) {
-      showImageError(productId, 'Imagen muy grande (mÃ¡ximo 5MB)');
+      showImageError(productId, 'Imagen muy grande (máximo 5MB)');
       return;
     }
 
@@ -647,10 +647,10 @@
       var row = item.querySelector('.product-image-replace-preview-row');
       if (row) row.style.display = 'none';
       await loadProductImages(productId);
-      window.showToast('âœ…', 'Imagen reemplazada correctamente', 'success');
+      window.showToast('✅', 'Imagen reemplazada correctamente', 'success');
     } catch (err) {
       showImageError(productId, err.message || 'Error al reemplazar imagen');
-      window.showToast('âŒ', err.message || 'Error al reemplazar imagen', 'error');
+      window.showToast('❌', err.message || 'Error al reemplazar imagen', 'error');
     }
   }
 
@@ -666,9 +666,9 @@
         throw new Error(errData.error || 'Error al eliminar');
       }
       await loadProductImages(productId);
-      window.showToast('âœ…', 'Imagen eliminada', 'success');
+      window.showToast('✅', 'Imagen eliminada', 'success');
     } catch (err) {
-      window.showToast('âŒ', err.message || 'Error al eliminar', 'error');
+      window.showToast('❌', err.message || 'Error al eliminar', 'error');
     }
   }
 
@@ -687,9 +687,9 @@
         var errData = await res.json().catch(function () { return {}; });
         throw new Error(errData.error || 'Error al actualizar');
       }
-      window.showToast('âœ…', 'Imagen principal actualizada', 'success');
+      window.showToast('✅', 'Imagen principal actualizada', 'success');
     } catch (err) {
-      window.showToast('âŒ', err.message || 'Error al actualizar', 'error');
+      window.showToast('❌', err.message || 'Error al actualizar', 'error');
     }
   }
 
@@ -718,7 +718,7 @@
           var data = {};
           try { data = JSON.parse(xhr.responseText || '{}'); } catch (e) { data = { error: xhr.responseText }; }
           if (xhr.status < 200 || xhr.status >= 300) {
-            reject(new Error(data.error || 'Error al subir imÃ¡genes'));
+            reject(new Error(data.error || 'Error al subir imágenes'));
             return;
           }
           resolve(data);
@@ -734,10 +734,10 @@
       });
 
       await loadProductImages(productId);
-      window.showToast('âœ…', 'ImÃ¡genes agregadas correctamente', 'success');
+      window.showToast('✅', 'Imágenes agregadas correctamente', 'success');
     } catch (err) {
-      showImageError(productId, err.message || 'Error al subir imÃ¡genes');
-      window.showToast('âŒ', err.message || 'Error al subir imÃ¡genes', 'error');
+      showImageError(productId, err.message || 'Error al subir imágenes');
+      window.showToast('❌', err.message || 'Error al subir imágenes', 'error');
     }
   }
 
@@ -752,7 +752,7 @@
 
     confirmCallback = onConfirm;
     titleEl.textContent = title || 'Confirmar';
-    msgEl.textContent = message || 'Â¿EstÃ¡s seguro?';
+    msgEl.textContent = message || '¿Estás seguro?';
     overlay.style.display = 'flex';
   }
 
@@ -888,7 +888,7 @@
     var cancelBtn = document.getElementById('cancelConfirmBtn');
     if (!modal || !msg || !actionBtn || !cancelBtn) return;
 
-    msg.textContent = 'Â¿EstÃ¡s seguro de eliminar el producto "' + product.name + '"?\n\nSe desactiva (soft delete) y no aparecerÃ¡ mÃ¡s en el catÃ¡logo.';
+    msg.textContent = '¿Estás seguro de eliminar el producto "' + product.name + '"?\n\nSe desactiva (soft delete) y no aparecerá más en el catálogo.';
     actionBtn.textContent = 'Eliminar';
     actionBtn.className = 'btn btn-danger';
     actionBtn.onclick = async function () {
@@ -913,11 +913,11 @@
         throw new Error(errMsg);
       }
 
-      window.showToast('âœ…', 'Producto eliminado correctamente.', 'success');
+      window.showToast('✅', 'Producto eliminado correctamente.', 'success');
       await loadProducts();
     } catch (err) {
       console.error('[Products] Error eliminando:', err);
-      window.showToast('âŒ', err.message || 'Error al eliminar el producto.', 'error');
+      window.showToast('❌', err.message || 'Error al eliminar el producto.', 'error');
     }
   }
 
@@ -996,7 +996,7 @@
 
          var totalAfter = selectedFiles.length + files.length;
          if (totalAfter > 5) {
-           window.showToast('âŒ', 'MÃ¡ximo 5 imÃ¡genes por producto.', 'error');
+           window.showToast('❌', 'Máximo 5 imágenes por producto.', 'error');
            e.target.value = '';
            return;
          }
@@ -1048,7 +1048,7 @@
 
         var totalAfter = selectedFiles.length + files.length;
         if (totalAfter > 5) {
-          window.showToast('âŒ', 'MÃ¡ximo 5 imÃ¡genes por producto.', 'error');
+          window.showToast('❌', 'Máximo 5 imágenes por producto.', 'error');
           return;
         }
         Array.from(files).forEach(function (f) { selectedFiles.push(f); });
