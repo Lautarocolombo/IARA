@@ -881,6 +881,12 @@ async function initDB() {
   }
 
   try {
+    await query("INSERT INTO site_texts (key, value, tenant_id) VALUES ('hero_subtitle', 'Artesanía Gualeguay nació en el corazón de Entre Ríos con la misión de crear pulseras, souvenirs y accesorios únicos que capturen la esencia de nuestra tierra.', 'default') ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP");
+  } catch (err) {
+    logger.debug({ err: err.message }, 'No se pudo actualizar hero_subtitle');
+  }
+
+  try {
     await query("UPDATE site_texts SET value = REPLACE(value, 'Explorar Catálogo', 'Explorar Catálogo') WHERE key = 'hero_cta_text' AND value LIKE '%Catálogo%'");
   } catch (err) {
     logger.debug({ err: err.message }, 'No se pudo corregir hero_cta_text');
