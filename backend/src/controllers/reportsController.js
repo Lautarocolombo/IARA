@@ -1,4 +1,4 @@
-const { query, transaction } = require('../lib/db');
+﻿const { query, transaction } = require('../lib/db');
 const logger = require('../lib/logger');
 const { safeJsonParse } = require('../lib/parser');
 const { logAudit } = require('../lib/audit');
@@ -60,7 +60,7 @@ const getSalesReport = async (req, res) => {
       for (const it of items) {
         const p = productsMap[it.id];
         const name = p ? p.name : 'Producto #' + it.id;
-        const cat = p ? p.category : 'Sin categoría';
+        const cat = p ? p.category : 'Sin categorÃ­a';
         const qty = it.quantity || 1;
         const itemTotal = Number(it.price || 0) * qty;
 
@@ -138,46 +138,26 @@ const resetMetrics = async (req, res) => {
   try {
     const { confirm } = req.body || {};
     if (!confirm) {
-      return res.status(400).json({ error: 'Falta confirmación. Enviá { confirm: true } en el body para confirmar el reseteo.' });
+      return res.status(400).json({ error: 'Falta confirmaciÃ³n. EnviÃ¡ { confirm: true } en el body para confirmar el reseteo.' });
     }
 
-    const result = await transaction(async (client) => {
-      let deletedProofs = 0;
-      let deletedSales = 0;
-      let deletedOrders = 0;
+    const result = await query(
+      "INSERT INTO site_settings (key, value, tenant_id) VALUES ('metrics_reset_at', $1, COALESCE(current_setting('app.current_tenant', TRUE), 'default')) ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = CURRENT_TIMESTAMP",
+      [new Date().toISOString()]
+    );
 
-      try {
-        const proofsResult = await client.query('DELETE FROM payment_proofs');
-        deletedProofs = Number(proofsResult.rowCount || 0);
-      } catch (e) {
-        // Si la tabla no existe en el contexto actual, continuar con el resto
-      }
-
-      const salesResult = await client.query('DELETE FROM sales');
-      deletedSales = Number(salesResult.rowCount || 0);
-
-      const ordersResult = await client.query('DELETE FROM orders');
-      deletedOrders = Number(ordersResult.rowCount || 0);
-
-      await client.query(
-        "DELETE FROM site_settings WHERE key = 'metrics_reset_at' AND tenant_id = COALESCE(current_setting('app.current_tenant', TRUE), 'default')"
-      );
-
-      return { deletedProofs, deletedSales, deletedOrders };
-    });
-
-    res.json({ ok: true, deleted: result });
+    res.json({ ok: true, resetAt: result.rows[0]?.value || new Date().toISOString() });
     logAudit({
       user: req.user?.user || 'admin',
       action: 'reset',
       entityType: 'reports',
       entityId: 0,
-      details: `Métricas reiniciadas: ${result.deletedOrders} pedidos, ${result.deletedSales} ventas, ${result.deletedProofs} comprobantes`,
+      details: 'MÃ©tricas reiniciadas desde ' + new Date().toISOString(),
       ip: req.ip || '',
       tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
     }).catch(() => {});
   } catch (err) {
-    logger.error({ err: err.message }, 'Error reiniciando métricas');
+    logger.error({ err: err.message }, 'Error reiniciando mÃ©tricas');
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
@@ -324,7 +304,7 @@ function groupByWeek(rawData, _startDate) {
     weekStart.setDate(weekEnd.getDate() - 6);
     weekStart.setHours(0, 0, 0, 0);
 
-    const label = `${formatDate(weekStart)} — ${formatDate(weekEnd)}`;
+    const label = `${formatDate(weekStart)} â€” ${formatDate(weekEnd)}`;
     weeks.push({ label, start: weekStart, end: weekEnd, total: 0, count: 0, date: formatDate(weekStart) });
   }
 
@@ -392,3 +372,4 @@ function formatDate(d) {
 }
 
 module.exports = { getSalesReport, getSalesTrend, resetMetrics, getWeeklySummary, getSalesSummary };
+

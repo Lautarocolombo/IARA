@@ -1,4 +1,4 @@
-jest.mock('../src/lib/logger', () => ({
+﻿jest.mock('../src/lib/logger', () => ({
   error: jest.fn(),
   warn: jest.fn(),
   info: jest.fn()
@@ -103,7 +103,7 @@ describe('reportsController', () => {
       expect(res.json).toHaveBeenCalledWith(expect.any(Array));
     });
 
-    test('usa 7 días por defecto', async () => {
+    test('usa 7 dÃ­as por defecto', async () => {
       const req = { query: {} };
       const res = { json: jest.fn() };
 
@@ -130,14 +130,14 @@ describe('reportsController', () => {
   });
 
   describe('resetMetrics', () => {
-    test('reinicia métricas borrando datos reales', async () => {
-      const req = { query: {}, body: { confirm: true } };
+    test('reinicia metricas guardando timestamp', async () => {
+      const req = { query: {}, body: { confirm: true }, user: { user: 'admin', tenant_id: 'default' }, ip: '', headers: {} };
       const res = {
         status: jest.fn(() => res),
         json: jest.fn()
       };
 
-      query.mockResolvedValue({ rowCount: 0 });
+      query.mockResolvedValue({ rows: [{ value: new Date().toISOString() }] });
 
       await resetMetrics(req, res);
 
@@ -146,7 +146,34 @@ describe('reportsController', () => {
       );
     });
 
-    test('rechaza sin confirmación', async () => {
+    test('rechaza sin confirmacion', async () => {
+      const req = { query: {}, body: {} };
+      const res = {
+        status: jest.fn(() => res),
+        json: jest.fn()
+      };
+
+      await resetMetrics(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
+    });
+
+    test('maneja error de base de datos', async () => {
+      const req = { query: {}, body: { confirm: true } };
+      const res = {
+        status: jest.fn(() => res),
+        json: jest.fn()
+      };
+
+      query.mockRejectedValueOnce(new Error('DB error'));
+
+      await resetMetrics(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
+
+    test('rechaza sin confirmaciÃ³n', async () => {
       const req = { query: {}, body: {} };
       const res = {
         status: jest.fn(() => res),
