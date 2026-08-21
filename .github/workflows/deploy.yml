@@ -45,7 +45,7 @@ jobs:
       - name: Run frontend unit tests
         run: npm test
       - name: Run backend unit tests with coverage
-        run: cd backend && npm run test:ci
+        run: cd backend && mkdir -p coverage && npm run test:ci
         env:
           NODE_ENV: test
           JWT_SECRET: test-secret

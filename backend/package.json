@@ -8,7 +8,7 @@
   "scripts": {
     "start": "node src/server.js",
     "test": "jest --config jest.config.js",
-    "test:ci": "jest --config jest.config.js --coverage --testTimeout=60000 --forceExit",
+    "test:ci": "jest --config jest.config.js --coverage --testTimeout=60000 --runInBand",
     "test:coverage": "jest --config jest.config.js --coverage",
     "lint": "eslint src --ext .js",
     "format": "prettier --write \"**/*.{js,json}\"",
