@@ -3,7 +3,6 @@ const { Pool } = require('pg');
 const DATABASE_URL = process.env.DATABASE_URL;
 if (!DATABASE_URL) {
   console.error('ERROR: DATABASE_URL no está definida.');
-  console.error('Ejecutá: $env:DATABASE_URL="postgresql://..." node fix-testimonials-encoding.js');
   process.exit(1);
 }
 

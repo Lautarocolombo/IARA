@@ -1,6 +1,10 @@
 const { Pool } = require('pg');
 
-const NEON_URL = 'postgresql://neondb_owner:npg_FKbM0xfQ3Lpd@ep-purple-water-axuf1ls3-pooler.c-4.us-east-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require';
+const NEON_URL = process.env.DATABASE_URL;
+if (!NEON_URL) {
+  console.error('ERROR: DATABASE_URL no está definida.');
+  process.exit(1);
+}
 
 async function fixAssets() {
   const pool = new Pool({
