@@ -1045,6 +1045,7 @@ html, body { overflow-x: hidden; }
   border-radius: 12px;
   backdrop-filter: blur(4px);
   max-width: 600px;
+  transition: opacity 0.3s ease;
 }
 
 .about-stats {

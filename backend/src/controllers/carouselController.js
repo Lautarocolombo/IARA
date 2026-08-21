@@ -57,18 +57,22 @@ async function updateCarouselSlot(req, res) {
 
     const altText = (req.body.alt_text || '').trim();
     const linkUrl = (req.body.link_url || '').trim();
+    const caption = (req.body.caption || '').trim();
+    const aboutGroup = Number(req.body.about_group || 0);
 
     const result = await query(
-      `INSERT INTO carousel_images (slot, url, public_id, alt_text, link_url, updated_at, tenant_id)
-       VALUES ($1, $2, $3, $4, $5, NOW(), $6)
+      `INSERT INTO carousel_images (slot, url, public_id, alt_text, link_url, caption, about_group, updated_at, tenant_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), $8)
        ON CONFLICT (slot, tenant_id) DO UPDATE SET
          url = EXCLUDED.url,
          public_id = EXCLUDED.public_id,
          alt_text = EXCLUDED.alt_text,
          link_url = EXCLUDED.link_url,
+         caption = EXCLUDED.caption,
+         about_group = EXCLUDED.about_group,
          updated_at = EXCLUDED.updated_at
        RETURNING *`,
-      [slot, processed.url, processed.public_id || processed.blobName || '', altText, linkUrl, tenantId]
+      [slot, processed.url, processed.public_id || processed.blobName || '', altText, linkUrl, caption, aboutGroup, tenantId]
     );
 
     const updated = result.rows[0];

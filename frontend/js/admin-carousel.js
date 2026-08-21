@@ -52,6 +52,13 @@
         (hasImage ? '<div class="carousel-slot-meta">' +
           '<input type="text" class="carousel-slot-input" placeholder="Texto alternativo (opcional)" value="' + escapeAttr(slot.alt_text || '') + '" data-field="alt_text" />' +
           '<input type="text" class="carousel-slot-input" placeholder="URL de destino (opcional)" value="' + escapeAttr(slot.link_url || '') + '" data-field="link_url" />' +
+          '<textarea class="carousel-slot-input" placeholder="Texto para el carrusel de Sobre Nosotros (opcional)" data-field="caption" rows="2">' + escapeAttr(slot.caption || '') + '</textarea>' +
+          '<select class="carousel-slot-input" data-field="about_group">' +
+            '<option value="0"' + (Number(slot.about_group || 0) === 0 ? ' selected' : '') + '>Sin grupo</option>' +
+            '<option value="1"' + (Number(slot.about_group || 0) === 1 ? ' selected' : '') + '>Grupo 1 (fotos 1-2)</option>' +
+            '<option value="2"' + (Number(slot.about_group || 0) === 2 ? ' selected' : '') + '>Grupo 2 (fotos 3-4)</option>' +
+            '<option value="3"' + (Number(slot.about_group || 0) === 3 ? ' selected' : '') + '>Grupo 3 (foto 5)</option>' +
+          '</select>' +
         '</div>' : '') +
         '<div class="carousel-slot-actions">' +
           '<label class="carousel-slot-file-label">' +
@@ -116,8 +123,12 @@
       formData.append('image', file);
       var altInput = card ? card.querySelector('[data-field="alt_text"]') : null;
       var linkInput = card ? card.querySelector('[data-field="link_url"]') : null;
+      var captionInput = card ? card.querySelector('[data-field="caption"]') : null;
+      var aboutGroupInput = card ? card.querySelector('[data-field="about_group"]') : null;
       if (altInput) formData.append('alt_text', altInput.value || '');
       if (linkInput) formData.append('link_url', linkInput.value || '');
+      if (captionInput) formData.append('caption', captionInput.value || '');
+      if (aboutGroupInput) formData.append('about_group', aboutGroupInput.value || '0');
 
       var xhr = new XMLHttpRequest();
       var url = CONFIG.API.BASE + '/api/carousel/' + slot;

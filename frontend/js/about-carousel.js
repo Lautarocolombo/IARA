@@ -8,6 +8,14 @@
   var currentIndex = 0;
   var autoplayTimer = null;
   var isPaused = false;
+  var aboutTexts = [];
+  var aboutTextEl = null;
+
+  var ABOUT_GROUPS = [
+    { indices: [0, 1], text: 'En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.' },
+    { indices: [2, 3], text: 'Artesanía Gualeguay nació en el corazón de Entre Ríos con la misión de crear pulseras, souvenirs y accesorios únicos que capturen la esencia de nuestra tierra.' },
+    { indices: [4], text: '' }
+  ];
 
   function collectImages(srcMap) {
     var images = [];
@@ -17,6 +25,26 @@
       if (url) images.push(url);
     }
     return images;
+  }
+
+  function getTextForIndex(index) {
+    for (var i = 0; i < ABOUT_GROUPS.length; i++) {
+      var group = ABOUT_GROUPS[i];
+      if (group.indices.indexOf(index) !== -1) {
+        return group.text;
+      }
+    }
+    return '';
+  }
+
+  function updateAboutText(index) {
+    if (!aboutTextEl) return;
+    var text = getTextForIndex(index);
+    aboutTextEl.style.opacity = '0';
+    setTimeout(function () {
+      aboutTextEl.textContent = text;
+      aboutTextEl.style.opacity = '1';
+    }, 200);
   }
 
   function wrapIndex(index, length) {
@@ -32,6 +60,8 @@
     var prevBtn = document.getElementById('aboutCarouselPrev');
     var nextBtn = document.getElementById('aboutCarouselNext');
     var wrap = document.getElementById('aboutCarouselWrap');
+
+    aboutTextEl = document.getElementById('aboutTextContent');
 
     if (!track || !dotsContainer) return;
 
@@ -52,6 +82,7 @@
       if (dotsContainer) dotsContainer.innerHTML = '';
       if (prevBtn) prevBtn.style.display = 'none';
       if (nextBtn) nextBtn.style.display = 'none';
+      if (aboutTextEl) aboutTextEl.textContent = '';
       return;
     }
 
@@ -110,6 +141,8 @@
     wrap.ontouchstart = pauseAutoplay;
     wrap.ontouchend = resumeAutoplay;
 
+    updateAboutText(0);
+
     startAutoplay();
   }
 
@@ -124,6 +157,7 @@
 
     slides[currentIndex].classList.add('active');
     dots[currentIndex].classList.add('active');
+    updateAboutText(currentIndex);
   }
 
   function startAutoplay() {
