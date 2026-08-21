@@ -5,7 +5,7 @@ const os = require('os');
 
 const { optimizeImage, generateVariant, generateAllVariants } = require('../src/lib/imageOptimizer');
 
-const TEST_DIR = path.join(os.tmpdir(), 'image-optimizer-test');
+const TEST_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'image-optimizer-test-'));
 
 function makeTmpFile(name, content) {
   if (!fs.existsSync(TEST_DIR)) fs.mkdirSync(TEST_DIR, { recursive: true });

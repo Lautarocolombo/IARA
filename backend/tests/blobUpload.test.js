@@ -14,11 +14,10 @@ const { put, del } = require('@vercel/blob');
 const upload = require('../src/lib/upload');
 
 function makeTmpFile(name) {
-  const dir = path.join(os.tmpdir(), 'blob-test');
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'blob-test-'));
   const filePath = path.join(dir, name);
   fs.writeFileSync(filePath, Buffer.from(TINY_PNG_BASE64, 'base64'));
-  return filePath;
+  return { filePath, dir };
 }
 
 describe('Vercel Blob helpers', () => {
@@ -28,10 +27,13 @@ describe('Vercel Blob helpers', () => {
   });
 
   afterAll(() => {
-    const dir = path.join(os.tmpdir(), 'blob-test');
-    if (fs.existsSync(dir)) {
-      fs.rmSync(dir, { recursive: true, force: true });
-    }
+    const dirs = fs.readdirSync(os.tmpdir()).filter(f => f.startsWith('blob-test-'));
+    dirs.forEach(d => {
+      const full = path.join(os.tmpdir(), d);
+      if (fs.existsSync(full)) {
+        fs.rmSync(full, { recursive: true, force: true });
+      }
+    });
   });
 
   test('isBlobUrl clasifica correctamente', () => {
@@ -45,7 +47,7 @@ describe('Vercel Blob helpers', () => {
 
   test('processFile sube a Vercel Blob cuando BLOB_READ_WRITE_TOKEN está configurado', async () => {
     process.env.BLOB_READ_WRITE_TOKEN = 'token-falso-para-test';
-    const tmpFile = makeTmpFile('test.png');
+    const { filePath: tmpFile } = makeTmpFile('test.png');
 
     put.mockResolvedValue({ url: 'https://proyecto.blob.vercel-storage.com/products/x.png' });
 
@@ -68,7 +70,7 @@ describe('Vercel Blob helpers', () => {
   });
 
   test('processFile usa fallback con URL relativa en dev cuando no hay token de Blob', async () => {
-    const tmpFile = makeTmpFile('test2.png');
+    const { filePath: tmpFile } = makeTmpFile('test2.png');
 
     const result = await upload.processFile({
       path: tmpFile,
@@ -87,7 +89,7 @@ describe('Vercel Blob helpers', () => {
     process.env.NODE_ENV = 'production';
     delete process.env.BLOB_READ_WRITE_TOKEN;
 
-    const tmpFile = makeTmpFile('test3.png');
+    const { filePath: tmpFile } = makeTmpFile('test3.png');
 
     const result = await upload.processFile({
       path: tmpFile,
@@ -104,7 +106,7 @@ describe('Vercel Blob helpers', () => {
   });
 
   test('processFile no borra el archivo optimizado en fallback local', async () => {
-    const tmpFile = makeTmpFile('test4.png');
+    const { filePath: tmpFile } = makeTmpFile('test4.png');
     const optimizedPath = path.join(path.dirname(tmpFile), 'test4.webp');
 
     const result = await upload.processFile({
