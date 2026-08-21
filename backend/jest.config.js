@@ -5,6 +5,7 @@ module.exports = {
   maxWorkers: 1,
   testTimeout: 60000,
   setupFiles: ['<rootDir>/tests/jest.setup.js'],
+  globalTeardown: '<rootDir>/tests/globalTeardown.js',
   coverageDirectory: 'coverage',
   collectCoverageFrom: [
     'src/**/*.js',
