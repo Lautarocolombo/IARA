@@ -5,8 +5,68 @@
   'use strict';
 
   var carouselSlots = {};
+  var carouselLastSaved = {};
+  var carouselPendingFiles = {};
+  var carouselDirty = {};
   var currentPreviewIndex = 0;
   var previewTimer = null;
+
+  function isSlotDirty(slot) {
+    if (carouselPendingFiles[slot]) return true;
+    var last = carouselLastSaved[slot];
+    var current = carouselSlots[slot];
+    if (!last && !current) return false;
+    if (!last || !current) return true;
+    var fields = ['alt_text', 'link_url', 'caption', 'about_group'];
+    for (var i = 0; i < fields.length; i++) {
+      var f = fields[i];
+      if ((last[f] || '') !== (current[f] || '')) return true;
+    }
+    return false;
+  }
+
+  function isAnyDirty() {
+    for (var i = 1; i <= 5; i++) {
+      if (isSlotDirty(i)) return true;
+    }
+    return false;
+  }
+
+  function markDirty(slot) {
+    carouselDirty[slot] = true;
+    updateDirtyUI();
+  }
+
+  function clearDirty() {
+    for (var i = 1; i <= 5; i++) {
+      carouselDirty[i] = false;
+      delete carouselPendingFiles[i];
+    }
+    updateDirtyUI();
+  }
+
+  function updateDirtyUI() {
+    var indicator = document.getElementById('carouselDirtyIndicator');
+    if (indicator) {
+      indicator.style.display = isAnyDirty() ? 'inline' : 'none';
+    }
+    var btn = document.getElementById('carouselSaveAllBtn');
+    if (btn) {
+      btn.disabled = !isAnyDirty();
+    }
+  }
+
+  function deepCloneSlots(slots) {
+    var clone = {};
+    for (var i = 1; i <= 5; i++) {
+      if (slots[i]) {
+        clone[i] = Object.assign({}, slots[i]);
+      } else {
+        clone[i] = null;
+      }
+    }
+    return clone;
+  }
 
   async function loadCarouselSlots() {
     var grid = document.getElementById('carouselSlotsGrid');
@@ -18,6 +78,8 @@
       if (!res || !res.ok) throw new Error('No se pudo cargar el carrusel');
       var data = await res.json();
       carouselSlots = data.slots || {};
+      carouselLastSaved = deepCloneSlots(carouselSlots);
+      clearDirty();
       renderCarouselSlots();
       renderCarouselPreview();
     } catch (err) {
@@ -39,7 +101,8 @@
       var slot = carouselSlots[i];
       var hasImage = slot && slot.url;
       var slotNum = String(i);
-      html += '<div class="carousel-slot-card" data-slot="' + slotNum + '">' +
+      var dirtyClass = isSlotDirty(i) ? ' carousel-slot-card--dirty' : '';
+      html += '<div class="carousel-slot-card' + dirtyClass + '" data-slot="' + slotNum + '">' +
         '<div class="carousel-slot-thumb">' +
           (hasImage
             ? '<img src="' + escapeAttr(slot.url) + '" alt="Carrusel slot ' + slotNum + '" class="carousel-slot-img" />'
@@ -66,8 +129,8 @@
             '</label>' +
             (hasImage ? '<button type="button" class="btn btn-danger btn-sm" data-action="delete-slot" data-slot="' + slotNum + '">Eliminar</button>' : '') +
           '</div>' +
+          '<div class="carousel-slot-save-indicator" id="carouselSlotSave_' + slotNum + '" style="display:none;"></div>' +
         '</div>' +
-        '<div class="carousel-slot-save-indicator" id="carouselSlotSave_' + slotNum + '" style="display:none;"></div>' +
       '</div>';
     }
 
@@ -84,7 +147,8 @@
         var slot = Number(input.dataset.slot);
         var file = e.target.files[0];
         if (!file) return;
-        uploadCarouselSlot(slot, file, input);
+        carouselPendingFiles[slot] = file;
+        markDirty(slot);
         e.target.value = '';
       });
     });
@@ -103,14 +167,15 @@
         var slot = Number(input.closest('.carousel-slot-card').dataset.slot);
         var field = input.dataset.field;
         var value = input.value.trim();
-        updateCarouselSlotMeta(slot, field, value);
+        if (!carouselSlots[slot]) carouselSlots[slot] = {};
+        carouselSlots[slot][field] = value;
+        markDirty(slot);
       });
     });
   }
 
-  async function uploadCarouselSlot(slot, file, inputEl) {
+  async function uploadCarouselSlot(slot, file) {
     var statusEl = document.getElementById('carouselSlotSave_' + slot);
-    var card = inputEl ? inputEl.closest('.carousel-slot-card') : null;
 
     if (statusEl) {
       statusEl.style.display = 'block';
@@ -121,20 +186,17 @@
     try {
       var formData = new FormData();
       formData.append('image', file);
-      var altInput = card ? card.querySelector('[data-field="alt_text"]') : null;
-      var linkInput = card ? card.querySelector('[data-field="link_url"]') : null;
-      var captionInput = card ? card.querySelector('[data-field="caption"]') : null;
-      var aboutGroupInput = card ? card.querySelector('[data-field="about_group"]') : null;
-      if (altInput) formData.append('alt_text', altInput.value || '');
-      if (linkInput) formData.append('link_url', linkInput.value || '');
-      if (captionInput) formData.append('caption', captionInput.value || '');
-      if (aboutGroupInput) formData.append('about_group', aboutGroupInput.value || '0');
+      var slotData = carouselSlots[slot] || {};
+      formData.append('alt_text', slotData.alt_text || '');
+      formData.append('link_url', slotData.link_url || '');
+      formData.append('caption', slotData.caption || '');
+      formData.append('about_group', String(slotData.about_group || 0));
 
       var xhr = new XMLHttpRequest();
       var url = CONFIG.API.BASE + '/api/carousel/' + slot;
       var token = window.getAuthToken();
 
-       await new Promise(function (resolve, reject) {
+      await new Promise(function (resolve, reject) {
         xhr.addEventListener('load', function () {
           var data = {};
           try { data = JSON.parse(xhr.responseText || '{}'); } catch (e) { data = { error: xhr.responseText }; }
@@ -172,6 +234,88 @@
     }
   }
 
+  async function saveCarouselMeta(slot) {
+    var slotData = carouselSlots[slot] || {};
+    var formData = new FormData();
+    formData.append('alt_text', slotData.alt_text || '');
+    formData.append('link_url', slotData.link_url || '');
+    formData.append('caption', slotData.caption || '');
+    formData.append('about_group', String(slotData.about_group || 0));
+
+    var res = await window.adminFetch('/api/carousel/' + slot + '/meta', {
+      method: 'PUT',
+      body: formData
+    });
+
+    if (!res || !res.ok) {
+      var errData = await res.json().catch(function () { return {}; });
+      throw new Error(errData.error || 'Error al guardar meta del slot ' + slot);
+    }
+
+    return res.json();
+  }
+
+  async function saveAllCarouselSlots() {
+    if (!isAnyDirty()) return;
+
+    var btn = document.getElementById('carouselSaveAllBtn');
+    var loading = document.getElementById('carouselSaveAllLoading');
+    var status = document.getElementById('carouselSaveStatus');
+
+    if (btn) btn.disabled = true;
+    if (loading) loading.classList.remove('hidden');
+    if (status) {
+      status.className = 'save-status visible saving';
+      status.textContent = 'Guardando cambios...';
+    }
+
+    var errors = [];
+    var savedSlots = [];
+
+    try {
+      for (var i = 1; i <= 5; i++) {
+        if (!isSlotDirty(i)) continue;
+
+        if (carouselPendingFiles[i]) {
+          await uploadCarouselSlot(i, carouselPendingFiles[i]);
+          savedSlots.push(i);
+        } else {
+          try {
+            await saveCarouselMeta(i);
+            savedSlots.push(i);
+          } catch (err) {
+            errors.push('Slot ' + i + ': ' + err.message);
+            console.error('[Carousel] Error guardando slot ' + i + ':', err);
+          }
+        }
+      }
+
+      if (errors.length > 0) {
+        throw new Error(errors.join('; '));
+      }
+
+      carouselLastSaved = deepCloneSlots(carouselSlots);
+      clearDirty();
+
+      if (status) {
+        status.className = 'save-status visible success';
+        status.textContent = 'Cambios guardados';
+        setTimeout(function () { status.className = 'save-status'; status.textContent = ''; }, 3000);
+      }
+      window.showToast('✅', 'Cambios guardados', 'success');
+    } catch (err) {
+      if (status) {
+        status.className = 'save-status visible error';
+        status.textContent = err.message || 'Error al guardar';
+        setTimeout(function () { status.className = 'save-status'; status.textContent = ''; }, 4000);
+      }
+      window.showToast('❌', err.message || 'Error al guardar los cambios', 'error');
+    } finally {
+      if (btn) btn.disabled = !isAnyDirty();
+      if (loading) loading.classList.add('hidden');
+    }
+  }
+
   async function deleteCarouselSlot(slot) {
     try {
       var res = await window.adminFetch('/api/carousel/' + slot, {
@@ -184,44 +328,13 @@
         throw new Error(errData.error || 'Error al eliminar');
       }
       carouselSlots[slot] = null;
+      delete carouselPendingFiles[slot];
+      markDirty(slot);
       renderCarouselSlots();
       renderCarouselPreview();
       window.showToast('✅', 'Slot ' + slot + ' eliminado', 'success');
     } catch (err) {
       window.showToast('❌', err.message || 'Error al eliminar', 'error');
-    }
-  }
-
-  async function updateCarouselSlotMeta(slot, field, value) {
-    try {
-      var formData = new FormData();
-      formData.append(field, value);
-      var xhr = new XMLHttpRequest();
-      var url = CONFIG.API.BASE + '/api/carousel/' + slot;
-      var token = window.getAuthToken();
-
-      await new Promise(function (resolve, reject) {
-        xhr.addEventListener('load', function () {
-          var data = {};
-          try { data = JSON.parse(xhr.responseText || '{}'); } catch (e) { data = { error: xhr.responseText }; }
-          if (xhr.status < 200 || xhr.status >= 300) {
-            reject(new Error(data.error || 'Error'));
-            return;
-          }
-          resolve(data);
-        });
-        xhr.addEventListener('error', function () { reject(new Error('Error de red')); });
-        xhr.open('PUT', url);
-        xhr.withCredentials = true;
-        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
-        xhr.send(formData);
-      });
-
-      carouselSlots[slot] = carouselSlots[slot] || {};
-      carouselSlots[slot][field] = value;
-      renderCarouselPreview();
-    } catch (err) {
-      window.showToast('❌', 'Error al actualizar texto: ' + err.message, 'error');
     }
   }
 
@@ -291,6 +404,10 @@
 
   window.initCarouselEditor = function () {
     loadCarouselSlots();
+    var saveBtn = document.getElementById('carouselSaveAllBtn');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', saveAllCarouselSlots);
+    }
   };
 
   window.reloadCarousel = loadCarouselSlots;

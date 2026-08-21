@@ -7,7 +7,7 @@ const { optimizeImage } = require('./imageOptimizer');
 const BLOB_URL_RE = /^https?:\/\/[^/]+\.blob\.vercel-storage\.com/;
 
 function isBlobConfigured() {
-  const token = process.env.BLOB_READ_WRITE_TOKEN;
+  const token = (process.env.BLOB_READ_WRITE_TOKEN || '').trim();
   if (!token) return false;
   if (!token.startsWith('vercel_blob_')) {
     logger.warn('BLOB_READ_WRITE_TOKEN tiene un formato inválido. Debe comenzar con "vercel_blob_".');
@@ -53,13 +53,13 @@ async function uploadToBlob(file) {
 
     const blob = await mod.put(blobName, buffer, {
       access: 'public',
-      token: process.env.BLOB_READ_WRITE_TOKEN,
+      token: process.env.BLOB_READ_WRITE_TOKEN.trim(),
       contentType
     });
 
     return { url: blob.url, filename: blobName, blobName, isCloudinary: false, isBlob: true };
   } catch (err) {
-    logger.error({ err: err.message, stack: err.stack }, 'Error subiendo a Vercel Blob - fallback a storage local');
+    logger.error({ err: err.message, stack: err.stack, code: err.code }, 'Error subiendo a Vercel Blob - fallback a storage local');
     return null;
   }
 }
@@ -201,6 +201,7 @@ async function processFile(file, _baseUrl) {
       logger.info('[Upload] Subido a Vercel Blob:', { url: blobResult.url });
       return { url: blobResult.url, filename: blobResult.filename, cloudinary_public_id: '', isCloudinary: false, isBlob: true };
     }
+    logger.error('[Upload] Falló subida a Vercel Blob. Verificá BLOB_READ_WRITE_TOKEN en Render.');
     if (process.env.NODE_ENV === 'production') {
       throw new Error('Error subiendo imagen: Vercel Blob está configurado pero la subida falló. Verificá que BLOB_READ_WRITE_TOKEN sea un token válido de Vercel Blob.');
     }

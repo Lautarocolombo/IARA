@@ -52,7 +52,6 @@ jobs:
           ADMIN_USER: testadmin
           ADMIN_PASS_HASH: $2b$10$testhashtesthashtesthas
           DATABASE_URL: ''
-          REDIS_URL: redis://localhost:6379
         timeout-minutes: 10
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium

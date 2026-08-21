@@ -5,8 +5,10 @@ const http = require('http');
 // Load production .env to get DATABASE_URL
 dotenv.config({ path: path.join(__dirname, '.env') });
 
-// Enable blob upload and set test admin password
-process.env.BLOB_READ_WRITE_TOKEN = 'vercel_blob_rw_Qv6wutytfjDt3N1u_lwLbEijACx8F4zSJI9yioQ0m2fikog';
+// Enable blob upload if token is provided via environment
+if (process.env.BLOB_READ_WRITE_TOKEN) {
+  logger.info('Test server: BLOB_READ_WRITE_TOKEN configurado para pruebas');
+}
 process.env.BACKEND_URL = 'http://localhost:3002';
 process.env.PORT = '3002';
 process.env.NODE_ENV = 'test';
