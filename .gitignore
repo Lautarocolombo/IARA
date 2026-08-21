@@ -66,5 +66,10 @@ dist/
 coverage/
 backend/coverage/
 
+# Vite build artifacts inside frontend/ (if outDir is ever changed)
+frontend/assets/*.js
+frontend/assets/*.css
+frontend/assets/*.js.map
+
 .vercel
 .env*
