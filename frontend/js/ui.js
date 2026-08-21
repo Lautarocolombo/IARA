@@ -538,6 +538,10 @@ function getFetchErrorMessage(err) {
     return 'No se pudo conectar con el servidor. Verificá tu conexión o intentá de nuevo en unos segundos.';
   }
 
+  if (msg.includes('Timeout') || msg.includes('timeout')) {
+    return 'El servidor está iniciando, esperá unos segundos y volvé a intentar.';
+  }
+
   if (status === 400) {
     return 'Error en la solicitud. Verificá los datos e intentá de nuevo.';
   }

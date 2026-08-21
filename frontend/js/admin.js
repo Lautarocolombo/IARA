@@ -115,6 +115,7 @@ async function doLogin() {
   } catch (err) {
     let userMessage = 'Error inesperado. Por favor, recargá la página.';
     if (err.name === 'AbortError') userMessage = 'El servidor tardó demasiado en responder. Recargá la página e intentá nuevamente.';
+    else if (err.message?.includes('Timeout')) userMessage = 'El servidor está iniciando, esperá unos segundos y volvé a intentar.';
     else if (err.name === 'TypeError' && err.message.includes('fetch')) userMessage = 'No se pudo conectar al servidor. Verificá tu conexión o recargá la página.';
     else userMessage = err.message || userMessage;
     showLoginError(errorEl, userMessage);
@@ -159,7 +160,7 @@ async function adminFetch(url, opts = {}, isRetry = false) {
   const directUploadOrigin = isUpload ? `${BACKEND_DIRECT_URL}${url}` : null;
   const fullUrl = directUploadOrigin || (url.startsWith('/api/') ? `${CONFIG.API.BASE}${url}` : url);
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 20000);
+  const timeout = setTimeout(() => controller.abort(), 60000);
   try {
     const isFormData = opts.body instanceof FormData;
     let finalHeaders = headers;
