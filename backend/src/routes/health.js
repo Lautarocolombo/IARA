@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { query, pool, connectionString } = require('../lib/db');
+const { isBlobConfigured } = require('../lib/upload');
 const logger = require('../lib/logger');
 
 router.get(['/', '/health'], async (req, res) => {
@@ -34,7 +35,11 @@ router.get(['/', '/health'], async (req, res) => {
         heapUsed: Math.round(memory.heapUsed / 1024 / 1024) + 'MB'
       },
       responseTime: Date.now() - start + 'ms',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      storage: {
+        blobConfigured: isBlobConfigured(),
+        uploadsPersist: isBlobConfigured() || process.env.VERCEL === 'true'
+      }
     };
 
     const statusCode = response.status === 'ok' ? 200 : 503;
