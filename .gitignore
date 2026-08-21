@@ -79,3 +79,6 @@ frontend/assets/*.js.map
 
 .vercel
 .env*
+
+.vercel
+.env*

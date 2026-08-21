@@ -281,14 +281,14 @@
   window.editTestimonial = function (id) {
     var t = testimonials.find(function (x) { return x.id === id; });
     if (!t) return;
-  editingId = id;
-  var createForm = document.getElementById('testimonialCreateForm');
-  var toggleIcon = document.getElementById('toggleTestimonialFormIcon');
-  if (createForm && !createForm.classList.contains('open')) {
-    createForm.classList.add('open');
-    if (toggleIcon) toggleIcon.classList.add('expanded');
-  }
-  var nameEl = document.getElementById('testimonialName');
+    editingId = id;
+    var createForm = document.getElementById('testimonialCreateForm');
+    var toggleIcon = document.getElementById('toggleTestimonialFormIcon');
+    if (createForm && !createForm.classList.contains('open')) {
+      createForm.classList.add('open');
+      if (toggleIcon) toggleIcon.classList.add('expanded');
+    }
+    var nameEl = document.getElementById('testimonialName');
     var roleEl = document.getElementById('testimonialRole');
     var commentEl = document.getElementById('testimonialComment');
     var ratingEl = document.getElementById('testimonialRating');

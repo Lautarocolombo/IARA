@@ -21,7 +21,9 @@ services:
       - key: DATABASE_URL
         sync: false
       - key: BLOB_READ_WRITE_TOKEN
-        generateValue: true
+        sync: false
+        # IMPORTANTE: Crear un Vercel Blob Store en https://vercel.com/dashboard/stores
+        # y pegar el token de read+write aquí. No uses generateValue porque requiere un token real.
       - key: SITE_URL
         value: https://artesania-gualeguay-v3.vercel.app
       - key: BACKEND_URL

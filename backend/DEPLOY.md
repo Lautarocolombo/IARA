@@ -60,15 +60,14 @@ Los workflows se ejecutan automáticamente cuando:
 
 ### 1. Almacenamiento de imágenes
 
-Las imágenes se guardan como base64 en la base de datos Neon (PostgreSQL).
+**Importante:** En producción (Render) el filesystem es efímero. Configurá Vercel Blob para que las imágenes persistan.
 
-**Opcional:** Si querés usar Vercel Blob en vez de base64:
 1. Crear cuenta en https://vercel.com
 2. Crear un Blob Store
-3. Obtener `BLOB_READ_WRITE_TOKEN`
+3. Obtener `BLOB_READ_WRITE_TOKEN` (read+write)
 4. Configurar en Render como variable de entorno
 
-El módulo usará Vercel Blob automáticamente si está configurado. Si no, guarda las imágenes en base64.
+El módulo usará Vercel Blob automáticamente si está configurado. En producción, si el token es inválido, la subida falla con un error explícito para evitar perder imágenes en `/tmp`.
 
 ### 2. Redis + BullMQ (Colas asíncronas) — Upstash Redis
 
@@ -123,13 +122,13 @@ Los backups se guardan en `/backups/` con retención de 7 días.
 
 ### Upload de imágenes
 1. Admin sube imagen → Validación cliente + servidor
-2. Si Vercel Blob está configurado: upload a Blob
-3. Si no: se convierte a base64 y se guarda en la base de datos Neon
-4. Sharp optimiza a WebP si está disponible
+2. Si Vercel Blob está configurado con un token válido: upload a Blob (URL pública persistente)
+3. Si el token es inválido o Blob no está disponible en producción: la subida falla con error 500 para evitar guardar en storage efímero
+4. En desarrollo sin Blob: fallback a filesystem local (`backend/uploads/imagenes`)
 
 ### Variantes de imagen
-- **Vercel Blob**: URLs públicas directas
-- **Base64 en DB**: el frontend renderiza el data URI directamente
+- **Vercel Blob**: URLs públicas directas desde Vercel CDN
+- **Local (solo dev)**: rutas `/uploads/imagenes/...` servidas por Express
 
 ### Watermark
 - No disponible en modo base64

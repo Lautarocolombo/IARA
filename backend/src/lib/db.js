@@ -158,7 +158,10 @@ async function transaction(fn) {
           if (err) return reject(err);
           const run = (sql, params) => {
             return new Promise((res, rej) => {
-              const sqlite = toSqlite(sql);
+              let sqlite = toSqlite(sql);
+              if (isLocal) {
+                sqlite = sqlite.replace(/current_setting\('app\.current_tenant',\s*TRUE\)/gi, "'default'");
+              }
               db.all(sqlite, params, (e, rows) => {
                 if (e) return rej(e);
                 res({ rows, rowCount: rows ? rows.length : 0 });
@@ -260,6 +263,20 @@ async function initDB() {
       shipping_email TEXT DEFAULT '',
       subtotal REAL DEFAULT 0,
       shipping_cost REAL DEFAULT 0,
+      tenant_id TEXT DEFAULT 'default',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS order_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id INTEGER NOT NULL,
+      product_id INTEGER NOT NULL,
+      name TEXT DEFAULT '',
+      price REAL DEFAULT 0,
+      quantity INTEGER DEFAULT 1,
+      emoji TEXT DEFAULT '',
+      image TEXT DEFAULT '',
+      category_name TEXT DEFAULT '',
+      category_slug TEXT DEFAULT '',
       tenant_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);

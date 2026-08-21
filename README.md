@@ -123,7 +123,7 @@ Configurar en **Vercel Dashboard > Settings > Environment Variables**:
 | `EMAIL_FROM` | `noreply@artesaniagualeguay.com` | No |
 | `ADMIN_NOTIFICATION_EMAIL` | `admin@artesaniagualeguay.com` | No |
 | `WHATSAPP` | `+5493444634444` | No |
-| `BLOB_READ_WRITE_TOKEN` | token de Vercel Blob | No |
+| `BLOB_READ_WRITE_TOKEN` | token de Vercel Blob | Sí (en producción) |
 
 > Importante: No subas `backend/.env` a Git. Usá `vercel env add` o el Dashboard.
 
@@ -140,7 +140,7 @@ Configurar en **Render Dashboard > Environment**:
 | `ALLOWED_ORIGINS` | `https://artesania-gualeguay-v3.vercel.app,https://artesania-gualeguay.vercel.app,http://localhost:3000,http://localhost:5173` |
 | `SITE_URL` | `https://artesania-gualeguay-v3.vercel.app` |
 | `BACKEND_URL` | `https://iara-os3h.onrender.com` |
-| `BLOB_READ_WRITE_TOKEN` | (opcional) para uploads a Vercel Blob |
+| `BLOB_READ_WRITE_TOKEN` | Obligatorio en producción (Render). Crear un Vercel Blob Store y pegar el token read+write. |
 
 ## Analytics
 
@@ -155,12 +155,11 @@ Para habilitar el seguimiento, completar los placeholders en `frontend/js/config
 
 ## Almacenamiento de imágenes
 
-Las imágenes se guardan como base64 en la base de datos Neon por defecto. Esto evita cold starts y dependencias externas.
+Las imágenes se guardan en **Vercel Blob** cuando `BLOB_READ_WRITE_TOKEN` está configurado con un token válido.
 
-Opcionalmente, se puede usar Vercel Blob:
-1. Crear un Blob Store en Vercel
-2. Configurar `BLOB_READ_WRITE_TOKEN` en Render
-3. Las imágenes nuevas se subirán a Blob automáticamente
+En desarrollo sin Blob, las imágenes se guardan temporalmente en el filesystem local (`backend/uploads/imagenes`). En producción (Render), **no uses almacenamiento local**: el filesystem es efímero y las imágenes se pierden en cada redeploy. Si el token de Blob es inválido, la subida falla con un error explícito en vez de guardar localmente.
+
+Para migrar imágenes existentes que estén en rutas locales rotas, ejecutá `backend/src/scripts/migrateImages.js` después de configurar Blob (si los archivos originales still existen).
 
 ## Seguridad
 

@@ -7,7 +7,12 @@ const { optimizeImage } = require('./imageOptimizer');
 const BLOB_URL_RE = /^https?:\/\/[^/]+\.blob\.vercel-storage\.com/;
 
 function isBlobConfigured() {
-  return !!process.env.BLOB_READ_WRITE_TOKEN;
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
+  if (!token) return false;
+  if (!token.startsWith('vercel_blob_')) {
+    logger.warn('BLOB_READ_WRITE_TOKEN tiene un formato inválido. Debe comenzar con "vercel_blob_".');
+  }
+  return true;
 }
 
 let blobModule = null;
@@ -195,6 +200,9 @@ async function processFile(file, _baseUrl) {
       try { fs.unlinkSync(file.path); } catch (e) { /* noop */ }
       logger.info('[Upload] Subido a Vercel Blob:', { url: blobResult.url });
       return { url: blobResult.url, filename: blobResult.filename, cloudinary_public_id: '', isCloudinary: false, isBlob: true };
+    }
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('Error subiendo imagen: Vercel Blob está configurado pero la subida falló. Verificá que BLOB_READ_WRITE_TOKEN sea un token válido de Vercel Blob.');
     }
     logger.warn('[Upload] Upload a Vercel Blob falló, intentando fallback a storage local');
   }

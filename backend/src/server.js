@@ -10,7 +10,7 @@ const pino = require('pino');
 dotenv.config({ override: false });
 
 const { initDB } = require('./lib/db');
-const { handleUploadError, processFile, uploadSingle } = require('./lib/upload');
+const { handleUploadError, processFile, uploadSingle, getPublicUrl } = require('./lib/upload');
 const { errorHandler } = require('./middleware/errorHandler');
 const { notFound } = require('./middleware/errorHandler');
 const { tenantContext } = require('./middleware/tenant');
@@ -420,9 +420,10 @@ app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUplo
     logger.info('[Upload] Procesando imagen:', { filename: req.file.originalname, size: req.file.size });
     const processed = await processFile(req.file, `${req.protocol}://${req.get('host')}`);
     logger.info('[Upload] Imagen procesada OK:', { url: processed.url });
+    const publicUrl = getPublicUrl(processed.url, `${req.protocol}://${req.get('host')}`);
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.json({
-      url: processed.url,
+      url: publicUrl,
       filename: processed.filename,
       size: req.file.size,
       isCloudinary: processed.isCloudinary
