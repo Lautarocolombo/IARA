@@ -69,6 +69,28 @@
   }
 }
 
+
+}
+
+.card-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .card-filters {
+    width: 100%;
+  }
+
+  .card-filters .card-filter {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+
 .card-body {
   padding: var(--spacing-lg);
 }
@@ -653,7 +675,7 @@
 
 .payments-grid {
   display: grid;
-  grid-template-columns: 320px 1fr 320px;
+  grid-template-columns: 1fr 1fr;
   gap: var(--spacing-lg);
   align-items: start;
 }
@@ -721,6 +743,30 @@
   font-size: var(--text-sm);
 }
 
+
+.payment-step-group {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+@media (max-width: 480px) {
+  .payment-steps {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-sm);
+  }
+  .payment-step-group {
+    justify-content: space-between;
+  }
+  .payment-step-arrow {
+    align-self: center;
+    transform: rotate(90deg);
+    margin: var(--spacing-xs) 0;
+  }
+}
+
+
 .payment-preview-row {
   display: flex;
   justify-content: space-between;
@@ -771,6 +817,105 @@
   height: 220px;
   position: relative;
 }
+
+
+/* ==================== SHIPPING RATES GRID ==================== */
+
+.shipping-rates-card {
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+.shipping-rates-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-sm);
+}
+
+@media (max-width: 1024px) {
+  .shipping-rates-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .shipping-rates-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.shipping-rate-item {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  background: var(--white);
+  border: 1px solid var(--border);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.shipping-rate-item:hover {
+  border-color: var(--rose-light);
+  box-shadow: 0 1px 4px rgba(212, 112, 144, 0.06);
+}
+
+.shipping-rate-name {
+  flex: none;
+  min-width: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--text-dark);
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  line-height: 1.3;
+}
+
+.shipping-rate-icon {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.shipping-rate-cost {
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.shipping-rate-cost input {
+  width: 100%;
+  height: 32px;
+  padding: 0.35rem 0.5rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--admin-input-radius);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  background: var(--white);
+  color: var(--text-dark);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  text-align: right;
+}
+
+.shipping-rate-cost input:focus {
+  outline: none;
+  border-color: #f4a7c0;
+  box-shadow: 0 0 0 3px rgba(244, 167, 192, 0.15);
+}
+
+.shipping-rate-item.has-diff .shipping-rate-name {
+  color: #b91c1c;
+  font-weight: var(--weight-medium);
+}
+
+.shipping-rate-item.no-diff .shipping-rate-name {
+  color: var(--text-dark);
+}
+
 
 /* ==================== ORDERS LAYOUT ==================== */
 
@@ -1492,6 +1637,22 @@
   -webkit-overflow-scrolling: touch;
 }
 
+
+#pmProofsTableContainer {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+
 #orderActivityTableContainer {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -1721,9 +1882,6 @@
 }
 
 @media (max-width: 1200px) {
-  .payments-grid {
-    grid-template-columns: 280px 1fr 280px;
-  }
   .orders-layout {
     grid-template-columns: minmax(220px, 1fr) 1.2fr minmax(220px, 1fr);
   }

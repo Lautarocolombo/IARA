@@ -121,8 +121,10 @@
               <button class="content-tab" data-content-tab="contact" type="button">Contacto</button>
               <button class="content-tab" data-content-tab="featured" type="button">Categorías</button>
             </div>
-            <div class="content-tab-panel active" data-content-tab="home-blocks">
-            <div class="card">
+
+            
+            
+            <div class="content-tab-panel active" data-content-tab="home-blocks"><div class="card">
               <div class="card-header">
                 <h3 class="card-header-title">Bloques del Home</h3>
                 <div class="card-header-actions">
@@ -251,8 +253,10 @@
                 <div class="save-status" id="saveHomeBlocksStatus"></div>
               </div>
             </div>
+          </div>
 
-            <div class="card">
+            
+            <div class="content-tab-panel" data-content-tab="about"><div class="card">
               <div class="card-header">
                 <h3 class="card-header-title">Sobre Nosotros</h3>
                 <div class="card-header-actions">
@@ -344,9 +348,11 @@
                       </div>
                     </div>
                 </div>
+          </div>
               </div>
 
-            <div class="card">
+            
+            <div class="content-tab-panel" data-content-tab="features"><div class="card">
               <div class="card-header">
                 <h3 class="card-header-title">Características (Highlights)</h3>
                 <div class="card-header-actions">
@@ -405,8 +411,10 @@
                 </div>
               </div>
             </div>
+          </div>
 
-            <div class="card">
+            
+            <div class="content-tab-panel" data-content-tab="process"><div class="card">
               <div class="card-header">
                 <h3 class="card-header-title">Proceso de Compra</h3>
                 <div class="card-header-actions">
@@ -426,8 +434,10 @@
                 <div class="process-steps-grid" id="processSteps"></div>
               </div>
             </div>
+          </div>
 
-            <div class="card">
+            
+            <div class="content-tab-panel" data-content-tab="stats"><div class="card">
               <div class="card-header">
                 <h3 class="card-header-title">Stats / Números</h3>
                 <div class="card-header-actions">
@@ -458,8 +468,10 @@
                 </div>
               </div>
             </div>
+          </div>
 
-            <div class="card">
+            
+            <div class="content-tab-panel" data-content-tab="contact"><div class="card">
               <div class="card-header">
                 <h3 class="card-header-title">Datos de Contacto</h3>
                 <div class="card-header-actions">
@@ -502,8 +514,10 @@
                 </div>
               </div>
             </div>
+          </div>
 
-            <div class="card">
+            
+            <div class="content-tab-panel" data-content-tab="featured"><div class="card">
               <div class="card-header">
                 <h3 class="card-header-title">Categorías Destacadas</h3>
                 <div class="card-header-actions">
@@ -524,6 +538,7 @@
                 <div class="save-status" id="saveFeaturedStatus"></div>
               </div>
             </div>
+          </div>
           </div>
         </section>
 
@@ -957,176 +972,178 @@
               </div>
             </div>
 
-            <!-- Columna Centro: Wizard + Pago -->
-            <div class="orders-col orders-col-center">
-              <div class="card" id="orderWizardCard">
-                <div class="card-header">
-                  <h3 class="card-header-title">Estado del Pedido</h3>
-                </div>
-                <div class="card-body">
-                  <div id="orderWizardEmpty" class="empty-state">
-                    <p>Seleccioná un pedido de la lista para ver el detalle.</p>
+            <!-- Columna Derecha: Detalle del Pedido -->
+            <div class="orders-col orders-col-right">
+              <div id="orderDetailEmpty" class="empty-state">
+                <p>Seleccioná un pedido de la lista para ver el detalle.</p>
+              </div>
+              <div id="orderDetailContent" class="hidden">
+                <div class="card" id="orderWizardCard">
+                  <div class="card-header">
+                    <h3 class="card-header-title">Estado del Pedido</h3>
                   </div>
-                  <div id="orderWizardContent" class="hidden">
-                    <div class="wizard-steps">
-                      <div class="wizard-step" data-step="1">
-                        <div class="wizard-step-icon">✓</div>
-                        <div class="wizard-step-label" data-base="1. Selección">1. Selección</div>
-                      </div>
-                      <div class="wizard-step-connector">→</div>
-                      <div class="wizard-step" data-step="2">
-                        <div class="wizard-step-icon">...</div>
-                        <div class="wizard-step-label" data-base="2. Obtener Datos">2. Obtener Datos</div>
-                      </div>
-                      <div class="wizard-step-connector">→</div>
-                      <div class="wizard-step" data-step="3">
-                        <div class="wizard-step-icon">...</div>
-                        <div class="wizard-step-label" data-base="3. Transferencia">3. Transferencia</div>
-                      </div>
-                      <div class="wizard-step-connector">→</div>
-                      <div class="wizard-step" data-step="4">
-                        <div class="wizard-step-icon">...</div>
-                        <div class="wizard-step-label" data-base="4. Verificación">4. Verificación</div>
-                      </div>
+                  <div class="card-body">
+                    <div id="orderWizardEmpty" class="empty-state hidden">
+                      <p>Seleccioná un pedido de la lista para ver el detalle.</p>
                     </div>
-
-                    <div class="admin-section-title mt-1">Verificación Manual</div>
-                    <div class="payment-details">
-                      <div class="form-group">
-                        <label>Alias Mercado Pago</label>
-                        <div id="mpAliasDisplay" class="form-readonly">—</div>
-                      </div>
-                      <div class="form-group">
-                        <label>Titular de Cuenta</label>
-                        <div id="holderNameDisplay" class="form-readonly">—</div>
-                      </div>
-                      <div class="form-group">
-                        <label>Total a pagar</label>
-                        <div id="orderTotalDisplay" class="form-readonly">—</div>
-                      </div>
-                      <div class="form-group">
-                        <label>Código QR</label>
-                        <div id="qrCodeDisplay"></div>
-                      </div>
-                      <div class="form-group">
-                        <label>Comprobante</label>
-                        <div id="receiptActions">
-                          <button class="btn btn-secondary btn-sm" id="uploadReceiptBtn">Subir Comprobante</button>
-                          <span class="text-muted" style="font-size:0.8rem;margin-left:0.5rem;">(Ver <a href="#" id="receiptGuideLink">Guía</a>)</span>
-                          <button class="btn btn-secondary btn-sm hidden" id="viewReceiptBtn">Ver Comprobante</button>
+                    <div id="orderWizardContent">
+                      <div class="wizard-steps">
+                        <div class="wizard-step" data-step="1">
+                          <div class="wizard-step-icon">✓</div>
+                          <div class="wizard-step-label" data-base="1. Selección">1. Selección</div>
+                        </div>
+                        <div class="wizard-step-connector">→</div>
+                        <div class="wizard-step" data-step="2">
+                          <div class="wizard-step-icon">...</div>
+                          <div class="wizard-step-label" data-base="2. Obtener Datos">2. Obtener Datos</div>
+                        </div>
+                        <div class="wizard-step-connector">→</div>
+                        <div class="wizard-step" data-step="3">
+                          <div class="wizard-step-icon">...</div>
+                          <div class="wizard-step-label" data-base="3. Transferencia">3. Transferencia</div>
+                        </div>
+                        <div class="wizard-step-connector">→</div>
+                        <div class="wizard-step" data-step="4">
+                          <div class="wizard-step-icon">...</div>
+                          <div class="wizard-step-label" data-base="4. Verificación">4. Verificación</div>
                         </div>
                       </div>
-                      <input type="file" id="receiptFileInput" accept="image/*" class="hidden" />
-                      <div class="form-group">
-                        <a href="#" id="trackingLink" target="_blank" rel="noopener">Ver Estado del Pedido completo</a>
-                      </div>
-                    </div>
 
-                    <div class="order-actions">
-                      <button class="btn btn-success" id="approvePaymentBtn">Aprobar Pago</button>
-                      <button class="btn btn-danger" id="rejectPaymentBtn">Rechazar Pago</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-             </div>
+                      <div class="admin-section-title mt-1">Verificación Manual</div>
+                      <div class="payment-details">
+                        <div class="form-group">
+                          <label>Alias Mercado Pago</label>
+                          <div id="mpAliasDisplay" class="form-readonly">—</div>
+                        </div>
+                        <div class="form-group">
+                          <label>Titular de Cuenta</label>
+                          <div id="holderNameDisplay" class="form-readonly">—</div>
+                        </div>
+                        <div class="form-group">
+                          <label>Total a pagar</label>
+                          <div id="orderTotalDisplay" class="form-readonly">—</div>
+                        </div>
+                        <div class="form-group">
+                          <label>Código QR</label>
+                          <div id="qrCodeDisplay"></div>
+                        </div>
+                        <div class="form-group">
+                          <label>Comprobante</label>
+                          <div id="receiptActions">
+                            <button class="btn btn-secondary btn-sm" id="uploadReceiptBtn">Subir Comprobante</button>
+                            <span class="text-muted" style="font-size:0.8rem;margin-left:0.5rem;">(Ver <a href="#" id="receiptGuideLink">Guía</a>)</span>
+                            <button class="btn btn-secondary btn-sm hidden" id="viewReceiptBtn">Ver Comprobante</button>
+                          </div>
+                        </div>
+                        <input type="file" id="receiptFileInput" accept="image/*" class="hidden" />
+                        <div class="form-group">
+                          <a href="#" id="trackingLink" target="_blank" rel="noopener">Ver Estado del Pedido completo</a>
+                        </div>
+                      </div>
 
-             <div class="card" id="orderItemsCard">
-               <div class="card-header">
-                 <h3 class="card-header-title">Productos del Pedido</h3>
-               </div>
-               <div class="card-body card-body--flush">
-                 <div id="orderItemsEmpty" class="empty-state">
-                   <p>Seleccioná un pedido para ver los productos.</p>
-                 </div>
-                 <div id="orderItemsContent" class="hidden">
-                   <table class="order-items-table">
-                     <thead>
-                       <tr>
-                         <th>Producto</th>
-                          <th class="text-center">Cantidad</th>
-                          <th class="text-right">Precio Unit.</th>
-                          <th class="text-right">Subtotal</th>
-                       </tr>
-                     </thead>
-                     <tbody id="orderItemsTableBody"></tbody>
-                     <tfoot>
-                       <tr class="order-total-row order-total-row--grand">
-                         <td colspan="3">Total del pedido</td>
-                          <td class="text-right"><span id="orderItemsTotal">—</span></td>
-                       </tr>
-                     </tfoot>
-                   </table>
-                 </div>
-               </div>
-             </div>
-
-             <!-- Columna Derecha: Cliente + Actividad -->
-            <div class="orders-col orders-col-right">
-              <div class="card" id="orderInfoCard">
-                <div class="card-header">
-                  <h3 class="card-header-title">Datos del Cliente y Envío</h3>
-                   <div class="card-header-actions">
-                    <button class="btn btn-primary btn-sm hidden" id="saveShippingBtn">
-                      <span id="saveShippingBtnText">Guardar</span>
-                      <span id="saveShippingBtnLoading" class="hidden">Guardando...</span>
-                    </button>
-                  </div>
-                 </div>
-                <div class="card-body">
-                  <div id="orderInfoEmpty" class="empty-state">
-                    <p>Seleccioná un pedido para ver los datos.</p>
-                  </div>
-                  <div id="orderInfoContent" class="hidden">
-                    <div class="form-group">
-                      <label class="toggle-field">
-                        <span class="toggle">
-                          <input type="checkbox" id="whatsappCompleteCheck" />
-                          <span class="toggle-slider"></span>
-                        </span>
-                        <span class="switch-label">Completar por WhatsApp</span>
-                      </label>
-                    </div>
-                    <div class="form-grid-2">
-                      <div class="form-group">
-                        <label>Persona de contacto</label>
-                        <input type="text" id="shipName" data-field="shipping_name" />
-                      </div>
-                      <div class="form-group">
-                        <label>Teléfono</label>
-                        <input type="text" id="shipPhone" data-field="shipping_phone" />
-                      </div>
-                      <div class="form-group">
-                        <label>Email</label>
-                        <input type="text" id="shipEmail" data-field="shipping_email" />
-                      </div>
-                      <div class="form-group">
-                        <label>Calle y Número</label>
-                        <input type="text" id="shipAddress" data-field="shipping_address" />
-                      </div>
-                      <div class="form-group">
-                        <label>Provincia</label>
-                        <input type="text" id="shipCity" data-field="shipping_city" placeholder="Ej: Entre Ríos" />
-                      </div>
-                      <div class="form-group">
-                        <label>Localidad</label>
-                        <input type="text" id="shipZip" data-field="shipping_zip" placeholder="Ej: Gualeguay" />
+                      <div class="order-actions">
+                        <button class="btn btn-success" id="approvePaymentBtn">Aprobar Pago</button>
+                        <button class="btn btn-danger" id="rejectPaymentBtn">Rechazar Pago</button>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div class="card" id="orderActivityCard">
-                <div class="card-header">
-                  <h3 class="card-header-title">Registro de Actividad</h3>
-                </div>
-                <div class="card-body">
-                  <div id="activityEmpty" class="empty-state">
-                    <p>Sin actividad registrada.</p>
+                <div class="card" id="orderItemsCard">
+                  <div class="card-header">
+                    <h3 class="card-header-title">Productos del Pedido</h3>
                   </div>
-                  <div id="activityContent" class="hidden">
-                    <div id="activityTimeline" class="activity-timeline"></div>
+                  <div class="card-body card-body--flush">
+                    <div id="orderItemsEmpty" class="empty-state">
+                      <p>Seleccioná un pedido para ver los productos.</p>
+                    </div>
+                    <div id="orderItemsContent" class="hidden">
+                      <table class="order-items-table">
+                        <thead>
+                          <tr>
+                            <th>Producto</th>
+                             <th class="text-center">Cantidad</th>
+                             <th class="text-right">Precio Unit.</th>
+                             <th class="text-right">Subtotal</th>
+                          </tr>
+                        </thead>
+                        <tbody id="orderItemsTableBody"></tbody>
+                        <tfoot>
+                          <tr class="order-total-row order-total-row--grand">
+                            <td colspan="3">Total del pedido</td>
+                             <td class="text-right"><span id="orderItemsTotal">—</span></td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card" id="orderInfoCard">
+                  <div class="card-header">
+                    <h3 class="card-header-title">Datos del Cliente y Envío</h3>
+                     <div class="card-header-actions">
+                      <button class="btn btn-primary btn-sm hidden" id="saveShippingBtn">
+                        <span id="saveShippingBtnText">Guardar</span>
+                        <span id="saveShippingBtnLoading" class="hidden">Guardando...</span>
+                      </button>
+                    </div>
+                   </div>
+                  <div class="card-body">
+                    <div id="orderInfoEmpty" class="empty-state hidden">
+                      <p>Seleccioná un pedido para ver los datos.</p>
+                    </div>
+                    <div id="orderInfoContent">
+                      <div class="form-group">
+                        <label class="toggle-field">
+                          <span class="toggle">
+                            <input type="checkbox" id="whatsappCompleteCheck" />
+                            <span class="toggle-slider"></span>
+                          </span>
+                          <span class="switch-label">Completar por WhatsApp</span>
+                        </label>
+                      </div>
+                      <div class="form-grid-2">
+                        <div class="form-group">
+                          <label>Persona de contacto</label>
+                          <input type="text" id="shipName" data-field="shipping_name" />
+                        </div>
+                        <div class="form-group">
+                          <label>Teléfono</label>
+                          <input type="text" id="shipPhone" data-field="shipping_phone" />
+                        </div>
+                        <div class="form-group">
+                          <label>Email</label>
+                          <input type="text" id="shipEmail" data-field="shipping_email" />
+                        </div>
+                        <div class="form-group">
+                          <label>Calle y Número</label>
+                          <input type="text" id="shipAddress" data-field="shipping_address" />
+                        </div>
+                        <div class="form-group">
+                          <label>Provincia</label>
+                          <input type="text" id="shipCity" data-field="shipping_city" placeholder="Ej: Entre Ríos" />
+                        </div>
+                        <div class="form-group">
+                          <label>Localidad</label>
+                          <input type="text" id="shipZip" data-field="shipping_zip" placeholder="Ej: Gualeguay" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card" id="orderActivityCard">
+                  <div class="card-header">
+                    <h3 class="card-header-title">Registro de Actividad</h3>
+                  </div>
+                  <div class="card-body">
+                    <div id="activityEmpty" class="empty-state hidden">
+                      <p>Sin actividad registrada.</p>
+                    </div>
+                    <div id="activityContent">
+                      <div id="activityTimeline" class="activity-timeline"></div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1136,7 +1153,7 @@
 
         <!-- ===== SECCIÓN: MEDIO DE PAGO ===== -->
          <section id="section-payments" class="admin-section-inactive">
-           <div class="payments-grid payments-grid--2col">
+           <div class="payments-grid">
              <!-- Columna Izquierda: Configuración + Costos de envío -->
              <div class="payments-col payments-col-left">
                <div class="card" id="paymentConfigCard">

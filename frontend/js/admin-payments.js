@@ -452,7 +452,7 @@
       var icon = hasDiff ? '🔴' : '🟢';
       var cls = hasDiff ? 'has-diff' : 'no-diff';
       html += '<div class="shipping-rate-item ' + cls + '">' +
-        '<span class="shipping-rate-name">' + escapeHtml(r.province) + ' ' + icon + '</span>' +
+        '<span class="shipping-rate-name">' + escapeHtml(r.province) + ' <span class="shipping-rate-icon">' + icon + '</span></span>' +
         '<span class="shipping-rate-cost">' +
           '<input type="number" data-province="' + escapeHtml(r.province) + '" value="' + cost + '" min="0" step="10" />' +
         '</span>' +
