@@ -64,6 +64,11 @@
   <script src="js/safeImage.js"></script>
   <script src="js/header.js"></script>
   <script src="js/theme.js"></script>
+  <script>
+    if (window.location.protocol === 'file:') {
+      document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#fde8ef;font-family:system-ui,sans-serif;padding:2rem;text-align:center;"><div style="max-width:500px;background:#fff;padding:2rem;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.15);"><h1 style="color:#d47090;margin-bottom:1rem;">🌸 Artesanía Gualeguay</h1><p style="color:#666;margin-bottom:1.5rem;">Para usar el panel de administración, abrí el sitio desde el servidor local.</p><button onclick="window.location.href=\'http://localhost:3000/pages/dashboard.html\'" style="background:#d47090;color:#fff;border:none;padding:12px 24px;border-radius:8px;font-size:1rem;cursor:pointer;">Abrir Panel de Administración</button><p style="color:#999;font-size:0.85rem;margin-top:1rem;">O ejecutá <code>npm run dev</code> en la terminal y accedé a <a href="http://localhost:3000" style="color:#d47090;">http://localhost:3000</a></p></div></div>';
+    }
+  </script>
 
   <main>
     <!-- ============== HERO SECTION ============== -->
