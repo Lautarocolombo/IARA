@@ -90,6 +90,20 @@ if (missingEnvVars.length > 0) {
 const app = express();
 app.set('trust proxy', 1);
 
+app.use((req, res, next) => {
+  if (req && req.get && req.headers) {
+    const originalGet = req.get.bind(req);
+    req.get = (name) => {
+      if (name && name.toLowerCase() === 'host') {
+        const host = (req.headers.host || '').split(':')[0];
+        if (host) return host;
+      }
+      return originalGet(name);
+    };
+  }
+  next();
+});
+
 app.use(helmet({
   crossOriginEmbedderPolicy: false,
   crossOriginResourcePolicy: { policy: 'cross-origin' },
