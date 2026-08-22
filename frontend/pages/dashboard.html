@@ -73,6 +73,10 @@
           <span>📋</span>
           <span>Pedidos Individuales</span>
         </a>
+        <a href="#" data-section="inventory">
+          <span>📉</span>
+          <span>Inventario</span>
+        </a>
 
       </nav>
       <div class="sidebar-footer">
@@ -1409,8 +1413,83 @@
                  </div>
                </div>
              </div>
-           </div>
-          </section>
+          </div>
+        </section>
+
+        <section id="section-inventory" class="admin-section-inactive">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-header-title">Movimientos de inventario</h3>
+              <div class="card-header-actions">
+                <button class="btn btn-secondary btn-sm" id="refreshInventoryBtn">Actualizar</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="form-grid-2" style="margin-bottom:1rem;">
+                <div class="form-group">
+                  <label>Producto (ID o nombre)</label>
+                  <input type="text" id="invProductFilter" placeholder="Ej: 1 o Pulsera..." />
+                </div>
+                <div class="form-group">
+                  <label>Límite</label>
+                  <input type="number" id="invLimit" value="100" min="1" max="500" />
+                </div>
+              </div>
+              <div class="table-wrap">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Producto</th>
+                      <th>Tipo</th>
+                      <th>Cantidad</th>
+                      <th>Stock anterior</th>
+                      <th>Stock nuevo</th>
+                      <th>Motivo</th>
+                      <th>Referencia</th>
+                      <th>Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody id="inventoryMovementsBody">
+                    <tr><td colspan="9" class="text-muted">Cargando...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:1rem;">
+            <div class="card-header">
+              <h3 class="card-header-title">Alertas de inventario</h3>
+              <div class="card-header-actions">
+                <button class="btn btn-secondary btn-sm" id="refreshAlertsBtn">Actualizar</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="table-wrap">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Producto</th>
+                      <th>SKU</th>
+                      <th>Stock actual</th>
+                      <th>Tipo</th>
+                      <th>Mensaje</th>
+                      <th>Estado</th>
+                      <th>Fecha</th>
+                      <th>Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody id="inventoryAlertsBody">
+                    <tr><td colspan="9" class="text-muted">Cargando...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
       </div>
     </main>
   </div>
@@ -1624,6 +1703,7 @@
   <script src="../js/admin-sales.js"></script>
   <script src="../js/admin-orders.js"></script>
   <script src="../js/admin-payments.js"></script>
+  <script src="../js/admin-inventory.js"></script>
   <script src="../js/pages/dashboard.js"></script>
 </body>
 </html>
