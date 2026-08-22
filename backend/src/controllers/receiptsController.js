@@ -4,6 +4,7 @@ const { safeJsonParse } = require('../lib/parser');
 const path = require('path');
 const fs = require('fs');
 const PDFDocument = require('pdfkit');
+const { uploadProofToBlob } = require('../lib/upload');
 
 const generateReceiptPDF = async (req, res) => {
   const orderId = Number(req.params.id);
@@ -58,15 +59,21 @@ const generateReceiptPDF = async (req, res) => {
     doc.end();
 
     stream.on('finish', () => {
-      const url = `/uploads/receipts/${filename}`;
-      query('INSERT INTO receipts (order_id, filename, url, tenant_id) VALUES ($1, $2, $3, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) ON CONFLICT (order_id) DO UPDATE SET filename = $4, url = $5', [orderId, filename, url, filename, url])
-        .then(() => {
-          res.download(filepath, filename);
-        })
-        .catch(err => {
-          logger.error('Error guardando receipt:', err);
-          res.download(filepath, filename);
-        });
+      uploadProofToBlob({ path: filepath, originalname: filename, mimetype: 'application/pdf' }).then((blobResult) => {
+        let publicUrl;
+        if (blobResult) {
+          publicUrl = blobResult.url;
+          try { fs.unlinkSync(filepath); } catch (e) { /* noop */ }
+        } else {
+          publicUrl = `/uploads/receipts/${filename}`;
+        }
+        return query('INSERT INTO receipts (order_id, filename, url, tenant_id) VALUES ($1, $2, $3, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) ON CONFLICT (order_id) DO UPDATE SET filename = $4, url = $5', [orderId, filename, publicUrl, filename, publicUrl]);
+      }).then(() => {
+        res.download(filepath, filename);
+      }).catch((err) => {
+        logger.error('Error guardando receipt:', err);
+        res.download(filepath, filename);
+      });
     });
   } catch (err) {
     logger.error('Error generando comprobante:', err);

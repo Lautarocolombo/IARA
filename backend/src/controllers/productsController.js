@@ -5,6 +5,7 @@ const { deleteImageAsset, getPublicUrl } = require('../lib/upload');
 const { syncBus } = require('../routes/sync');
 const { logAudit } = require('../lib/audit');
 const { applyETag } = require('../lib/etag');
+const { logInventoryMovement } = require('../controllers/inventoryController');
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
@@ -262,10 +263,16 @@ const bulkImportProducts = async (req, res) => {
 
       const existing = await query('SELECT id FROM products WHERE name = $1 OR slug = $2', [data.name, data.slug]);
       if (existing.rows.length > 0) {
+        const stockRow = await query('SELECT stock FROM products WHERE id = $1', [existing.rows[0].id]);
+        const previousStock = stockRow.rows[0]?.stock || 0;
+        const newStock = Number(data.stock || 0);
         await query(
           'UPDATE products SET category = $1, price = $2, description = $3, emoji = $4, image = $5, badge = $6, stock = $7, featured = $8, active = $9, sku = $10, slug = $11, updated_at = CURRENT_TIMESTAMP WHERE id = $12',
           [data.category, Number(data.price), data.description, data.emoji, data.image, data.badge, Number(data.stock), data.featured, data.active, data.sku || '', data.slug, existing.rows[0].id]
         );
+        if (previousStock !== newStock) {
+          logInventoryMovement(existing.rows[0].id, 'adjustment', newStock - previousStock, previousStock, newStock, 'Ajuste manual (csv)', '').catch(() => {});
+        }
       } else {
         await query(
           'INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\'))',
@@ -522,8 +529,22 @@ const updateProduct = async (req, res) => {
     const setClause = fields.map((_, i) => `${fields[i]} = $${i + 1}`).join(', ');
     const values = fields.map(f => (['price', 'stock'].includes(f) ? Number(data[f]) : data[f]));
     values.push(id);
+
+    let previousStock = 0;
+    if (fields.includes('stock')) {
+      const stockRow = await query('SELECT stock FROM products WHERE id = $1', [id]);
+      previousStock = stockRow.rows[0]?.stock || 0;
+    }
+
     const result = await query(`UPDATE products SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = $${values.length} AND deleted = FALSE AND (tenant_id = current_setting('app.current_tenant', TRUE) OR tenant_id = 'default') RETURNING *`, values);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
+
+    if (fields.includes('stock')) {
+      const newStock = Number(data.stock);
+      const qty = newStock - previousStock;
+      logInventoryMovement(id, 'adjustment', qty, previousStock, newStock, 'Ajuste manual', '').catch(() => {});
+    }
+
     logger.info({ productId: id, fields }, 'updateProduct: producto actualizado');
     res.json(result.rows[0]);
     try { syncBus.emit('products_updated', { id: Number(req.params.id) }); } catch (e) { /* noop */ }
@@ -664,10 +685,16 @@ const syncToNeon = async (req, res) => {
       try {
         const exists = await query('SELECT id FROM products WHERE id = $1', [Number(p.id)]);
         if (exists.rows.length > 0) {
+          const stockRow = await query('SELECT stock FROM products WHERE id = $1', [Number(p.id)]);
+          const previousStock = stockRow.rows[0]?.stock || 0;
+          const newStock = Number(p.stock || 0);
           await query(
             'UPDATE products SET name = $1, slug = $2, category = $3, price = $4, description = $5, emoji = $6, image = $7, badge = $8, stock = $9, featured = $10, active = $11, sku = $12, updated_at = CURRENT_TIMESTAMP WHERE id = $13',
             [p.name, p.slug || slugify(p.name), p.category, Number(p.price), p.description || '', p.emoji || '📿', p.image || '', p.badge || '', Number(p.stock), p.featured || false, p.active !== false, p.sku || '', Number(p.id)]
           );
+          if (previousStock !== newStock) {
+            logInventoryMovement(Number(p.id), 'adjustment', newStock - previousStock, previousStock, newStock, 'Ajuste manual (bulk)', '').catch(() => {});
+          }
           results.updated += 1;
         } else {
           await query(

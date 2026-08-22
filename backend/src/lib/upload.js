@@ -37,6 +37,31 @@ function isBlobUrl(url) {
   return !!(url && typeof url === 'string' && BLOB_URL_RE.test(url));
 }
 
+async function uploadProofToBlob(file) {
+  const mod = getBlobModule();
+  if (!mod || !isBlobConfigured()) {
+    return null;
+  }
+  try {
+    const buffer = fs.readFileSync(file.path);
+    const ext = path.extname(file.originalname).toLowerCase() || '.bin';
+    const safe = file.originalname.replace(ext, '').replace(/[^a-zA-Z0-9._-]/g, '_');
+    const contentType = file.mimetype || 'application/octet-stream';
+    const blobName = `comprobantes/${Date.now()}_${safe}${ext}`;
+
+    const blob = await mod.put(blobName, buffer, {
+      access: 'public',
+      token: process.env.BLOB_READ_WRITE_TOKEN.trim(),
+      contentType
+    });
+
+    return { url: blob.url, filename: blobName, blobName, isCloudinary: false, isBlob: true };
+  } catch (err) {
+    logger.error({ err: err.message, stack: err.stack, code: err.code }, 'Error subiendo comprobante a Vercel Blob - fallback a storage local');
+    return null;
+  }
+}
+
 async function uploadToBlob(file) {
   const mod = getBlobModule();
   if (!mod || !isBlobConfigured()) {
@@ -312,6 +337,7 @@ module.exports = {
   deleteFromBlob,
   deleteImageAsset,
   saveUploadedFile,
+  uploadProofToBlob,
   isBlobConfigured,
   isBlobUrl
 };

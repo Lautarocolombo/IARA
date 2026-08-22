@@ -350,6 +350,7 @@ app.use('/api', csrfProtection);
 app.use('/api', limiter);
 
 app.use('/api/admin', require('./routes/coupons'));
+app.use('/api/admin/inventory', require('./routes/inventory'));
 
 app.get('/metrics', (req, res) => {
   const clientIp = req.ip || req.connection.remoteAddress || '';

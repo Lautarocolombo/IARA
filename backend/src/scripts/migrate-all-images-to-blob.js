@@ -58,7 +58,18 @@ async function migrateTable(tableName, urlColumn, idColumn, extraUpdateFields = 
       let buffer = null;
       let contentType = 'image/webp';
 
-      if (currentUrl.startsWith('http')) {
+      if (currentUrl.startsWith('data:image/')) {
+        const match = currentUrl.match(/^data:(image\/[a-z0-9.+-]+);base64,(.*)$/);
+        if (match) {
+          buffer = Buffer.from(match[2], 'base64');
+          contentType = match[1];
+        }
+        if (!buffer) {
+          console.log(`  SKIP (invalid data URI): ${tableName}.${row[idColumn]}: ${currentUrl.substring(0, 60)}`);
+          skipped++;
+          continue;
+        }
+      } else if (currentUrl.startsWith('http')) {
         const fetched = await fetchUrl(currentUrl);
         if (fetched.status === 200 && fetched.buffer && fetched.buffer.length > 0) {
           buffer = fetched.buffer;
@@ -136,25 +147,20 @@ async function migrateTable(tableName, urlColumn, idColumn, extraUpdateFields = 
     let totalSkipped = 0;
     let totalFailed = 0;
 
-    // 1. product_images
     const pm = await migrateTable('product_images', 'url', 'id', ['filename', 'cloudinary_public_id']);
     totalMigrated += pm.migrated; totalSkipped += pm.skipped; totalFailed += pm.failed;
 
-    // 2. products.image
     const pr = await migrateTable('products', 'image', 'id', []);
     totalMigrated += pr.migrated; totalSkipped += pr.skipped; totalFailed += pr.failed;
 
-    // 3. carousel_images
     const cm = await migrateTable('carousel_images', 'url', 'id', ['public_id']);
     totalMigrated += cm.migrated; totalSkipped += cm.skipped; totalFailed += cm.failed;
 
-    // 4. hero_cards
     const hm = await migrateTable('hero_cards', 'imagen', 'id', []);
     totalMigrated += hm.migrated; totalSkipped += hm.skipped; totalFailed += hm.failed;
 
-    // 5. site_texts (special case - JSON/text values)
     console.log('\n=== Migrating site_texts ===');
-    const textsResult = await query("SELECT key, value FROM site_texts WHERE value LIKE '%/imagenes/%' OR value LIKE '%iara-peach%' OR value LIKE '%uploads/imagenes%' OR value LIKE 'http%'");
+    const textsResult = await query("SELECT key, value FROM site_texts WHERE value LIKE '%/imagenes/%' OR value LIKE '%iara-peach%' OR value LIKE '%uploads/imagenes%' OR value LIKE 'http%' OR value LIKE 'data:image/%'");
     const textRows = textsResult.rows || [];
     console.log(`Found ${textRows.length} site_texts rows with image URLs`);
     for (const row of textRows) {
@@ -170,7 +176,13 @@ async function migrateTable(tableName, urlColumn, idColumn, extraUpdateFields = 
       }
       let buffer = null;
       let contentType = 'image/webp';
-      if (oldVal.startsWith('http')) {
+      if (oldVal.startsWith('data:image/')) {
+        const match = oldVal.match(/^data:(image\/[a-z0-9.+-]+);base64,(.*)$/);
+        if (match) {
+          buffer = Buffer.from(match[2], 'base64');
+          contentType = match[1];
+        }
+      } else if (oldVal.startsWith('http')) {
         const fetched = await fetchUrl(oldVal);
         if (fetched.status === 200 && fetched.buffer && fetched.buffer.length > 0) {
           buffer = fetched.buffer;

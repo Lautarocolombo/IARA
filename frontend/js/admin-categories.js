@@ -240,7 +240,7 @@
     var preview = document.getElementById('cat_image_preview');
     if (preview) {
       if (category && category.image_url) {
-        preview.innerHTML = '<img src="' + escapeHtml(category.image_url) + '" style="max-height:120px;border-radius:8px;" />';
+        preview.innerHTML = '<img src="' + escapeHtml(category.image_url) + '" alt="Preview categoría" style="max-height:120px;border-radius:8px;" />';
       } else {
         preview.innerHTML = '';
       }
@@ -366,7 +366,7 @@
         if (file && preview) {
           var reader = new FileReader();
           reader.onload = function (e) {
-            preview.innerHTML = '<img src="' + e.target.result + '" style="max-height:120px;border-radius:8px;" />';
+            preview.innerHTML = '<img src="' + e.target.result + '" alt="Preview categoría" style="max-height:120px;border-radius:8px;" />';
           };
           reader.readAsDataURL(file);
         }

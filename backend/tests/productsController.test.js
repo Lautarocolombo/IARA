@@ -309,6 +309,7 @@ describe('productsController', () => {
         json: jest.fn()
       };
 
+      query.mockResolvedValueOnce({ rows: [{ stock: 10 }] });
       query.mockResolvedValueOnce({ rows: [{ id: 1, name: 'Producto Actualizado', price: 200 }] });
 
       await updateProduct(req, res);

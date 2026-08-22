@@ -22,6 +22,11 @@ jest.mock('pdfkit', () => jest.fn(() => ({
   end: jest.fn().mockReturnThis()
 })));
 
+jest.mock('../src/lib/upload', () => ({
+  uploadProofToBlob: jest.fn().mockResolvedValue(null),
+  deleteFromBlob: jest.fn().mockResolvedValue(false)
+}));
+
 const fs = require('fs');
 const path = require('path');
 const { query } = require('../src/lib/db');
@@ -29,8 +34,13 @@ const { generateReceiptPDF, sendReceiptWhatsApp, uploadReceipt } = require('../s
 
 function createSyncThenable(result) {
   const promise = Promise.resolve(result);
-  promise.then = (onFulfilled) => {
-    onFulfilled(result);
+  promise.then = (onFulfilled, onRejected) => {
+    if (typeof onFulfilled === 'function') {
+      onFulfilled(result);
+    }
+    if (typeof onRejected === 'function') {
+      onRejected(new Error('Custom thenable rejected'));
+    }
     return promise;
   };
   return promise;
@@ -42,7 +52,6 @@ function createRejectedThenable(error) {
       if (typeof onRejected === 'function') {
         onRejected(error);
       }
-      return Promise.reject(error);
     }
   };
 }
@@ -86,10 +95,10 @@ describe('receiptsController', () => {
 
       await generateReceiptPDF(req, res);
 
-      expect(fs.createWriteStream).toHaveBeenCalled();
-      const stream = fs.createWriteStream.mock.results[0].value;
+      const stream = fs.createWriteStream.mock.results[0]?.value;
       expect(stream.on).toHaveBeenCalledWith('finish', expect.any(Function));
       expect(query.mock.calls.length).toBe(2);
+      await new Promise(r => setTimeout(r, 10));
       expect(res.download).toHaveBeenCalledWith(
         expect.stringContaining('comprobante-pedido-1.pdf'),
         'comprobante-pedido-1.pdf'
@@ -169,6 +178,7 @@ describe('receiptsController', () => {
       query.mockReturnValueOnce(createRejectedThenable(new Error('DB error')));
 
       await generateReceiptPDF(req, res);
+      await new Promise(r => setTimeout(r, 10));
 
       expect(res.download).toHaveBeenCalled();
     });

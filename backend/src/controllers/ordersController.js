@@ -8,6 +8,7 @@ const path = require('path');
 const fs = require('fs');
 const PDFDocument = require('pdfkit');
 const { sendOrderConfirmationEmail } = require('../lib/email');
+const { logInventoryMovement } = require('../controllers/inventoryController');
 
 async function logActivity(user, action, entityType = '', entityId = 0, details = '', ip = '', relatedOrderId = 0, tenantId = 'default') {
   try {
@@ -79,7 +80,7 @@ const getUserOrders = async (req, res) => {
 
 const createOrder = async (req, res) => {
   logger.info('createOrder: inicio');
-  const { items, total, customer, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, shipping_cost, notes, idempotency_key, couponCode } = req.body || {};
+  const { items, total, customer, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, shipping_cost, notes, idempotency_key, couponCode, payment_method } = req.body || {};
   logger.info('createOrder: body parseado');
 
   if (idempotency_key) {
@@ -207,11 +208,13 @@ const createOrder = async (req, res) => {
         if (currentStock < item.quantity) {
           throw new Error(`Stock insuficiente para el producto ${item.id}. Disponible: ${currentStock}, solicitado: ${item.quantity}`);
         }
+        const newStock = currentStock - Number(item.quantity);
         await query(
           'UPDATE products SET stock = stock - $1 WHERE id = $2 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')',
           [Number(item.quantity), Number(item.id)],
           client
         );
+        logInventoryMovement(Number(item.id), 'sale', Number(item.quantity), currentStock, newStock, 'Venta', '').catch(() => {});
       }
 
       let finalCouponCode = couponCode ? String(couponCode).trim() : '';
@@ -252,7 +255,7 @@ const createOrder = async (req, res) => {
       const finalTotal = calculatedSubtotal - finalCouponDiscount + calculatedShipping;
 
       const orderResult = await query(
-        'INSERT INTO orders (items, total, customer, status, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, subtotal, shipping_cost, notes, order_token, coupon_code, coupon_discount, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) RETURNING *',
+        'INSERT INTO orders (items, total, customer, status, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, subtotal, shipping_cost, notes, order_token, coupon_code, coupon_discount, payment_method, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) RETURNING *',
         [
           JSON.stringify(validatedItems),
           finalTotal,
@@ -269,7 +272,8 @@ const createOrder = async (req, res) => {
           notes || '',
           orderToken,
           finalCouponCode,
-          finalCouponDiscount
+          finalCouponDiscount,
+          payment_method || 'transfer'
         ],
         client
       );
@@ -455,7 +459,11 @@ const updateOrder = async (req, res) => {
         for (const item of items) {
           const productId = Number(item.id);
           const qty = Number(item.quantity || 1);
-    await query('UPDATE products SET stock = stock + $1 WHERE id = $2 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [qty, productId]);
+          const stockResult = await query('SELECT stock FROM products WHERE id = $1', [productId]);
+          const currentStock = stockResult.rows[0]?.stock || 0;
+          const newStock = currentStock + qty;
+          await query('UPDATE products SET stock = stock + $1 WHERE id = $2 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [qty, productId]);
+          logInventoryMovement(productId, 'cancellation', qty, currentStock, newStock, 'Cancelación de pedido', String(id)).catch(() => {});
         }
         logMsgs.push('Stock restaurado');
       }

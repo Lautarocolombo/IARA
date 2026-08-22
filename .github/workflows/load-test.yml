@@ -1,0 +1,38 @@
+name: Load test
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 4 * * 0'
+
+jobs:
+  artillery:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Artillery
+        run: npm install -g artillery
+
+      - name: Run load test
+        env:
+          TARGET_URL: ${{ secrets.BACKEND_URL || 'https://iara-os3h.onrender.com' }}
+        run: |
+          sed -i "s|http://localhost:3000|${TARGET_URL}|g" artillery-load-test.yml
+          artillery run artillery-load-test.yml
+
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: artillery-report-${{ github.run_id }}
+          path: |
+            artillery-report.html
+            artillery-report.json
+          retention-days: 7

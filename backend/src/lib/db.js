@@ -279,6 +279,7 @@ async function initDB() {
       shipping_email TEXT DEFAULT '',
       subtotal REAL DEFAULT 0,
       shipping_cost REAL DEFAULT 0,
+      payment_method TEXT DEFAULT 'transfer',
       tenant_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
@@ -312,6 +313,31 @@ async function initDB() {
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
     await query('CREATE INDEX IF NOT EXISTS idx_sales_sale_date ON sales(sale_date)');
+    await query(`CREATE TABLE IF NOT EXISTS inventory_movements (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL,
+      type TEXT DEFAULT 'adjustment',
+      quantity INTEGER DEFAULT 0,
+      previous_stock INTEGER DEFAULT 0,
+      new_stock INTEGER DEFAULT 0,
+      reason TEXT DEFAULT '',
+      reference_id TEXT DEFAULT '',
+      tenant_id TEXT DEFAULT 'default',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query('CREATE INDEX IF NOT EXISTS idx_inventory_movements_product ON inventory_movements(product_id)');
+    await query('CREATE INDEX IF NOT EXISTS idx_inventory_movements_created ON inventory_movements(created_at)');
+    await query(`CREATE TABLE IF NOT EXISTS inventory_alerts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL,
+      type TEXT DEFAULT 'low_stock',
+      message TEXT DEFAULT '',
+      resolved BOOLEAN DEFAULT FALSE,
+      tenant_id TEXT DEFAULT 'default',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      resolved_at DATETIME
+    )`);
+    await query('CREATE INDEX IF NOT EXISTS idx_inventory_alerts_product ON inventory_alerts(product_id)');
     await query(`CREATE TABLE IF NOT EXISTS reviews (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       product_id INTEGER NOT NULL,

@@ -40,6 +40,10 @@ services:
         value: admin@artesaniagualeguay.com
       - key: RESEND_API_KEY
         value: ""
+        sync: false
+      - key: REDIS_URL
+        value: ""
+        sync: false
       - key: WHATSAPP
         value: "+5493444634444"
       - key: LOG_LEVEL

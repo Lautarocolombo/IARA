@@ -316,6 +316,9 @@
     }
 
     try {
+      const paymentMethodEl = document.getElementById('paymentMethod');
+      const paymentMethod = paymentMethodEl ? paymentMethodEl.value : 'transfer';
+
       const orderRes = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/orders`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -330,7 +333,8 @@
           subtotal,
           shipping_cost: shippingCost,
           total,
-          couponCode: appliedCoupon ? appliedCoupon.code : ''
+          couponCode: appliedCoupon ? appliedCoupon.code : '',
+          payment_method: paymentMethod
         })
       });
 
@@ -358,6 +362,8 @@
         return;
       }
 
+      const isCash = paymentMethod === 'cash';
+
       const waNumber = paymentConfig.whatsapp || (CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, '');
       const orderId = orderData.id || 'NUEVO';
       const orderNumber = `#${String(orderId).padStart(4, '0')}`;
@@ -366,7 +372,7 @@
       const shippingLine = shippingCost > 0 && shipping.province
         ? `Diferencia de envío (${shipping.province}): ${formatARS(shippingCost)}`
         : (shippingCost === 0 ? 'Envío incluido en el precio' : `Envío: ${formatARS(shippingCost)}`);
-      const waMsg = encodeURIComponent(`Hola! Soy ${customerName}, acabo de hacer el pedido ${orderNumber}:\n${productList}\nSubtotal productos: ${formatARS(subtotal)}\n${shippingLine}\nTotal: ${formatARS(total)}\nLes mando el comprobante de la transferencia.`);
+      const waMsg = encodeURIComponent(`Hola! Soy ${customerName}, acabo de hacer el pedido ${orderNumber}:\n${productList}\nSubtotal productos: ${formatARS(subtotal)}\n${shippingLine}\nTotal: ${formatARS(total)}\n${isCash ? 'Voy a pagar en efectivo al retirar/recibir.' : 'Les mando el comprobante de la transferencia.'}`);
 
       sessionStorage.setItem('ag_last_order', JSON.stringify({
         id: orderId,
@@ -383,38 +389,65 @@
         shippingEmail: shipping.email,
         shippingCost: shippingCost,
         subtotal: subtotal,
-        orderToken: orderData.order_token || ''
+        orderToken: orderData.order_token || '',
+        paymentMethod
       }));
+
+      const paymentInstructionsEl = document.getElementById('paymentInstructions');
+      const paymentTitleEl = paymentInstructionsEl ? paymentInstructionsEl.querySelector('h2') : null;
+      const paymentNoteEl = document.getElementById('paymentInstructionsText');
+      if (paymentTitleEl) {
+        paymentTitleEl.textContent = isCash ? '💵 Pagar en efectivo' : '💳 Pagar por transferencia';
+      }
+      if (paymentNoteEl) {
+        paymentNoteEl.textContent = isCash
+          ? 'Tu pedido quedará reservado. Te contactaremos para coordinar el pago y entrega.'
+          : 'Transferí el total exacto y envíanos el comprobante por WhatsApp para confirmar tu pedido.';
+      }
 
       document.getElementById('paymentOrderId').textContent = orderNumber;
       document.getElementById('paymentOrderTotal').textContent = formatARS(total);
       document.getElementById('paymentTotalAmount').textContent = formatARS(total);
 
-      document.getElementById('transferOrderNumber').textContent = orderNumber;
-      document.getElementById('transferOrderItems').innerHTML = items.map(i => `
-        <div class="transfer-item-row">
-          <span class="transfer-item-name">${i.name} x${i.qty}</span>
-          <span class="transfer-item-price">${formatARS(i.price * i.qty)}</span>
-        </div>
-      `).join('');
-      const shippingBreakdown = document.getElementById('transferShippingBreakdown');
-      if (shippingBreakdown) {
-        if (shippingCost > 0 && shipping.province) {
-          shippingBreakdown.innerHTML = `<div class='transfer-item-row' style='color:#d47090;'><span class='transfer-item-name'>Diferencia de envío (${shipping.province})</span><span class='transfer-item-price'>${formatARS(shippingCost)}</span></div>`;
-          shippingBreakdown.style.display = '';
-        } else if (shippingCost === 0) {
-          shippingBreakdown.innerHTML = '<div class=\'transfer-item-row\' style=\'color:#10b981;\'><span class=\'transfer-item-name\'>Envío incluido en el precio</span><span class=\'transfer-item-price\'>$0</span></div>';
-          shippingBreakdown.style.display = '';
-        } else {
-          shippingBreakdown.style.display = 'none';
+      if (!isCash) {
+        document.getElementById('transferOrderNumber').textContent = orderNumber;
+        document.getElementById('transferOrderItems').innerHTML = items.map(i => `
+          <div class="transfer-item-row">
+            <span class="transfer-item-name">${i.name} x${i.qty}</span>
+            <span class="transfer-item-price">${formatARS(i.price * i.qty)}</span>
+          </div>
+        `).join('');
+        const shippingBreakdown = document.getElementById('transferShippingBreakdown');
+        if (shippingBreakdown) {
+          if (shippingCost > 0 && shipping.province) {
+            shippingBreakdown.innerHTML = `<div class='transfer-item-row' style='color:#d47090;'><span class='transfer-item-name'>Diferencia de envío (${shipping.province})</span><span class='transfer-item-price'>${formatARS(shippingCost)}</span></div>`;
+            shippingBreakdown.style.display = '';
+          } else if (shippingCost === 0) {
+            shippingBreakdown.innerHTML = '<div class=\'transfer-item-row\' style=\'color:#10b981;\'><span class=\'transfer-item-name\'>Envío incluido en el precio</span><span class=\'transfer-item-price\'>$0</span></div>';
+            shippingBreakdown.style.display = '';
+          } else {
+            shippingBreakdown.style.display = 'none';
+          }
         }
+        document.getElementById('transferOrderTotalHighlight').textContent = formatARS(total);
       }
-      document.getElementById('transferOrderTotalHighlight').textContent = formatARS(total);
 
-      document.getElementById('whatsappComprobanteBtn').href = `https://wa.me/${waNumber}?text=${waMsg}`;
-      document.getElementById('transferReceiptBtn').href = `https://wa.me/${waNumber}?text=${waMsg}`;
-      document.getElementById('transferReceiptBtn').dataset.orderNumber = orderNumber;
-      document.getElementById('transferReceiptBtn').dataset.orderId = orderId;
+      const comprobanteBtn = document.getElementById('whatsappComprobanteBtn');
+      if (comprobanteBtn) {
+        comprobanteBtn.href = `https://wa.me/${waNumber}?text=${waMsg}`;
+        comprobanteBtn.textContent = isCash ? 'Coordinar pago por WhatsApp' : 'Enviar comprobante por WhatsApp';
+      }
+      const transferReceiptBtn = document.getElementById('transferReceiptBtn');
+      if (transferReceiptBtn) {
+        transferReceiptBtn.href = `https://wa.me/${waNumber}?text=${waMsg}`;
+        transferReceiptBtn.dataset.orderNumber = orderNumber;
+        transferReceiptBtn.dataset.orderId = orderId;
+        transferReceiptBtn.style.display = isCash ? 'none' : '';
+      }
+
+      document.getElementById('paymentInstructions').style.display = 'block';
+      document.getElementById('transferDataCard').style.display = isCash ? 'none' : 'block';
+      document.getElementById('shippingForm').style.display = 'none';
 
       try {
         const orderToken = (() => {
@@ -438,10 +471,6 @@
       } catch (e) {
         console.warn('[checkout] No se pudo confirmar el pago automáticamente:', e);
       }
-
-      document.getElementById('paymentInstructions').style.display = 'block';
-      document.getElementById('transferDataCard').style.display = 'block';
-      document.getElementById('shippingForm').style.display = 'none';
 
       emitSync('order_created');
      } catch (err) {
@@ -492,8 +521,14 @@
         document.getElementById('transferReceiptBtn').dataset.orderNumber = order.number;
         document.getElementById('transferReceiptBtn').dataset.orderId = order.id || '';
       }
+      const paymentInstructionsEl = document.getElementById('paymentInstructions');
+      const paymentTitleEl = paymentInstructionsEl ? paymentInstructionsEl.querySelector('h2') : null;
+      const isCash = order.paymentMethod === 'cash';
+      if (paymentTitleEl) {
+        paymentTitleEl.textContent = isCash ? '💵 Pagar en efectivo' : '💳 Pagar por transferencia';
+      }
       document.getElementById('paymentInstructions').style.display = 'block';
-      document.getElementById('transferDataCard').style.display = 'block';
+      document.getElementById('transferDataCard').style.display = isCash ? 'none' : 'block';
       document.getElementById('shippingForm').style.display = 'none';
     } catch (e) {
       console.error('Error restaurando pedido desde sesión:', e);
