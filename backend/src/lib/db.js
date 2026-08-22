@@ -280,6 +280,8 @@ async function initDB() {
       subtotal REAL DEFAULT 0,
       shipping_cost REAL DEFAULT 0,
       payment_method TEXT DEFAULT 'transfer',
+      coupon_code TEXT DEFAULT '',
+      coupon_discount REAL DEFAULT 0,
       tenant_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);

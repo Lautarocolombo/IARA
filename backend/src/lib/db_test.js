@@ -253,6 +253,8 @@ async function initDB() {
       subtotal REAL DEFAULT 0,
       shipping_cost REAL DEFAULT 0,
       payment_method TEXT DEFAULT 'transfer',
+      coupon_code TEXT DEFAULT '',
+      coupon_discount REAL DEFAULT 0,
       tenant_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
@@ -673,13 +675,23 @@ async function initDB() {
       } catch (err) {
         logger.debug({ err: err.message }, 'Columna orden ya existe o no se pudo agregar (SQLite)');
       }
-     try {
-       await query('ALTER TABLE orders ADD COLUMN payment_method TEXT DEFAULT \'\'');
-     } catch (err) {
-       logger.debug({ err: err.message }, 'Columna payment_method ya existe o no se pudo agregar (SQLite)');
-     }
-     try {
-       await query('ALTER TABLE payment_config ADD COLUMN transfer_alias TEXT DEFAULT \'\'');
+      try {
+        await query('ALTER TABLE orders ADD COLUMN payment_method TEXT DEFAULT \'\'');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna payment_method ya existe o no se pudo agregar (SQLite)');
+      }
+      try {
+        await query('ALTER TABLE orders ADD COLUMN coupon_code TEXT DEFAULT \'\'');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna coupon_code ya existe o no se pudo agregar (SQLite)');
+      }
+      try {
+        await query('ALTER TABLE orders ADD COLUMN coupon_discount REAL DEFAULT 0');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna coupon_discount ya existe o no se pudo agregar (SQLite)');
+      }
+      try {
+        await query('ALTER TABLE payment_config ADD COLUMN transfer_alias TEXT DEFAULT \'\'');
      } catch (err) {
        logger.debug({ err: err.message }, 'Columna transfer_alias ya existe o no se pudo agregar (SQLite)');
      }
