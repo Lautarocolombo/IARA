@@ -634,6 +634,10 @@ function sanitizeAboutText(raw) {
   if (!clean || /^<(p|div)>\s*(<br\s*\/?>)?\s*<\/\1>$/.test(clean)) {
     return '';
   }
+  var match = clean.match(/<p[^>]*>[\s\S]*?<\/p>/i);
+  if (match) {
+    return match[0];
+  }
   return clean;
 }
 window.sanitizeAboutText = sanitizeAboutText;

@@ -320,23 +320,11 @@
   };
 
   window.deleteTestimonial = async function (id) {
-    var modal = document.getElementById('confirmModalOverlay');
-    var msg = document.getElementById('confirmModalMessage');
-    var actionBtn = document.getElementById('confirmModalAction');
-    var cancelBtn = document.getElementById('cancelConfirmBtn');
-    if (!modal || !msg || !actionBtn || !cancelBtn) return;
-
-    msg.textContent = '¿Estás seguro de eliminar este testimonio? Esta acción no se puede deshacer.';
-    actionBtn.textContent = 'Eliminar';
-    actionBtn.className = 'btn btn-danger';
-    actionBtn.onclick = async function () {
-      if (modal) modal.classList.remove('active');
-      await doDeleteTestimonial(id);
-    };
-    cancelBtn.onclick = function () {
-      if (modal) modal.classList.remove('active');
-    };
-    modal.classList.add('active');
+    window.showConfirmModal(
+      'Eliminar testimonio',
+      '¿Estás seguro de eliminar este testimonio? Esta acción no se puede deshacer.',
+      function () { doDeleteTestimonial(id); }
+    );
   };
 
   async function doDeleteTestimonial(id) {

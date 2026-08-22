@@ -68,4 +68,11 @@ describe('sanitizeAboutText (renderizado del texto principal de Sobre Nosotros)'
     expect(el.querySelector('p')).not.toBeNull();
     expect(el.textContent).toBe('Trabajamos mas de 5 años ');
   });
+
+  test('extrae solo el primer párrafo cuando el texto contiene múltiples bloques', () => {
+    delete global.DOMPurify;
+    const out = sanitize('<p>En cada pieza...</p><p>Artesanía Gualeguay nació...</p>');
+    expect(out).toBe('<p>En cada pieza...</p>');
+    expect(out).not.toContain('Artesanía Gualeguay nació');
+  });
 });

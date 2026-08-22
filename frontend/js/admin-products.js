@@ -495,7 +495,7 @@
         var item = btn.closest('.product-image-item');
         var imageId = item ? item.dataset.imageId : null;
         if (!imageId) return;
-        showConfirmModal('Eliminar imagen', '¿Estás seguro de eliminar esta imagen? Esta acción no se puede deshacer.', function () {
+        window.showConfirmModal('Eliminar imagen', '¿Estás seguro de eliminar esta imagen? Esta acción no se puede deshacer.', function () {
           deleteProductImage(productId, imageId);
         });
       });
@@ -742,43 +742,6 @@
   }
 
   /* ===== MODAL DE CONFIRMACIÃ“N ===== */
-  var confirmCallback = null;
-
-  function showConfirmModal(title, message, onConfirm) {
-    var overlay = document.getElementById('confirmModalOverlay');
-    var titleEl = document.getElementById('confirmModalTitle');
-    var msgEl = document.getElementById('confirmModalMessage');
-    if (!overlay || !titleEl || !msgEl) return;
-
-    confirmCallback = onConfirm;
-    titleEl.textContent = title || 'Confirmar';
-    msgEl.textContent = message || '¿Estás seguro?';
-    overlay.style.display = 'flex';
-  }
-
-  function hideConfirmModal() {
-    var overlay = document.getElementById('confirmModalOverlay');
-    if (overlay) overlay.style.display = 'none';
-    confirmCallback = null;
-  }
-
-  if (document.getElementById('confirmModalAction')) {
-    document.getElementById('confirmModalAction').addEventListener('click', function () {
-      if (typeof confirmCallback === 'function') confirmCallback();
-      hideConfirmModal();
-    });
-  }
-  if (document.getElementById('cancelConfirmBtn')) {
-    document.getElementById('cancelConfirmBtn').addEventListener('click', hideConfirmModal);
-  }
-  if (document.getElementById('closeConfirmModal')) {
-    document.getElementById('closeConfirmModal').addEventListener('click', hideConfirmModal);
-  }
-  if (document.getElementById('confirmModalOverlay')) {
-    document.getElementById('confirmModalOverlay').addEventListener('click', function (e) {
-      if (e.target === document.getElementById('confirmModalOverlay')) hideConfirmModal();
-    });
-  }
 
   /* ===== MODAL ===== */
 
@@ -881,24 +844,11 @@
   window.deleteProductConfirm = async function (id) {
     var product = productList.find(function (p) { return p.id === id; });
     if (!product) return;
-
-    var modal = document.getElementById('confirmModalOverlay');
-    var msg = document.getElementById('confirmModalMessage');
-    var actionBtn = document.getElementById('confirmModalAction');
-    var cancelBtn = document.getElementById('cancelConfirmBtn');
-    if (!modal || !msg || !actionBtn || !cancelBtn) return;
-
-    msg.textContent = '¿Estás seguro de eliminar el producto "' + product.name + '"?\n\nSe desactiva (soft delete) y no aparecerá más en el catálogo.';
-    actionBtn.textContent = 'Eliminar';
-    actionBtn.className = 'btn btn-danger';
-    actionBtn.onclick = async function () {
-      if (modal) modal.classList.remove('active');
-      await processDeleteProduct(id);
-    };
-    cancelBtn.onclick = function () {
-      if (modal) modal.classList.remove('active');
-    };
-    modal.classList.add('active');
+    window.showConfirmModal(
+      'Eliminar producto',
+      '¿Estás seguro de eliminar el producto "' + product.name + '"?\n\nSe desactiva (soft delete) y no aparecerá más en el catálogo.',
+      function () { processDeleteProduct(id); }
+    );
   };
 
   async function processDeleteProduct(id) {

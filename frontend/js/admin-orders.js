@@ -581,21 +581,11 @@
       return;
     }
 
-    var modal = document.getElementById('confirmModalOverlay');
-    var msg = document.getElementById('confirmModalMessage');
-    var actionBtn = document.getElementById('confirmModalAction');
-    if (modal) {
-      if (msg) msg.textContent = '¿Confirmás la aprobación del pago del pedido #' + selectedOrderId + '?';
-      if (actionBtn) {
-        actionBtn.textContent = 'Aprobar';
-        actionBtn.className = 'btn btn-success';
-        actionBtn.onclick = async function () {
-          if (modal) modal.classList.remove('active');
-          await processApprove(selectedOrderId);
-        };
-      }
-      modal.classList.add('active');
-    }
+    window.showConfirmModal(
+      'Aprobar pago',
+      '¿Confirmás la aprobación del pago del pedido #' + selectedOrderId + '?',
+      function () { processApprove(selectedOrderId); }
+    );
   }
 
   async function processApprove(id) {
@@ -636,21 +626,11 @@
     var reason = prompt('Motivo del rechazo (opcional):');
     if (reason === null) return;
 
-    var modal = document.getElementById('confirmModalOverlay');
-    var msg = document.getElementById('confirmModalMessage');
-    var actionBtn = document.getElementById('confirmModalAction');
-    if (modal) {
-      if (msg) msg.textContent = '¿Confirmás el rechazo del pago del pedido #' + selectedOrderId + '?';
-      if (actionBtn) {
-        actionBtn.textContent = 'Rechazar';
-        actionBtn.className = 'btn btn-danger';
-        actionBtn.onclick = async function () {
-          if (modal) modal.classList.remove('active');
-          await processReject(selectedOrderId, reason || '');
-        };
-      }
-      modal.classList.add('active');
-    }
+    window.showConfirmModal(
+      'Rechazar pago',
+      '¿Confirmás el rechazo del pago del pedido #' + selectedOrderId + '?',
+      function () { processReject(selectedOrderId, reason || ''); }
+    );
   }
 
   async function processReject(id, reason) {
@@ -687,21 +667,11 @@
   }
 
   async function deleteOrder(id) {
-    var modal = document.getElementById('confirmModalOverlay');
-    var msg = document.getElementById('confirmModalMessage');
-    var actionBtn = document.getElementById('confirmModalAction');
-    if (modal) {
-      if (msg) msg.textContent = '¿Eliminar este pedido #' + id + '? Esta acción no se puede deshacer.';
-      if (actionBtn) {
-        actionBtn.textContent = 'Eliminar';
-        actionBtn.className = 'btn btn-danger';
-        actionBtn.onclick = async function () {
-          if (modal) modal.classList.remove('active');
-          await processDeleteOrder(id);
-        };
-      }
-      modal.classList.add('active');
-    }
+    window.showConfirmModal(
+      'Eliminar pedido',
+      '¿Eliminar este pedido #' + id + '? Esta acción no se puede deshacer.',
+      function () { processDeleteOrder(id); }
+    );
   }
 
   async function processDeleteOrder(id) {
@@ -729,21 +699,11 @@
 
   async function batchDeleteOrders(status) {
     var label = status === 'cancelled' ? 'cancelados' : 'pendientes';
-    var modal = document.getElementById('confirmModalOverlay');
-    var msg = document.getElementById('confirmModalMessage');
-    var actionBtn = document.getElementById('confirmModalAction');
-    if (modal) {
-      if (msg) msg.textContent = '¿Eliminar todos los pedidos ' + label + '? Esta acción no se puede deshacer.';
-      if (actionBtn) {
-        actionBtn.textContent = 'Eliminar ' + label;
-        actionBtn.className = 'btn btn-danger';
-        actionBtn.onclick = async function () {
-          if (modal) modal.classList.remove('active');
-          await processBatchDelete(status);
-        };
-      }
-      modal.classList.add('active');
-    }
+    window.showConfirmModal(
+      'Eliminar pedidos',
+      '¿Eliminar todos los pedidos ' + label + '? Esta acción no se puede deshacer.',
+      function () { processBatchDelete(status); }
+    );
   }
 
   async function processBatchDelete(status) {

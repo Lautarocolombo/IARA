@@ -93,7 +93,7 @@ describe('Vercel Blob helpers', () => {
     expect(put).not.toHaveBeenCalled();
   });
 
-  test('processFile usa fallback con URL relativa en producción si no hay Blob configurado', async () => {
+  test('processFile usa fallback con data URI base64 en producción si no hay Blob configurado', async () => {
     const originalNodeEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
     delete process.env.BLOB_READ_WRITE_TOKEN;
@@ -108,13 +108,18 @@ describe('Vercel Blob helpers', () => {
     });
 
     expect(result.isBlob).toBe(false);
-    expect(result.url).toBe('/uploads/imagenes/test3.webp');
+    expect(result.url).toMatch(/^data:image\/webp;base64,/);
+    expect(result.isBase64).toBe(true);
     expect(put).not.toHaveBeenCalled();
 
     process.env.NODE_ENV = originalNodeEnv;
   });
 
-  test('processFile no borra el archivo optimizado en fallback local', async () => {
+  test('processFile borra el archivo optimizado en fallback de producción base64', async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    delete process.env.BLOB_READ_WRITE_TOKEN;
+
     const { filePath: tmpFile } = makeTmpFile('test4.png');
     const optimizedPath = path.join(path.dirname(tmpFile), 'test4.webp');
 
@@ -126,7 +131,28 @@ describe('Vercel Blob helpers', () => {
     });
 
     expect(result.isBlob).toBe(false);
-    expect(result.url).toBe('/uploads/imagenes/test4.webp');
+    expect(result.url).toMatch(/^data:image\/webp;base64,/);
+    expect(fs.existsSync(optimizedPath)).toBe(false);
+    if (fs.existsSync(tmpFile)) {
+      fs.unlinkSync(tmpFile);
+    }
+
+    process.env.NODE_ENV = originalNodeEnv;
+  });
+
+  test('processFile no borra el archivo optimizado en fallback local dev', async () => {
+    const { filePath: tmpFile } = makeTmpFile('test5.png');
+    const optimizedPath = path.join(path.dirname(tmpFile), 'test5.webp');
+
+    const result = await upload.processFile({
+      path: tmpFile,
+      originalname: 'test5.png',
+      mimetype: 'image/png',
+      size: Buffer.from(TINY_PNG_BASE64, 'base64').length
+    });
+
+    expect(result.isBlob).toBe(false);
+    expect(result.url).toBe('/uploads/imagenes/test5.webp');
     expect(fs.existsSync(optimizedPath)).toBe(true);
     if (fs.existsSync(tmpFile)) {
       fs.unlinkSync(tmpFile);

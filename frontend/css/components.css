@@ -1023,8 +1023,8 @@ html, body { overflow-x: hidden; }
   position: absolute;
   inset: 0;
   display: flex;
-  align-items: flex-end;
-  justify-content: flex-start;
+  align-items: center;
+  justify-content: center;
   padding: 2rem;
   z-index: 3;
   pointer-events: none;

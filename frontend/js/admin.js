@@ -323,9 +323,41 @@ async function saveToCloud(section, options) {
   }
 }
 
+function showConfirmModal(title, message, onConfirm) {
+  var overlay = document.getElementById('confirmModalOverlay');
+  var titleEl = document.getElementById('confirmModalTitle');
+  var msgEl = document.getElementById('confirmModalMessage');
+  var actionBtn = document.getElementById('confirmModalAction');
+  var cancelBtn = document.getElementById('cancelConfirmBtn');
+  if (!overlay || !actionBtn) return;
+  if (titleEl) titleEl.textContent = title || 'Confirmar';
+  if (msgEl) msgEl.textContent = message || '¿Estás seguro?';
+  actionBtn.textContent = 'Confirmar';
+  actionBtn.className = 'btn btn-danger';
+  actionBtn.onclick = function () {
+    hideConfirmModal();
+    if (typeof onConfirm === 'function') onConfirm();
+  };
+  if (cancelBtn) {
+    cancelBtn.onclick = hideConfirmModal;
+  }
+  overlay.classList.add('active');
+  overlay.style.display = '';
+}
+
+function hideConfirmModal() {
+  var overlay = document.getElementById('confirmModalOverlay');
+  if (overlay) {
+    overlay.classList.remove('active');
+    overlay.style.display = 'none';
+  }
+}
+
 window.showSaveStatus = showSaveStatus;
 window.setButtonState = setButtonState;
 window.saveToCloud = saveToCloud;
+window.showConfirmModal = showConfirmModal;
+window.hideConfirmModal = hideConfirmModal;
 
 document.addEventListener('DOMContentLoaded', () => {
   const passwordToggle = document.getElementById('passwordToggle');

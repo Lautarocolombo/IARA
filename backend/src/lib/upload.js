@@ -192,7 +192,8 @@ function handleUploadError(err, req, res, next) {
 
 async function processFile(file, _baseUrl) {
   const useBlob = isBlobConfigured();
-  logger.info('[Upload] processFile start:', { useBlob, filename: file.originalname, size: file.size, NODE_ENV: process.env.NODE_ENV, isRender: !!process.env.RENDER_EXTERNAL_HOSTNAME });
+  const useBase64 = !useBlob && process.env.NODE_ENV === 'production';
+  logger.info('[Upload] processFile start:', { useBlob, useBase64, filename: file.originalname, size: file.size, NODE_ENV: process.env.NODE_ENV, isRender: !!process.env.RENDER_EXTERNAL_HOSTNAME });
 
   if (useBlob) {
     const blobResult = await uploadToBlob(file);
@@ -202,10 +203,29 @@ async function processFile(file, _baseUrl) {
       return { url: blobResult.url, filename: blobResult.filename, cloudinary_public_id: '', isCloudinary: false, isBlob: true };
     }
     logger.error('[Upload] Falló subida a Vercel Blob. Verificá BLOB_READ_WRITE_TOKEN en Render.');
-    logger.warn('[Upload] Haciendo fallback a storage local');
+    logger.warn('[Upload] Haciendo fallback a base64 en base de datos');
+  }
+
+  if (!useBlob && process.env.NODE_ENV === 'production') {
+    logger.warn('[Upload] Sin blobstore configurado en producción. Las imágenes se guardan como base64 en la base de datos.');
   }
 
   const optimizedPath = await optimizeImage(file.path, { format: 'webp' });
+
+  if (useBase64) {
+    const buffer = fs.readFileSync(optimizedPath);
+    const base64 = buffer.toString('base64');
+    const dataUri = 'data:image/webp;base64,' + base64;
+
+    if (optimizedPath !== file.path) {
+      try { fs.unlinkSync(file.path); } catch (e) { /* noop */ }
+    }
+    try { fs.unlinkSync(optimizedPath); } catch (e) { /* noop */ }
+
+    logger.info('[Upload] Imagen guardada como base64 en DB:', { size: dataUri.length });
+    return { url: dataUri, filename: file.originalname, cloudinary_public_id: '', isCloudinary: false, isBlob: false, isBase64: true };
+  }
+
   const filename = path.basename(optimizedPath);
   const relativeUrl = `/uploads/imagenes/${filename}`;
 

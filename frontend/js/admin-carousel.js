@@ -189,12 +189,13 @@
       var slotData = carouselSlots[slot] || {};
       formData.append('alt_text', slotData.alt_text || '');
       formData.append('link_url', slotData.link_url || '');
-      formData.append('caption', slotData.caption || '');
-      formData.append('about_group', String(slotData.about_group || 0));
+       formData.append('caption', slotData.caption || '');
+       formData.append('about_group', String(slotData.about_group || 0));
 
-      var xhr = new XMLHttpRequest();
-      var url = CONFIG.API.BASE + '/api/carousel/' + slot;
-      var token = window.getAuthToken();
+       var xhr = new XMLHttpRequest();
+       var uploadOrigin = (CONFIG.API && CONFIG.API.BACKEND_URL) ? CONFIG.API.BACKEND_URL : CONFIG.API.BASE;
+       var url = uploadOrigin + '/api/carousel/' + slot;
+       var token = window.getAuthToken();
 
       await new Promise(function (resolve, reject) {
         xhr.addEventListener('load', function () {
@@ -296,6 +297,7 @@
         throw new Error(errors.join('; '));
       }
 
+      await loadCarouselSlots();
       carouselLastSaved = deepCloneSlots(carouselSlots);
       clearDirty();
 

@@ -5,6 +5,8 @@ CREATE TABLE IF NOT EXISTS carousel_images (
   public_id TEXT,
   alt_text TEXT,
   link_url TEXT,
+  caption TEXT DEFAULT '',
+  about_group INTEGER DEFAULT 0,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   tenant_id TEXT DEFAULT 'default',
   UNIQUE(slot, tenant_id)

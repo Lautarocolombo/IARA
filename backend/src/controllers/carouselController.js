@@ -77,6 +77,8 @@ async function updateCarouselSlot(req, res) {
 
     const updated = result.rows[0];
     updated.url = getPublicUrl(updated.url, baseUrl);
+    const origin = req.headers.origin || req.headers.referer || '*';
+    res.setHeader('Access-Control-Allow-Origin', origin);
     try { syncBus.emit('carousel_updated', { slot }); } catch (e) { /* noop */ }
     res.json(updated);
   } catch (err) {
@@ -119,6 +121,8 @@ async function updateCarouselSlotMeta(req, res) {
     const updated = result.rows[0];
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
     updated.url = getPublicUrl(updated.url, baseUrl);
+    const origin = req.headers.origin || req.headers.referer || '*';
+    res.setHeader('Access-Control-Allow-Origin', origin);
     try { syncBus.emit('carousel_updated', { slot }); } catch (e) { /* noop */ }
     res.json(updated);
   } catch (err) {
@@ -146,6 +150,8 @@ async function deleteCarouselSlot(req, res) {
     }
 
     try { syncBus.emit('carousel_updated', { slot }); } catch (e) { /* noop */ }
+    const origin = req.headers.origin || req.headers.referer || '*';
+    res.setHeader('Access-Control-Allow-Origin', origin);
     res.json({ ok: true });
   } catch (err) {
     logger.error('Error eliminando slot de carrusel:', err);

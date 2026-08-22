@@ -180,30 +180,19 @@
   window.confirmDeleteCategory = function (id) {
     var cat = categoriesCache.find(function (c) { return c.id === id; });
     if (!cat) return;
-    var overlay = document.getElementById('confirmModalOverlay');
-    var msg = document.getElementById('confirmModalMessage');
-    var confirmBtn = document.getElementById('confirmModalAction');
-    if (!overlay || !msg || !confirmBtn) return;
-
     if ((cat.product_count || 0) > 0) {
-      msg.textContent = 'La categoría "' + cat.name + '" tiene ' + cat.product_count + ' productos asociados. Reasigná los productos antes de eliminar.';
-      confirmBtn.textContent = 'Entendido';
-      confirmBtn.className = 'btn btn-secondary';
-      confirmBtn.onclick = function () {
-        closeConfirmModal();
-      };
-      openConfirmModal();
+      window.showConfirmModal(
+        'Categoría con productos',
+        'La categoría "' + cat.name + '" tiene ' + cat.product_count + ' productos asociados. Reasigná los productos antes de eliminar.',
+        function () {}
+      );
       return;
     }
-
-    msg.textContent = '¿Seguro que querés eliminar la categoría "' + cat.name + '"? Esta acción no se puede deshacer.';
-    confirmBtn.textContent = 'Eliminar';
-    confirmBtn.className = 'btn btn-danger';
-    confirmBtn.onclick = function () {
-      deleteCategory(id);
-      closeConfirmModal();
-    };
-    openConfirmModal();
+    window.showConfirmModal(
+      'Eliminar categoría',
+      '¿Seguro que querés eliminar la categoría "' + cat.name + '"? Esta acción no se puede deshacer.',
+      function () { deleteCategory(id); }
+    );
   };
 
   async function deleteCategory(id) {
@@ -347,16 +336,6 @@
     }
   }
 
-  function openConfirmModal() {
-    var overlay = document.getElementById('confirmModalOverlay');
-    if (overlay) overlay.classList.add('active');
-  }
-
-  function closeConfirmModal() {
-    var overlay = document.getElementById('confirmModalOverlay');
-    if (overlay) overlay.classList.remove('active');
-  }
-
   function initCategoryManager() {
     loadCategories();
 
@@ -377,7 +356,7 @@
     if (closeBtn) closeBtn.addEventListener('click', closeCategoryModal);
 
     var cancelConfirm = document.getElementById('cancelConfirmBtn');
-    if (cancelConfirm) cancelConfirm.addEventListener('click', closeConfirmModal);
+    if (cancelConfirm) cancelConfirm.addEventListener('click', function () { window.hideConfirmModal(); });
 
     var imageInput = document.getElementById('cat_image_file');
     if (imageInput) {
@@ -404,7 +383,7 @@
     var confirmOverlay = document.getElementById('confirmModalOverlay');
     if (confirmOverlay) {
       confirmOverlay.addEventListener('click', function (e) {
-        if (e.target === confirmOverlay) closeConfirmModal();
+        if (e.target === confirmOverlay) window.hideConfirmModal();
       });
     }
   }

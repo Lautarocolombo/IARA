@@ -100,10 +100,18 @@ async function query(text, params, transactionClient = null) {
       }
       const sqliteSql = toSqlite(sql);
       const values = params || [];
-      db.all(sqliteSql, values, (err, rows) => {
-        if (err) return reject(err);
-        resolve({ rows, rowCount: rows.length });
-      });
+      const trimmed = sqliteSql.trim().toUpperCase();
+      if (trimmed.startsWith('SELECT') || trimmed.startsWith('WITH') || trimmed.startsWith('PRAGMA')) {
+        db.all(sqliteSql, values, (err, rows) => {
+          if (err) return reject(err);
+          resolve({ rows, rowCount: rows ? rows.length : 0 });
+        });
+      } else {
+        db.run(sqliteSql, values, function (err) {
+          if (err) return reject(err);
+          resolve({ rows: [], rowCount: this.changes || 0 });
+        });
+      }
     });
   }
 
@@ -162,10 +170,18 @@ async function transaction(fn) {
               if (isLocal) {
                 sqlite = sqlite.replace(/current_setting\('app\.current_tenant',\s*TRUE\)/gi, "'default'");
               }
-              db.all(sqlite, params, (e, rows) => {
-                if (e) return rej(e);
-                res({ rows, rowCount: rows ? rows.length : 0 });
-              });
+              const trimmed = sqlite.trim().toUpperCase();
+              if (trimmed.startsWith('SELECT') || trimmed.startsWith('WITH') || trimmed.startsWith('PRAGMA')) {
+                db.all(sqlite, params, (e, rows) => {
+                  if (e) return rej(e);
+                  res({ rows, rowCount: rows ? rows.length : 0 });
+                });
+              } else {
+                db.run(sqlite, params, function (e) {
+                  if (e) return rej(e);
+                  res({ rows: [], rowCount: this.changes || 0 });
+                });
+              }
             });
           };
           const client = { query: run };
@@ -841,6 +857,27 @@ async function initDB() {
     }
   } catch (err) {
     logger.debug({ err: err.message }, 'Error asegurando columnas tenant_id (PostgreSQL)');
+  }
+
+  try {
+    const carouselColumns = ['caption', 'about_group'];
+    for (const col of carouselColumns) {
+      try {
+        const colExists = await query(
+          "SELECT COUNT(*) AS count FROM information_schema.columns WHERE table_name = 'carousel_images' AND column_name = $1",
+          [col]
+        );
+        if (colExists.rows[0].count === 0) {
+          const type = col === 'about_group' ? 'INTEGER DEFAULT 0' : "TEXT DEFAULT ''";
+          await query(`ALTER TABLE carousel_images ADD COLUMN ${col} ${type}`);
+          logger.info(`Columna ${col} agregada a carousel_images`);
+        }
+      } catch (err) {
+        logger.debug({ err: err.message }, `Error asegurando columna ${col} en carousel_images`);
+      }
+    }
+  } catch (err) {
+    logger.debug({ err: err.message }, 'Error asegurando columnas de carousel_images');
   }
 
      try {

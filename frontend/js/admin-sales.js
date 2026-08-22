@@ -79,11 +79,17 @@
       tbody.innerHTML = '';
 
       if (transactions.length === 0) {
-        if (emptyState) emptyState.style.display = '';
+        if (emptyState) {
+          emptyState.classList.remove('hidden');
+          emptyState.style.display = '';
+        }
         return;
       }
 
-      if (emptyState) emptyState.style.display = 'none';
+      if (emptyState) {
+        emptyState.classList.add('hidden');
+        emptyState.style.display = 'none';
+      }
 
 transactions.forEach(function (t) {
         var tr = document.createElement('tr');
@@ -128,31 +134,16 @@ transactions.forEach(function (t) {
       });
     } catch (err) {
       console.error('[Sales] Error cargando transacciones:', err);
+      window.showToast('❌', 'No se pudieron cargar las transacciones.', 'error');
     }
   }
 
   function deleteTransaction(txId, txType) {
-    var modal = document.getElementById('confirmModalOverlay');
-    var msg = document.getElementById('confirmModalMessage');
-    var actionBtn = document.getElementById('confirmModalAction');
-    var cancelBtn = document.getElementById('cancelConfirmBtn');
-    if (modal) {
-      if (msg) msg.textContent = '¿Eliminar esta transacción (' + txId + ')? Esta acción no se puede deshacer.';
-      if (actionBtn) {
-        actionBtn.textContent = 'Eliminar';
-        actionBtn.className = 'btn btn-warning';
-        actionBtn.onclick = async function () {
-          if (modal) modal.classList.remove('active');
-          await processDeleteTransaction(txId, txType);
-        };
-      }
-      if (cancelBtn) {
-        cancelBtn.onclick = function () {
-          if (modal) modal.classList.remove('active');
-        };
-      }
-      modal.classList.add('active');
-    }
+    window.showConfirmModal(
+      'Eliminar transacción',
+      '¿Eliminar esta transacción (' + txId + ')? Esta acción no se puede deshacer.',
+      function () { processDeleteTransaction(txId, txType); }
+    );
   }
 
   async function processDeleteTransaction(txId, txType) {
@@ -160,6 +151,8 @@ transactions.forEach(function (t) {
     var url = txType === 'manual'
       ? '/api/admin/sales/' + numericId
       : '/api/admin/orders/' + numericId;
+
+    console.warn('[Sales] Eliminando transacción:', { txId, txType, numericId, url });
 
     try {
       var res = await window.adminFetch(url, { method: 'DELETE' });
@@ -174,6 +167,7 @@ transactions.forEach(function (t) {
         window.dispatchEvent(new CustomEvent('sync', { detail: { event: 'transactions_updated' } }));
       }
     } catch (err) {
+      console.error('[Sales] Error eliminando transacción:', err);
       window.showToast('❌', err.message || 'Error eliminando transacción', 'error');
     }
   }
@@ -472,27 +466,11 @@ transactions.forEach(function (t) {
   }
 
   function openResetModal() {
-    var modal = document.getElementById('confirmModalOverlay');
-    var msg = document.getElementById('confirmModalMessage');
-    var actionBtn = document.getElementById('confirmModalAction');
-    var cancelBtn = document.getElementById('cancelConfirmBtn');
-    if (modal) {
-      if (msg) msg.textContent = '¿Estás seguro? Esto no elimina pedidos ni ventas, solo reinicia el resumen visual a partir de este momento.';
-      if (actionBtn) {
-        actionBtn.textContent = 'Sí, reiniciar';
-        actionBtn.className = 'btn btn-warning';
-        actionBtn.onclick = async function () {
-          if (modal) modal.classList.remove('active');
-          await confirmReset();
-        };
-      }
-      if (cancelBtn) {
-        cancelBtn.onclick = function () {
-          if (modal) modal.classList.remove('active');
-        };
-      }
-      modal.classList.add('active');
-    }
+    window.showConfirmModal(
+      'Reiniciar métricas',
+      '¿Estás seguro? Esto no elimina pedidos ni ventas, solo reinicia el resumen visual a partir de este momento.',
+      function () { confirmReset(); }
+    );
   }
 
   async function confirmReset() {
@@ -529,27 +507,11 @@ transactions.forEach(function (t) {
 
 
   function openClearHistoryModal() {
-    var modal = document.getElementById('confirmModalOverlay');
-    var msg = document.getElementById('confirmModalMessage');
-    var actionBtn = document.getElementById('confirmModalAction');
-    var cancelBtn = document.getElementById('cancelConfirmBtn');
-    if (modal) {
-      if (msg) msg.textContent = '¿Estás seguro? Se eliminará todo el historial de transacciones, pedidos, ventas y comprobantes. Esta acción no se puede deshacer.';
-      if (actionBtn) {
-        actionBtn.textContent = 'Sí, eliminar';
-        actionBtn.className = 'btn btn-danger';
-        actionBtn.onclick = async function () {
-          if (modal) modal.classList.remove('active');
-          await confirmClearHistory();
-        };
-      }
-      if (cancelBtn) {
-        cancelBtn.onclick = function () {
-          if (modal) modal.classList.remove('active');
-        };
-      }
-      modal.classList.add('active');
-    }
+    window.showConfirmModal(
+      'Eliminar historial',
+      '¿Estás seguro? Se eliminará todo el historial de transacciones, pedidos, ventas y comprobantes. Esta acción no se puede deshacer.',
+      function () { confirmClearHistory(); }
+    );
   }
 
   async function confirmClearHistory() {
