@@ -80,7 +80,8 @@
            Colección 2026
          </div>
          <div class="hero-greeting" id="heroGreeting">🌸</div>
-           <h1 class="hero-title">Regalos <em>artesanales</em><br>que cuentan historias</h1>
+            <h1 class="hero-title">Regalos <em>artesanales</em><br>que cuentan historias</h1>
+          <p class="hero-subtitle">Artesanía Gualeguay nació en el corazón de Entre Ríos con la misión de crear pulseras, souvenirs y accesorios únicos que capturen la esencia de nuestra tierra.</p>
 
         <div class="hero-buttons">
           <a href="#catalog" class="btn-primary reveal">Explorar Catálogo</a>
@@ -145,14 +146,14 @@
     <section class="stats-strip">
       <div class="stat-item reveal">
         <span class="stat-number" id="statClients" data-target="500" data-suffix="+">0+</span>
-        <span class="stat-label">Clientes</span>
+        <span class="stat-label">Clientes satisfechos</span>
       </div>
       <div class="stat-item reveal">
         <span class="stat-number" id="statProductsSold" data-target="1000" data-suffix="+">0+</span>
         <span class="stat-label">Productos vendidos</span>
       </div>
       <div class="stat-item reveal">
-        <span class="stat-number" id="statYears" data-target="5" data-suffix="+">0+</span>
+        <span class="stat-number" id="statYears" data-target="6" data-suffix="+">0+</span>
         <span class="stat-label">Años de experiencia</span>
       </div>
       <div class="stat-item reveal">
@@ -206,8 +207,10 @@
         <button class="filter-btn" data-filter="pulseras">Pulseras</button>
         <button class="filter-btn" data-filter="accesorios">Accesorios</button>
         <button class="filter-btn" data-filter="souvenirs">Souvenirs</button>
-        <input type="number" id="minPrice" placeholder="Precio mín." class="filter-price" min="0" />
-        <input type="number" id="maxPrice" placeholder="Precio máx." class="filter-price" min="0" />
+        <div class="filter-group">
+          <input type="number" id="minPrice" placeholder="Precio mín." class="filter-price" min="0" />
+          <input type="number" id="maxPrice" placeholder="Precio máx." class="filter-price" min="0" />
+        </div>
         <button type="button" id="clearFiltersBtn" class="btn btn-outline btn-sm">Limpiar</button>
       </div>
       <div class="search-bar">
@@ -239,15 +242,14 @@
         <div class="about-carousel-wrap reveal" id="aboutCarouselWrap">
           <div class="about-carousel" id="aboutCarousel">
             <div class="about-carousel-track" id="aboutCarouselTrack"></div>
-            <div class="about-carousel-overlay">
-              <div class="about-text reveal" id="aboutText">
-                <p id="aboutTextContent"></p>
-              </div>
-            </div>
             <button class="about-carousel-btn about-carousel-btn--prev" id="aboutCarouselPrev" aria-label="Anterior">&#10094;</button>
             <button class="about-carousel-btn about-carousel-btn--next" id="aboutCarouselNext" aria-label="Siguiente">&#10095;</button>
             <div class="about-carousel-dots" id="aboutCarouselDots"></div>
           </div>
+        </div>
+
+        <div class="about-text reveal" id="aboutText">
+          <p id="aboutTextContent"></p>
         </div>
 
         <div class="about-stats">
@@ -328,7 +330,7 @@
             <div class="info-icon" aria-hidden="true">📧</div>
             <div>
                <h4>Email</h4>
-                <a href="mailto:CONFIGURAR_EMAIL">CONFIGURAR_EMAIL</a>
+               <a href="mailto:noreply@artesaniagualeguay.com">noreply@artesaniagualeguay.com</a>
             </div>
           </div>
           <div class="info-item">
@@ -491,7 +493,7 @@
         description: 'Pulseras, souvenirs y accesorios hechos a mano en Gualeguay, Entre Ríos',
         url: window.location.origin,
         telephone: '+5493444634444',
-        email: 'CONFIGURAR_EMAIL',
+        email: 'noreply@artesaniagualeguay.com',
         address: {
           '@type': 'PostalAddress',
           streetAddress: 'San Antonio Norte 473',

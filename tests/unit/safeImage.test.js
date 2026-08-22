@@ -97,6 +97,13 @@ describe('safeImage.js', () => {
       expect(() => window.imgError(div)).not.toThrow();
     });
 
+    test('retorna silenciosamente si acceder a tagName lanza error', () => {
+      require('../../frontend/js/safeImage');
+      const fake = {};
+      Object.defineProperty(fake, 'tagName', { get() { throw new Error('boom'); } });
+      expect(() => window.imgError(fake)).not.toThrow();
+    });
+
     test('detiene re-entrada de error', () => {
       require('../../frontend/js/safeImage');
       const img = document.createElement('img');
@@ -331,7 +338,102 @@ describe('safeImage.js', () => {
     });
   });
 
-  describe('window exports', () => {
+  describe('cobertura branches adicionales', () => {
+    test('simbolo con solo caracteres especiales usa DEFAULT_SYMBOL (linea 34)', () => {
+      require('../../frontend/js/safeImage');
+      const uri = window.getPlaceholderDataUri('<>\'"&');
+      expect(uri).toContain(encodeURIComponent('📿'));
+    });
+
+    test('imgError preserva alt existente (linea 88 false)', () => {
+      require('../../frontend/js/safeImage');
+      const img = document.createElement('img');
+      img.alt = 'existing alt';
+      window.imgError(img);
+      expect(img.getAttribute('alt')).toBe('existing alt');
+    });
+
+    test('renderProductImage con alt null (linea 107 true)', () => {
+      require('../../frontend/js/safeImage');
+      const html = window.renderProductImage('https://example.com/img.jpg', null);
+      expect(html).toContain('alt=""');
+    });
+
+    test('renderProductImage con alt undefined (linea 107 true)', () => {
+      require('../../frontend/js/safeImage');
+      const html = window.renderProductImage('https://example.com/img.jpg');
+      expect(html).toContain('alt=""');
+    });
+
+    test('getProductImageUrl con images no-array (linea 121 false)', () => {
+      require('../../frontend/js/safeImage');
+      const product = { images: 'not-array', image: 'fallback.jpg' };
+      expect(window.getProductImageUrl(product)).toBe('fallback.jpg');
+    });
+
+    test('getProductImageUrl con url whitespace (linea 130 false)', () => {
+      require('../../frontend/js/safeImage');
+      const product = {
+        images: [{ url: '   ', es_principal: true }]
+      };
+      expect(window.getProductImageUrl(product)).toBe('');
+    });
+
+    test('getProductImageUrl con image="null" (linea 135 p truthy && p !== null false)', () => {
+      require('../../frontend/js/safeImage');
+      const product = { image: 'null' };
+      expect(window.getProductImageUrl(product)).toBe('');
+    });
+
+    test('getProductImageUrl con image whitespace (linea 135 p falsy)', () => {
+      require('../../frontend/js/safeImage');
+      const product = { image: '   ' };
+      expect(window.getProductImageUrl(product)).toBe('');
+    });
+
+    test('createSafeImage con alt null (linea 149 true)', () => {
+      require('../../frontend/js/safeImage');
+      const img = window.createSafeImage('https://example.com/img.jpg', null);
+      expect(img.alt).toBe('');
+    });
+
+    test('createSafeImage con style (linea 152 true)', () => {
+      require('../../frontend/js/safeImage');
+      const img = window.createSafeImage('https://example.com/img.jpg', 'Test', { style: 'width:100px' });
+      expect(img.getAttribute('style')).toBe('width:100px');
+    });
+
+    test('createSafeImage con lazy false (linea 153 true)', () => {
+      require('../../frontend/js/safeImage');
+      const img = window.createSafeImage('https://example.com/img.jpg', 'Test', { lazy: false });
+      expect(img.loading).toBe('eager');
+    });
+  });
+
+    test('createSafeImage: onerror del img llama a imgError', () => {
+      require('../../frontend/js/safeImage');
+      const img = window.createSafeImage('https://example.com/broken.jpg', 'Test');
+      img.dispatchEvent(new Event('error'));
+      expect(img.classList.contains('img-placeholder')).toBe(true);
+    });
+
+    test('createSafeImage: onerror con placeholder usa fallback del opts', () => {
+      require('../../frontend/js/safeImage');
+      const img = window.createSafeImage('https://example.com/broken.jpg', 'Test', { placeholder: '💎' });
+      img.dispatchEvent(new Event('error'));
+      expect(img.getAttribute('src')).toContain(encodeURIComponent('💎'));
+    });
+
+    test('createSafeImage: onerror con placeholder usa fallback del opts', () => {
+      require('../../frontend/js/safeImage');
+      document.documentElement.setAttribute('data-theme', 'dark');
+      const img = window.createSafeImage('https://example.com/broken.jpg', 'Test');
+      img.dispatchEvent(new Event('error'));
+      expect(img.classList.contains('img-placeholder')).toBe(true);
+      document.documentElement.removeAttribute('data-theme');
+    });
+
+    describe('window exports', () => {
     test('expone renderProductImage', () => {
       require('../../frontend/js/safeImage');
       expect(typeof window.renderProductImage).toBe('function');

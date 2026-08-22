@@ -54,8 +54,20 @@ describe('Vercel Blob helpers', () => {
     expect(upload.isBlobUrl(null)).toBe(false);
   });
 
+  test('isBlobConfigured rechaza tokens vacíos o con formato inválido', () => {
+    delete process.env.BLOB_READ_WRITE_TOKEN;
+    expect(upload.isBlobConfigured()).toBe(false);
+    process.env.BLOB_READ_WRITE_TOKEN = '';
+    expect(upload.isBlobConfigured()).toBe(false);
+    process.env.BLOB_READ_WRITE_TOKEN = 'token-invalido';
+    expect(upload.isBlobConfigured()).toBe(false);
+    process.env.BLOB_READ_WRITE_TOKEN = 'vercel_blob_token_valido';
+    expect(upload.isBlobConfigured()).toBe(true);
+    delete process.env.BLOB_READ_WRITE_TOKEN;
+  });
+
   test('processFile sube a Vercel Blob cuando BLOB_READ_WRITE_TOKEN está configurado', async () => {
-    process.env.BLOB_READ_WRITE_TOKEN = 'token-falso-para-test';
+    process.env.BLOB_READ_WRITE_TOKEN = 'vercel_blob_test_token';
     const { filePath: tmpFile } = makeTmpFile('test.png');
 
     put.mockResolvedValue({ url: 'https://proyecto.blob.vercel-storage.com/products/x.png' });
@@ -75,7 +87,7 @@ describe('Vercel Blob helpers', () => {
     expect(Buffer.isBuffer(buffer)).toBe(true);
     expect(opts.contentType).toBe('image/webp');
     expect(opts.access).toBe('public');
-    expect(opts.token).toBe('token-falso-para-test');
+    expect(opts.token).toBe('vercel_blob_test_token');
   });
 
   test('processFile usa fallback con URL relativa en dev cuando no hay token de Blob', async () => {
@@ -113,6 +125,31 @@ describe('Vercel Blob helpers', () => {
     expect(put).not.toHaveBeenCalled();
 
     process.env.NODE_ENV = originalNodeEnv;
+  });
+
+  test('processFile hace fallback a base64 en producción cuando falla subida a Blob', async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    process.env.BLOB_READ_WRITE_TOKEN = 'vercel_blob_test_token';
+
+    put.mockRejectedValue(new Error('Blob upload failed'));
+
+    const { filePath: tmpFile } = makeTmpFile('test-fallback.png');
+
+    const result = await upload.processFile({
+      path: tmpFile,
+      originalname: 'test-fallback.png',
+      mimetype: 'image/png',
+      size: Buffer.from(TINY_PNG_BASE64, 'base64').length
+    });
+
+    expect(result.isBlob).toBe(false);
+    expect(result.url).toMatch(/^data:image\/webp;base64,/);
+    expect(result.isBase64).toBe(true);
+    expect(put).toHaveBeenCalledTimes(1);
+
+    process.env.NODE_ENV = originalNodeEnv;
+    delete process.env.BLOB_READ_WRITE_TOKEN;
   });
 
   test('processFile borra el archivo optimizado en fallback de producción base64', async () => {
@@ -167,10 +204,10 @@ describe('Vercel Blob helpers', () => {
   });
 
   test('deleteFromBlob borra cuando la URL es de Blob y el token está seteado', async () => {
-    process.env.BLOB_READ_WRITE_TOKEN = 'token-falso-para-test';
+    process.env.BLOB_READ_WRITE_TOKEN = 'vercel_blob_test_token';
     del.mockResolvedValue();
     const r = await upload.deleteFromBlob('https://proyecto.blob.vercel-storage.com/products/x.png');
     expect(r).toBe(true);
-    expect(del).toHaveBeenCalledWith('https://proyecto.blob.vercel-storage.com/products/x.png', { token: 'token-falso-para-test' });
+    expect(del).toHaveBeenCalledWith('https://proyecto.blob.vercel-storage.com/products/x.png', { token: 'vercel_blob_test_token' });
   });
 });

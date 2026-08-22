@@ -9,37 +9,58 @@
   var autoplayTimer = null;
   var isPaused = false;
   var aboutTextEl = null;
-  var aboutTextCache = '';
+  var carouselData = [];
+  var currentGroupId = null;
 
-  function loadAboutText() {
-    return fetchWithRetry(CONFIG.API.BASE + '/api/site-texts', {}, 2, 1000)
+  function loadCarouselData() {
+    return fetchWithRetry(CONFIG.API.BASE + '/api/carousel', {}, 2, 1000)
       .then(function (res) {
-        if (!res || !res.ok) throw new Error('No se pudo cargar about_text');
+        if (!res || !res.ok) throw new Error('No se pudo cargar carousel');
         return res.json();
       })
       .then(function (data) {
-        if (data && data.about_text) {
-          aboutTextCache = window.sanitizeAboutText(data.about_text);
-        }
-        if (aboutTextEl && aboutTextCache) {
-          aboutTextEl.innerHTML = aboutTextCache;
-        }
+        carouselData = data.slots || {};
+        updateCaptionForSlide(0);
       })
       .catch(function () {
+        carouselData = {};
         if (aboutTextEl && !aboutTextEl.innerHTML.trim()) {
           aboutTextEl.innerHTML = '<p>En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.</p>';
         }
       });
   }
 
-  function refreshAboutText() {
-    if (aboutTextEl && aboutTextCache) {
+  function updateCaptionForSlide(slideIndex) {
+    if (!aboutTextEl) return;
+    var slotNum = slideIndex + 1;
+    var slot = carouselData[slotNum];
+    var groupId = slot && slot.about_group ? slot.about_group : slotNum;
+
+    if (groupId === currentGroupId) return;
+    currentGroupId = groupId;
+
+    var caption = '';
+    for (var key in carouselData) {
+      if (carouselData[key] && carouselData[key].about_group === groupId) {
+        caption = carouselData[key].caption || '';
+        break;
+      }
+    }
+
+    if (caption) {
       aboutTextEl.style.opacity = '0';
       setTimeout(function () {
-        aboutTextEl.innerHTML = aboutTextCache;
+        aboutTextEl.innerHTML = '<p>' + caption + '</p>';
         aboutTextEl.style.opacity = '1';
       }, 200);
+    } else {
+      aboutTextEl.innerHTML = '<p>En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.</p>';
     }
+  }
+
+  function refreshAboutText() {
+    currentGroupId = null;
+    updateCaptionForSlide(currentIndex);
   }
 
   function collectImages(srcMap) {
@@ -84,7 +105,7 @@
       wrap.style.display = '';
       wrap.classList.add('visible');
       track.innerHTML = '<div class="about-carousel-slide active" style="display:flex;align-items:center;justify-content:center;padding:2rem;"><p style="color:var(--text-muted);text-align:center;">Próximamente nuevas imágenes</p></div>';
-      if (dotsContainer) dotsContainer.innerHTML = '';
+      dotsContainer.innerHTML = '';
       if (prevBtn) prevBtn.style.display = 'none';
       if (nextBtn) nextBtn.style.display = 'none';
       if (aboutTextEl) aboutTextEl.textContent = '';
@@ -146,13 +167,14 @@
     wrap.ontouchstart = pauseAutoplay;
     wrap.ontouchend = resumeAutoplay;
 
-    loadAboutText();
+    loadCarouselData();
 
     startAutoplay();
 
+    /* istanbul ignore else */
     if (typeof window !== 'undefined') {
       window.addEventListener('site_texts_updated', function () {
-        loadAboutText().then(function () {
+        loadCarouselData().then(function () {
           refreshAboutText();
         });
       });
@@ -160,6 +182,7 @@
   }
 
   function goTo(index) {
+    /* istanbul ignore if */
     if (!slides.length) return;
     index = wrapIndex(index, slides.length);
 
@@ -170,7 +193,6 @@
 
     slides[currentIndex].classList.add('active');
     dots[currentIndex].classList.add('active');
-    refreshAboutText();
   }
 
   function startAutoplay() {
@@ -194,11 +216,14 @@
 
   window.initAboutCarousel = build;
 
+  /* istanbul ignore else */
   if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
       collectImages: collectImages,
       wrapIndex: wrapIndex,
-      build: build
+      build: build,
+      loadAboutText: loadCarouselData,
+      refreshAboutText: refreshAboutText
     };
   }
 

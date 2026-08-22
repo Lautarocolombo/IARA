@@ -60,7 +60,7 @@
   function getPlaceholderDataUri(symbol, isDark) {
     var key = (symbol || DEFAULT_SYMBOL) + (isDark ? ':dark' : ':light');
     if (!_cache[key]) {
-      _cache[key] = buildPlaceholderSvg(key in _cache ? symbol : symbol, isDark);
+      _cache[key] = buildPlaceholderSvg(symbol, isDark);
     }
     return _cache[key];
   }

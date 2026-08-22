@@ -372,6 +372,202 @@ describe('hero.js', () => {
       expect(card1.querySelector('.hero-card-price')).not.toBeNull();
       expect(card1.querySelector('.hero-card-cta')).toBeNull();
     });
+
+    test('actualiza el greeting cuando el elemento heroGreeting existe', async () => {
+      require('../../frontend/js/hero');
+      document.body.innerHTML = '<div id="heroGreeting"></div><div class="hero-content"><h1></h1><p class="hero-subtitle"></p><a class="btn-primary"></a></div><div id="heroCardsContainer"></div>';
+      fetchWithRetryMock.mockResolvedValue({ ok: true, json: async () => ({}) });
+      await window.renderHeroCards([]);
+      const greeting = document.getElementById('heroGreeting');
+      expect(greeting.textContent).toBeDefined();
+      expect(greeting.textContent).not.toBe('');
+    });
+
+    test('maneja error al renderizar cards (catch externo)', async () => {
+      require('../../frontend/js/hero');
+      global.renderProductImage = jest.fn(() => { throw new Error('render fail'); });
+      document.body.innerHTML = '<div class="hero-content"><h1></h1><p class="hero-subtitle"></p><a class="btn-primary"></a></div><div id="heroCardsContainer"></div>';
+      fetchWithRetryMock.mockResolvedValue({ ok: true, json: async () => ({}) });
+      await expect(window.renderHeroCards([])).resolves.not.toThrow();
+      global.renderProductImage = jest.fn(() => '<img src="" alt="product" />');
+    });
+  });
+
+  describe('updateGreeting', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+      jest.clearAllTimers();
+    });
+
+    test('greeting de tarde (12-19)', async () => {
+      require('../../frontend/js/hero');
+      document.body.innerHTML = '<div id="heroGreeting"></div><div class="hero-content"><h1></h1><p class="hero-subtitle"></p><a class="btn-primary"></a></div><div id="heroCardsContainer"></div>';
+      jest.setSystemTime(new Date(2024, 0, 1, 14, 0, 0));
+      fetchWithRetryMock.mockResolvedValue({ ok: true, json: async () => ({}) });
+      await window.renderHeroCards([]);
+      expect(document.getElementById('heroGreeting').textContent).toContain('Tardes');
+    });
+
+    test('greeting de ma\u00F1ana (6-11) mantiene Buenos D\u00EDas', async () => {
+      require('../../frontend/js/hero');
+      document.body.innerHTML = '<div id="heroGreeting"></div><div class="hero-content"><h1></h1><p class="hero-subtitle"></p><a class="btn-primary"></a></div><div id="heroCardsContainer"></div>';
+      jest.setSystemTime(new Date(2024, 0, 1, 10, 0, 0));
+      fetchWithRetryMock.mockResolvedValue({ ok: true, json: async () => ({}) });
+      await window.renderHeroCards([]);
+      expect(document.getElementById('heroGreeting').textContent).toContain('D\u00EDas');
+    });
+
+    test('greeting de madrugada (<6)', async () => {
+      require('../../frontend/js/hero');
+      document.body.innerHTML = '<div id="heroGreeting"></div><div class="hero-content"><h1></h1><p class="hero-subtitle"></p><a class="btn-primary"></a></div><div id="heroCardsContainer"></div>';
+      jest.setSystemTime(new Date(2024, 0, 1, 3, 0, 0));
+      fetchWithRetryMock.mockResolvedValue({ ok: true, json: async () => ({}) });
+      await window.renderHeroCards([]);
+      expect(document.getElementById('heroGreeting').textContent).toContain('Noches');
+    });
+
+    test('greeting de noche (20+) y madrugada (<6)', async () => {
+      require('../../frontend/js/hero');
+      document.body.innerHTML = '<div id="heroGreeting"></div><div class="hero-content"><h1></h1><p class="hero-subtitle"></p><a class="btn-primary"></a></div><div id="heroCardsContainer"></div>';
+      jest.setSystemTime(new Date(2024, 0, 1, 23, 0, 0));
+      fetchWithRetryMock.mockResolvedValue({ ok: true, json: async () => ({}) });
+      await window.renderHeroCards([]);
+      expect(document.getElementById('heroGreeting').textContent).toContain('Noches');
+    });
+  });
+
+  describe('cobertura branches adicionales', () => {
+    test('usa featured products con imagen (linea 124/149-150) y cta_url vacio (linea 141/166)', async () => {
+      require('../../frontend/js/hero');
+      fetchWithRetryMock.mockImplementation((url) => {
+        if (url.includes('site-texts')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              hero_cta_url: '',
+              featured_product_cta_text: 'Comprar',
+              featured_product_cta_url: ''
+            })
+          });
+        }
+        if (url.includes('featured')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => [
+              { image: 'prod1.jpg', titulo: 'Prod 1' },
+              { image: 'prod2.jpg', titulo: 'Prod 2' }
+            ]
+          });
+        }
+        return Promise.resolve(null);
+      });
+
+      document.body.innerHTML = `
+        <div class="hero-content">
+          <h1></h1>
+          <p class="hero-subtitle"></p>
+          <a class="btn-primary"></a>
+        </div>
+        <div id="heroCardsContainer"></div>
+      `;
+      await window.renderHeroCards([]);
+
+      const primaryBtn = document.querySelector('.btn-primary');
+      expect(primaryBtn.href).toContain('#catalog');
+      const heroVisual = document.getElementById('heroCardsContainer');
+      expect(heroVisual.innerHTML).toContain('hero-card');
+    });
+
+    test('usado featured1 pero no featured2 (linea 124 featured1 truthy)', async () => {
+      require('../../frontend/js/hero');
+      fetchWithRetryMock.mockImplementation((url) => {
+        if (url.includes('featured')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => [{ image: 'prod1.jpg', titulo: 'Prod 1' }]
+          });
+        }
+        return Promise.resolve({ ok: true, json: async () => ({}) });
+      });
+
+      document.body.innerHTML = `
+        <div class="hero-content">
+          <h1></h1>
+          <p class="hero-subtitle"></p>
+          <a class="btn-primary"></a>
+        </div>
+        <div id="heroCardsContainer"></div>
+      `;
+      await window.renderHeroCards([]);
+
+      const heroVisual = document.getElementById('heroCardsContainer');
+      expect(heroVisual.innerHTML).toContain('hero-card');
+    });
+
+    test('card con imagen definida (linea 150 truthy)', async () => {
+      require('../../frontend/js/hero');
+      fetchWithRetryMock.mockResolvedValue({ ok: true, json: async () => ({}) });
+
+      document.body.innerHTML = `
+        <div class="hero-content">
+          <h1></h1>
+          <p class="hero-subtitle"></p>
+          <a class="btn-primary"></a>
+        </div>
+        <div id="heroCardsContainer"></div>
+      `;
+      await window.renderHeroCards([
+        { titulo: 'Card 1', imagen: 'card1.jpg', cta_texto: 'Ver', cta_url: '#catalog' }
+      ]);
+
+      expect(window.renderProductImage).toHaveBeenCalledWith('card1.jpg', 'Card 1', expect.anything());
+    });
+
+    test('card con imagen pero titulo vacio (linea 150 card.titulo falsy)', async () => {
+      require('../../frontend/js/hero');
+      fetchWithRetryMock.mockImplementation((url) => {
+        if (url.includes('site-texts')) {
+          return Promise.resolve({ ok: true, json: async () => ({ hero_card_1_name: '' }) });
+        }
+        if (url.includes('featured')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => [{ image: 'prod1.jpg', titulo: 'Prod 1' }]
+          });
+        }
+        return Promise.resolve(null);
+      });
+
+      document.body.innerHTML = `
+        <div class="hero-content">
+          <h1></h1>
+          <p class="hero-subtitle"></p>
+          <a class="btn-primary"></a>
+        </div>
+        <div id="heroCardsContainer"></div>
+      `;
+      await window.renderHeroCards([]);
+
+      expect(window.renderProductImage).toHaveBeenCalledWith('prod1.jpg', '', expect.anything());
+    });
+
+    test('sin hero-content en el DOM (linea 135 false)', async () => {
+      require('../../frontend/js/hero');
+      fetchWithRetryMock.mockResolvedValue({
+        ok: true,
+        json: async () => ({})
+      });
+
+      document.body.innerHTML = '<div id="heroCardsContainer"></div>';
+      await window.renderHeroCards([]);
+
+      const heroVisual = document.getElementById('heroCardsContainer');
+      expect(heroVisual.innerHTML).toContain('hero-card');
+    });
   });
 
   describe('window exports', () => {

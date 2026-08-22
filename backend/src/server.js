@@ -435,7 +435,9 @@ app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUplo
     const processed = await processFile(req.file, `${req.protocol}://${req.get('host')}`);
     logger.info('[Upload] Imagen procesada OK:', { url: processed.url });
     const publicUrl = getPublicUrl(processed.url, `${req.protocol}://${req.get('host')}`);
-    res.setHeader('Access-Control-Allow-Origin', origin);
+    if (isOriginAllowed(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
     res.json({
       url: publicUrl,
       filename: processed.filename,
@@ -453,7 +455,7 @@ app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUplo
 const isVercel = process.env.VERCEL === 'true';
 const isRender = !!process.env.RENDER_EXTERNAL_HOSTNAME;
 const isEphemeralProd = !isVercel && process.env.NODE_ENV === 'production';
-const uploadsStaticDir = (isVercel || isRender || isEphemeralProd) ? '/tmp/uploads' : path.join(__dirname, '..', '..', 'backend', 'uploads');
+const uploadsStaticDir = (isVercel || isRender || isEphemeralProd) ? '/tmp/uploads' : path.join(__dirname, '..', '..', 'uploads');
 
 app.use('/uploads', cors(corsOptions), express.static(uploadsStaticDir, { maxAge: '7d', etag: true, lastModified: true }));
 const staticDir = path.join(__dirname, '..', '..', 'frontend');

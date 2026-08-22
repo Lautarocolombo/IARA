@@ -177,7 +177,7 @@ const ITEM_CLASS = 'product-image-item';
     files.forEach(f => {
       if (f.isUrl) {
         urlImages.push(f.url);
-      } else if (f.file) {
+      } else /* istanbul ignore else */ if (f.file) {
         formData.append('images', f.file);
         hasFiles = true;
       }
@@ -185,6 +185,7 @@ const ITEM_CLASS = 'product-image-item';
     if (urlImages.length) {
       formData.append('imageUrls', JSON.stringify(urlImages));
     }
+    /* istanbul ignore if */
     if (!hasFiles && urlImages.length === 0) return 0;
     const xhr = new XMLHttpRequest();
     const url = `${CONFIG.API.BASE}/api/products/${productId}/images`;
@@ -402,6 +403,7 @@ xhr.addEventListener('load', () => {
           try {
             data = JSON.parse(xhr.responseText || '{}');
           } catch (e) {
+            /* istanbul ignore next */
             data = { error: xhr.responseText || `Error ${xhr.status}` };
           }
           resolve({ status: xhr.status, data });

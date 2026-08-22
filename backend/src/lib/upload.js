@@ -1,6 +1,7 @@
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const logger = require('./logger');
 const { optimizeImage } = require('./imageOptimizer');
 
@@ -10,7 +11,8 @@ function isBlobConfigured() {
   const token = (process.env.BLOB_READ_WRITE_TOKEN || '').trim();
   if (!token) return false;
   if (!token.startsWith('vercel_blob_')) {
-    logger.warn('BLOB_READ_WRITE_TOKEN tiene un formato inválido. Debe comenzar con "vercel_blob_".');
+    logger.warn('BLOB_READ_WRITE_TOKEN tiene un formato inválido. Debe comenzar con "vercel_blob_". Ignorando token.');
+    return false;
   }
   return true;
 }
@@ -40,15 +42,18 @@ async function uploadToBlob(file) {
   if (!mod || !isBlobConfigured()) {
     return null;
   }
+  let tmpDir = null;
   try {
-    const optimizedPath = await optimizeImage(file.path, { format: 'webp' });
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'blob-upload-'));
+    const ext = path.extname(file.originalname).toLowerCase() || '.webp';
+    const safe = file.originalname.replace(ext, '').replace(/[^a-zA-Z0-9._-]/g, '_');
+    const tmpPath = path.join(tmpDir, `${Date.now()}_${safe}${ext}`);
+    fs.copyFileSync(file.path, tmpPath);
+
+    const optimizedPath = await optimizeImage(tmpPath, { format: 'webp' });
     let buffer = fs.readFileSync(optimizedPath);
     let contentType = path.extname(optimizedPath).toLowerCase() === '.webp' ? 'image/webp' : file.mimetype || 'application/octet-stream';
 
-    const ext = path.extname(file.originalname).toLowerCase() || '.webp';
-    const safe = file.originalname
-      .replace(/\.[^.\\/]*$/, '')
-      .replace(/[^a-zA-Z0-9._-]/g, '_');
     const blobName = `products/${Date.now()}_${safe}${ext}`;
 
     const blob = await mod.put(blobName, buffer, {
@@ -61,6 +66,10 @@ async function uploadToBlob(file) {
   } catch (err) {
     logger.error({ err: err.message, stack: err.stack, code: err.code }, 'Error subiendo a Vercel Blob - fallback a storage local');
     return null;
+  } finally {
+    if (tmpDir && fs.existsSync(tmpDir)) {
+      try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch (e) { /* noop */ }
+    }
   }
 }
 
@@ -192,7 +201,7 @@ function handleUploadError(err, req, res, next) {
 
 async function processFile(file, _baseUrl) {
   const useBlob = isBlobConfigured();
-  const useBase64 = !useBlob && process.env.NODE_ENV === 'production';
+  let useBase64 = !useBlob && process.env.NODE_ENV === 'production';
   logger.info('[Upload] processFile start:', { useBlob, useBase64, filename: file.originalname, size: file.size, NODE_ENV: process.env.NODE_ENV, isRender: !!process.env.RENDER_EXTERNAL_HOSTNAME });
 
   if (useBlob) {
@@ -203,7 +212,12 @@ async function processFile(file, _baseUrl) {
       return { url: blobResult.url, filename: blobResult.filename, cloudinary_public_id: '', isCloudinary: false, isBlob: true };
     }
     logger.error('[Upload] Falló subida a Vercel Blob. Verificá BLOB_READ_WRITE_TOKEN en Render.');
-    logger.warn('[Upload] Haciendo fallback a base64 en base de datos');
+    if (process.env.NODE_ENV === 'production') {
+      logger.warn('[Upload] Haciendo fallback a base64 en base de datos');
+      useBase64 = true;
+    } else {
+      logger.warn('[Upload] Haciendo fallback a storage local en desarrollo');
+    }
   }
 
   if (!useBlob && process.env.NODE_ENV === 'production') {

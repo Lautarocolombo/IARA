@@ -733,17 +733,35 @@ async function loadSiteSettings() {
 
     const instagramLink = document.getElementById('instagramLink');
     if (instagramLink) {
-      instagramLink.href = settings.instagram || 'https://instagram.com';
+      const igUrl = settings.instagram && settings.instagram !== '#' ? settings.instagram : '';
+      if (igUrl) {
+        instagramLink.href = igUrl;
+        instagramLink.style.display = '';
+      } else {
+        instagramLink.style.display = 'none';
+      }
     }
 
     const facebookLink = document.getElementById('facebookLink');
     if (facebookLink) {
-      facebookLink.href = settings.facebook || 'https://facebook.com';
+      const fbUrl = settings.facebook && settings.facebook !== '#' ? settings.facebook : '';
+      if (fbUrl) {
+        facebookLink.href = fbUrl;
+        facebookLink.style.display = '';
+      } else {
+        facebookLink.style.display = 'none';
+      }
     }
 
     const twitterLink = document.getElementById('twitterLink');
     if (twitterLink) {
-      twitterLink.href = settings.twitter || 'https://twitter.com';
+      const twUrl = settings.twitter && settings.twitter !== '#' ? settings.twitter : '';
+      if (twUrl) {
+        twitterLink.href = twUrl;
+        twitterLink.style.display = '';
+      } else {
+        twitterLink.style.display = 'none';
+      }
     }
 
     updateContactFromSettings(settings);

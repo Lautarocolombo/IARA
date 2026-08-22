@@ -34,6 +34,7 @@ body {
 
 /* ==================== BUTTONS SYSTEM ==================== */
 /* Sistema de botones profesional con jerarquía clara */
+.header {
   display: flex;
   justify-content: space-between;
   align-items: center;

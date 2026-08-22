@@ -19,6 +19,10 @@ function setProducts(newProducts) {
 }
 
 async function fetchProducts(filters = {}) {
+  const grid = document.getElementById('productsGrid');
+  if (grid) {
+    grid.innerHTML = '<div class="loading-skeleton-grid" style="grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.5rem;"><div class="skeleton-card" style="background:var(--white);border-radius:16px;height:320px;animation:skeleton-pulse 1.5s infinite;"></div><div class="skeleton-card" style="background:var(--white);border-radius:16px;height:320px;animation:skeleton-pulse 1.5s infinite 0.2s;"></div><div class="skeleton-card" style="background:var(--white);border-radius:16px;height:320px;animation:skeleton-pulse 1.5s infinite 0.4s;"></div><div class="skeleton-card" style="background:var(--white);border-radius:16px;height:320px;animation:skeleton-pulse 1.5s infinite 0.6s;"></div></div>';
+  }
   try {
     const params = new URLSearchParams();
     if (filters.category) params.set('category', filters.category);
@@ -33,7 +37,9 @@ async function fetchProducts(filters = {}) {
   } catch (err) {
     console.error('Error cargando productos:', err);
     products = defaultProducts;
-    if (typeof renderProducts === 'function') renderProducts(getProducts());
+    if (grid) {
+      grid.innerHTML = '<div class="error-state" style="grid-column:1/-1;text-align:center;padding:3rem;"><h3>Error al cargar productos</h3><p>No se pudieron cargar los productos. Intentá de nuevo más tarde.</p><button class="btn btn-primary" onclick="fetchProducts()" style="margin-top:1rem;">Reintentar</button></div>';
+    }
   }
 }
 
@@ -143,6 +149,10 @@ return `
 function renderFeaturedProducts() {
   const grid = document.getElementById('featuredGrid');
   if (!grid) return;
+  if (!products.length) {
+    grid.innerHTML = '<div class="loading-skeleton-grid" style="grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.5rem;"><div class="skeleton-card" style="background:var(--white);border-radius:16px;height:320px;animation:skeleton-pulse 1.5s infinite;"></div><div class="skeleton-card" style="background:var(--white);border-radius:16px;height:320px;animation:skeleton-pulse 1.5s infinite 0.2s;"></div><div class="skeleton-card" style="background:var(--white);border-radius:16px;height:320px;animation:skeleton-pulse 1.5s infinite 0.4s;"></div><div class="skeleton-card" style="background:var(--white);border-radius:16px;height:320px;animation:skeleton-pulse 1.5s infinite 0.6s;"></div></div>';
+    return;
+  }
   const featured = getFeaturedProducts();
   if (!featured.length) {
     grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;text-align:center;padding:2rem;"><p>Aún no hay productos destacados.</p></div>';

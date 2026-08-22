@@ -672,8 +672,8 @@
 
 .payments-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--spacing-lg);
+  grid-template-columns: 1fr 1.2fr;
+  gap: var(--spacing-xl);
   align-items: start;
 }
 
@@ -681,6 +681,18 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.payments-col .card {
+  width: 100%;
+}
+
+.chart-wrap {
+  width: 100%;
+  min-height: 200px;
+  position: relative;
 }
 
 .payment-preview {
@@ -819,23 +831,24 @@
 /* ==================== SHIPPING RATES GRID ==================== */
 
 .shipping-rates-card {
-  max-height: 520px;
+  max-height: 600px;
   overflow-y: auto;
+  padding: var(--spacing-sm);
 }
 
 .shipping-rates-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: var(--spacing-sm);
 }
 
-@media (max-width: 1024px) {
+@media (min-width: 1400px) {
   .shipping-rates-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .shipping-rates-grid {
     grid-template-columns: 1fr;
   }
@@ -845,12 +858,13 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: var(--spacing-xs);
+  gap: 6px;
   padding: var(--spacing-sm);
   border-radius: var(--radius-sm);
   background: var(--white);
   border: 1px solid var(--border);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-height: 70px;
 }
 
 .shipping-rate-item:hover {
@@ -859,24 +873,35 @@
 }
 
 .shipping-rate-name {
-  flex: none;
-  min-width: 0;
   font-family: var(--font-body);
   font-size: var(--text-xs);
   color: var(--text-dark);
-  white-space: normal;
-  overflow: visible;
-  text-overflow: unset;
   display: flex;
   align-items: center;
   gap: 0.35rem;
   line-height: 1.3;
+  word-break: break-word;
 }
 
 .shipping-rate-icon {
   flex-shrink: 0;
   font-size: 0.75rem;
   line-height: 1;
+}
+
+.shipping-rate-cost {
+  flex-shrink: 0;
+  width: 100%;
+  margin-top: auto;
+}
+
+.shipping-rate-cost input {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: var(--text-xs);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-sizing: border-box;
 }
 
 .shipping-rate-cost {
@@ -919,8 +944,8 @@
 
 .orders-layout {
   display: grid;
-  grid-template-columns: minmax(280px, 1fr) 1.5fr;
-  gap: var(--spacing-lg);
+  grid-template-columns: minmax(320px, 1fr) 2fr;
+  gap: var(--spacing-xl);
   align-items: start;
 }
 
@@ -928,16 +953,45 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-lg);
+  min-width: 0;
+  overflow: hidden;
 }
 
 .orders-col .card {
   display: flex;
   flex-direction: column;
+  width: 100%;
 }
 
 .orders-col .card-body {
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+.orders-col .table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.orders-col .table-admin {
+  min-width: 100%;
+  table-layout: auto;
+  width: 100%;
+}
+
+.orders-col .table-admin th,
+.orders-col .table-admin td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
 }
 
 .orders-col-right .empty-state {
@@ -1427,6 +1481,7 @@
   border-collapse: collapse;
   font-size: var(--admin-table-body);
   font-family: var(--font-body);
+  table-layout: fixed;
 }
 
 .table-admin th,
@@ -1434,6 +1489,9 @@
   padding: var(--spacing-sm) var(--spacing-md);
   border-bottom: 1px solid var(--border);
   text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .table-admin th {
@@ -1880,6 +1938,18 @@
 
 /* ==================== RESPONSIVE ==================== */
 
+@media (max-width: 1200px) {
+  .payments-grid {
+    grid-template-columns: 1fr;
+  }
+  .orders-layout {
+    grid-template-columns: 1fr;
+  }
+  .orders-col-right .empty-state {
+    min-height: 200px;
+  }
+}
+
 @media (max-width: 1024px) {
   .payments-grid {
     grid-template-columns: 1fr;
@@ -1889,6 +1959,9 @@
   }
   .orders-col-right .empty-state {
     min-height: 200px;
+  }
+  .shipping-rates-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -1908,6 +1981,7 @@
   .wizard-step-label {
     font-size: 0.7rem;
   }
+}
   .charts-row {
     flex-direction: column;
   }
