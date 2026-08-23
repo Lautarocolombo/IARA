@@ -1,13 +1,11 @@
 (() => {
   const API_BASE = (window.CONFIG && window.CONFIG.API && window.CONFIG.API.BASE) || '';
-  const TOKEN_KEY = 'artesania_admin_token';
   const authHeader = () => {
-    const token = localStorage.getItem(TOKEN_KEY);
+    const token = window.getAuthToken ? window.getAuthToken() : '';
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
 
   const $ = (sel) => document.querySelector(sel);
-  const $$ = (sel) => Array.from(document.querySelectorAll(sel));
 
   async function loadMovements() {
     const product = ($('#invProductFilter') || {}).value || '';
@@ -162,6 +160,9 @@
     loadMovements();
     loadAlerts();
   }
+
+  window.inventory = { loadMovements, loadAlerts, resolveAlert, escapeHtml };
+  window.inventoryInit = init;
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

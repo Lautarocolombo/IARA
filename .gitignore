@@ -17,6 +17,7 @@ backend/data/
 # Uploads
 uploads/
 backend/uploads/
+backend/src/uploads/
 
 # Logs
 *.log
@@ -45,7 +46,6 @@ test-results/
 
 # Vercel
 .vercel
-.env.vercel
 .env*
 
 # Diagnostic scripts (contain Render API key)
@@ -59,7 +59,6 @@ backend/check_payment.js
 backend/verify_hash.js
 backend/fix_neon_user.js
 backend/test_admin_products.js
-backend/test-upload-vercel.js
 
 # Build/test artifacts
 dist/
@@ -72,13 +71,8 @@ frontend/assets/*.jpg
 frontend/assets/*.svg
 frontend/assets/*.json
 
-# Vite build artifacts inside frontend/ (if outDir is ever changed)
-frontend/assets/*.js
-frontend/assets/*.css
-frontend/assets/*.js.map
+# Kilo state
+.kilo/
 
-.vercel
-.env*
-
-.vercel
-.env*
+# Image folder
+image/

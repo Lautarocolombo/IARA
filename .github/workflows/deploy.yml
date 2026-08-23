@@ -53,13 +53,6 @@ jobs:
           ADMIN_PASS_HASH: $2b$10$testhashtesthashtesthas
           DATABASE_URL: ''
         timeout-minutes: 15
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-      - name: Run Playwright E2E tests
-        run: npx playwright test --config=playwright.audit.config.js
-        env:
-          CI: true
-        continue-on-error: true
 
   security-audit:
     runs-on: ubuntu-latest

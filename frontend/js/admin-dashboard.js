@@ -12,7 +12,8 @@
     testimonials: ['admin', 'editor', 'viewer'],
     sales:      ['admin'],
     payments:   ['admin'],
-    orders:     ['admin', 'editor', 'viewer']
+    orders:     ['admin', 'editor', 'viewer'],
+    inventory:  ['admin', 'editor', 'viewer']
   };
 
   var SECTION_MAP = {
@@ -23,7 +24,8 @@
     testimonials: { title: 'Testimonios',      breadcrumb: 'Gestionar testimonios de clientes' },
     sales:      { title: 'Ganancias',          breadcrumb: 'Reportes de ventas e ingresos' },
     payments:   { title: 'Medio de Pago',       breadcrumb: 'Configurar alias y método de pago' },
-    orders:     { title: 'Pedidos',             breadcrumb: 'Gestionar pedidos individuales' }
+    orders:     { title: 'Pedidos',             breadcrumb: 'Gestionar pedidos individuales' },
+    inventory:  { title: 'Inventario',          breadcrumb: 'Gestionar stock y movimientos' }
   };
 
   var AUTH_KEY = 'ag_admin_token';

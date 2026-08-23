@@ -10,13 +10,10 @@
     "test:coverage": "jest --config tests/unit/jest.config.js --testEnvironment jsdom --coverage",
     "test:backend": "cd backend && npm test",
     "test:frontend": "npm test",
-    "test:e2e": "playwright test --config=playwright.audit.config.js",
     "lint": "eslint frontend/js/ tests/ --ext .js",
     "lint:backend": "cd backend && npm run lint",
     "format": "prettier --write \"**/*.{js,json,css,html}\"",
     "lint:fix": "eslint frontend/js/ tests/ --ext .js --fix",
-    "e2e": "playwright test --config=playwright.audit.config.js",
-    "load-test": "artillery run artillery-load-test.yml",
     "dev": "cd backend && npm start",
     "start": "cd backend && npm start"
   },

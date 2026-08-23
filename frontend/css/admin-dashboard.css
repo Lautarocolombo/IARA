@@ -2167,3 +2167,19 @@
 .modal--sm { max-width: 400px; }
 .modal--md { max-width: 520px; }
 .modal--lg { max-width: 600px; }
+
+/* ==================== INVENTORY SECTION ==================== */
+#section-inventory .card-filters {
+  margin-bottom: var(--spacing-md);
+}
+#section-inventory .table-admin {
+  min-width: 100%;
+  table-layout: auto;
+}
+#section-inventory .table-admin th,
+#section-inventory .table-admin td {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
