@@ -3,10 +3,11 @@ services:
     name: iara-backend
     env: node
     rootDirectory: backend
-    plan: free
+    plan: starter
     buildCommand: npm ci --only=production --no-audit --no-fund
     startCommand: node src/server.js
     healthCheckPath: /health
+    minInstances: 1
     envVars:
       - key: NODE_ENV
         value: production

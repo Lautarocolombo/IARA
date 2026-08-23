@@ -455,14 +455,14 @@ describe('ordersController', () => {
       };
 
       query.mockResolvedValueOnce({ rows: [{ id: 1, status: 'pending', items: JSON.stringify([{ id: 1, quantity: 2 }]) }] });
-      query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+      query.mockResolvedValueOnce({ rows: [] });
       query.mockResolvedValueOnce({ rows: [{ id: 1, status: 'cancelled' }] });
       query.mockResolvedValueOnce({ rows: [] });
 
       await updateOrderStatus(req, res);
 
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ id: 1, status: 'cancelled' }));
-      expect(query).toHaveBeenCalledWith('UPDATE products SET stock = stock + $1 WHERE id = $2 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [2, 1]);
+      expect(query).toHaveBeenNthCalledWith(2, 'UPDATE products SET stock = stock + $1 WHERE id = $2 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [2, 1], undefined);
     });
 
     test('maneja error de base de datos', async () => {
@@ -507,14 +507,13 @@ describe('ordersController', () => {
       const res = { json: jest.fn() };
 
       query.mockResolvedValueOnce({ rows: [{ id: 1, status: 'pending', items: JSON.stringify([{ id: 1, quantity: 2 }]) }] });
-      query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
       query.mockResolvedValueOnce({ rows: [] });
       query.mockResolvedValueOnce({ rows: [] });
 
       await deleteOrder(req, res);
 
       expect(res.json).toHaveBeenCalledWith({ ok: true });
-      expect(query).toHaveBeenCalledWith('DELETE FROM orders WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [1]);
+      expect(query).toHaveBeenNthCalledWith(3, 'DELETE FROM orders WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [1], expect.anything());
     });
   });
 
@@ -563,7 +562,7 @@ describe('ordersController', () => {
       await batchDeleteOrders(req, res);
 
       expect(res.json).toHaveBeenCalledWith({ ok: true, deleted: 2 });
-      expect(query).toHaveBeenCalledWith('DELETE FROM orders WHERE status = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', ['cancelled']);
+      expect(query).toHaveBeenCalledWith('DELETE FROM orders WHERE status = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', ['cancelled'], expect.anything());
     });
 
     test('maneja error de base de datos', async () => {

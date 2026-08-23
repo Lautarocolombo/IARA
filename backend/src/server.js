@@ -158,9 +158,12 @@ function isOriginAllowed(origin) {
 }
 
 app.use((req, res, next) => {
-  if (req.method === 'OPTIONS') {
-    const origin = req.headers.origin;
-    if (isOriginAllowed(origin)) {
+  const origin = req.headers.origin;
+  const isAllowed = isOriginAllowed(origin);
+  const isPreflight = req.method === 'OPTIONS';
+
+  if (isPreflight) {
+    if (isAllowed) {
       res.setHeader('Access-Control-Allow-Origin', origin || '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Accept-Language, Origin, X-Requested-With, X-Request-ID');
@@ -172,6 +175,12 @@ app.use((req, res, next) => {
     logger.warn('[CORS] Preflight rechazado para:', { path: req.path, origin });
     return res.status(403).json({ error: 'Origen no permitido' });
   }
+
+  if (isAllowed && origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+
   next();
 });
 
@@ -199,7 +208,6 @@ const corsOptions = allowedOrigins.length
         allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With', 'X-Request-ID'],
     };
 
-app.use(cors(corsOptions));
 app.use(require('cookie-parser')());
 app.use(tenantContext);
 // app.options('*', cors(corsOptions)); // Reemplazado por middleware manual arriba para garantizar 204 en todas las rutas
@@ -213,15 +221,6 @@ if (process.env.REDIS_URL) {
     logger.warn('Redis store no disponible, usando memoria:', err.message);
   }
 }
-
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-  store: rateLimitStore,
-  message: { error: 'Demasiadas solicitudes, intentá de nuevo en unos minutos' }
-});
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
@@ -257,6 +256,16 @@ const adminLimiter = rateLimit({
   message: { error: 'Demasiadas solicitudes al panel admin, intentá de nuevo en unos minutos' }
 });
 
+const publicLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: rateLimitStore,
+  message: { error: 'Demasiadas solicitudes, intentá de nuevo en unos minutos' }
+});
+
+app.use('/api', publicLimiter);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/contact', contactLimiter);
 app.use('/api/orders', ordersLimiter);
@@ -347,7 +356,6 @@ app.use('/api/sync', require('./routes/sync'));
 
 app.use('/api', tenantContext);
 app.use('/api', csrfProtection);
-app.use('/api', limiter);
 
 app.use('/api/admin', require('./routes/coupons'));
 app.use('/api/admin/inventory', require('./routes/inventory'));

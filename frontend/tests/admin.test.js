@@ -18,19 +18,18 @@ describe('Frontend admin - auth state', () => {
     expect(true).toBe(true);
   });
 
-  it('getCurrentUser retorna username y role desde localStorage', async () => {
+  it('getCurrentUser retorna username y role desde estado en memoria', async () => {
     await require('../js/admin.js');
-    localStorage.setItem('ag_admin_user', 'lara');
-    localStorage.setItem('ag_admin_role', 'admin');
+    window.__setCurrentUser({ user: 'lara', role: 'admin' });
 
     var user = window.getCurrentUser();
     expect(user.username).toBe('lara');
     expect(user.role).toBe('admin');
   });
 
-  it('getAdminRole retorna el rol desde localStorage', async () => {
+  it('getAdminRole retorna el rol desde estado en memoria', async () => {
     await require('../js/admin.js');
-    localStorage.setItem('ag_admin_role', 'editor');
+    window.__setCurrentUser({ user: 'lara', role: 'editor' });
 
     expect(window.getAdminRole()).toBe('editor');
   });
@@ -42,19 +41,17 @@ describe('Frontend admin - auth state', () => {
     expect(user.role).toBe('');
   });
 
-  it('doLogout limpia localStorage', async () => {
+  it('doLogout limpia estado en memoria', async () => {
     await require('../js/admin.js');
-    localStorage.setItem('ag_admin_token', 'fake-token');
-    localStorage.setItem('ag_admin_user', 'lara');
-    localStorage.setItem('ag_admin_role', 'admin');
+    window.__setAdminToken('fake-token');
+    window.__setCurrentUser({ user: 'lara', role: 'admin' });
 
     var token = window.getAuthToken();
     expect(token).toBe('fake-token');
 
-    // Simulate logout cleanup (the actual function also fetches)
-    localStorage.removeItem('ag_admin_token');
-    localStorage.removeItem('ag_admin_user');
-    localStorage.removeItem('ag_admin_role');
+    // Simulate logout cleanup without making network requests
+    window.__setAdminToken('');
+    window.__setCurrentUser(null);
 
     expect(window.getAuthToken()).toBe('');
     expect(window.getCurrentUser().username).toBe('');
@@ -99,7 +96,7 @@ describe('Admin dashboard role-based visibility', () => {
   it('admin ve todas las secciones del sidebar', async () => {
     await require('../js/admin.js');
     await require('../js/admin-dashboard.js');
-    localStorage.setItem('ag_admin_role', 'admin');
+    window.__setCurrentUser({ user: 'admin', role: 'admin' });
 
     window.applyRoleVisibility();
 
@@ -113,7 +110,7 @@ describe('Admin dashboard role-based visibility', () => {
   it('editor NO ve Ganancias ni Medio de Pago en el sidebar', async () => {
     await require('../js/admin.js');
     await require('../js/admin-dashboard.js');
-    localStorage.setItem('ag_admin_role', 'editor');
+    window.__setCurrentUser({ user: 'editor', role: 'editor' });
 
     window.applyRoleVisibility();
 
@@ -136,7 +133,7 @@ describe('Admin dashboard role-based visibility', () => {
   it('editor NO ve las secciones Ganancias/Medio de Pago del DOM', async () => {
     await require('../js/admin.js');
     await require('../js/admin-dashboard.js');
-    localStorage.setItem('ag_admin_role', 'editor');
+    window.__setCurrentUser({ user: 'editor', role: 'editor' });
 
     window.applyRoleVisibility();
 
@@ -151,7 +148,7 @@ describe('Admin dashboard role-based visibility', () => {
   it('editor ve Pedidos (orders) en el sidebar', async () => {
     await require('../js/admin.js');
     await require('../js/admin-dashboard.js');
-    localStorage.setItem('ag_admin_role', 'editor');
+    window.__setCurrentUser({ user: 'editor', role: 'editor' });
 
     window.applyRoleVisibility();
 

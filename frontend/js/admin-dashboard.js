@@ -28,15 +28,13 @@
     inventory:  { title: 'Inventario',          breadcrumb: 'Gestionar stock y movimientos' }
   };
 
-  var AUTH_KEY = 'ag_admin_token';
-
   function isTokenPresent() {
-    var token = localStorage.getItem(AUTH_KEY);
+    var token = window.getAuthToken ? window.getAuthToken() : '';
     return !!(token && token.length > 0);
   }
 
   function redirectToLogin() {
-    localStorage.removeItem(AUTH_KEY);
+    if (window.doLogout) window.doLogout();
     window.location.href = '../pages/admin.html';
   }
 
@@ -116,7 +114,7 @@
   }
 
   function getCurrentRole() {
-    return localStorage.getItem('ag_admin_role') || 'admin';
+    return (window.getAdminRole && window.getAdminRole()) || 'admin';
   }
 
   function applyRoleVisibility() {

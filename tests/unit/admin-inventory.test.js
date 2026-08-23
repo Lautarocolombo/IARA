@@ -60,8 +60,9 @@ describe('admin-inventory.js', () => {
       expect(fetchWithRetryMock).toHaveBeenCalledWith(
         'http://localhost/api/admin/inventory/movements?limit=100&offset=0',
         expect.objectContaining({
+          credentials: 'include',
           headers: expect.objectContaining({
-            Authorization: 'Bearer fake-token'
+            'Content-Type': 'application/json'
           })
         })
       );
@@ -129,8 +130,9 @@ describe('admin-inventory.js', () => {
       expect(fetchWithRetryMock).toHaveBeenCalledWith(
         'http://localhost/api/admin/inventory/alerts?resolved=false',
         expect.objectContaining({
+          credentials: 'include',
           headers: expect.objectContaining({
-            Authorization: 'Bearer fake-token'
+            'Content-Type': 'application/json'
           })
         })
       );
@@ -170,8 +172,9 @@ describe('admin-inventory.js', () => {
         'http://localhost/api/admin/inventory/alerts/5/resolve',
         expect.objectContaining({
           method: 'POST',
+          credentials: 'include',
           headers: expect.objectContaining({
-            Authorization: 'Bearer fake-token'
+            'Content-Type': 'application/json'
           })
         })
       );
@@ -192,13 +195,13 @@ describe('admin-inventory.js', () => {
   });
 
   describe('authHeader', () => {
-    test('no envía token cuando getAuthToken está vacío', async () => {
+    test('envía credentials include', async () => {
       getAuthTokenMock.mockReturnValue('');
       require('../../frontend/js/admin-inventory');
       await window.inventory.loadMovements();
 
       const call = fetchWithRetryMock.mock.calls[0];
-      expect(call[1].headers.Authorization).toBeUndefined();
+      expect(call[1].credentials).toBe('include');
     });
   });
 });

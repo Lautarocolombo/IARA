@@ -118,11 +118,11 @@ return `
         ${badgeHtml}
       </a>
       <div class="product-info">
-        <span class="product-category">${product.category}</span>
+        <span class="product-category">${escapeHtml(product.category)}</span>
         <a href="pages/product.html?id=${product.id}" style="text-decoration:none;color:inherit;">
-          <h3 class="product-name">${product.name}</h3>
+          <h3 class="product-name">${escapeHtml(product.name)}</h3>
         </a>
-        <p class="product-description">${product.description}</p>
+        <p class="product-description">${escapeHtml(product.description)}</p>
         <div class="product-footer">
           <span class="product-price">${formatARS(product.price)}</span>
           <a href="pages/product.html?id=${product.id}" class="product-cta">Ver producto</a>

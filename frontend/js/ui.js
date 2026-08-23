@@ -8,7 +8,9 @@ function showToast(icon, message, type = 'default', options = {}) {
   const { onRetry, duration } = options;
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
-  toast.innerHTML = `<span class="toast-icon">${icon}</span><div class="toast-body"><div class="toast-message">${message}</div>${onRetry ? '<button class="toast-retry" type="button">Reintentar</button>' : ''}</div><button class="toast-close" type="button" aria-label="Cerrar">&times;</button>`;
+  const safeIcon = escapeHtml(String(icon));
+  const safeMessage = escapeHtml(String(message));
+  toast.innerHTML = `<span class="toast-icon">${safeIcon}</span><div class="toast-body"><div class="toast-message">${safeMessage}</div>${onRetry ? '<button class="toast-retry" type="button">Reintentar</button>' : ''}</div><button class="toast-close" type="button" aria-label="Cerrar">&times;</button>`;
   toast.setAttribute('role', 'status');
   toast.setAttribute('aria-live', 'polite');
   container.appendChild(toast);

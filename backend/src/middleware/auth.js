@@ -9,7 +9,7 @@ const ROLE_PERMISSIONS = {
 
 async function adminAuth(req, res, next) {
   const authHeader = req.headers.authorization || '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : req.headers['x-admin-token'];
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : req.headers['x-admin-token'] || req.cookies?.adminToken;
 
   if (!token) {
     return res.status(401).json({ error: 'No autorizado' });

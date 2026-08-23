@@ -10,11 +10,12 @@ const PDFDocument = require('pdfkit');
 const { sendOrderConfirmationEmail } = require('../lib/email');
 const { logInventoryMovement } = require('../controllers/inventoryController');
 
-async function logActivity(user, action, entityType = '', entityId = 0, details = '', ip = '', relatedOrderId = 0, tenantId = 'default') {
+async function logActivity(user, action, entityType = '', entityId = 0, details = '', ip = '', relatedOrderId = 0, tenantId = 'default', client) {
   try {
     await query(
       'INSERT INTO activity_log (username, action, entity_type, entity_id, details, ip, related_order_id, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-      [user, action, entityType, entityId, details, ip, relatedOrderId, tenantId]
+      [user, action, entityType, entityId, details, ip, relatedOrderId, tenantId],
+      client
     );
   } catch (err) {
     logger.warn({ err: err.message }, 'Error guardando activity_log');
@@ -297,13 +298,13 @@ const createOrder = async (req, res) => {
   }
 };
 
-async function restoreStockForOrder(items) {
+async function restoreStockForOrder(items, client) {
   const itemsArr = typeof items === 'string' ? JSON.parse(items) : items;
   if (!Array.isArray(itemsArr)) return;
   for (const item of itemsArr) {
     const productId = Number(item.id);
     const qty = Number(item.quantity || 1);
-          await query('UPDATE products SET stock = stock + $1 WHERE id = $2 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [qty, productId]);
+    await query('UPDATE products SET stock = stock + $1 WHERE id = $2 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [qty, productId], client);
   }
 }
 
@@ -360,18 +361,21 @@ const updateOrderStatus = async (req, res) => {
 const deleteOrder = async (req, res) => {
   const id = Number(req.params.id);
   try {
-    const orderResult = await query('SELECT * FROM orders WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [id]);
-    if (orderResult.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
-    const order = orderResult.rows[0];
-    const items = safeJsonParse(order.items, []);
-    if (order.status === 'pending' || order.status === 'confirmed' || order.status === 'cancelled') {
-      await restoreStockForOrder(items);
-    }
-    const user = req.user?.user || 'admin';
-    await logActivity(user, 'delete', 'order', id, `Pedido #${id} eliminado`, req.ip || '', id, req.headers['x-tenant-id'] || req.user?.tenant_id || 'default');
-    await query('DELETE FROM orders WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [id]);
+    await transaction(async (client) => {
+      const orderResult = await query('SELECT * FROM orders WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [id], client);
+      if (orderResult.rows.length === 0) throw new Error('NOT_FOUND');
+      const order = orderResult.rows[0];
+      const items = safeJsonParse(order.items, []);
+      if (order.status === 'pending' || order.status === 'confirmed' || order.status === 'cancelled') {
+        await restoreStockForOrder(items, client);
+      }
+      const user = req.user?.user || 'admin';
+      await logActivity(user, 'delete', 'order', id, `Pedido #${id} eliminado`, req.ip || '', id, req.headers['x-tenant-id'] || req.user?.tenant_id || 'default', client);
+      await query('DELETE FROM orders WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [id], client);
+    });
     res.json({ ok: true });
   } catch (err) {
+    if (err.message === 'NOT_FOUND') return res.status(404).json({ error: 'Pedido no encontrado' });
     logger.error({ err: err.message }, 'Error eliminando pedido');
     res.status(500).json({ error: 'Error interno del servidor' });
   }
@@ -383,18 +387,21 @@ const batchDeleteOrders = async (req, res) => {
     return res.status(400).json({ error: 'Estado inválido para eliminación en lote' });
   }
   try {
-    const result = await query('SELECT id, items, status FROM orders WHERE status = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [status]);
-    const orders = result.rows;
-    for (const order of orders) {
-      const items = safeJsonParse(order.items, []);
-      if (order.status === 'pending' || order.status === 'confirmed' || order.status === 'cancelled') {
-        await restoreStockForOrder(items);
+    const result = await transaction(async (client) => {
+      const ordersResult = await query('SELECT id, items, status FROM orders WHERE status = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [status], client);
+      const orders = ordersResult.rows;
+      for (const order of orders) {
+        const items = safeJsonParse(order.items, []);
+        if (order.status === 'pending' || order.status === 'confirmed' || order.status === 'cancelled') {
+          await restoreStockForOrder(items, client);
+        }
+        const user = req.user?.user || 'admin';
+        await logActivity(user, 'batch_delete', 'order', order.id, `Pedido #${order.id} eliminado en lote (estado: ${status})`, req.ip || '', order.id, req.headers['x-tenant-id'] || req.user?.tenant_id || 'default', client);
       }
-      const user = req.user?.user || 'admin';
-      await logActivity(user, 'batch_delete', 'order', order.id, `Pedido #${order.id} eliminado en lote (estado: ${status})`, req.ip || '', order.id, req.headers['x-tenant-id'] || req.user?.tenant_id || 'default');
-    }
-    const deleteResult = await query('DELETE FROM orders WHERE status = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [status]);
-    res.json({ ok: true, deleted: deleteResult.rowCount });
+      const deleteResult = await query('DELETE FROM orders WHERE status = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [status], client);
+      return { deleted: deleteResult.rowCount };
+    });
+    res.json({ ok: true, deleted: result.deleted });
   } catch (err) {
     logger.error({ err: err.message }, 'Error eliminando pedidos en lote');
     res.status(500).json({ error: 'Error interno del servidor' });

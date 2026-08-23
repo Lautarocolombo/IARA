@@ -23,13 +23,28 @@ router.get(['/', '/health'], async (req, res) => {
       dbStatus = 'sqlite-fallback';
     }
 
+    let redisStatus = 'disabled';
+    let workerStatus = 'disabled';
+    if (process.env.REDIS_URL) {
+      try {
+        require('../queues/webhookQueue');
+        redisStatus = 'connected';
+        workerStatus = 'enabled';
+      } catch (err) {
+        redisStatus = 'error';
+        workerStatus = 'error';
+      }
+    }
+
     const uptime = process.uptime();
     const memory = process.memoryUsage();
     const response = {
-      status: dbStatus === 'connected' || dbStatus === 'sqlite-fallback' ? 'ok' : 'degraded',
+      status: (dbStatus === 'connected' || dbStatus === 'sqlite-fallback') && (redisStatus === 'connected' || redisStatus === 'disabled') ? 'ok' : 'degraded',
       uptime: Math.floor(uptime),
       database: dbStatus,
       dbError: dbError || null,
+      redis: redisStatus,
+      worker: workerStatus,
       memory: {
         rss: Math.round(memory.rss / 1024 / 1024) + 'MB',
         heapUsed: Math.round(memory.heapUsed / 1024 / 1024) + 'MB'

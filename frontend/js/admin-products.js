@@ -613,7 +613,6 @@
 
       var xhr = new XMLHttpRequest();
       var url = CONFIG.API.BASE + '/api/products/' + productId + '/images/' + imageId + '/replace';
-      var token = window.getAuthToken();
 
       await new Promise(function (resolve, reject) {
         xhr.upload.addEventListener('progress', function (e) {
@@ -640,7 +639,6 @@
         });
         xhr.open('PUT', url);
         xhr.withCredentials = true;
-        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
         xhr.send(formData);
       });
 
@@ -658,7 +656,6 @@
     try {
       var res = await window.adminFetch('/api/products/' + productId + '/images/' + imageId, {
         method: 'DELETE',
-        headers: { Authorization: 'Bearer ' + window.getAuthToken() },
         credentials: 'include'
       });
       if (!res || !res.ok) {
@@ -677,7 +674,6 @@
       var res = await window.adminFetch('/api/products/' + productId + '/images/' + imageId, {
         method: 'PATCH',
         headers: {
-          Authorization: 'Bearer ' + window.getAuthToken(),
           'Content-Type': 'application/json'
         },
         credentials: 'include',
@@ -704,7 +700,6 @@
     try {
       var xhr = new XMLHttpRequest();
       var url = CONFIG.API.BASE + '/api/products/' + productId + '/images';
-      var token = window.getAuthToken();
 
       await new Promise(function (resolve, reject) {
         xhr.upload.addEventListener('progress', function (e) {
@@ -729,7 +724,6 @@
         });
         xhr.open('POST', url);
         xhr.withCredentials = true;
-        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
         xhr.send(imageFormData);
       });
 

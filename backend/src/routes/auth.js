@@ -7,7 +7,7 @@ const { adminAuth } = require('../middleware/auth');
 
 function userOrAdminAuth(req, res, next) {
   const authHeader = req.headers.authorization || '';
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : req.headers['x-admin-token'] || req.headers['x-user-token'];
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : req.headers['x-admin-token'] || req.headers['x-user-token'] || req.cookies?.adminToken;
 
   if (!token) {
     return res.status(401).json({ error: 'No autorizado' });

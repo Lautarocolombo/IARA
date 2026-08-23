@@ -1,6 +1,9 @@
 const API_BASE = CONFIG.API.BASE;
 const BACKEND_DIRECT_URL = CONFIG.API.BACKEND_URL || '';
-let authToken = localStorage.getItem('ag_admin_token') || '';
+let authToken = '';
+let currentUser = null;
+window.__setCurrentUser = function(user) { currentUser = user; };
+window.__setAdminToken = function(token) { authToken = token; };
 window.__getAdminToken = () => authToken;
 
 function getApiUrl(path) {
@@ -106,12 +109,10 @@ async function doLogin() {
       throw new Error(errorMsg);
     }
      authToken = data.token;
-    localStorage.setItem('ag_admin_token', authToken);
-    localStorage.setItem('ag_admin_user', data.user || '');
-    localStorage.setItem('ag_admin_role', data.role || '');
-    var userNameEl = document.getElementById('adminUserName');
-    if (userNameEl && data.user) userNameEl.textContent = data.user;
-    window.location.href = '../pages/dashboard.html';
+     currentUser = { user: data.user, role: data.role, permissions: data.permissions };
+     var userNameEl = document.getElementById('adminUserName');
+     if (userNameEl && data.user) userNameEl.textContent = data.user;
+     window.location.href = '../pages/dashboard.html';
   } catch (err) {
     let userMessage = 'Error inesperado. Por favor, recargá la página.';
     if (err.name === 'AbortError') userMessage = 'El servidor tardó demasiado en responder. Recargá la página e intentá nuevamente.';
@@ -147,15 +148,12 @@ async function doLogout() {
     console.warn('[doLogout] Error cerrando sesión:', e);
   }
   authToken = '';
-  localStorage.removeItem('ag_admin_token');
-  localStorage.removeItem('ag_admin_user');
-  localStorage.removeItem('ag_admin_role');
+  currentUser = null;
   window.location.href = '../index.html';
 }
 
 async function adminFetch(url, opts = {}, isRetry = false) {
-  if (!authToken) throw new Error('No autorizado');
-  const headers = { Authorization: `Bearer ${authToken}`, ...(opts.headers || {}) };
+  if (!authToken && !document.cookie.includes('adminToken=')) throw new Error('No autorizado');
   const isUpload = url === '/api/admin/upload';
   const directUploadOrigin = isUpload ? `${BACKEND_DIRECT_URL}${url}` : null;
   const fullUrl = directUploadOrigin || (url.startsWith('/api/') ? `${CONFIG.API.BASE}${url}` : url);
@@ -163,13 +161,11 @@ async function adminFetch(url, opts = {}, isRetry = false) {
   const timeout = setTimeout(() => controller.abort(), 60000);
   try {
     const isFormData = opts.body instanceof FormData;
-    let finalHeaders = headers;
+    let finalHeaders = { ...(opts.headers || {}) };
     if (isFormData) {
-      /* eslint-disable-next-line no-unused-vars */
-      const { 'Content-Type': _ct, ...rest } = headers;
-      finalHeaders = rest;
+      delete finalHeaders['Content-Type'];
     }
-    const fetchOpts = { ...opts, headers: finalHeaders, signal: controller.signal };
+    const fetchOpts = { ...opts, headers: finalHeaders, signal: controller.signal, credentials: 'include' };
     if (isUpload) {
       fetchOpts.credentials = 'include';
     }
@@ -190,11 +186,13 @@ async function adminFetch(url, opts = {}, isRetry = false) {
         console.warn('[adminFetch] Error refrescando token:', e);
       }
       authToken = '';
+      currentUser = null;
       document.getElementById('loginOverlay')?.classList.remove('hidden');
       throw new Error('Sesión expirada. Iniciá sesión nuevamente.');
     }
     if (res.status === 401) {
       authToken = '';
+      currentUser = null;
       document.getElementById('loginOverlay')?.classList.remove('hidden');
       throw new Error('Sesión expirada. Iniciá sesión nuevamente.');
     }
@@ -236,14 +234,15 @@ window.togglePasswordVisibility = togglePasswordVisibility;
 window.checkServerHealth = checkServerHealth;
 window.showLoginError = showLoginError;
 window.clearLoginError = clearLoginError;
-window.getAuthToken = function() { return localStorage.getItem('ag_admin_token') || ''; };
+window.getAuthToken = function() { return authToken; };
 window.getCurrentUser = function() {
+  if (currentUser) return { username: currentUser.user || currentUser.username || '', role: currentUser.role || '' };
   return {
-    username: localStorage.getItem('ag_admin_user') || '',
-    role: localStorage.getItem('ag_admin_role') || ''
+    username: '',
+    role: ''
   };
 };
-window.getAdminRole = function() { return localStorage.getItem('ag_admin_role') || ''; };
+window.getAdminRole = function() { return (currentUser?.role || ''); };
 window.adminFetch = adminFetch;
 
 window.addEventListener('error', function(event) {

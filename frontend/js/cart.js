@@ -2,7 +2,8 @@
 
 let cart = [];
 try {
-  cart = JSON.parse(localStorage.getItem(CONFIG.CART.STORAGE_KEY) || '[]');
+  const storageKey = (typeof CONFIG !== 'undefined' && CONFIG && CONFIG.CART && CONFIG.CART.STORAGE_KEY) ? CONFIG.CART.STORAGE_KEY : 'ag_cart';
+  cart = JSON.parse(localStorage.getItem(storageKey) || '[]');
 } catch (e) {
   console.error('Error leyendo carrito desde localStorage:', e);
   cart = [];
@@ -80,6 +81,10 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 window.addToCart = addToCart;
+window.getCart = getCart;
+window.updateCartBadge = updateCartBadge;
+window.clearCart = clearCart;
+window.saveCart = saveCart;
 
 // Exportar para Node.js (si aplica)
 if (typeof module !== 'undefined' && module.exports) {

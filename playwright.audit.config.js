@@ -8,7 +8,7 @@ module.exports = defineConfig({
   forbidOnly: false,
   retries: 0,
   workers: 1,
-  reporter: 'list',
+  reporter: 'line',
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',

@@ -189,14 +189,12 @@ const ITEM_CLASS = 'product-image-item';
     if (!hasFiles && urlImages.length === 0) return 0;
     const xhr = new XMLHttpRequest();
     const url = `${CONFIG.API.BASE}/api/products/${productId}/images`;
-    const token = getAuthToken();
     try {
       const result = await new Promise((resolve, reject) => {
          xhr.addEventListener('load', () => resolve({ status: xhr.status, data: JSON.parse(xhr.responseText || '{}') }));
          xhr.addEventListener('error', () => reject(new Error('Error de red')));
          xhr.open('POST', url);
          xhr.withCredentials = true;
-         xhr.setRequestHeader('Authorization', `Bearer ${token}`);
          xhr.send(formData);
       });
       if (result.status < 200 || result.status >= 300) {
@@ -387,33 +385,31 @@ const ITEM_CLASS = 'product-image-item';
       if (catInput && catInput.value) formData.append('categoria', catInput.value);
       const xhr = new XMLHttpRequest();
       const url = `${CONFIG.API.BASE}/api/products/${productId}/images`;
-      const token = getAuthToken();
       const result = await new Promise((resolve, reject) => {
-        xhr.upload.addEventListener('progress', (e) => {
-          if (e.lengthComputable && progressContainer) {
-            const pct = Math.round((e.loaded / e.total) * 100);
-            const fill = progressContainer.querySelector('.progress-fill');
-            const text = progressContainer.querySelector('.progress-text');
-            if (fill) fill.style.width = pct + '%';
-            if (text) text.textContent = pct + '%';
-          }
+         xhr.upload.addEventListener('progress', (e) => {
+           if (e.lengthComputable && progressContainer) {
+             const pct = Math.round((e.loaded / e.total) * 100);
+             const fill = progressContainer.querySelector('.progress-fill');
+             const text = progressContainer.querySelector('.progress-text');
+             if (fill) fill.style.width = pct + '%';
+             if (text) text.textContent = pct + '%';
+           }
+         });
+ xhr.addEventListener('load', () => {
+           let data = {};
+           try {
+             data = JSON.parse(xhr.responseText || '{}');
+           } catch (e) {
+             /* istanbul ignore next */
+             data = { error: xhr.responseText || `Error ${xhr.status}` };
+           }
+           resolve({ status: xhr.status, data });
+         });
+          xhr.addEventListener('error', () => reject(new Error('Error de red')));
+          xhr.open('POST', url);
+          xhr.withCredentials = true;
+          xhr.send(formData);
         });
-xhr.addEventListener('load', () => {
-          let data = {};
-          try {
-            data = JSON.parse(xhr.responseText || '{}');
-          } catch (e) {
-            /* istanbul ignore next */
-            data = { error: xhr.responseText || `Error ${xhr.status}` };
-          }
-          resolve({ status: xhr.status, data });
-        });
-         xhr.addEventListener('error', () => reject(new Error('Error de red')));
-         xhr.open('POST', url);
-         xhr.withCredentials = true;
-         xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-         xhr.send(formData);
-       });
        if (result.status < 200 || result.status >= 300) {
          const msg = result.status === 403
           ? 'No autorizado para subir imágenes. Verificá tu sesión de administrador.'
@@ -467,7 +463,6 @@ xhr.addEventListener('load', () => {
       formData.append('image', file);
       const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}/images/${imageId}/replace`, {
         method: 'PUT',
-        headers: { Authorization: `Bearer ${getAuthToken()}` },
         credentials: 'include',
         body: formData
       }, 2, 1000);
@@ -495,7 +490,6 @@ xhr.addEventListener('load', () => {
       const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}/images/${imageId}`, {
         method: 'PATCH',
         headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
           'Content-Type': 'application/json'
         },
         credentials: 'include',
@@ -517,7 +511,6 @@ xhr.addEventListener('load', () => {
       const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}/images/${imageId}`, {
         method: 'PATCH',
         headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
           'Content-Type': 'application/json'
         },
         credentials: 'include',
@@ -538,7 +531,6 @@ xhr.addEventListener('load', () => {
     try {
       const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}/images/${imageId}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${getAuthToken()}` },
         credentials: 'include'
       }, 2, 1000);
       if (!res) throw new Error('Error de red');
@@ -557,7 +549,6 @@ xhr.addEventListener('load', () => {
       const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}/images/sync-order`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${getAuthToken()}`,
           'Content-Type': 'application/json'
         },
         credentials: 'include',
@@ -576,13 +567,6 @@ xhr.addEventListener('load', () => {
   function preventDefaults(e) {
     e.preventDefault();
     e.stopPropagation();
-  }
-
-  function getAuthToken() {
-    if (typeof window !== 'undefined' && window.__getAdminToken) {
-      return window.__getAdminToken();
-    }
-    return '';
   }
 
   function escapeHtml(str) {

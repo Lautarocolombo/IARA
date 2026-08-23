@@ -44,6 +44,13 @@ const login = async (req, res) => {
         }
         const token = jwt.sign({ role, user: u.username, permissions, tenant_id: u.tenant_id }, JWT_SECRET, { expiresIn: '15m' });
         const refreshToken = jwt.sign({ role, user: u.username, permissions, tenant_id: u.tenant_id }, JWT_SECRET, { expiresIn: '7d' });
+        res.cookie('adminToken', token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict',
+          maxAge: 15 * 60 * 1000,
+          path: '/'
+        });
         res.cookie('refreshToken', refreshToken, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
@@ -79,6 +86,13 @@ const login = async (req, res) => {
         }
         const token = jwt.sign({ role, user: jwtUser, permissions, tenant_id: dbCheck.rows[0]?.tenant_id || 'default' }, JWT_SECRET, { expiresIn: '15m' });
         const refreshToken = jwt.sign({ role, user: jwtUser, permissions, tenant_id: dbCheck.rows[0]?.tenant_id || 'default' }, JWT_SECRET, { expiresIn: '7d' });
+        res.cookie('adminToken', token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict',
+          maxAge: 15 * 60 * 1000,
+          path: '/'
+        });
         res.cookie('refreshToken', refreshToken, {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
@@ -117,6 +131,13 @@ const refresh = async (req, res) => {
 
     const decoded = jwt.verify(refreshToken, JWT_SECRET);
     const accessToken = jwt.sign({ role: decoded.role, user: decoded.user, permissions: decoded.permissions || {}, tenant_id: decoded.tenant_id }, JWT_SECRET, { expiresIn: '15m' });
+    res.cookie('adminToken', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 15 * 60 * 1000,
+      path: '/'
+    });
     res.json({ token: accessToken });
   } catch (err) {
     return res.status(401).json({ error: 'Refresh token inválido o expirado' });
@@ -126,9 +147,17 @@ const refresh = async (req, res) => {
 const logout = (req, res) => {
   const authHeader = req.headers.authorization || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-  if (token) {
-    tokenBlacklist.add(token);
+  const cookieToken = req.cookies?.adminToken || '';
+  const tokenToBlacklist = token || cookieToken;
+  if (tokenToBlacklist) {
+    tokenBlacklist.add(tokenToBlacklist);
   }
+  res.clearCookie('adminToken', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    path: '/'
+  });
   res.clearCookie('refreshToken', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',

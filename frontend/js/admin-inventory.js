@@ -1,9 +1,5 @@
 (() => {
   const API_BASE = (window.CONFIG && window.CONFIG.API && window.CONFIG.API.BASE) || '';
-  const authHeader = () => {
-    const token = window.getAuthToken ? window.getAuthToken() : '';
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  };
 
   const $ = (sel) => document.querySelector(sel);
 
@@ -21,7 +17,8 @@
 
     try {
       const res = await window.fetchWithRetry(`${API_BASE}/api/admin/inventory/movements?${qs.toString()}`, {
-        headers: { 'Content-Type': 'application/json', ...authHeader() }
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
       });
       if (!res || !res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -63,7 +60,8 @@
 
     try {
       const res = await window.fetchWithRetry(`${API_BASE}/api/admin/inventory/alerts?resolved=false`, {
-        headers: { 'Content-Type': 'application/json', ...authHeader() }
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
       });
       if (!res || !res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -102,7 +100,8 @@
     try {
       const res = await window.fetchWithRetry(`${API_BASE}/api/admin/inventory/alerts/${id}/resolve`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeader() }
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
       });
       if (!res || !res.ok) {
         const data = await res.json().catch(() => ({}));

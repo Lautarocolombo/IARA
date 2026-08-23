@@ -1,0 +1,57 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci --no-audit --no-fund
+          cd backend && npm ci --no-audit --no-fund
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Start backend
+        run: |
+          cd backend
+          mkdir -p data
+          npm start &
+          echo $! > backend.pid
+        env:
+          ADMIN_USER: testadmin
+          JWT_SECRET: test-jwt-secret
+          ADMIN_PASS_HASH: $2b$10$testhashtesthashtesthaste
+          ALLOWED_ORIGINS: http://localhost:3000
+          NODE_ENV: test
+          DATABASE_URL: ''
+          PORT: 3000
+
+      - name: Wait for backend
+        run: |
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:3000/api/health > /dev/null; then
+              echo "Backend is ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Backend failed to start"
+          exit 1
+
+      - name: Run Playwright E2E tests
+        run: npx playwright test --config=playwright.audit.config.js --reporter=line
+        env:
+          CI: true

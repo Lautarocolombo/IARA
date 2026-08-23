@@ -28,7 +28,7 @@ function createPool(connectionString) {
     const separator = finalConnectionString.includes('?') ? '&' : '?';
     finalConnectionString = finalConnectionString + separator + 'client_encoding=UTF8';
   }
-  return new Pool({
+  const pool = new Pool({
     connectionString: finalConnectionString,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
     max: 20,
@@ -36,6 +36,18 @@ function createPool(connectionString) {
     connectionTimeoutMillis: 10000,
     allowExitOnIdle: false
   });
+
+  pool.on('acquire', () => {
+    if (pool.waitingCount > 5) {
+      logger.warn({ total: pool.totalCount, idle: pool.idleCount, waiting: pool.waitingCount }, 'Pool cerca del agotamiento');
+    }
+  });
+
+  pool.on('error', (err) => {
+    logger.error({ err: err.message }, 'Error inesperado en pool de conexiones');
+  });
+
+  return pool;
 }
 
 async function waitForPool(poolInstance, retries = 5, delay = 1000) {
@@ -101,7 +113,7 @@ async function query(text, params, transactionClient = null) {
       const sqliteSql = toSqlite(sql);
       const values = params || [];
       const trimmed = sqliteSql.trim().toUpperCase();
-      if (trimmed.startsWith('SELECT') || trimmed.startsWith('WITH') || trimmed.startsWith('PRAGMA')) {
+      if (trimmed.startsWith('SELECT') || trimmed.startsWith('WITH') || trimmed.startsWith('PRAGMA') || sqliteSql.toUpperCase().includes('RETURNING')) {
         db.all(sqliteSql, values, (err, rows) => {
           if (err) return reject(err);
           resolve({ rows, rowCount: rows ? rows.length : 0 });
@@ -707,11 +719,36 @@ async function initDB() {
      } catch (err) {
        logger.debug({ err: err.message }, 'Columna tipo ya existe o no se pudo agregar (SQLite)');
      }
-    try {
-      await query('CREATE UNIQUE INDEX IF NOT EXISTS idx_hero_cards_slot ON hero_cards(slot) WHERE slot > 0');
-    } catch (err) {
-      logger.debug({ err: err.message }, 'Índice unique slot ya existe o no se pudo agregar (SQLite)');
-    }
+     try {
+       await query('CREATE UNIQUE INDEX IF NOT EXISTS idx_hero_cards_slot ON hero_cards(slot) WHERE slot > 0');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Índice unique slot ya existe o no se pudo agregar (SQLite)');
+     }
+     try {
+       await query('CREATE INDEX IF NOT EXISTS idx_orders_order_token ON orders(order_token)');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Índice order_token ya existe o no se pudo agregar (SQLite)');
+     }
+     try {
+       await query('CREATE INDEX IF NOT EXISTS idx_products_featured ON products(featured) WHERE featured = 1');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Índice featured ya existe o no se pudo agregar (SQLite)');
+     }
+     try {
+       await query('CREATE INDEX IF NOT EXISTS idx_webhook_events_status ON webhook_events(status)');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Índice webhook status ya existe o no se pudo agregar (SQLite)');
+     }
+     try {
+       await query('CREATE INDEX IF NOT EXISTS idx_activity_log_created_at ON activity_log(created_at DESC)');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Índice activity_log created_at ya existe o no se pudo agregar (SQLite)');
+     }
+     try {
+       await query('CREATE INDEX IF NOT EXISTS idx_activity_log_related_order ON activity_log(related_order_id)');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Índice activity_log related_order_id ya existe o no se pudo agregar (SQLite)');
+     }
        try {
         await query('ALTER TABLE products ADD COLUMN sku TEXT DEFAULT \'\'');
       } catch (err) {
@@ -950,11 +987,30 @@ async function initDB() {
     logger.debug({ err: err.message }, 'Error reseteando sequences');
   }
 
-  try {
-    await ensureAdminUser();
-  } catch (err) {
-    logger.warn({ err: err.message }, 'No se pudo asegurar usuario admin (PostgreSQL)');
-  }
+   try {
+     await ensureAdminUser();
+   } catch (err) {
+     logger.warn({ err: err.message }, 'No se pudo asegurar usuario admin (PostgreSQL)');
+   }
+
+   try {
+     const missingIndexes = [
+       'CREATE INDEX IF NOT EXISTS idx_orders_order_token ON orders(order_token)',
+       'CREATE INDEX IF NOT EXISTS idx_products_featured ON products(featured) WHERE featured = TRUE',
+       'CREATE INDEX IF NOT EXISTS idx_webhook_events_status ON webhook_events(status)',
+       'CREATE INDEX IF NOT EXISTS idx_activity_log_created_at ON activity_log(created_at DESC)',
+       'CREATE INDEX IF NOT EXISTS idx_activity_log_related_order ON activity_log(related_order_id)'
+     ];
+     for (const idxSql of missingIndexes) {
+       try {
+         await query(idxSql);
+       } catch (err) {
+         logger.debug({ err: err.message }, 'No se pudo crear índice adicional');
+       }
+     }
+   } catch (err) {
+     logger.debug({ err: err.message }, 'Error creando índices adicionales (PostgreSQL)');
+   }
 
   try {
     await query("UPDATE site_texts SET value = REPLACE(value, 'Cada pieza es única', 'Cada pieza es única') WHERE key = 'hero_subtitle' AND value LIKE '%única%'");

@@ -181,10 +181,23 @@ describe('authController', () => {
       const req = {
         cookies: { refreshToken }
       };
-      const res = { json: jest.fn() };
+      const res = {
+        cookie: jest.fn(),
+        json: jest.fn()
+      };
 
       await refresh(req, res);
 
+      expect(res.cookie).toHaveBeenCalledWith(
+        'adminToken',
+        expect.any(String),
+        expect.objectContaining({
+          httpOnly: true,
+          sameSite: 'strict',
+          maxAge: 15 * 60 * 1000,
+          path: '/'
+        })
+      );
       expect(res.json).toHaveBeenCalledWith({ token: expect.any(String) });
     });
 

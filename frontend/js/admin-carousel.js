@@ -192,12 +192,11 @@
        formData.append('caption', slotData.caption || '');
        formData.append('about_group', String(slotData.about_group || 0));
 
-       var xhr = new XMLHttpRequest();
-       var uploadOrigin = (CONFIG.API && CONFIG.API.BACKEND_URL) ? CONFIG.API.BACKEND_URL : CONFIG.API.BASE;
-       var url = uploadOrigin + '/api/carousel/' + slot;
-       var token = window.getAuthToken();
+        var xhr = new XMLHttpRequest();
+        var uploadOrigin = (CONFIG.API && CONFIG.API.BACKEND_URL) ? CONFIG.API.BACKEND_URL : CONFIG.API.BASE;
+        var url = uploadOrigin + '/api/carousel/' + slot;
 
-      await new Promise(function (resolve, reject) {
+       await new Promise(function (resolve, reject) {
         xhr.addEventListener('load', function () {
           var data = {};
           try { data = JSON.parse(xhr.responseText || '{}'); } catch (e) { data = { error: xhr.responseText }; }
@@ -210,7 +209,6 @@
         xhr.addEventListener('error', function () { reject(new Error('Error de red')); });
         xhr.open('PUT', url);
         xhr.withCredentials = true;
-        xhr.setRequestHeader('Authorization', 'Bearer ' + token);
         xhr.send(formData);
       });
 
@@ -324,7 +322,6 @@
     try {
       var res = await window.adminFetch('/api/carousel/' + slot, {
         method: 'DELETE',
-        headers: { Authorization: 'Bearer ' + window.getAuthToken() },
         credentials: 'include'
       });
       if (!res || !res.ok) {

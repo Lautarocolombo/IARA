@@ -345,3 +345,9 @@ CREATE INDEX IF NOT EXISTS idx_customers_tenant_id ON customers(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_contacts_tenant_id ON contacts(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_users_tenant_id ON users(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_coupons_tenant_id ON coupons(tenant_id);
+
+CREATE INDEX IF NOT EXISTS idx_orders_order_token ON orders(order_token);
+CREATE INDEX IF NOT EXISTS idx_products_featured ON products(featured) WHERE featured = TRUE;
+CREATE INDEX IF NOT EXISTS idx_webhook_events_status ON webhook_events(status);
+CREATE INDEX IF NOT EXISTS idx_activity_log_created_at ON activity_log(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_activity_log_related_order ON activity_log(related_order_id);
