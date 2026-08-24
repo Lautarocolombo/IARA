@@ -464,9 +464,15 @@ app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUplo
 const isVercel = process.env.VERCEL === 'true';
 const isRender = !!process.env.RENDER_EXTERNAL_HOSTNAME;
 const isEphemeralProd = !isVercel && process.env.NODE_ENV === 'production';
-const uploadsStaticDir = (isVercel || isRender || isEphemeralProd) ? '/tmp/uploads' : path.join(__dirname, '..', '..', 'uploads');
+const uploadsStaticDir = path.join(__dirname, '..', '..', 'uploads');
 
-app.use('/uploads', cors(corsOptions), express.static(uploadsStaticDir, { maxAge: '7d', etag: true, lastModified: true }));
+app.use('/uploads', cors(corsOptions), (req, res, next) => {
+  const relativePath = req.path.replace(/^\//, '');
+  const filePath = path.join(uploadsStaticDir, relativePath);
+  res.sendFile(filePath, { maxAge: '7d', etag: true, lastModified: true }, (err) => {
+    if (err) next();
+  });
+});
 const staticDir = path.join(__dirname, '..', '..', 'frontend');
 
 app.get('/', (req, res) => {

@@ -24,6 +24,10 @@ function createPool(connectionString) {
     const separator = connectionString.includes('?') ? '&' : '?';
     finalConnectionString = connectionString + separator + 'sslmode=require';
   }
+  if (finalConnectionString && !finalConnectionString.includes('uselibpqcompat=')) {
+    const separator = finalConnectionString.includes('?') ? '&' : '?';
+    finalConnectionString = finalConnectionString + separator + 'uselibpqcompat=true';
+  }
   if (finalConnectionString && !finalConnectionString.includes('client_encoding=')) {
     const separator = finalConnectionString.includes('?') ? '&' : '?';
     finalConnectionString = finalConnectionString + separator + 'client_encoding=UTF8';
