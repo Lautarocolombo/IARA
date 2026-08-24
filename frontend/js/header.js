@@ -99,14 +99,14 @@ function initSiteHeader(options) {
   }
 }
 
+window.initSiteHeader = initSiteHeader;
+window.autoInitSiteHeader = autoInitSiteHeader;
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', autoInitSiteHeader);
 } else if (!window.__skipHeaderAutoInit) {
   autoInitSiteHeader();
 }
-
-window.initSiteHeader = initSiteHeader;
-window.autoInitSiteHeader = autoInitSiteHeader;
 
 function autoInitSiteHeader() {
   if (window.__siteHeaderInitialized) return;
