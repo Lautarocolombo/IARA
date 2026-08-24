@@ -7,6 +7,7 @@ window.__setAdminToken = function(token) { authToken = token; };
 window.__getAdminToken = () => authToken;
 
 function getApiUrl(path) {
+  if (BACKEND_DIRECT_URL) return `${BACKEND_DIRECT_URL}${path}`;
   if (!API_BASE) return path;
   return `${API_BASE}${path}`;
 }
