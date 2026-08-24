@@ -188,7 +188,7 @@ const ITEM_CLASS = 'product-image-item';
     /* istanbul ignore if */
     if (!hasFiles && urlImages.length === 0) return 0;
     const xhr = new XMLHttpRequest();
-    const url = `${CONFIG.API.BASE}/api/products/${productId}/images`;
+    const url = (CONFIG.API && CONFIG.API.BACKEND_URL ? CONFIG.API.BACKEND_URL : (CONFIG.API && CONFIG.API.BACKEND_URL ? CONFIG.API.BACKEND_URL : CONFIG.API.BASE)) + '/api/products/' + productId + '/images';
     try {
       const result = await new Promise((resolve, reject) => {
          xhr.addEventListener('load', () => resolve({ status: xhr.status, data: JSON.parse(xhr.responseText || '{}') }));
@@ -211,7 +211,7 @@ const ITEM_CLASS = 'product-image-item';
     const gallery = document.getElementById('productImageGallery');
     if (!gallery) return;
     try {
-      const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}/images`, {}, 2, 1000);
+      const res = await window.fetchWithRetry(`${(CONFIG.API && CONFIG.API.BACKEND_URL ? CONFIG.API.BACKEND_URL : CONFIG.API.BASE)}/api/products/${productId}/images`, {}, 2, 1000);
       if (!res) throw new Error('Error de red');
       const images = await res.json();
       renderGallery(gallery, images, productId);
@@ -384,7 +384,7 @@ const ITEM_CLASS = 'product-image-item';
       if (descInput && descInput.value) formData.append('descripcion', descInput.value);
       if (catInput && catInput.value) formData.append('categoria', catInput.value);
       const xhr = new XMLHttpRequest();
-      const url = `${CONFIG.API.BASE}/api/products/${productId}/images`;
+      const url = `${(CONFIG.API && CONFIG.API.BACKEND_URL ? CONFIG.API.BACKEND_URL : CONFIG.API.BASE)}/api/products/${productId}/images`;
       const result = await new Promise((resolve, reject) => {
          xhr.upload.addEventListener('progress', (e) => {
            if (e.lengthComputable && progressContainer) {
@@ -461,7 +461,7 @@ const ITEM_CLASS = 'product-image-item';
     try {
       const formData = new FormData();
       formData.append('image', file);
-      const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}/images/${imageId}/replace`, {
+      const res = await window.fetchWithRetry(`${(CONFIG.API && CONFIG.API.BACKEND_URL ? CONFIG.API.BACKEND_URL : CONFIG.API.BASE)}/api/products/${productId}/images/${imageId}/replace`, {
         method: 'PUT',
         credentials: 'include',
         body: formData
@@ -487,7 +487,7 @@ const ITEM_CLASS = 'product-image-item';
 
   async function markPrincipal(productId, imageId) {
     try {
-      const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}/images/${imageId}`, {
+      const res = await window.fetchWithRetry(`${(CONFIG.API && CONFIG.API.BACKEND_URL ? CONFIG.API.BACKEND_URL : CONFIG.API.BASE)}/api/products/${productId}/images/${imageId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
@@ -508,7 +508,7 @@ const ITEM_CLASS = 'product-image-item';
 
   async function updateImageMeta(productId, imageId, meta) {
     try {
-      const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}/images/${imageId}`, {
+      const res = await window.fetchWithRetry(`${(CONFIG.API && CONFIG.API.BACKEND_URL ? CONFIG.API.BACKEND_URL : CONFIG.API.BASE)}/api/products/${productId}/images/${imageId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
@@ -529,7 +529,7 @@ const ITEM_CLASS = 'product-image-item';
 
   async function deleteImage(productId, imageId) {
     try {
-      const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}/images/${imageId}`, {
+      const res = await window.fetchWithRetry(`${(CONFIG.API && CONFIG.API.BACKEND_URL ? CONFIG.API.BACKEND_URL : CONFIG.API.BASE)}/api/products/${productId}/images/${imageId}`, {
         method: 'DELETE',
         credentials: 'include'
       }, 2, 1000);
@@ -546,7 +546,7 @@ const ITEM_CLASS = 'product-image-item';
 
   async function syncOrder(productId, orderedIds) {
     try {
-      const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}/images/sync-order`, {
+      const res = await window.fetchWithRetry(`${(CONFIG.API && CONFIG.API.BACKEND_URL ? CONFIG.API.BACKEND_URL : CONFIG.API.BASE)}/api/products/${productId}/images/sync-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

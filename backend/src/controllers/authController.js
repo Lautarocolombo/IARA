@@ -7,6 +7,8 @@ const tokenBlacklist = require('../lib/tokenBlacklist');
 
 const RESET_TOKENS = new Map();
 const RESET_TOKEN_EXPIRY = 15 * 60 * 1000;
+const cookieSecure = process.env.NODE_ENV === 'production';
+const cookieSameSite = cookieSecure ? 'none' : 'lax';
 
 async function hashPassword(password) {
   return bcrypt.hash(password, 10);
@@ -46,15 +48,15 @@ const login = async (req, res) => {
         const refreshToken = jwt.sign({ role, user: u.username, permissions, tenant_id: u.tenant_id }, JWT_SECRET, { expiresIn: '7d' });
         res.cookie('adminToken', token, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'strict',
+          secure: cookieSecure,
+          sameSite: cookieSameSite,
           maxAge: 15 * 60 * 1000,
           path: '/'
         });
         res.cookie('refreshToken', refreshToken, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'strict',
+          secure: cookieSecure,
+          sameSite: cookieSameSite,
           maxAge: 7 * 24 * 60 * 60 * 1000,
           path: '/'
         });
@@ -88,15 +90,15 @@ const login = async (req, res) => {
         const refreshToken = jwt.sign({ role, user: jwtUser, permissions, tenant_id: dbCheck.rows[0]?.tenant_id || 'default' }, JWT_SECRET, { expiresIn: '7d' });
         res.cookie('adminToken', token, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'strict',
+          secure: cookieSecure,
+          sameSite: cookieSameSite,
           maxAge: 15 * 60 * 1000,
           path: '/'
         });
         res.cookie('refreshToken', refreshToken, {
           httpOnly: true,
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'strict',
+          secure: cookieSecure,
+          sameSite: cookieSameSite,
           maxAge: 7 * 24 * 60 * 60 * 1000,
           path: '/'
         });
@@ -133,8 +135,8 @@ const refresh = async (req, res) => {
     const accessToken = jwt.sign({ role: decoded.role, user: decoded.user, permissions: decoded.permissions || {}, tenant_id: decoded.tenant_id }, JWT_SECRET, { expiresIn: '15m' });
     res.cookie('adminToken', accessToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      secure: cookieSecure,
+      sameSite: cookieSameSite,
       maxAge: 15 * 60 * 1000,
       path: '/'
     });
@@ -154,14 +156,14 @@ const logout = (req, res) => {
   }
   res.clearCookie('adminToken', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    secure: cookieSecure,
+    sameSite: cookieSameSite,
     path: '/'
   });
   res.clearCookie('refreshToken', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    secure: cookieSecure,
+    sameSite: cookieSameSite,
     path: '/'
   });
   res.json({ ok: true });

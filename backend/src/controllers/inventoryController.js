@@ -72,6 +72,13 @@ const getInventoryMovements = async (req, res) => {
 
 const getInventoryAlerts = async (req, res) => {
   try {
+    const tableCheck = await query(
+      `SELECT COUNT(*) AS count FROM information_schema.tables WHERE table_name = 'inventory_alerts' AND table_schema = 'public'`
+    );
+    if (tableCheck.rows[0].count === 0) {
+      return res.json({ alerts: [] });
+    }
+
     const resolved = req.query.resolved === 'true';
     const result = await query(
       `SELECT a.*, p.name as product_name, p.sku, p.stock as current_stock
@@ -84,8 +91,8 @@ const getInventoryAlerts = async (req, res) => {
 
     res.json({ alerts: result.rows });
   } catch (err) {
-    logger.error({ err: err.message }, 'Error obteniendo alertas de inventario');
-    res.status(500).json({ error: 'Error interno del servidor' });
+    logger.error({ err: err.message, stack: err.stack, sqlState: err.code }, 'Error obteniendo alertas de inventario');
+    res.status(500).json({ error: 'Error interno del servidor', detail: process.env.NODE_ENV === 'development' ? err.message : undefined });
   }
 };
 

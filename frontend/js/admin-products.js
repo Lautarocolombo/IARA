@@ -1,4 +1,4 @@
-﻿/* ==================== ADMIN PRODUCTS.JS ==================== */
+/* ==================== ADMIN PRODUCTS.JS ==================== */
 /* Modal CRUD, soft-delete, preview de imágenes */
 
 (function () {
@@ -128,7 +128,7 @@
       var imgUrl = window.getProductImageUrl(p) || '';
       var thumbnail = imgUrl
         ? '<img src="' + escapeAttr(imgUrl) + '" alt="' + escapeAttr(p.name) + '" class="thumb" onerror="window.imgError(this)" />'
-        : '<div class="thumb">' + (p.emoji || 'ðŸ“¿') + '</div>';
+        : '<div class="thumb">' + (p.emoji || '📹') + '</div>';
 
       var stock = Number(p.stock || 0);
 
@@ -141,8 +141,8 @@
         '<td class="stock-cell">' + renderStockCell(stock) + '</td>' +
         '<td class="status-cell">' + renderStatusCell(p.active) + '</td>' +
         '<td class="actions-cell">' +
-          '<button class="btn btn-sm btn-secondary" onclick="window.editProduct(' + p.id + ')" title="Editar">âœï¸</button>' +
-          '<button class="btn btn-sm btn-danger" onclick="window.deleteProductConfirm(' + p.id + ')" title="Eliminar">ðŸ—‘</button>' +
+          '<button class="btn btn-sm btn-secondary" onclick="window.editProduct(' + p.id + ')" title="Editar">✏️</button>' +
+          '<button class="btn btn-sm btn-danger" onclick="window.deleteProductConfirm(' + p.id + ')" title="Eliminar">🗑️</button>' +
         '</td></tr>';
     }).join('');
 
@@ -153,7 +153,7 @@
         var imgUrl = window.getProductImageUrl(p) || '';
         var thumbnail = imgUrl
           ? '<img src="' + escapeAttr(imgUrl) + '" alt="' + escapeAttr(p.name) + '" class="product-mobile-thumb" onerror="window.imgError(this)" />'
-          : '<div class="product-mobile-thumb">' + (p.emoji || 'ðŸ“¿') + '</div>';
+          : '<div class="product-mobile-thumb">' + (p.emoji || '📹') + '</div>';
         var stock = Number(p.stock || 0);
 
         return '<div class="product-mobile-card" data-product-id="' + p.id + '">' +
@@ -171,8 +171,8 @@
             renderStatusCell(p.active) +
           '</div>' +
           '<div class="product-mobile-card-actions">' +
-            '<button class="btn btn-sm btn-secondary" onclick="window.editProduct(' + p.id + ')" title="Editar">âœï¸ Editar</button>' +
-            '<button class="btn btn-sm btn-danger" onclick="window.deleteProductConfirm(' + p.id + ')" title="Eliminar">ðŸ—‘ Eliminar</button>' +
+            '<button class="btn btn-sm btn-secondary" onclick="window.editProduct(' + p.id + ')" title="Editar">✏️ Editar</button>' +
+            '<button class="btn btn-sm btn-danger" onclick="window.deleteProductConfirm(' + p.id + ')" title="Eliminar">🗑️ Eliminar</button>' +
           '</div>' +
         '</div>';
       }).join('');
@@ -209,7 +209,7 @@
       var div = document.createElement('div');
       div.className = 'modal-image-item';
       div.innerHTML = '<img src="' + url + '" alt="Preview" />' +
-        '<button type="button" class="modal-image-remove" onclick="window.removeImagePreview(' + index + ')" title="Quitar">âœ•</button>';
+        '<button type="button" class="modal-image-remove" onclick="window.removeImagePreview(' + index + ')" title="Quitar">⚠️</button>';
       container.appendChild(div);
     });
   }
@@ -260,7 +260,7 @@
     formData.append('category', document.getElementById('prod_category')?.value || '');
     formData.append('price', document.getElementById('prod_price')?.value || '0');
     formData.append('description', document.getElementById('prod_description')?.value.trim() || '');
-    formData.append('emoji', document.getElementById('prod_emoji')?.value || 'ðŸ“¿');
+    formData.append('emoji', document.getElementById('prod_emoji')?.value || '📹');
     formData.append('stock', document.getElementById('prod_stock')?.value || '0');
     formData.append('featured', document.getElementById('prod_featured')?.checked ? 'true' : 'false');
     formData.append('active', document.getElementById('prod_active')?.checked ? 'true' : 'false');
@@ -388,17 +388,17 @@
         '<div class="product-image-item-preview">' +
           '<img src="' + escapeAttr(img.url) + '" alt="Producto" loading="lazy" onerror="window.imgError(this)" />' +
           '<div class="product-image-item-actions">' +
-            '<button type="button" class="btn btn-sm btn-secondary" data-action="main" title="Marcar como principal">â­ Principal</button>' +
-            '<button type="button" class="btn btn-sm btn-secondary" data-action="replace" title="Reemplazar imagen">ðŸ”„ Cambiar</button>' +
-            '<button type="button" class="btn btn-sm btn-danger" data-action="delete" title="Eliminar">ðŸ—‘ Eliminar</button>' +
+            '<button type="button" class="btn btn-sm btn-secondary" data-action="main" title="Marcar como principal">⭐ Principal</button>' +
+            '<button type="button" class="btn btn-sm btn-secondary" data-action="replace" title="Reemplazar imagen">🔄 Cambiar</button>' +
+            '<button type="button" class="btn btn-sm btn-danger" data-action="delete" title="Eliminar">🗑️ Eliminar</button>' +
           '</div>' +
           '<input type="file" class="product-image-replace-input" accept="image/jpeg,image/png,image/webp" data-image-id="' + img.id + '" style="display:none" />' +
         '</div>' +
         '<div class="product-image-replace-preview-row" style="display:none;padding:8px;">' +
           '<img class="product-image-replace-preview" src="" alt="Preview reemplazo" />' +
           '<div style="display:flex;gap:4px;margin-top:4px;">' +
-            '<button type="button" class="btn btn-sm btn-primary" data-action="confirm-replace" data-image-id="' + img.id + '">âœ“ Confirmar</button>' +
-            '<button type="button" class="btn btn-sm btn-secondary" data-action="cancel-replace" data-image-id="' + img.id + '">âœ• Cancelar</button>' +
+            '<button type="button" class="btn btn-sm btn-primary" data-action="confirm-replace" data-image-id="' + img.id + '">✅ Confirmar</button>' +
+            '<button type="button" class="btn btn-sm btn-secondary" data-action="cancel-replace" data-image-id="' + img.id + '">⚠️ Cancelar</button>' +
           '</div>' +
         '</div>' +
       '</div>';
@@ -612,7 +612,7 @@
       formData.append('image', blob, 'replace_' + imageId + '.webp');
 
       var xhr = new XMLHttpRequest();
-      var url = CONFIG.API.BASE + '/api/products/' + productId + '/images/' + imageId + '/replace';
+      var url = (CONFIG.API && CONFIG.API.BACKEND_URL ? CONFIG.API.BACKEND_URL : CONFIG.API.BASE) + '/api/products/' + productId + '/images/' + imageId + '/replace';
 
       await new Promise(function (resolve, reject) {
         xhr.upload.addEventListener('progress', function (e) {
@@ -699,7 +699,7 @@
 
     try {
       var xhr = new XMLHttpRequest();
-      var url = CONFIG.API.BASE + '/api/products/' + productId + '/images';
+      var url = (CONFIG.API && CONFIG.API.BACKEND_URL ? CONFIG.API.BACKEND_URL : CONFIG.API.BASE) + '/api/products/' + productId + '/images';
 
       await new Promise(function (resolve, reject) {
         xhr.upload.addEventListener('progress', function (e) {
@@ -813,7 +813,7 @@
     (document.getElementById('prod_price') || {}).value = product.price || '';
     (document.getElementById('prod_category') || {}).value = product.category || '';
     (document.getElementById('prod_description') || {}).value = product.description || '';
-    (document.getElementById('prod_emoji') || {}).value = product.emoji || 'ðŸ“¿';
+    (document.getElementById('prod_emoji') || {}).value = product.emoji || '📹';
     (document.getElementById('prod_stock') || {}).value = product.stock || 0;
     (document.getElementById('prod_badge') || {}).value = product.badge || '';
     (document.getElementById('prod_sku') || {}).value = product.sku || '';

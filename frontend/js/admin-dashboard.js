@@ -39,10 +39,6 @@
   }
 
   async function checkAuth() {
-    if (!isTokenPresent()) {
-      redirectToLogin();
-      return false;
-    }
     try {
       var res = await window.adminFetch('/api/admin/site-texts', { method: 'GET' });
       if (!res || !res.ok) {
@@ -180,18 +176,14 @@
     setupContentTabs();
     applyRoleVisibility();
 
-    if (isTokenPresent()) {
-      checkAuth().then(function (ok) {
-        if (ok) {
-          var user = window.getCurrentUser ? window.getCurrentUser() : { username: 'Admin', role: 'admin' };
-          var tokenEl = document.getElementById('adminUserName');
-          if (tokenEl && user.username) tokenEl.textContent = user.username;
-        }
-      });
-      updateLowStockIndicator();
-    } else {
-      redirectToLogin();
-    }
+    checkAuth().then(function (ok) {
+      if (ok) {
+        var user = window.getCurrentUser ? window.getCurrentUser() : { username: 'Admin', role: 'admin' };
+        var tokenEl = document.getElementById('adminUserName');
+        if (tokenEl && user.username) tokenEl.textContent = user.username;
+      }
+    });
+    updateLowStockIndicator();
   }
 
   async function updateLowStockIndicator() {

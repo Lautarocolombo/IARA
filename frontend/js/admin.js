@@ -153,10 +153,10 @@ async function doLogout() {
 }
 
 async function adminFetch(url, opts = {}, isRetry = false) {
-  if (!authToken && !document.cookie.includes('adminToken=')) throw new Error('No autorizado');
+  const apiBase = BACKEND_DIRECT_URL || CONFIG.API.BASE;
   const isUpload = url === '/api/admin/upload';
   const directUploadOrigin = isUpload ? `${BACKEND_DIRECT_URL}${url}` : null;
-  const fullUrl = directUploadOrigin || (url.startsWith('/api/') ? `${CONFIG.API.BASE}${url}` : url);
+  const fullUrl = directUploadOrigin || (url.startsWith('/api/') ? `${apiBase}${url}` : url);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 60000);
   try {

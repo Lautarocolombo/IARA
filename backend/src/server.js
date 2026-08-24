@@ -466,11 +466,20 @@ const isRender = !!process.env.RENDER_EXTERNAL_HOSTNAME;
 const isEphemeralProd = !isVercel && process.env.NODE_ENV === 'production';
 const uploadsStaticDir = path.join(__dirname, '..', '..', 'uploads');
 
+const UPLOAD_PLACEHOLDER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Imagen no disponible"><rect width="200" height="200" rx="14" fill="#fde8ef"/><text x="100" y="110" text-anchor="middle" font-family="system-ui,serif" font-size="40" fill="#d47090">📷</text><text x="100" y="150" text-anchor="middle" font-family="system-ui,serif" font-size="14" fill="#d47090">Imagen no disponible</text></svg>`;
+
 app.use('/uploads', cors(corsOptions), (req, res, next) => {
   const relativePath = req.path.replace(/^\//, '');
   const filePath = path.join(uploadsStaticDir, relativePath);
   res.sendFile(filePath, { maxAge: '7d', etag: true, lastModified: true }, (err) => {
-    if (err) next();
+    if (err) {
+      if (err.code === 'ENOENT') {
+        res.setHeader('Content-Type', 'image/svg+xml');
+        res.setHeader('Cache-Control', 'no-cache');
+        return res.status(200).send(UPLOAD_PLACEHOLDER_SVG);
+      }
+      next();
+    }
   });
 });
 const staticDir = path.join(__dirname, '..', '..', 'frontend');

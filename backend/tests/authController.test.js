@@ -62,7 +62,7 @@ describe('authController', () => {
         expect.any(String),
         expect.objectContaining({
           httpOnly: true,
-          sameSite: 'strict',
+          sameSite: 'lax',
           path: '/'
         })
       );
@@ -193,7 +193,7 @@ describe('authController', () => {
         expect.any(String),
         expect.objectContaining({
           httpOnly: true,
-          sameSite: 'strict',
+          sameSite: 'lax',
           maxAge: 15 * 60 * 1000,
           path: '/'
         })
@@ -248,7 +248,7 @@ describe('authController', () => {
       expect(res.clearCookie).toHaveBeenCalledWith('refreshToken', {
         httpOnly: true,
         secure: false,
-        sameSite: 'strict',
+        sameSite: 'lax',
         path: '/'
       });
       expect(res.json).toHaveBeenCalledWith({ ok: true });
