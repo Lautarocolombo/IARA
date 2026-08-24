@@ -3,7 +3,7 @@
  */
 
 describe('admin-inventory.js', () => {
-  let fetchWithRetryMock;
+  let adminFetchMock;
   let getAuthTokenMock;
 
   beforeEach(() => {
@@ -11,13 +11,13 @@ describe('admin-inventory.js', () => {
     jest.resetModules();
 
     global.CONFIG = {
-      API: { BASE: 'http://localhost' },
+      API: { BASE: 'http://localhost', BACKEND_URL: 'http://localhost' },
       ANIMATIONS: { TOAST_DURATION: 3000, REVEAL_THRESHOLD: 0.15, TRANSITION_SPEED: 0.4 }
     };
 
-    fetchWithRetryMock = jest.fn();
+    adminFetchMock = jest.fn();
     getAuthTokenMock = jest.fn(() => 'fake-token');
-    global.fetchWithRetry = fetchWithRetryMock;
+    window.adminFetch = adminFetchMock;
     window.getAuthToken = getAuthTokenMock;
     window.alert = jest.fn();
 
@@ -46,7 +46,7 @@ describe('admin-inventory.js', () => {
     test('carga movimientos y renderiza filas', async () => {
       require('../../frontend/js/admin-inventory');
 
-      fetchWithRetryMock.mockResolvedValue({
+      adminFetchMock.mockResolvedValue({
         ok: true,
         json: async () => ({
           movements: [
@@ -57,12 +57,12 @@ describe('admin-inventory.js', () => {
 
       await window.inventory.loadMovements();
 
-      expect(fetchWithRetryMock).toHaveBeenCalledWith(
-        'http://localhost/api/admin/inventory/movements?limit=100&offset=0',
+      expect(adminFetchMock).toHaveBeenCalledWith(
+        '/api/admin/inventory/movements?limit=100&offset=0',
         expect.objectContaining({
-          credentials: 'include',
+          method: 'GET',
           headers: expect.objectContaining({
-            'Content-Type': 'application/json'
+            'Accept': 'application/json'
           })
         })
       );
@@ -75,7 +75,7 @@ describe('admin-inventory.js', () => {
     test('renderiza estado vacío cuando no hay movimientos', async () => {
       require('../../frontend/js/admin-inventory');
 
-      fetchWithRetryMock.mockResolvedValue({
+      adminFetchMock.mockResolvedValue({
         ok: true,
         json: async () => ({ movements: [] })
       });
@@ -89,7 +89,7 @@ describe('admin-inventory.js', () => {
     test('muestra error cuando la respuesta no es ok', async () => {
       require('../../frontend/js/admin-inventory');
 
-      fetchWithRetryMock.mockResolvedValue({
+      adminFetchMock.mockResolvedValue({
         ok: false,
         json: async () => ({ error: 'No autorizado' })
       });
@@ -103,7 +103,7 @@ describe('admin-inventory.js', () => {
     test('maneja error de red', async () => {
       require('../../frontend/js/admin-inventory');
 
-      fetchWithRetryMock.mockRejectedValue(new Error('Network error'));
+      adminFetchMock.mockRejectedValue(new Error('Network error'));
 
       await window.inventory.loadMovements();
 
@@ -116,7 +116,7 @@ describe('admin-inventory.js', () => {
     test('carga alertas y renderiza filas', async () => {
       require('../../frontend/js/admin-inventory');
 
-      fetchWithRetryMock.mockResolvedValue({
+      adminFetchMock.mockResolvedValue({
         ok: true,
         json: async () => ({
           alerts: [
@@ -127,12 +127,12 @@ describe('admin-inventory.js', () => {
 
       await window.inventory.loadAlerts();
 
-      expect(fetchWithRetryMock).toHaveBeenCalledWith(
-        'http://localhost/api/admin/inventory/alerts?resolved=false',
+      expect(adminFetchMock).toHaveBeenCalledWith(
+        '/api/admin/inventory/alerts?resolved=false',
         expect.objectContaining({
-          credentials: 'include',
+          method: 'GET',
           headers: expect.objectContaining({
-            'Content-Type': 'application/json'
+            'Accept': 'application/json'
           })
         })
       );
@@ -145,7 +145,7 @@ describe('admin-inventory.js', () => {
     test('renderiza estado vacío cuando no hay alertas', async () => {
       require('../../frontend/js/admin-inventory');
 
-      fetchWithRetryMock.mockResolvedValue({
+      adminFetchMock.mockResolvedValue({
         ok: true,
         json: async () => ({ alerts: [] })
       });
@@ -161,18 +161,17 @@ describe('admin-inventory.js', () => {
     test('resuelve alerta y recarga lista', async () => {
       require('../../frontend/js/admin-inventory');
 
-      fetchWithRetryMock.mockResolvedValue({
+      adminFetchMock.mockResolvedValue({
         ok: true,
         json: async () => ({ ok: true })
       });
 
       await window.inventory.resolveAlert(5);
 
-      expect(fetchWithRetryMock).toHaveBeenCalledWith(
-        'http://localhost/api/admin/inventory/alerts/5/resolve',
+      expect(adminFetchMock).toHaveBeenCalledWith(
+        '/api/admin/inventory/alerts/5/resolve',
         expect.objectContaining({
           method: 'POST',
-          credentials: 'include',
           headers: expect.objectContaining({
             'Content-Type': 'application/json'
           })
@@ -183,7 +182,7 @@ describe('admin-inventory.js', () => {
     test('muestra alerta cuando la resolución falla', async () => {
       require('../../frontend/js/admin-inventory');
 
-      fetchWithRetryMock.mockResolvedValue({
+      adminFetchMock.mockResolvedValue({
         ok: false,
         json: async () => ({ error: 'Error' })
       });
@@ -194,14 +193,13 @@ describe('admin-inventory.js', () => {
     });
   });
 
-  describe('authHeader', () => {
-    test('envía credentials include', async () => {
+  describe('auth', () => {
+    test('usa adminFetch para autenticación', async () => {
       getAuthTokenMock.mockReturnValue('');
       require('../../frontend/js/admin-inventory');
       await window.inventory.loadMovements();
 
-      const call = fetchWithRetryMock.mock.calls[0];
-      expect(call[1].credentials).toBe('include');
+      expect(adminFetchMock).toHaveBeenCalled();
     });
   });
 });

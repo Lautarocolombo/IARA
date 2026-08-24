@@ -240,6 +240,7 @@
   }
 
   function populateFields() {
+    Object.keys(contentImageObjectUrls).forEach(function (k) { revokeContentImageUrl(k); });
     var heroKeys = ['hero_title', 'hero_subtitle', 'hero_cta_text', 'hero_cta_url'];
     heroKeys.forEach(function (key) {
       var el = document.getElementById(key);
@@ -597,6 +598,7 @@
         heroImgPreview.style.display = 'none';
         heroPlaceholder.style.display = 'flex';
       }
+      revokeContentImageUrl('hero');
 
       if (fpImageFileInput) fpImageFileInput.value = '';
       if (fpImageRemoveBtn) delete fpImageRemoveBtn.dataset.remove;
@@ -619,6 +621,7 @@
         fpImgPreview.style.display = 'none';
         fpPlaceholder.style.display = 'flex';
       }
+      revokeContentImageUrl('fp');
 
       showSaveStatus(statusId, 'success', 'Cambios guardados correctamente (' + (data.results?.saved || Object.keys(payload).length) + ' campos)');
       window.showToast('✅', 'Cambios guardados correctamente', 'success');
@@ -802,6 +805,7 @@
             }
             if (newPreview) newPreview.style.display = 'none';
             if (newImg) newImg.src = '';
+            revokeContentImageUrl('about' + index);
             if (preview && placeholder) {
               if (url) {
                 preview.src = url;
@@ -889,6 +893,128 @@
     }
   }
 
+  /* ==================== IMAGE PREVIEW HELPERS ==================== */
+  /* Unifica el manejo de previews de imagen (Hero, Producto Destacado y
+     el carrusel "Sobre Nosotros") usando URL.createObjectURL para un preview
+     inmediato dentro del recuadro principal, con revocación para evitar
+     memory leaks. */
+
+  var contentImageObjectUrls = {};
+
+  function revokeContentImageUrl(key) {
+    var url = contentImageObjectUrls[key];
+    if (url) {
+      try { URL.revokeObjectURL(url); } catch (e) { /* noop */ }
+      contentImageObjectUrls[key] = null;
+    }
+  }
+
+  function hideContentImageError(errorId) {
+    var el = document.getElementById(errorId);
+    if (el) {
+      el.style.display = 'none';
+      el.textContent = '';
+    }
+  }
+
+  function showContentImageError(errorId, message) {
+    var el = document.getElementById(errorId);
+    if (el) {
+      el.textContent = message;
+      el.style.display = 'block';
+    }
+    window.showToast('❌', message, 'error');
+  }
+
+  function showContentImagePreview(opts, objectUrl) {
+    var preview = document.getElementById(opts.previewId);
+    var placeholder = document.getElementById(opts.placeholderId);
+    if (preview) {
+      preview.src = objectUrl;
+      preview.style.display = 'block';
+    }
+    if (placeholder) {
+      placeholder.style.display = 'none';
+    }
+  }
+
+  function resetContentImagePreview(opts) {
+    revokeContentImageUrl(opts.key);
+    var preview = document.getElementById(opts.previewId);
+    var placeholder = document.getElementById(opts.placeholderId);
+    var newPreview = opts.newPreviewId ? document.getElementById(opts.newPreviewId) : null;
+    var newImg = opts.newImgId ? document.getElementById(opts.newImgId) : null;
+    if (preview) {
+      preview.src = '';
+      preview.style.display = 'none';
+    }
+    if (placeholder) {
+      placeholder.style.display = 'flex';
+    }
+    if (newPreview) {
+      newPreview.style.display = 'none';
+    }
+    if (newImg) {
+      newImg.src = '';
+    }
+    hideContentImageError(opts.errorId);
+  }
+
+  var CONTENT_IMAGE_MAX_SIZE = 5 * 1024 * 1024;
+  var CONTENT_IMAGE_ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
+  function setupContentImageUploader(opts) {
+    var input = document.getElementById(opts.inputId);
+    if (!input) return;
+    var changeBtn = document.getElementById(opts.changeBtnId);
+    var removeBtn = document.getElementById(opts.removeBtnId);
+
+    if (changeBtn) {
+      changeBtn.addEventListener('click', function () {
+        input.click();
+      });
+    }
+
+    input.addEventListener('change', function () {
+      hideContentImageError(opts.errorId);
+      var file = input.files && input.files[0];
+      if (!file) return;
+
+      if (file.size > CONTENT_IMAGE_MAX_SIZE) {
+        showContentImageError(opts.errorId, 'La imagen es muy grande (máximo 5MB)');
+        input.value = '';
+        return;
+      }
+      if (CONTENT_IMAGE_ALLOWED_TYPES.indexOf(file.type) === -1) {
+        showContentImageError(opts.errorId, 'Formato no soportado. Usá JPG, PNG o WEBP.');
+        input.value = '';
+        return;
+      }
+
+      revokeContentImageUrl(opts.key);
+      var objectUrl = URL.createObjectURL(file);
+      contentImageObjectUrls[opts.key] = objectUrl;
+      showContentImagePreview(opts, objectUrl);
+
+      if (window.markDirty && opts.dirtyTab) {
+        window.markDirty('content', opts.dirtyTab);
+      }
+    });
+
+    if (removeBtn) {
+      removeBtn.addEventListener('click', function () {
+        removeBtn.dataset.remove = 'true';
+        if (input) {
+          input.value = '';
+        }
+        resetContentImagePreview(opts);
+        if (window.markDirty && opts.dirtyTab) {
+          window.markDirty('content', opts.dirtyTab);
+        }
+      });
+    }
+  }
+
   function initContentEditor() {
     try {
       initQuillEditor();
@@ -962,202 +1088,52 @@
       });
     });
 
-    var heroImageChangeBtn = document.getElementById('heroImageChangeBtn');
-    var heroImageInput = document.getElementById('heroImageInput');
-    var heroImageError = document.getElementById('heroImageError');
-    if (heroImageChangeBtn && heroImageInput) {
-      heroImageChangeBtn.addEventListener('click', function () {
-        heroImageInput.click();
-      });
-      heroImageInput.addEventListener('change', function () {
-        if (heroImageError) {
-          heroImageError.style.display = 'none';
-          heroImageError.textContent = '';
-        }
-        if (heroImageInput.files && heroImageInput.files[0]) {
-          var file = heroImageInput.files[0];
-          if (file.size > 5 * 1024 * 1024) {
-            var heroMsg = 'La imagen es muy grande (máximo 5MB)';
-            window.showToast('❌', heroMsg, 'error');
-            if (heroImageError) {
-              heroImageError.textContent = heroMsg;
-              heroImageError.style.display = 'block';
-            }
-            heroImageInput.value = '';
-            return;
-          }
-          if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-            var heroMsg2 = 'Formato no soportado. Usá JPG, PNG o WEBP.';
-            window.showToast('❌', heroMsg2, 'error');
-            if (heroImageError) {
-              heroImageError.textContent = heroMsg2;
-              heroImageError.style.display = 'block';
-            }
-            heroImageInput.value = '';
-            return;
-          }
-          var reader = new FileReader();
-          reader.onload = function (e) {
-            var newPreview = document.getElementById('heroImageNewPreview');
-            var newImg = document.getElementById('heroImageNewImg');
-            if (newPreview && newImg) {
-              newImg.src = e.target.result;
-              newPreview.style.display = 'block';
-            }
-            if (window.markDirty) window.markDirty('content', 'home-blocks');
-          };
-          reader.readAsDataURL(heroImageInput.files[0]);
-        }
+    setupContentImageUploader({
+      key: 'hero',
+      inputId: 'heroImageInput',
+      changeBtnId: 'heroImageChangeBtn',
+      removeBtnId: 'heroImageRemoveBtn',
+      previewId: 'heroImagePreview',
+      placeholderId: 'heroImagePlaceholder',
+      newPreviewId: 'heroImageNewPreview',
+      newImgId: 'heroImageNewImg',
+      errorId: 'heroImageError',
+      dirtyTab: 'home-blocks'
+    });
+
+    setupContentImageUploader({
+      key: 'fp',
+      inputId: 'fpImageInput',
+      changeBtnId: 'fpImageChangeBtn',
+      removeBtnId: 'fpImageRemoveBtn',
+      previewId: 'fpImagePreview',
+      placeholderId: 'fpImagePlaceholder',
+      newPreviewId: 'fpImageNewPreview',
+      newImgId: 'fpImageNewImg',
+      errorId: 'fpImageError',
+      dirtyTab: 'home-blocks'
+    });
+
+    for (var ai = 1; ai <= 5; ai++) {
+      setupContentImageUploader({
+        key: 'about' + ai,
+        inputId: 'aboutImageInput' + ai,
+        changeBtnId: 'aboutImageChangeBtn' + ai,
+        removeBtnId: 'aboutImageRemoveBtn' + ai,
+        previewId: 'aboutImagePreview' + ai,
+        placeholderId: 'aboutImagePlaceholder' + ai,
+        newPreviewId: 'aboutImageNewPreview' + ai,
+        newImgId: 'aboutImageNewImg' + ai,
+        errorId: 'aboutImageError' + ai,
+        dirtyTab: 'about'
       });
     }
 
-    var heroImageRemoveBtn = document.getElementById('heroImageRemoveBtn');
-    if (heroImageRemoveBtn) {
-      heroImageRemoveBtn.addEventListener('click', function () {
-        heroImageRemoveBtn.dataset.remove = 'true';
-        var heroImageInput = document.getElementById('heroImageInput');
-        if (heroImageInput) heroImageInput.value = '';
-        var newPreview = document.getElementById('heroImageNewPreview');
-        var newImg = document.getElementById('heroImageNewImg');
-        if (newPreview) newPreview.style.display = 'none';
-        if (newImg) newImg.src = '';
-        if (window.markDirty) window.markDirty('content', 'home-blocks');
+    if (!window.__contentImageCleanupBound) {
+      window.__contentImageCleanupBound = true;
+      window.addEventListener('beforeunload', function () {
+        Object.keys(contentImageObjectUrls).forEach(function (k) { revokeContentImageUrl(k); });
       });
-    }
-
-    var fpImageChangeBtn = document.getElementById('fpImageChangeBtn');
-    var fpImageInput = document.getElementById('fpImageInput');
-    var fpImageError = document.getElementById('fpImageError');
-    if (fpImageChangeBtn && fpImageInput) {
-      fpImageChangeBtn.addEventListener('click', function () {
-        fpImageInput.click();
-      });
-      fpImageInput.addEventListener('change', function () {
-        if (fpImageError) {
-          fpImageError.style.display = 'none';
-          fpImageError.textContent = '';
-        }
-        if (fpImageInput.files && fpImageInput.files[0]) {
-          var file = fpImageInput.files[0];
-          if (file.size > 5 * 1024 * 1024) {
-            var fpMsg = 'La imagen es muy grande (máximo 5MB)';
-            window.showToast('❌', fpMsg, 'error');
-            if (fpImageError) {
-              fpImageError.textContent = fpMsg;
-              fpImageError.style.display = 'block';
-            }
-            fpImageInput.value = '';
-            return;
-          }
-          if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-            var fpMsg2 = 'Formato no soportado. Usá JPG, PNG o WEBP.';
-            window.showToast('❌', fpMsg2, 'error');
-            if (fpImageError) {
-              fpImageError.textContent = fpMsg2;
-              fpImageError.style.display = 'block';
-            }
-            fpImageInput.value = '';
-            return;
-          }
-          var reader = new FileReader();
-          reader.onload = function (e) {
-            var newPreview = document.getElementById('fpImageNewPreview');
-            var newImg = document.getElementById('fpImageNewImg');
-            if (newPreview && newImg) {
-              newImg.src = e.target.result;
-              newPreview.style.display = 'block';
-            }
-            if (window.markDirty) window.markDirty('content', 'home-blocks');
-          };
-          reader.readAsDataURL(fpImageInput.files[0]);
-        }
-      });
-    }
-
-    var fpImageRemoveBtn = document.getElementById('fpImageRemoveBtn');
-    if (fpImageRemoveBtn) {
-      fpImageRemoveBtn.addEventListener('click', function () {
-        fpImageRemoveBtn.dataset.remove = 'true';
-        var fpImageInput = document.getElementById('fpImageInput');
-        if (fpImageInput) fpImageInput.value = '';
-        var newPreview = document.getElementById('fpImageNewPreview');
-        var newImg = document.getElementById('fpImageNewImg');
-        if (newPreview) newPreview.style.display = 'none';
-        if (newImg) newImg.src = '';
-        if (window.markDirty) window.markDirty('content', 'home-blocks');
-      });
-    }
-
-    for (var i = 1; i <= 5; i++) {
-      (function(index) {
-        var changeBtn = document.getElementById('aboutImageChangeBtn' + index);
-        var input = document.getElementById('aboutImageInput' + index);
-        var errorEl = document.getElementById('aboutImageError' + index);
-        var removeBtn = document.getElementById('aboutImageRemoveBtn' + index);
-        var newPreview = document.getElementById('aboutImageNewPreview' + index);
-        var newImg = document.getElementById('aboutImageNewImg' + index);
-        var preview = document.getElementById('aboutImagePreview' + index);
-        var placeholder = document.getElementById('aboutImagePlaceholder' + index);
-
-        if (changeBtn && input) {
-          changeBtn.addEventListener('click', function () {
-            input.click();
-          });
-          input.addEventListener('change', function () {
-            if (errorEl) {
-              errorEl.style.display = 'none';
-              errorEl.textContent = '';
-            }
-            if (input.files && input.files[0]) {
-              var file = input.files[0];
-              if (file.size > 5 * 1024 * 1024) {
-                var msg = 'La imagen es muy grande (máximo 5MB)';
-                window.showToast('❌', msg, 'error');
-                if (errorEl) {
-                  errorEl.textContent = msg;
-                  errorEl.style.display = 'block';
-                }
-                input.value = '';
-                return;
-              }
-              if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-                var msg2 = 'Formato no soportado. Usá JPG, PNG o WEBP.';
-                window.showToast('❌', msg2, 'error');
-                if (errorEl) {
-                  errorEl.textContent = msg2;
-                  errorEl.style.display = 'block';
-                }
-                input.value = '';
-                return;
-              }
-               var reader = new FileReader();
-               reader.onload = function (e) {
-                 if (newPreview && newImg) {
-                   newImg.src = e.target.result;
-                   newPreview.style.display = 'block';
-                 }
-                 if (preview && placeholder) {
-                   preview.src = e.target.result;
-                   preview.style.display = 'block';
-                   placeholder.style.display = 'none';
-                 }
-                  if (window.markDirty) window.markDirty('content', 'about');
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-          });
-        }
-
-        if (removeBtn) {
-          removeBtn.addEventListener('click', function () {
-            removeBtn.dataset.remove = 'true';
-            if (input) input.value = '';
-            if (newPreview) newPreview.style.display = 'none';
-            if (newImg) newImg.src = '';
-            if (window.markDirty) window.markDirty('content', 'about');
-          });
-        }
-      })(i);
     }
 
     initContentTabs();

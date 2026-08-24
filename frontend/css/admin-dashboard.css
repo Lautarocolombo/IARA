@@ -119,6 +119,12 @@
   margin-bottom: 0;
 }
 
+/* Campos que deben ocupar el ancho completo del grid (ej: área de texto) */
+.form-grid-2 .col-span-full,
+.col-span-full {
+  grid-column: 1 / -1;
+}
+
 /* ==================== SECTION TITLES & DIVIDERS ==================== */
 /* Jerarquía visual clara entre títulos de panel, bloques y campos */
 
@@ -193,9 +199,10 @@
   gap: var(--spacing-md);
   padding: var(--spacing-lg);
   background: var(--white);
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--border);
   border-radius: 12px;
   margin-bottom: var(--spacing-lg);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
 .home-block:last-child {
@@ -207,11 +214,12 @@
 }
 
 .home-block-image-card {
-  background: var(--white);
+  background: #fafafa;
   border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
   border-radius: 12px;
   padding: var(--spacing-md);
-  margin-top: var(--spacing-sm);
+  margin-top: var(--spacing-md);
 }
 
 .home-block-image-card label {
@@ -220,7 +228,18 @@
   font-size: var(--admin-label);
   color: var(--text-label);
   margin-bottom: var(--spacing-sm);
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+.home-block-image-card label::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
 }
 
 .home-block-image-card .hero-image-editor {
@@ -238,6 +257,13 @@
   align-items: center;
   gap: var(--spacing-md);
   flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .hero-image-preview-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 .hero-image-preview {

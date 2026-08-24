@@ -249,6 +249,15 @@ async function replaceProductImage(req, res) {
 
     const updated = result.rows[0];
     updated.url = getPublicUrl(processed.url, baseUrl);
+
+    if (oldImage.es_principal) {
+      try {
+        await query('UPDATE products SET image = $1 WHERE id = $2', [updated.url, productId]);
+      } catch (err) {
+        logger.warn({ err: err.message }, 'Error sincronizando imagen principal tras reemplazo');
+      }
+    }
+
     res.json(updated);
   } catch (err) {
     logger.error('Error reemplazando imagen:', err);

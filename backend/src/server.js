@@ -10,7 +10,7 @@ const pino = require('pino');
 dotenv.config({ override: false });
 
 const { initDB } = require('./lib/db');
-const { handleUploadError, processFile, uploadSingle, getPublicUrl } = require('./lib/upload');
+const { handleUploadError, processFile, uploadSingle, getPublicUrl, isBlobConfigured } = require('./lib/upload');
 const { errorHandler } = require('./middleware/errorHandler');
 const { notFound } = require('./middleware/errorHandler');
 const { tenantContext } = require('./middleware/tenant');
@@ -20,6 +20,17 @@ const { nonceMiddleware } = require('./middleware/nonce');
 const { cspMiddleware } = require('./middleware/csp');
 
 const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
+
+const blobConfigured = isBlobConfigured();
+const blobTokenPreview = blobConfigured
+  ? process.env.BLOB_READ_WRITE_TOKEN.slice(0, 8) + '...' + process.env.BLOB_READ_WRITE_TOKEN.slice(-4)
+  : null;
+logger.info('[Blob] Configuración al arrancar:', {
+  configured: blobConfigured,
+  tokenPreview: blobTokenPreview,
+  NODE_ENV: process.env.NODE_ENV,
+  isRender: !!process.env.RENDER_EXTERNAL_HOSTNAME
+});
 
 let Sentry = null;
 if (process.env.SENTRY_DSN) {
@@ -416,6 +427,18 @@ app.get('/health', async (req, res) => {
   }
 
   health.checks.sentry = Sentry ? 'ok' : 'disabled';
+
+  const blobCheck = {
+    configured: blobConfigured,
+    tokenPreview: blobTokenPreview ? `${blobTokenPreview.slice(0, 8)}...` : null
+  };
+  if (blobConfigured) {
+    health.checks.blob = 'configured';
+  } else {
+    health.checks.blob = 'not_configured';
+    health.status = 'degraded';
+  }
+  health.blob = blobCheck;
 
   res.setHeader('X-Commit', gitCommit);
   res.status(health.status === 'ok' ? 200 : 503).json(health);

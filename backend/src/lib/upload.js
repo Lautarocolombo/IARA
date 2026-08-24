@@ -89,7 +89,12 @@ async function uploadToBlob(file) {
 
     return { url: blob.url, filename: blobName, blobName, isCloudinary: false, isBlob: true };
   } catch (err) {
-    logger.error({ err: err.message, stack: err.stack, code: err.code }, 'Error subiendo a Vercel Blob - fallback a storage local');
+    const hint = err.code === 401 || err.code === 403
+      ? 'Token inválido o revocado. Generá un nuevo token en Vercel Blob y actualizá BLOB_READ_WRITE_TOKEN en Render.'
+      : err.code === 'ENOTFOUND' || err.code === 'ECONNREFUSED'
+        ? 'Error de red conectando a Vercel Blob. Verificá la conectividad desde Render.'
+        : 'Error desconocido. Verificá los logs para más detalles.';
+    logger.error({ err: err.message, stack: err.stack, code: err.code, hint }, 'Error subiendo a Vercel Blob - fallback a storage local');
     return null;
   } finally {
     if (tmpDir && fs.existsSync(tmpDir)) {
@@ -236,7 +241,7 @@ async function processFile(file, _baseUrl) {
       logger.info('[Upload] Subido a Vercel Blob:', { url: blobResult.url });
       return { url: blobResult.url, filename: blobResult.filename, cloudinary_public_id: '', isCloudinary: false, isBlob: true };
     }
-    logger.error('[Upload] Falló subida a Vercel Blob. Verificá BLOB_READ_WRITE_TOKEN en Render.');
+    logger.error('[Upload] Falló subida a Vercel Blob. Verificá BLOB_READ_WRITE_TOKEN en Render. Token presente: ' + (isBlobConfigured() ? 'sí' : 'no') + '. Revisá el log anterior para el código de error específico.');
     if (process.env.NODE_ENV === 'production') {
       logger.warn('[Upload] Haciendo fallback a base64 en base de datos');
       useBase64 = true;

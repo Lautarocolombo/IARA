@@ -1,5 +1,4 @@
 (() => {
-  const API_BASE = (window.CONFIG && window.CONFIG.API && window.CONFIG.API.BASE) || '';
 
   const $ = (sel) => document.querySelector(sel);
 
@@ -16,9 +15,9 @@
     qs.set('offset', '0');
 
     try {
-      const res = await window.fetchWithRetry(`${API_BASE}/api/admin/inventory/movements?${qs.toString()}`, {
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include'
+      const res = await window.adminFetch('/api/admin/inventory/movements?' + qs.toString(), {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
       });
       if (!res || !res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -59,9 +58,9 @@
     tbody.innerHTML = '<tr><td colspan="9" class="text-muted">Cargando...</td></tr>';
 
     try {
-      const res = await window.fetchWithRetry(`${API_BASE}/api/admin/inventory/alerts?resolved=false`, {
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include'
+      const res = await window.adminFetch('/api/admin/inventory/alerts?resolved=false', {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' }
       });
       if (!res || !res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -98,10 +97,9 @@
 
   async function resolveAlert(id) {
     try {
-      const res = await window.fetchWithRetry(`${API_BASE}/api/admin/inventory/alerts/${id}/resolve`, {
+      const res = await window.adminFetch('/api/admin/inventory/alerts/' + id + '/resolve', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include'
+        headers: { 'Content-Type': 'application/json' }
       });
       if (!res || !res.ok) {
         const data = await res.json().catch(() => ({}));
