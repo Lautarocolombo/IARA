@@ -36,12 +36,29 @@
       </div>
 
       <div id="emptyWishlist" class="empty-cart-container reveal" style="display:none;">
+        <div class="empty-cart-illustration" aria-hidden="true">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+        </div>
         <h2>No tenés favoritos aún</h2>
-        <p>Explorá el catálogo y guardá tus productos preferidos.</p>
-        <a href="../index.html#catalog" class="btn-primary">Explorar Productos</a>
+        <p class="empty-cart-sub">Guardá tus productos preferidos del catálogo y encontralos fácil cuando quieras.</p>
+        <a href="../index.html#catalog" class="btn-primary">Ver catálogo</a>
       </div>
 
       <div id="wishlistContent">
+        <div id="wishlistSkeleton" class="wishlist-skeleton reveal" style="display:block;">
+          <div class="products-grid" role="status" aria-label="Cargando favoritos">
+            <div class="product-card reveal"><div class="loading-skeleton" style="width:100%;aspect-ratio:1/1;border-radius:16px;"></div><div class="product-info"><div class="loading-skeleton" style="width:28%;height:1rem;margin-top:.6rem;"></div><div class="loading-skeleton" style="width:90%;height:1.2rem;"></div><div class="loading-skeleton" style="width:80%;height:0.9rem;"></div><div style="display:flex;justify-content:space-between;margin-top:.6rem;"><div class="loading-skeleton" style="width:22%;height:1.3rem;"></div><div class="loading-skeleton" style="width:18%;height:2rem;border-radius:20px;"></div><div class="loading-skeleton" style="width:16%;height:2rem;border-radius:20px;"></div></div></div></div>
+            <div class="product-card reveal"><div class="loading-skeleton" style="width:100%;aspect-ratio:1/1;border-radius:16px;"></div><div class="product-info"><div class="loading-skeleton" style="width:28%;height:1rem;margin-top:.6rem;"></div><div class="loading-skeleton" style="width:90%;height:1.2rem;"></div><div class="loading-skeleton" style="width:80%;height:0.9rem;"></div><div style="display:flex;justify-content:space-between;margin-top:.6rem;"><div class="loading-skeleton" style="width:22%;height:1.3rem;"></div><div class="loading-skeleton" style="width:18%;height:2rem;border-radius:20px;"></div><div class="loading-skeleton" style="width:16%;height:2rem;border-radius:20px;"></div></div></div></div>
+            <div class="product-card reveal"><div class="loading-skeleton" style="width:100%;aspect-ratio:1/1;border-radius:16px;"></div><div class="product-info"><div class="loading-skeleton" style="width:28%;height:1rem;margin-top:.6rem;"></div><div class="loading-skeleton" style="width:90%;height:1.2rem;"></div><div class="loading-skeleton" style="width:80%;height:0.9rem;"></div><div style="display:flex;justify-content:space-between;margin-top:.6rem;"><div class="loading-skeleton" style="width:22%;height:1.3rem;"></div><div class="loading-skeleton" style="width:18%;height:2rem;border-radius:20px;"></div><div class="loading-skeleton" style="width:16%;height:2rem;border-radius:20px;"></div></div></div></div>
+          </div>
+        </div>
+
+        <div id="wishlistError" class="empty-cart-container reveal" style="display:none;">
+          <h2>Ups, algo salió mal</h2>
+          <p>No pudimos cargar tus favoritos en este momento.</p>
+          <a href="wishlist.html" class="btn-primary">Recargar</a>
+        </div>
+
         <div class="catalog-grid" id="wishlistGrid"></div>
       </div>
     </section>
