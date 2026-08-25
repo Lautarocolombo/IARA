@@ -8,7 +8,17 @@
     if (!container) return;
 
     try {
-      const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/orders/${orderId}/track`, { method: 'GET' });
+      const raw = sessionStorage.getItem('ag_last_order');
+      let orderToken = '';
+      if (raw) {
+          try { orderToken = JSON.parse(raw).orderToken || ''; } catch (e) { /* ignore */ }
+      }
+      const url = new URL(`${CONFIG.API.BASE}/api/orders/${encodeURIComponent(orderId)}/track`);
+      if (orderToken) url.searchParams.set('order_token', orderToken);
+      const res = await window.fetchWithRetry(url.toString(), {
+        method: 'GET',
+        headers: orderToken ? { 'X-Order-Token': orderToken } : {}
+      }, 2, 1000);
       if (!res) throw new Error('Error al cargar el pedido');
       const data = await res.json();
       if (!data || res.status === 404) {

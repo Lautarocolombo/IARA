@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const { login, refresh, logout, changePassword, requestPasswordReset, resetPassword } = require('../controllers/authController');
+const { login, refresh, logout, changePassword, requestPasswordReset, resetPassword, verifyToken } = require('../controllers/authController');
 const { exportUserData, deleteUserData } = require('../controllers/dataController');
 const { adminAuth } = require('../middleware/auth');
 
@@ -32,6 +32,7 @@ function userOrAdminAuth(req, res, next) {
 router.post('/login', login);
 router.post('/refresh', refresh);
 router.post('/logout', logout);
+router.get('/verify', adminAuth, verifyToken);
 router.put('/change-password', adminAuth, changePassword);
 router.post('/forgot-password', requestPasswordReset);
 router.post('/reset-password', resetPassword);

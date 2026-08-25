@@ -38,7 +38,7 @@ const getSalesReport = async (req, res) => {
          GROUP BY date(created_at) ORDER BY date ASC`,
         params
       ),
-      query(`SELECT items, total, status FROM orders ${where}`, params),
+      query(`SELECT items, total, subtotal, shipping_cost, coupon_discount, status FROM orders ${where}`, params),
       query('SELECT id, name, category FROM products')
     ]);
 
@@ -48,12 +48,17 @@ const getSalesReport = async (req, res) => {
     const byProduct = {};
     const byCategory = {};
     const byStatus = {};
+    let grossTotal = 0;
+    let netTotal = 0;
 
     for (const o of allOrders.rows) {
       const status = o.status || 'pending';
       if (!byStatus[status]) byStatus[status] = { status, count: 0, total: 0 };
       byStatus[status].count += 1;
       byStatus[status].total += Number(o.total || 0);
+
+      grossTotal += Number(o.total || 0);
+      netTotal += Math.max(0, Number(o.subtotal || 0) - Number(o.coupon_discount || 0));
 
       const items = safeJsonParse(o.items, []);
       const categorySeen = new Set();
@@ -78,7 +83,7 @@ const getSalesReport = async (req, res) => {
     }
 
     res.json({
-      sales: sales.rows[0],
+      sales: { ...sales.rows[0], gross: grossTotal, net: Math.round(netTotal * 100) / 100 },
       trend: dailyTrend.rows,
       byProduct: Object.values(byProduct).sort((a, b) => b.total - a.total),
       byCategory: Object.values(byCategory).sort((a, b) => b.total - a.total),

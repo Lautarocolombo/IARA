@@ -902,6 +902,7 @@
     await window.saveToCloud('orders', {
       btnId: 'saveOrdersCloudBtn',
       loadingId: 'saveOrdersCloudBtnLoading',
+      defaultText: 'Actualizar lista',
       action: async function () {
         await loadOrders();
       }

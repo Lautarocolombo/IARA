@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const cors = require('cors');
 const helmet = require('helmet');
 const dotenv = require('dotenv');
@@ -10,11 +11,10 @@ const pino = require('pino');
 dotenv.config({ override: false });
 
 const { initDB } = require('./lib/db');
-const { handleUploadError, processFile, uploadSingle, getPublicUrl, isBlobConfigured } = require('./lib/upload');
+const { handleUploadError, processFile, uploadSingle, getPublicUrl, isBlobConfigured, validateMagicBytes } = require('./lib/upload');
 const { errorHandler } = require('./middleware/errorHandler');
 const { notFound } = require('./middleware/errorHandler');
 const { tenantContext } = require('./middleware/tenant');
-const { csrfProtection } = require('./middleware/csrf');
 const { sanitizeBody } = require('./middleware/xssClean');
 const { nonceMiddleware } = require('./middleware/nonce');
 const { cspMiddleware } = require('./middleware/csp');
@@ -139,7 +139,7 @@ if (Sentry) {
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(sanitizeBody({ excludeKeys: ['about_text', 'hero_title'] }));
+app.use(sanitizeBody({ excludeKeys: ['about_text', 'hero_title', 'comment', 'value', 'subtitle', 'message', 'details'] }));
 app.use(require('compression')());
 
 const envOrigins = (process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || '').split(',').filter(Boolean);
@@ -363,10 +363,10 @@ app.use('/api', require('./routes/heroCards'));
 app.use('/api', require('./routes/sales'));
 app.use('/api', require('./routes/earnings'));
 app.use('/api', require('./routes/carousel'));
+
 app.use('/api/sync', require('./routes/sync'));
 
 app.use('/api', tenantContext);
-app.use('/api', csrfProtection);
 
 app.use('/api/admin', require('./routes/coupons'));
 app.use('/api/admin/inventory', require('./routes/inventory'));
@@ -463,7 +463,12 @@ app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUplo
       logger.warn('[Upload] No se recibió imagen en /api/admin/upload');
       return res.status(400).json({ error: 'No se recibió imagen' });
     }
-    logger.info('[Upload] Procesando imagen:', { filename: req.file.originalname, size: req.file.size });
+    const magicCheck = await validateMagicBytes(req.file);
+    if (!magicCheck.ok) {
+      try { fs.unlinkSync(req.file.path); } catch (e) { /* noop */ }
+      return res.status(400).json({ error: magicCheck.error });
+    }
+    logger.info('[Upload] Procesando imagen:', { filename: req.file.originalname, size: req.file.size, detected: magicCheck.detected });
     const processed = await processFile(req.file, `${req.protocol}://${req.get('host')}`);
     logger.info('[Upload] Imagen procesada OK:', { url: processed.url });
     const publicUrl = getPublicUrl(processed.url, `${req.protocol}://${req.get('host')}`);
@@ -487,7 +492,7 @@ app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUplo
 const isVercel = process.env.VERCEL === 'true';
 const isRender = !!process.env.RENDER_EXTERNAL_HOSTNAME;
 const isEphemeralProd = !isVercel && process.env.NODE_ENV === 'production';
-const uploadsStaticDir = path.join(__dirname, '..', '..', 'uploads');
+const uploadsStaticDir = isRender ? '/tmp/uploads' : path.join(__dirname, '..', '..', 'uploads');
 
 const UPLOAD_PLACEHOLDER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Imagen no disponible"><rect width="200" height="200" rx="14" fill="#fde8ef"/><text x="100" y="110" text-anchor="middle" font-family="system-ui,serif" font-size="40" fill="#d47090">📷</text><text x="100" y="150" text-anchor="middle" font-family="system-ui,serif" font-size="14" fill="#d47090">Imagen no disponible</text></svg>`;
 

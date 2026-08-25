@@ -34,7 +34,8 @@
       renderKPIs({
         total_revenue: salesData.total || 0,
         total_orders: salesData.count || 0,
-        avg_order_value: salesData.ticketPromedio || 0
+        avg_order_value: salesData.ticketPromedio || 0,
+        net_revenue: salesData.sales && salesData.sales.net !== undefined ? salesData.sales.net : (salesData.total || 0)
       });
 
       updateChart(salesData);
@@ -181,8 +182,9 @@ transactions.forEach(function (t) {
     var kpiAvg = document.getElementById('metricAvg');
 
     var gross = Number(kpis.total_revenue || 0);
+    var net = Number(kpis.net_revenue !== undefined ? kpis.net_revenue : gross);
     if (kpiRevenue) kpiRevenue.textContent = '$' + gross.toLocaleString('es-AR');
-    if (kpiNet) kpiNet.textContent = '$' + gross.toLocaleString('es-AR');
+    if (kpiNet) kpiNet.textContent = '$' + net.toLocaleString('es-AR');
     if (kpiOrders) kpiOrders.textContent = Number(kpis.total_orders || 0).toLocaleString('es-AR');
     if (kpiAvg) kpiAvg.textContent = '$' + Number(kpis.avg_order_value || 0).toLocaleString('es-AR');
   }

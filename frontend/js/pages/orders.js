@@ -9,7 +9,15 @@
     const lookup = document.getElementById('ordersLookup');
     if (!container) return;
     try {
-      const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/orders?email=${encodeURIComponent(email)}`, {}, 2, 1000);
+      const raw = sessionStorage.getItem('ag_last_order');
+      let accessToken = '';
+      if (raw) {
+        try { accessToken = JSON.parse(raw).orderToken || ''; } catch (e) { /* ignore */ }
+      }
+      const url = new URL(`${CONFIG.API.BASE}/api/orders`);
+      url.searchParams.set('email', email);
+      if (accessToken) url.searchParams.set('access_token', accessToken);
+      const res = await window.fetchWithRetry(url.toString(), {}, 2, 1000);
       if (!res) throw new Error('Error al cargar pedidos');
       const orders = await res.json();
       currentOrderEmail = email;

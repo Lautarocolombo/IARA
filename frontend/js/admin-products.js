@@ -1050,6 +1050,7 @@
     await window.saveToCloud('products', {
       btnId: 'saveProductsCloudBtn',
       loadingId: 'saveProductsCloudBtnLoading',
+      defaultText: 'Actualizar lista',
       action: async function () {
         await loadProducts();
       }

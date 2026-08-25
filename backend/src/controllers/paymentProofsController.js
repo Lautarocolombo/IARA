@@ -5,6 +5,7 @@ const { syncBus } = require('../routes/sync');
 const { logAudit } = require('../lib/audit');
 const path = require('path');
 const fs = require('fs');
+const { validateMagicBytes } = require('../lib/upload');
 
 const isVercel = process.env.VERCEL === 'true';
 const isRender = !!process.env.RENDER_EXTERNAL_HOSTNAME;
@@ -72,6 +73,12 @@ async function uploadPaymentProof(req, res) {
 
     if (!req.file) {
       return res.status(400).json({ error: 'No se recibió el comprobante' });
+    }
+
+    const magicCheck = await validateMagicBytes(req.file);
+    if (!magicCheck.ok) {
+      try { fs.unlinkSync(req.file.path); } catch (e) { /* noop */ }
+      return res.status(400).json({ error: magicCheck.error });
     }
 
     const filename = path.basename(req.file.path);

@@ -66,10 +66,20 @@ const getOrders = async (req, res) => {
 
 const getUserOrders = async (req, res) => {
   try {
-    const { email } = req.query;
+    const { email, access_token } = req.query;
     if (!email) {
       return res.status(400).json({ error: 'Email es requerido para buscar pedidos' });
     }
+
+    if (!access_token) {
+      return res.status(401).json({ error: 'Token de acceso requerido' });
+    }
+
+    const tokenResult = await query('SELECT id FROM orders WHERE order_token = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') LIMIT 1', [String(access_token)]);
+    if (tokenResult.rows.length === 0) {
+      return res.status(401).json({ error: 'Token de acceso inválido' });
+    }
+
     const result = await query('SELECT * FROM orders WHERE shipping_email = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') ORDER BY created_at DESC', [email]);
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json(result.rows);
@@ -198,24 +208,24 @@ const createOrder = async (req, res) => {
     }
 
     const result = await transaction(async (client) => {
-      logger.info('createOrder: dentro de transaccion');
       for (const item of validatedItems) {
-        logger.info('createOrder: consultando stock para producto', { itemId: item.id });
-        const stockResult = await query('SELECT stock FROM products WHERE id = $1', [Number(item.id)], client);
+        const itemId = Number(item.id);
+        const qty = Number(item.quantity || 1);
+        const stockResult = await query('SELECT stock FROM products WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') FOR UPDATE', [itemId], client);
         if (stockResult.rows.length === 0) {
-          throw new Error(`Producto ${item.id} no encontrado`);
+          throw new Error(`Producto ${itemId} no encontrado`);
         }
         const currentStock = stockResult.rows[0].stock;
-        if (currentStock < item.quantity) {
-          throw new Error(`Stock insuficiente para el producto ${item.id}. Disponible: ${currentStock}, solicitado: ${item.quantity}`);
+        if (currentStock < qty) {
+          throw new Error(`Stock insuficiente para el producto ${itemId}. Disponible: ${currentStock}, solicitado: ${qty}`);
         }
-        const newStock = currentStock - Number(item.quantity);
+        const newStock = currentStock - qty;
         await query(
-          'UPDATE products SET stock = stock - $1 WHERE id = $2 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')',
-          [Number(item.quantity), Number(item.id)],
+          'UPDATE products SET stock = stock - $1 WHERE id = $2 AND stock >= $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')',
+          [qty, itemId],
           client
         );
-        logInventoryMovement(Number(item.id), 'sale', Number(item.quantity), currentStock, newStock, 'Venta', '').catch(() => {});
+        logInventoryMovement(itemId, 'sale', qty, currentStock, newStock, 'Venta', '').catch(() => {});
       }
 
       let finalCouponCode = couponCode ? String(couponCode).trim() : '';
@@ -294,7 +304,8 @@ const createOrder = async (req, res) => {
     }
   } catch (err) {
     logger.error({ err: err.message }, 'Error creando pedido');
-    res.status(400).json({ error: err.message || 'Error interno del servidor' });
+    const errorMessage = process.env.NODE_ENV === 'production' ? 'Error interno del servidor' : (err.message || 'Error interno del servidor');
+    res.status(400).json({ error: errorMessage });
   }
 };
 
@@ -612,6 +623,17 @@ const getPublicOrderTrack = async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!id) return res.status(400).json({ error: 'ID de pedido requerido' });
+
+    const accessToken = (req.headers['x-order-token'] || req.query.order_token || '').toString().trim();
+    if (!accessToken) {
+      return res.status(401).json({ error: 'Token de acceso requerido' });
+    }
+
+    const tokenResult = await query('SELECT id FROM orders WHERE id = $1 AND order_token = $2 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') LIMIT 1', [id, accessToken]);
+    if (tokenResult.rows.length === 0) {
+      return res.status(403).json({ error: 'Token de acceso inválido para este pedido' });
+    }
+
     const result = await query('SELECT id, items, total, status, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, created_at FROM orders WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');

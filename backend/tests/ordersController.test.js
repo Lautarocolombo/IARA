@@ -133,12 +133,14 @@ describe('ordersController', () => {
 
   describe('getUserOrders', () => {
     test('retorna pedidos por email', async () => {
-      const req = { query: { email: 'test@example.com' } };
+      const req = { query: { email: 'test@example.com', access_token: 'valid-token' } };
       const res = {
         setHeader: jest.fn(),
+        status: jest.fn(() => res),
         json: jest.fn()
       };
 
+      query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
       query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
       await getUserOrders(req, res);
@@ -148,7 +150,7 @@ describe('ordersController', () => {
     });
 
     test('retorna 400 si falta email', async () => {
-      const req = { query: {} };
+      const req = { query: { access_token: 'valid-token' } };
       const res = {
         status: jest.fn(() => res),
         json: jest.fn()
@@ -158,6 +160,19 @@ describe('ordersController', () => {
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({ error: 'Email es requerido para buscar pedidos' });
+    });
+
+    test('retorna 401 si falta access_token', async () => {
+      const req = { query: { email: 'test@example.com' } };
+      const res = {
+        status: jest.fn(() => res),
+        json: jest.fn()
+      };
+
+      await getUserOrders(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Token de acceso requerido' });
     });
   });
 
@@ -244,18 +259,33 @@ describe('ordersController', () => {
 
   describe('getPublicOrderTrack', () => {
     test('retorna pedido público sin datos sensibles', async () => {
-      const req = { params: { id: 1 } };
+      const req = { params: { id: 1 }, headers: {}, query: { order_token: 'valid-token' } };
       const res = {
         setHeader: jest.fn(),
+        status: jest.fn(() => res),
         json: jest.fn()
       };
 
-      query.mockResolvedValueOnce({ rows: [{ id: 1, items: '[]', total: 100, status: 'pending', shipping_name: 'Test', created_at: '2024-01-01' }] });
+      query.mockResolvedValueOnce({ rows: [{ id: 1, order_token: 'valid-token', items: '[]', total: 100, status: 'pending', shipping_name: 'Test', created_at: '2024-01-01' }] });
+      query.mockResolvedValueOnce({ rows: [{ id: 1, order_token: 'valid-token', items: '[]', total: 100, status: 'pending', shipping_name: 'Test', shipping_phone: '123', shipping_email: 'test@example.com', created_at: '2024-01-01' }] });
 
       await getPublicOrderTrack(req, res);
 
       expect(res.setHeader).toHaveBeenCalledWith('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
       expect(res.json).toHaveBeenCalled();
+    });
+
+    test('retorna 401 si falta order_token', async () => {
+      const req = { params: { id: 1 }, headers: {}, query: {} };
+      const res = {
+        status: jest.fn(() => res),
+        json: jest.fn()
+      };
+
+      await getPublicOrderTrack(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(401);
+      expect(res.json).toHaveBeenCalledWith({ error: 'Token de acceso requerido' });
     });
   });
 

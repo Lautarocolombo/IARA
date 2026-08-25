@@ -12,6 +12,32 @@ function getApiUrl(path) {
   return `${API_BASE}${path}`;
 }
 
+function getCookie(name) {
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return match ? match[2] : null;
+}
+
+async function restoreSessionFromCookie() {
+  const token = getCookie('adminToken');
+  if (!token) return false;
+  try {
+    const res = await fetch(getApiUrl('/api/auth/verify'), {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${token}` },
+      credentials: 'include'
+    });
+    if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      authToken = token;
+      currentUser = { user: data.user, role: data.role, permissions: data.permissions };
+      return true;
+    }
+  } catch (e) {
+    console.warn('[restoreSessionFromCookie] No se pudo restaurar sesión:', e);
+  }
+  return false;
+}
+
 async function checkServerHealth() {
   const hint = document.getElementById('loginHint');
   const retryBtn = document.getElementById('retryHealthBtn');
@@ -160,9 +186,15 @@ async function adminFetch(url, opts = {}, isRetry = false) {
   const fullUrl = directUploadOrigin || (url.startsWith('/api/') ? `${apiBase}${url}` : url);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 60000);
+
+  const effectiveToken = authToken || getCookie('adminToken');
+
   try {
     const isFormData = opts.body instanceof FormData;
     let finalHeaders = { ...(opts.headers || {}) };
+    if (effectiveToken && !finalHeaders['Authorization']) {
+      finalHeaders['Authorization'] = `Bearer ${effectiveToken}`;
+    }
     if (isFormData) {
       delete finalHeaders['Content-Type'];
     }
@@ -188,13 +220,23 @@ async function adminFetch(url, opts = {}, isRetry = false) {
       }
       authToken = '';
       currentUser = null;
-      document.getElementById('loginOverlay')?.classList.remove('hidden');
+      const loginOverlay = document.getElementById('loginOverlay');
+      if (loginOverlay) {
+        loginOverlay.classList.remove('hidden');
+      } else {
+        window.location.href = '../admin.html';
+      }
       throw new Error('Sesión expirada. Iniciá sesión nuevamente.');
     }
     if (res.status === 401) {
       authToken = '';
       currentUser = null;
-      document.getElementById('loginOverlay')?.classList.remove('hidden');
+      const loginOverlay = document.getElementById('loginOverlay');
+      if (loginOverlay) {
+        loginOverlay.classList.remove('hidden');
+      } else {
+        window.location.href = '../admin.html';
+      }
       throw new Error('Sesión expirada. Iniciá sesión nuevamente.');
     }
     if (res.status === 403) throw new Error('Acceso denegado. No tenés permisos para esta acción.');

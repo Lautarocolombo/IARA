@@ -172,6 +172,37 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
+async function validateMagicBytes(file) {
+  try {
+    let fileTypeFromBuffer;
+    try {
+      const mod = require('file-type');
+      fileTypeFromBuffer = mod.fileTypeFromBuffer || mod.fileTypeFromStream || mod.fileTypeFromBlob;
+    } catch (err) {
+      logger.warn('file-type no disponible, se salta validación de magic-bytes:', err.message);
+      return { ok: true };
+    }
+    if (!fileTypeFromBuffer) {
+      return { ok: true };
+    }
+    const buffer = fs.readFileSync(file.path);
+    const detected = await fileTypeFromBuffer(buffer);
+    if (!detected) {
+      return { ok: false, error: 'No se pudo detectar el tipo de archivo.' };
+    }
+    const allowedImages = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    const allowedDocs = ['text/csv', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+    const allowedMimeTypes = [...allowedImages, ...allowedDocs];
+    if (allowedMimeTypes.includes(detected.mime)) {
+      return { ok: true, detected };
+    }
+    return { ok: false, error: `Tipo de archivo no permitido: ${detected.mime}. Usá JPG, PNG, WEBP, GIF o CSV.` };
+  } catch (err) {
+    logger.warn({ err: err.message }, 'Error validando magic-bytes');
+    return { ok: false, error: 'Error validando el archivo.' };
+  }
+}
+
 const upload = multer({
   storage,
   fileFilter,
@@ -344,5 +375,6 @@ module.exports = {
   saveUploadedFile,
   uploadProofToBlob,
   isBlobConfigured,
-  isBlobUrl
+  isBlobUrl,
+  validateMagicBytes
 };
