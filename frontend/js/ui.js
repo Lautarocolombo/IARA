@@ -916,3 +916,12 @@ async function loadHeroCards() {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { escapeHtml, unescapeHtml, sanitizeAboutText, getFetchErrorMessage, showToast, safeFetch, fetchWithRetry, initMobileNavbar, initContactForm };
 }
+
+if (typeof window !== 'undefined') {
+  window.initSSESync = initSSESync;
+  window.destroySSESync = destroySSESync;
+  window.startDataSync = startDataSync;
+  window.stopDataSync = stopDataSync;
+  window.emitSync = emitSync;
+  window.onSyncMessage = onSyncMessage;
+}

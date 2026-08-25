@@ -133,6 +133,14 @@ function formatARS(amount) {
   }
 }
 
+if (typeof window !== 'undefined') {
+  window.CONFIG = CONFIG;
+  window.formatARS = formatARS;
+  window.getWhatsAppLink = getWhatsAppLink;
+  window.getMailtoLink = getMailtoLink;
+  window.getGoogleWriteReviewLink = getGoogleWriteReviewLink;
+}
+
 // Exportar para uso en Node.js (si aplica)
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { CONFIG, getWhatsAppLink, getMailtoLink, getGoogleWriteReviewLink, formatARS };
