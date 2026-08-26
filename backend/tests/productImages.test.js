@@ -61,11 +61,11 @@ async function loginToken() {
 
 describe('Product images on public API', () => {
   test('GET /api/products resuelve image e images desde la galería', async () => {
-    const insert = await query(
-      'INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,FALSE) RETURNING id',
+    await query(
+      'INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,FALSE)',
       [TEST_PRODUCT_NAME, 'test-imagenes', 'pulseras', 100, '', '📿', '', '', 10, false, true, 'TEST-SKU']
     );
-    const productId = insert.rows[0].id;
+    const productId = await query('SELECT id FROM products WHERE name = $1', [TEST_PRODUCT_NAME]).then(r => r.rows[0].id);
 
     await query(
       'INSERT INTO product_images (product_id, url, filename, orden, es_principal, descripcion, categoria) VALUES ($1,$2,$3,$4,$5,$6,$7)',
@@ -117,21 +117,21 @@ describe('Product images on public API', () => {
     const productName = 'Producto Test Borrado __test__';
     await cleanup(productName);
 
-    const insert = await query(
-      'INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,FALSE) RETURNING id',
+    await query(
+      'INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,FALSE)',
       [productName, 'test-borrado', 'pulseras', 100, '', '📿', '', '', 10, false, true, 'TEST-SKU-B']
     );
-    const productId = insert.rows[0].id;
+    const productId = await query('SELECT id FROM products WHERE name = $1', [productName]).then(r => r.rows[0].id);
 
-    const img1 = await query(
-      'INSERT INTO product_images (product_id, url, filename, orden, es_principal, descripcion, categoria) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
+    await query(
+      'INSERT INTO product_images (product_id, url, filename, orden, es_principal, descripcion, categoria) VALUES ($1,$2,$3,$4,$5,$6,$7)',
       [productId, 'https://res.cloudinary.com/demo/image1.webp', 'image1.webp', 0, true, 'Principal', 'pulseras']
     );
-    const img2 = await query(
-      'INSERT INTO product_images (product_id, url, filename, orden, es_principal, descripcion, categoria) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *',
+    await query(
+      'INSERT INTO product_images (product_id, url, filename, orden, es_principal, descripcion, categoria) VALUES ($1,$2,$3,$4,$5,$6,$7)',
       [productId, 'https://res.cloudinary.com/demo/image2.webp', 'image2.webp', 1, false, 'Secundaria', 'pulseras']
     );
-    const img1Id = img1.rows[0].id;
+    const img1Id = await query('SELECT id FROM product_images WHERE product_id = $1 AND url = $2', [productId, 'https://res.cloudinary.com/demo/image1.webp']).then(r => r.rows[0].id);
 
     const token = await loginToken();
 
@@ -159,11 +159,11 @@ describe('Product images on public API', () => {
     const productName = 'Producto Test Perdido __test__';
     await cleanup(productName);
 
-    const insert = await query(
-      'INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,FALSE) RETURNING id',
+    await query(
+      'INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,FALSE)',
       [productName, 'test-perdido', 'pulseras', 100, '', '📿', '', '', 10, false, true, 'TEST-PERDIDO']
     );
-    const productId = insert.rows[0].id;
+    const productId = await query('SELECT id FROM products WHERE name = $1', [productName]).then(r => r.rows[0].id);
 
     await query(
       'INSERT INTO product_images (product_id, url, filename, orden, es_principal, descripcion, categoria) VALUES ($1,$2,$3,$4,$5,$6,$7)',

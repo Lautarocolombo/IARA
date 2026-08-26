@@ -3,8 +3,8 @@ const { test, expect } = require('@playwright/test');
 test.describe('Admin Sales Delete Buttons', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('http://localhost:3000/pages/admin.html');
-    await page.fill('#loginUser', 'admin');
-    await page.fill('#loginPass', 'admin');
+    await page.fill('#loginUser', 'Iara');
+    await page.fill('#loginPass', 'pulseras2026');
     await page.click('#loginBtn');
     await page.waitForURL('**/dashboard.html');
     await page.goto('http://localhost:3000/pages/dashboard.html');

@@ -34,11 +34,17 @@ body {
 
 /* ==================== BUTTONS SYSTEM ==================== */
 /* Sistema de botones profesional con jerarquía clara */
+/* Pre-existing syntax error: orphaned declarations with no selector (introduced by the
+   9e18d8b admin refactor). PostCSS rejects the whole file, breaking `vite build` and
+   therefore the Vercel deploy. Neutralized (zero behavior change - these had no selector)
+   to unblock the production deploy. */
+/*
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
 }
+*/
 
 .header-left {
   display: flex;

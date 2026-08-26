@@ -46,7 +46,7 @@ async function searchProducts(query, filters = {}) {
   try {
     const params = new URLSearchParams();
     params.set('q', trimmed);
-    if (filters.category) params.set('category', filters.category);
+    if (filters.category && filters.category !== 'all') params.set('category', filters.category);
     if (filters.minPrice !== undefined && filters.minPrice !== '') params.set('minPrice', filters.minPrice);
     if (filters.maxPrice !== undefined && filters.maxPrice !== '') params.set('maxPrice', filters.maxPrice);
     const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/search?${params.toString()}`, {}, 2, 1000);
@@ -106,9 +106,9 @@ function renderProducts(productsToRender) {
     const waMessage = encodeURIComponent(`Hola! Me interesa el producto: ${product.name} - ${formatARS(product.price)}`);
     const waLink = `https://wa.me/${CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g, '')}?text=${waMessage}`;
 return `
-    <div class="product-card reveal" data-product-id="${product.id}">
+    <div class="product-card reveal ${catClass}" data-product-id="${product.id}">
       <a href="pages/product.html?id=${product.id}" style="text-decoration:none;color:inherit;">
-        <div class="product-image ${catClass}" aria-hidden="true">${imageHtml}</div>
+        <div class="product-image" aria-hidden="true">${imageHtml}</div>
         ${badgeHtml}
       </a>
       <div class="product-info">

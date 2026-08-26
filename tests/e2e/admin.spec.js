@@ -16,6 +16,11 @@ test('admin muestra título y enlace de volver', async ({ page }) => {
 });
 
 test('dashboard carga y muestra sidebar de admin', async ({ page }) => {
+  await page.goto('/pages/admin.html');
+  await page.fill('#loginUser', 'Iara');
+  await page.fill('#loginPass', 'pulseras2026');
+  await page.click('#loginBtn');
+  await page.waitForURL('**/dashboard.html');
   const res = await page.goto('/pages/dashboard.html');
   expect(res.status()).toBe(200);
   await expect(page.locator('.admin-sidebar')).toBeVisible();
@@ -25,6 +30,11 @@ test('dashboard carga y muestra sidebar de admin', async ({ page }) => {
 });
 
 test('dashboard muestra enlace de cerrar sesión', async ({ page }) => {
+  await page.goto('/pages/admin.html');
+  await page.fill('#loginUser', 'Iara');
+  await page.fill('#loginPass', 'pulseras2026');
+  await page.click('#loginBtn');
+  await page.waitForURL('**/dashboard.html');
   await page.goto('/pages/dashboard.html');
   await expect(page.locator('#logoutBtn')).toBeVisible();
   await expect(page.locator('#logoutBtn')).toContainText('Cerrar sesión');

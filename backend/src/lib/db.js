@@ -101,7 +101,7 @@ async function query(text, params, transactionClient = null) {
       const sqliteSql = toSqlite(sql);
       const values = params || [];
       const trimmed = sqliteSql.trim().toUpperCase();
-      if (trimmed.startsWith('SELECT') || trimmed.startsWith('WITH') || trimmed.startsWith('PRAGMA')) {
+      if (trimmed.startsWith('SELECT') || trimmed.startsWith('WITH') || trimmed.startsWith('PRAGMA') || /RETURNING/i.test(sqliteSql)) {
         db.all(sqliteSql, values, (err, rows) => {
           if (err) return reject(err);
           resolve({ rows, rowCount: rows ? rows.length : 0 });
@@ -171,7 +171,7 @@ async function transaction(fn) {
                 sqlite = sqlite.replace(/current_setting\('app\.current_tenant',\s*TRUE\)/gi, "'default'");
               }
               const trimmed = sqlite.trim().toUpperCase();
-              if (trimmed.startsWith('SELECT') || trimmed.startsWith('WITH') || trimmed.startsWith('PRAGMA')) {
+              if (trimmed.startsWith('SELECT') || trimmed.startsWith('WITH') || trimmed.startsWith('PRAGMA') || /RETURNING/i.test(sqlite)) {
                 db.all(sqlite, params, (e, rows) => {
                   if (e) return rej(e);
                   res({ rows, rowCount: rows ? rows.length : 0 });
@@ -439,6 +439,20 @@ async function initDB() {
       tenant_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS carousel_images (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      slot INTEGER NOT NULL,
+      url TEXT NOT NULL,
+      public_id TEXT DEFAULT '',
+      alt_text TEXT DEFAULT '',
+      link_url TEXT DEFAULT '',
+      caption TEXT DEFAULT '',
+      about_group INTEGER DEFAULT 0,
+      tenant_id TEXT DEFAULT 'default',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(slot, tenant_id)
     )`);
     await query(`CREATE TABLE IF NOT EXISTS activity_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

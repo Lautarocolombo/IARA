@@ -15,20 +15,13 @@ function isBlobConfigured() {
   return true;
 }
 
-let blobModule = null;
-let blobModuleLoadAttempted = false;
-
 function getBlobModule() {
-  if (blobModule) return blobModule;
-  if (blobModuleLoadAttempted) return null;
-  blobModuleLoadAttempted = true;
   try {
-    blobModule = require('@vercel/blob');
+    return require('@vercel/blob');
   } catch (err) {
     logger.warn('No se pudo cargar @vercel/blob:', err.message);
-    blobModule = null;
+    return null;
   }
-  return blobModule;
 }
 
 function isBlobUrl(url) {

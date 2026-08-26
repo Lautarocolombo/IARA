@@ -80,6 +80,12 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 window.addToCart = addToCart;
+window.getCart = getCart;
+window.removeFromCart = removeFromCart;
+window.updateCartQty = updateCartQty;
+window.clearCart = clearCart;
+window.saveCart = saveCart;
+window.updateCartBadge = updateCartBadge;
 
 // Exportar para Node.js (si aplica)
 if (typeof module !== 'undefined' && module.exports) {

@@ -607,6 +607,7 @@ xhr.addEventListener('load', () => {
     renderPendingFileList,
     addPendingUrl,
     addPendingFiles,
-    renderGallery
+    renderGallery,
+    getAuthToken
   };
 })();

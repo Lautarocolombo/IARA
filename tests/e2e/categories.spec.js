@@ -59,7 +59,7 @@ test('categories: productos filtrados muestran categoría correcta', async ({ pa
   const count = await cards.count();
   expect(count).toBeGreaterThan(0);
   for (let i = 0; i < count; i++) {
-    await expect(cards.nth(i).locator('.product-image')).toHaveClass(/cat-pulseras/);
+    await expect(cards.nth(i)).toHaveClass(/cat-pulseras/);
   }
 });
 

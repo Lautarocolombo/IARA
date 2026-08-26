@@ -64,8 +64,7 @@ test('contact: mapa está presente', async ({ page }) => {
 
 test('contact: botón de WhatsApp presente', async ({ page }) => {
   await page.goto('/pages/contact.html');
-  const waBtn = page.locator('.whatsapp-cta .btn-primary');
-  await waBtn.scrollIntoViewIfNeeded();
+  const waBtn = page.locator('.social-icon[aria-label="WhatsApp"]');
   await expect(waBtn).toBeVisible();
   await expect(waBtn).toHaveAttribute('href', /wa\.me/);
 });
