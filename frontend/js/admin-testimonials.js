@@ -258,23 +258,54 @@
 
   function renderPhotoPreview(file, imageUrl) {
     var preview = document.getElementById('testimonialPhotoPreview');
+    var removeBtn = document.getElementById('testimonialRemovePhotoBtn');
+    var uploadBtn = document.getElementById('testimonialUploadPhotoBtn');
     if (!preview) return;
     if (!file && !imageUrl) {
-      preview.innerHTML = '';
+      preview.innerHTML = '<div class="testimonial-photo-empty">😊</div>';
+      if (removeBtn) removeBtn.classList.add('hidden');
+      if (uploadBtn) uploadBtn.textContent = '📷 Subir foto';
       return;
     }
     var src = imageUrl || URL.createObjectURL(file);
     var img = new Image();
-    img.src = src;
+    img.alt = 'Foto del cliente';
+    img.loading = 'lazy';
     img.style.maxWidth = '100%';
     img.style.maxHeight = '120px';
     img.style.borderRadius = '8px';
+    img.style.objectFit = 'cover';
+    img.onerror = function() {
+      preview.innerHTML = '<div class="testimonial-photo-empty">😊</div>';
+      if (removeBtn) removeBtn.classList.add('hidden');
+      if (uploadBtn) uploadBtn.textContent = '📷 Subir foto';
+    };
     if (file) {
       img.onload = function () { URL.revokeObjectURL(src); };
     }
     preview.innerHTML = '';
     preview.appendChild(img);
+    if (removeBtn) removeBtn.classList.remove('hidden');
+    if (uploadBtn) uploadBtn.textContent = '🔄 Cambiar foto';
   }
+
+  window.removeTestimonialPhoto = function() {
+    window.showConfirmModal(
+      'Eliminar foto',
+      '¿Estás seguro de eliminar la foto de este testimonio?',
+      function() {
+        pendingPhotoFile = null;
+        var photoInput = document.getElementById('testimonialPhotoFile');
+        if (photoInput) photoInput.value = '';
+        window._testimonialRemoveImageFlag = true;
+        if (editingId) {
+          var t = testimonials.find(function(x) { return x.id === editingId; });
+          if (t) t.image = '';
+        }
+        renderPhotoPreview(null, null);
+      }
+    );
+  };
 
   /* ===== CRUD ===== */
 
@@ -282,6 +313,7 @@
     var t = testimonials.find(function (x) { return x.id === id; });
     if (!t) return;
     editingId = id;
+    window._testimonialRemoveImageFlag = false;
     var createForm = document.getElementById('testimonialCreateForm');
     var toggleIcon = document.getElementById('toggleTestimonialFormIcon');
     if (createForm && !createForm.classList.contains('open')) {
@@ -389,12 +421,19 @@
     try {
       var payload = { name: name, role: role, comment: comment, rating: rating, active: active };
 
+      if (window._testimonialRemoveImageFlag) {
+        payload.removeImage = true;
+        window._testimonialRemoveImageFlag = false;
+      }
+
       var formData = new FormData();
       Object.keys(payload).forEach(function (key) {
         formData.append(key, payload[key]);
       });
+
       if (pendingPhotoFile) {
-        formData.append('image', pendingPhotoFile, pendingPhotoFile.name);
+        formData.append('image', pendingPhotoFile);
+        pendingPhotoFile = null;
       }
 
       var res = await window.adminFetch(url, {
@@ -412,6 +451,11 @@
       } else {
         testimonials.push(saved);
         editingId = saved.id;
+      }
+      if (saved.image) {
+        renderPhotoPreview(null, saved.image);
+      } else {
+        renderPhotoPreview(null, null);
       }
       if (saveBtn) {
         saveBtn.textContent = 'Guardar cambios';
@@ -436,6 +480,7 @@
   function resetTestimonialForm() {
     editingId = null;
     pendingPhotoFile = null;
+    window._testimonialRemoveImageFlag = false;
     var nameEl = document.getElementById('testimonialName');
     var roleEl = document.getElementById('testimonialRole');
     var commentEl = document.getElementById('testimonialComment');
@@ -443,12 +488,14 @@
     var activeEl = document.getElementById('testimonialActive');
     var saveBtn = document.getElementById('saveTestimonialBtn');
     var photoInput = document.getElementById('testimonialPhotoFile');
+    var removeBtn = document.getElementById('testimonialRemovePhotoBtn');
     if (nameEl) nameEl.value = '';
     if (roleEl) roleEl.value = '';
     if (commentEl) commentEl.value = '';
     if (ratingEl) ratingEl.value = 5;
     if (activeEl) activeEl.checked = true;
     if (photoInput) photoInput.value = '';
+    if (removeBtn) removeBtn.classList.add('hidden');
     renderPhotoPreview(null, null);
     if (saveBtn) {
       saveBtn.disabled = false;
@@ -494,10 +541,38 @@
     }
 
     var photoInput = document.getElementById('testimonialPhotoFile');
+    var removePhotoBtn = document.getElementById('testimonialRemovePhotoBtn');
+    var uploadPhotoBtn = document.getElementById('testimonialUploadPhotoBtn');
     if (photoInput) {
       photoInput.addEventListener('change', function (e) {
         pendingPhotoFile = e.target.files[0] || null;
-        renderPhotoPreview(pendingPhotoFile);
+        if (pendingPhotoFile) {
+          var allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+          if (allowedTypes.indexOf(pendingPhotoFile.type) === -1) {
+            window.showToast('❌', 'Formato no permitido. Usá JPG, PNG o WEBP.', 'error');
+            pendingPhotoFile = null;
+            photoInput.value = '';
+            return;
+          }
+          if (pendingPhotoFile.size > 2 * 1024 * 1024) {
+            window.showToast('❌', 'La imagen es muy grande (máximo 2MB)', 'error');
+            pendingPhotoFile = null;
+            photoInput.value = '';
+            return;
+          }
+          window._testimonialRemoveImageFlag = false;
+          renderPhotoPreview(pendingPhotoFile);
+        }
+      });
+    }
+    if (uploadPhotoBtn) {
+      uploadPhotoBtn.addEventListener('click', function() {
+        if (photoInput) photoInput.click();
+      });
+    }
+    if (removePhotoBtn) {
+      removePhotoBtn.addEventListener('click', function() {
+        window.removeTestimonialPhoto();
       });
     }
 

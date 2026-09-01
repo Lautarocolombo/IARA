@@ -747,15 +747,16 @@
                           <option value="1">⭐</option>
                         </select>
                       </div>
-                       <div class="form-group">
-                          <label>Foto del cliente</label>
-                          <div id="testimonialPhotoPreview" class="testimonial-photo-preview"></div>
-                          <div class="testimonial-photo-actions">
-                            <button type="button" class="btn btn-secondary btn-sm" id="testimonialUploadPhotoBtn">📷 Subir foto</button>
-                            <button type="button" class="btn btn-danger btn-sm hidden" id="testimonialRemovePhotoBtn">🗑️ Quitar foto</button>
-                          </div>
-                          <input type="file" id="testimonialPhotoFile" accept="image/jpeg,image/png,image/webp" class="hidden" />
-                       </div>
+                        <div class="form-group">
+                           <label>Foto del cliente (opcional)</label>
+                           <div id="testimonialPhotoPreview" class="testimonial-photo-preview"></div>
+                           <div class="testimonial-photo-actions">
+                             <button type="button" class="btn btn-secondary btn-sm" id="testimonialUploadPhotoBtn">📷 Subir foto</button>
+                             <button type="button" class="btn btn-danger btn-sm hidden" id="testimonialRemovePhotoBtn">🗑️ Eliminar foto</button>
+                           </div>
+                           <input type="file" id="testimonialPhotoFile" accept="image/jpeg,image/png,image/webp" class="hidden" />
+                           <small class="form-hint">JPG, PNG o WEBP. Máx 2MB.</small>
+                        </div>
                       <div class="form-group col-span-full">
                         <label>Comentario <span class="required">*</span></label>
                         <textarea id="testimonialComment" rows="3" placeholder="Comentario del cliente..."></textarea>
