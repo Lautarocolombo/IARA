@@ -841,10 +841,14 @@ function renderTestimonials(testimonials) {
     return;
   }
 
-  grid.innerHTML = testimonials.map(t => `
+  grid.innerHTML = testimonials.map(t => {
+    const avatarContent = t.image
+      ? `<img src="${escapeHtml(t.image)}" alt="${escapeHtml(t.name)}" class="testimonial-avatar-img" loading="lazy" onerror="this.style.display='none';this.parentElement.textContent='😊'" />`
+      : (t.avatar || '😊');
+    return `
     <div class="testimonial-card reveal">
       <div class="testimonial-header">
-        <div class="testimonial-avatar">${t.avatar || '😊'}</div>
+        <div class="testimonial-avatar">${avatarContent}</div>
         <div>
           <div class="testimonial-name">${escapeHtml(t.name)}</div>
           ${t.role ? `<div style="font-size:0.8rem;color:var(--text-muted);">${escapeHtml(t.role)}</div>` : ''}
@@ -853,7 +857,7 @@ function renderTestimonials(testimonials) {
       </div>
       <p class="testimonial-comment">${escapeHtml(t.comment)}</p>
     </div>
-  `).join('');
+  `}).join('');
 
   if (window.revealObserver) {
     grid.querySelectorAll('.reveal').forEach(el => {

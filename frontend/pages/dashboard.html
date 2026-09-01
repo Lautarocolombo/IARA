@@ -91,7 +91,7 @@
 
     <main class="admin-main" id="adminContent">
       <header class="admin-header">
-        <div>
+        <div class="admin-header-left">
           <h1 id="headerTitle">Contenido del sitio</h1>
           <span class="header-breadcrumb" id="headerBreadcrumb">Editar textos visibles del frontend</span>
         </div>
@@ -107,9 +107,7 @@
               <span id="saveAllBtnLoading" class="hidden">Guardando...</span>
             </button>
           </div>
-          <span class="user-info">
-            <span id="adminUserName">Admin</span>
-          </span>
+          <span class="user-info" id="adminUserName">Admin</span>
         </div>
       </header>
 
@@ -749,18 +747,15 @@
                           <option value="1">⭐</option>
                         </select>
                       </div>
-                      <div class="form-group">
-                        <label>Foto del cliente (opcional)</label>
-                         <label class="image-upload-zone" for="testimonialPhotoFile">
-                          <div class="image-upload-primary">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                            <span>Subir foto</span>
-                            <small class="form-hint">JPG, PNG o WEBP. Máx 2MB.</small>
+                       <div class="form-group">
+                          <label>Foto del cliente</label>
+                          <div id="testimonialPhotoPreview" class="testimonial-photo-preview"></div>
+                          <div class="testimonial-photo-actions">
+                            <button type="button" class="btn btn-secondary btn-sm" id="testimonialUploadPhotoBtn">📷 Subir foto</button>
+                            <button type="button" class="btn btn-danger btn-sm hidden" id="testimonialRemovePhotoBtn">🗑️ Quitar foto</button>
                           </div>
-                           <input type="file" id="testimonialPhotoFile" accept="image/jpeg,image/png,image/webp" class="hidden" />
-                        </label>
-                         <div id="testimonialPhotoPreview" class="testimonial-photo-preview"></div>
-                      </div>
+                          <input type="file" id="testimonialPhotoFile" accept="image/jpeg,image/png,image/webp" class="hidden" />
+                       </div>
                       <div class="form-group col-span-full">
                         <label>Comentario <span class="required">*</span></label>
                         <textarea id="testimonialComment" rows="3" placeholder="Comentario del cliente..."></textarea>
@@ -883,11 +878,12 @@
                 <div class="sales-bottom-grid mt-2">
                   <div>
                       <div class="admin-section-title admin-section-title--space-between">
-                       <span>Historial de Transacciones</span>
-                       <button class="btn btn-danger btn-sm" id="resetSalesBtn" title="Eliminar todo el historial y empezar de 0">
-                         🗑️ Eliminar historial
-                       </button>
-                     </div>
+                        <span>Historial de Transacciones</span>
+                        <button class="btn btn-danger btn-sm" id="resetSalesBtn" title="Eliminar todo el historial y empezar de 0">
+                          <span id="resetSalesBtnText">🗑️ Eliminar historial</span>
+                          <span id="resetSalesBtnLoading" class="hidden">Eliminando...</span>
+                        </button>
+                      </div>
                     <div class="report-section table-wrap">
                       <table class="table-admin" id="transactionsTable">
                         <thead>

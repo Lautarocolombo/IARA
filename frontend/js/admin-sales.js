@@ -516,11 +516,11 @@ transactions.forEach(function (t) {
 
   async function confirmClearHistory() {
     var btn = document.getElementById('resetSalesBtn');
-    var btnText = btn ? btn.querySelector('span') : null;
-    var btnLoading = btn ? btn.querySelector('span:nth-child(2)') : null;
+    var btnText = document.getElementById('resetSalesBtnText');
+    var btnLoading = document.getElementById('resetSalesBtnLoading');
 
     if (btn) btn.disabled = true;
-    if (btnText) btnText.style.display = 'none';
+    if (btnText) btnText.classList.add('hidden');
     if (btnLoading) btnLoading.classList.remove('hidden');
 
     try {
@@ -537,7 +537,7 @@ transactions.forEach(function (t) {
       window.showToast('❌', err.message || 'Error al eliminar el historial.', 'error');
     } finally {
       if (btn) btn.disabled = false;
-      if (btnText) btnText.style.display = '';
+      if (btnText) btnText.classList.remove('hidden');
       if (btnLoading) btnLoading.classList.add('hidden');
     }
   }
@@ -555,11 +555,21 @@ transactions.forEach(function (t) {
 
   function initSalesPanel() {
     var rangeSelect = document.getElementById('sales_range');
+    var customDateRange = document.getElementById('customDateRange');
+
     if (rangeSelect) {
       rangeSelect.addEventListener('change', function () {
         var val = rangeSelect.value || 'weekly';
+        if (customDateRange) {
+          customDateRange.classList.toggle('hidden', val !== 'custom');
+        }
         loadSalesSummary(val);
       });
+    }
+
+    /* Hide custom date range by default if not selected */
+    if (customDateRange && rangeSelect && rangeSelect.value !== 'custom') {
+      customDateRange.classList.add('hidden');
     }
 
     var syncBtn = document.getElementById('syncSalesBtn');

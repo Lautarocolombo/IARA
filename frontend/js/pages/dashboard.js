@@ -17,15 +17,15 @@
     var toggle = document.getElementById('sidebarToggle');
 
     function openSidebar() {
-      sidebar.classList.add('admin-sidebar-open');
-      overlay.classList.add('admin-sidebar-overlay-visible');
+      sidebar.classList.add('open');
+      overlay.classList.add('active');
       toggle.setAttribute('aria-expanded', 'true');
       document.body.style.overflow = 'hidden';
     }
 
     function closeSidebar() {
-      sidebar.classList.remove('admin-sidebar-open');
-      overlay.classList.remove('admin-sidebar-overlay-visible');
+      sidebar.classList.remove('open');
+      overlay.classList.remove('active');
       toggle.setAttribute('aria-expanded', 'false');
       document.body.style.overflow = '';
     }
@@ -46,7 +46,7 @@
 
     document.querySelectorAll('#adminNav a[data-section]').forEach(function(link) {
       link.addEventListener('click', function() {
-        if (window.innerWidth <= 768) {
+        if (window.innerWidth <= 900) {
           closeSidebar();
         }
       });
