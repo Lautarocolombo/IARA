@@ -1476,6 +1476,27 @@ html, body { overflow-x: hidden; }
   flex: 1;
 }
 
+.testimonial-product-image-wrap {
+  margin-top: 0.5rem;
+  width: 100%;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--blush);
+}
+
+.testimonial-product-image {
+  width: 100%;
+  height: auto;
+  max-height: 320px;
+  object-fit: cover;
+  display: block;
+}
+
+[data-theme="dark"] .testimonial-product-image-wrap {
+  background: #2a1c24;
+  border: 1px solid #3a2028;
+}
+
 [data-theme="dark"] .testimonial-card {
   background: var(--blush);
   border-color: #3a2028;

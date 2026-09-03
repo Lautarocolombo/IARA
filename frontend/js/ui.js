@@ -845,6 +845,9 @@ function renderTestimonials(testimonials) {
     const avatarContent = t.image
       ? `<img src="${escapeHtml(t.image)}" alt="${escapeHtml(t.name)}" class="testimonial-avatar-img" loading="lazy" onerror="this.style.display='none';this.parentElement.textContent='😊'" />`
       : (t.avatar || '😊');
+    const productImageHtml = t.product_image_url
+      ? `<div class="testimonial-product-image-wrap"><img src="${escapeHtml(t.product_image_url)}" alt="${escapeHtml(t.name)} con su producto" class="testimonial-product-image" loading="lazy" onerror="this.parentElement.style.display='none'" /></div>`
+      : '';
     return `
     <div class="testimonial-card reveal">
       <div class="testimonial-header">
@@ -856,6 +859,7 @@ function renderTestimonials(testimonials) {
         <div class="testimonial-rating">${'⭐'.repeat(t.rating)}</div>
       </div>
       <p class="testimonial-comment">${escapeHtml(t.comment)}</p>
+      ${productImageHtml}
     </div>
   `;}).join('');
 

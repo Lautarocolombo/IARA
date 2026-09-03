@@ -1,0 +1,1 @@
+ALTER TABLE testimonials ADD COLUMN IF NOT EXISTS product_image_url TEXT DEFAULT '';

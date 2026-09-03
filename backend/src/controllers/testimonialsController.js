@@ -6,7 +6,7 @@ const { testimonialSchema } = require('../lib/validators');
 const { logAudit } = require('../lib/audit');
 const { applyETag } = require('../lib/etag');
 
-const ALLOWED_TESTIMONIAL_COLUMNS = ['name', 'comment', 'rating', 'image', 'avatar', 'active', 'orden', 'role'];
+const ALLOWED_TESTIMONIAL_COLUMNS = ['name', 'comment', 'rating', 'image', 'avatar', 'active', 'orden', 'role', 'product_image_url'];
 
 const getPublicTestimonials = async (req, res) => {
   try {
@@ -30,12 +30,20 @@ const getAdminTestimonials = async (req, res) => {
 };
 
 const createTestimonial = async (req, res) => {
-  let { name, comment, rating = 5, image = '', active = true, orden = 0, removeImage } = req.body || {};
-  if (req.file) {
-    image = await saveUploadedFile(req.file);
+  let { name, comment, rating = 5, image = '', product_image_url = '', active = true, orden = 0, removeImage, removeProductImage } = req.body || {};
+  if (req.files && req.files.image && req.files.image[0]) {
+    image = await saveUploadedFile(req.files.image[0]);
+  }
+  if (req.files && req.files.productImage && req.files.productImage[0]) {
+    product_image_url = await saveUploadedFile(req.files.productImage[0]);
+  } else if (req.file && req.file.fieldname === 'productImage') {
+    product_image_url = await saveUploadedFile(req.file);
   }
   if (removeImage === 'true' || removeImage === true) {
     image = '';
+  }
+  if (removeProductImage === 'true' || removeProductImage === true) {
+    product_image_url = '';
   }
   const parsed = testimonialSchema.safeParse({ name, comment, rating, image, active });
   if (!parsed.success) {
@@ -44,8 +52,8 @@ const createTestimonial = async (req, res) => {
   const { name: safeName, comment: safeComment, rating: safeRating } = parsed.data;
   try {
     const result = await query(
-      'INSERT INTO testimonials (name, comment, rating, image, avatar, active, orden, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) RETURNING *',
-      [safeName, safeComment, Number(safeRating), image, image, active !== false, Number(orden)]
+      'INSERT INTO testimonials (name, comment, rating, image, avatar, active, orden, product_image_url, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) RETURNING *',
+      [safeName, safeComment, Number(safeRating), image, image, active !== false, Number(orden), product_image_url || '']
     );
     res.status(201).json(result.rows[0]);
     try { syncBus.emit('testimonials_updated', { id: result.rows[0].id }); } catch (e) { /* noop */ }
@@ -112,12 +120,21 @@ const reorderTestimonials = updateTestimonialOrder;
 const updateTestimonial = async (req, res) => {
   const id = Number(req.params.id);
   const updates = req.body || {};
-  if (req.file) {
-    updates.image = await saveUploadedFile(req.file);
+  if (req.files && req.files.image && req.files.image[0]) {
+    updates.image = await saveUploadedFile(req.files.image[0]);
+  }
+  if (req.files && req.files.productImage && req.files.productImage[0]) {
+    updates.product_image_url = await saveUploadedFile(req.files.productImage[0]);
+  } else if (req.file && req.file.fieldname === 'productImage') {
+    updates.product_image_url = await saveUploadedFile(req.file);
   }
   if (updates.removeImage === 'true' || updates.removeImage === true) {
     updates.image = '';
     delete updates.removeImage;
+  }
+  if (updates.removeProductImage === 'true' || updates.removeProductImage === true) {
+    updates.product_image_url = '';
+    delete updates.removeProductImage;
   }
   const fields = Object.keys(updates).filter(k => k !== 'id' && ALLOWED_TESTIMONIAL_COLUMNS.includes(k));
   if (!fields.length) return res.status(400).json({ error: 'Sin datos para actualizar' });
@@ -264,4 +281,83 @@ const deleteTestimonialImage = async (req, res) => {
   }
 };
 
-module.exports = { getPublicTestimonials, getAdminTestimonials, createTestimonial, updateTestimonial, deleteTestimonial, toggleTestimonialActive, updateTestimonialOrder, reorderTestimonials, uploadTestimonialImage, deleteTestimonialImage };
+const uploadTestimonialProductImage = async (req, res) => {
+  const id = Number(req.params.id);
+  try {
+    const existing = await query('SELECT * FROM testimonials WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Testimonio no encontrado' });
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se recibió imagen' });
+    }
+    if (existing.rows[0].product_image_url) {
+      await deleteImageAsset({ url: existing.rows[0].product_image_url });
+    }
+    const imageUrl = await saveUploadedFile(req.file);
+    const result = await query(
+      'UPDATE testimonials SET product_image_url = $1, tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\') WHERE id = $2 RETURNING *',
+      [imageUrl, id]
+    );
+    res.json(result.rows[0]);
+    try { syncBus.emit('testimonials_updated', { id }); } catch (e) { /* noop */ }
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'upload_product_image',
+      entityType: 'testimonial',
+      entityId: id,
+      details: 'Imagen de producto en uso subida',
+      ip: req.ip || '',
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
+  } catch (err) {
+    logger.error('Error subiendo imagen de producto del testimonio:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+const deleteTestimonialProductImage = async (req, res) => {
+  const id = Number(req.params.id);
+  try {
+    const existing = await query('SELECT * FROM testimonials WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Testimonio no encontrado' });
+    }
+    if (existing.rows[0].product_image_url) {
+      await deleteImageAsset({ url: existing.rows[0].product_image_url });
+    }
+    const result = await query(
+      'UPDATE testimonials SET product_image_url = \'\', tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\') WHERE id = $1 RETURNING *',
+      [id]
+    );
+    res.json(result.rows[0]);
+    try { syncBus.emit('testimonials_updated', { id }); } catch (e) { /* noop */ }
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'delete_product_image',
+      entityType: 'testimonial',
+      entityId: id,
+      details: 'Imagen de producto en uso eliminada',
+      ip: req.ip || '',
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
+  } catch (err) {
+    logger.error('Error eliminando imagen de producto del testimonio:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+module.exports = {
+  getPublicTestimonials,
+  getAdminTestimonials,
+  createTestimonial,
+  updateTestimonial,
+  deleteTestimonial,
+  toggleTestimonialActive,
+  updateTestimonialOrder,
+  reorderTestimonials,
+  uploadTestimonialImage,
+  deleteTestimonialImage,
+  uploadTestimonialProductImage,
+  deleteTestimonialProductImage
+};

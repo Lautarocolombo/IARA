@@ -166,6 +166,11 @@ const upload = multer({
 const uploadSingle = upload.single('image');
 const uploadMultiple = upload.array('images', 10);
 
+const uploadTestimonialFields = upload.fields([
+  { name: 'image', maxCount: 1 },
+  { name: 'productImage', maxCount: 1 }
+]);
+
 const proofStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     const proofDir = (isVercel || isRender || isEphemeralProd) ? '/tmp/uploads/comprobantes' : path.join(__dirname, '..', '..', 'uploads', 'comprobantes');
@@ -280,6 +285,7 @@ module.exports = {
   uploadSingle,
   uploadMultiple,
   uploadSingleProof,
+  uploadTestimonialFields,
   handleUploadError,
   saveFile,
   processFile,

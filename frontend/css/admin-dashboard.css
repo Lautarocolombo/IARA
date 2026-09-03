@@ -2194,6 +2194,16 @@
   margin-top: 0.5rem;
 }
 
+.testimonial-thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--blush);
+  display: inline-block;
+}
+
 .testimonial-preview-box {
   border: 1px dashed var(--border);
   border-radius: 8px;
