@@ -66,11 +66,20 @@ const getOrders = async (req, res) => {
 
 const getUserOrders = async (req, res) => {
   try {
-    const { email } = req.query;
+    const { email, order_token } = req.query;
     if (!email) {
       return res.status(400).json({ error: 'Email es requerido para buscar pedidos' });
     }
-    const result = await query('SELECT * FROM orders WHERE shipping_email = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') ORDER BY created_at DESC', [email]);
+    const params = [email];
+    let whereClause = 'WHERE shipping_email = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')';
+    if (order_token) {
+      params.push(String(order_token));
+      whereClause += ` AND order_token = $${params.length}`;
+    }
+    const result = await query(
+      `SELECT * FROM orders ${whereClause} ORDER BY created_at DESC`,
+      params
+    );
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json(result.rows);
   } catch (err) {

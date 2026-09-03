@@ -7,7 +7,7 @@ const { applyETag } = require('../lib/etag');
 async function getProductImages(req, res) {
   try {
     const productId = Number(req.params.id);
-    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
     const result = await query(
       'SELECT * FROM product_images WHERE product_id =$1 ORDER BY orden ASC, id ASC',
       [productId]
@@ -51,7 +51,7 @@ async function uploadProductImages(req, res) {
       }
     }
 
-    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
 
     for (let i = 0; i < imageUrls.length; i++) {
       const url = imageUrls[i];
@@ -110,7 +110,7 @@ async function updateProductImage(req, res) {
     const productId = Number(req.params.id);
     const imageId = Number(req.params.imageId);
     const { es_principal, orden, descripcion, categoria } = req.body;
-    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
 
     const imageCheck = await query(
       'SELECT id FROM product_images WHERE id = $1 AND product_id = $2',
@@ -174,7 +174,7 @@ async function deleteProductImage(req, res) {
   try {
     const productId = Number(req.params.id);
     const imageId = Number(req.params.imageId);
-    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
 
     const result = await query(
       'SELECT * FROM product_images WHERE id = $1 AND product_id = $2',
@@ -224,7 +224,7 @@ async function replaceProductImage(req, res) {
   try {
     const productId = Number(req.params.id);
     const imageId = Number(req.params.imageId);
-    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
 
     const imageCheck = await query(
       'SELECT * FROM product_images WHERE id = $1 AND product_id = $2',
@@ -241,7 +241,7 @@ async function replaceProductImage(req, res) {
     const oldImage = imageCheck.rows[0];
     await deleteImageAsset(oldImage);
 
-    const processed = await processFile(req.file, `${req.protocol}://${req.get('host')}`);
+    const processed = await processFile(req.file, process.env.BACKEND_URL || process.env.SITE_URL || '');
     const result = await query(
       'UPDATE product_images SET url = $1, filename = $2, cloudinary_public_id = $3 WHERE id = $4 RETURNING *',
       [processed.url, processed.filename, processed.cloudinary_public_id || '', imageId]

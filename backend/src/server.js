@@ -464,9 +464,9 @@ app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUplo
       return res.status(400).json({ error: 'No se recibió imagen' });
     }
     logger.info('[Upload] Procesando imagen:', { filename: req.file.originalname, size: req.file.size });
-    const processed = await processFile(req.file, `${req.protocol}://${req.get('host')}`);
+    const processed = await processFile(req.file, process.env.BACKEND_URL || process.env.SITE_URL || '');
     logger.info('[Upload] Imagen procesada OK:', { url: processed.url });
-    const publicUrl = getPublicUrl(processed.url, `${req.protocol}://${req.get('host')}`);
+    const publicUrl = getPublicUrl(processed.url, process.env.BACKEND_URL || process.env.SITE_URL || '');
     if (isOriginAllowed(origin)) {
       res.setHeader('Access-Control-Allow-Origin', origin);
     }

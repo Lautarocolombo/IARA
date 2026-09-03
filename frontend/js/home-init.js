@@ -49,7 +49,7 @@ if (typeof loadTestimonials === 'function') {
 
   function loadAboutImages() {
     if (typeof fetchWithRetry !== 'function') return;
-    fetchWithRetry(CONFIG.API.BASE + '/api/carousel', {}, 2, 1000).then(function(res) {
+    fetchWithRetry(CONFIG.API.BASE + '/api/carousel/public', {}, 2, 1000).then(function(res) {
       if (!res || !res.ok) return;
       res.json().then(function(data) {
         window.__aboutImages = {};
@@ -79,6 +79,11 @@ if (typeof loadTestimonials === 'function') {
       }
     });
     window.loadAboutImages = loadAboutImages;
+  }
+
+  window.__aboutImages = {};
+  for (var i = 1; i <= 5; i++) {
+    window.__aboutImages['about_image_' + i] = '/imagenes/carrucel/' + i + '.jpg';
   }
 
 if (typeof loadAboutImages === 'function') {

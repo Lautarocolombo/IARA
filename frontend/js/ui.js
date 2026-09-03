@@ -857,7 +857,7 @@ function renderTestimonials(testimonials) {
       </div>
       <p class="testimonial-comment">${escapeHtml(t.comment)}</p>
     </div>
-  `}).join('');
+  `;}).join('');
 
   if (window.revealObserver) {
     grid.querySelectorAll('.reveal').forEach(el => {

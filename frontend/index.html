@@ -608,11 +608,14 @@
       });
     }
   </script>
-   <script>
-     window.__aboutImages = window.__aboutImages || {};
-   </script>
-   <script src="js/about-carousel.js"></script>
-   <script src="js/home-init.js"></script>
+    <script>
+      window.__aboutImages = {};
+      for (var i = 1; i <= 5; i++) {
+        window.__aboutImages['about_image_' + i] = '/imagenes/carrucel/' + i + '.jpg';
+      }
+    </script>
+    <script src="js/about-carousel.js"></script>
+    <script src="js/home-init.js"></script>
  </body>
 </html>
 

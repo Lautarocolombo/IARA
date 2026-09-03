@@ -31,7 +31,7 @@ async function processHeroImage(file, baseUrl) {
 
 const getHeroCards = async (req, res) => {
   try {
-    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
     const result = await query('SELECT * FROM hero_cards WHERE tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\') ORDER BY slot ASC, id ASC');
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json(result.rows.map(r => mapRow(r, baseUrl)));
@@ -43,7 +43,7 @@ const getHeroCards = async (req, res) => {
 
 const getPublicHeroCards = async (req, res) => {
   try {
-    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
     const result = await query('SELECT * FROM hero_cards WHERE activo = TRUE AND tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\') ORDER BY slot ASC, id ASC');
     const mapped = result.rows.map(r => mapRow(r, baseUrl));
     logger.debug('[HeroCards] GET /hero-cards public count:', mapped.length, mapped.map(function(c) { return { slot: c.slot, imagen: c.imagen ? 'has-image' : 'empty' }; }));
@@ -59,7 +59,7 @@ const getPublicHeroCards = async (req, res) => {
 const getHeroCardBySlot = async (req, res) => {
   const slot = Number(req.params.slot);
   try {
-    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
     const result = await query('SELECT * FROM hero_cards WHERE slot = $1 AND tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\') LIMIT 1', [slot]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Card no encontrada' });
     res.json(mapRow(result.rows[0], baseUrl));
@@ -73,7 +73,7 @@ const upsertHeroCard = async (req, res) => {
   try {
     const { nombre, precio, imagen, emoji, orden, activo, titulo, subtitulo, descripcion, cta_texto, cta_url, slot } = req.body || {};
     const id = req.params.id ? Number(req.params.id) : null;
-    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
     let imagenUrl = imagen || '';
     if (req.file) {
       imagenUrl = await processHeroImage(req.file, baseUrl);
@@ -145,7 +145,7 @@ const updateHeroSlot = async (req, res) => {
   const slot = Number(req.params.slot);
   try {
     const { titulo, subtitulo, descripcion, cta_texto, cta_url, imagen, activo } = req.body || {};
-    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
     let imagenUrl = imagen || '';
     if (req.file) {
       imagenUrl = await processHeroImage(req.file, baseUrl);
@@ -203,7 +203,7 @@ const deleteHeroSlotImage = async (req, res) => {
 
 const syncHeroCards = async (req, res) => {
   try {
-    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
     await query('DELETE FROM hero_cards WHERE tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')');
     const cards = req.body?.cards || [];
     for (const c of cards) {

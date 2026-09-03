@@ -8,8 +8,13 @@ jest.mock('../src/lib/logger', () => ({
   info: jest.fn()
 }));
 
+jest.mock('../src/lib/audit', () => ({
+  logAudit: jest.fn().mockResolvedValue(undefined)
+}));
+
 jest.mock('../src/lib/upload', () => ({
-  saveUploadedFile: jest.fn().mockResolvedValue('/uploads/testimonial-image.webp')
+  saveUploadedFile: jest.fn().mockResolvedValue('/uploads/testimonial-image.webp'),
+  deleteImageAsset: jest.fn().mockResolvedValue(true)
 }));
 
 jest.mock('../src/routes/sync', () => ({
@@ -289,8 +294,12 @@ describe('testimonialsController', () => {
   describe('deleteTestimonial', () => {
     test('elimina testimonio exitosamente', async () => {
       const req = { params: { id: '1' } };
-      const res = { json: jest.fn() };
+      const res = {
+        status: jest.fn(() => res),
+        json: jest.fn()
+      };
 
+      query.mockResolvedValueOnce({ rows: [{ id: 1, image: '' }] });
       query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
       await deleteTestimonial(req, res);

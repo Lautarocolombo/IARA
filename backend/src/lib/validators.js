@@ -18,7 +18,7 @@ const productSchema = z.object({
   price: z.coerce.number({ invalid_type_error: 'Precio debe ser un número' }).positive('Precio debe ser mayor a 0'),
   description: z.string().max(2000).optional().default(''),
   emoji: z.string().max(10).optional().default('📿'),
-  image: z.string().refine(val => !val.startsWith('data:'), 'No se permiten imágenes en base64. Usá URLs o subí la imagen por el panel admin.').url('URL de imagen inválida').optional().or(z.literal('')).default(''),
+  image: z.string().url('URL de imagen inválida').optional().or(z.literal('')).default(''),
   badge: z.string().max(50).optional().default(''),
   stock: z.coerce.number().int().nonnegative().optional().default(0),
   featured: z.preprocess(toBoolean, z.boolean().optional().default(false)),

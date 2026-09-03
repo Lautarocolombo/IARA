@@ -66,11 +66,9 @@ describe('Vercel Blob helpers', () => {
     delete process.env.BLOB_READ_WRITE_TOKEN;
   });
 
-  test('processFile sube a Vercel Blob cuando BLOB_READ_WRITE_TOKEN está configurado', async () => {
+  test('processFile siempre guarda como base64 en Neon', async () => {
     process.env.BLOB_READ_WRITE_TOKEN = 'vercel_blob_test_token';
     const { filePath: tmpFile } = makeTmpFile('test.png');
-
-    put.mockResolvedValue({ url: 'https://proyecto.blob.vercel-storage.com/products/x.png' });
 
     const result = await upload.processFile({
       path: tmpFile,
@@ -79,18 +77,13 @@ describe('Vercel Blob helpers', () => {
       size: Buffer.from(TINY_PNG_BASE64, 'base64').length
     });
 
-    expect(result.isBlob).toBe(true);
-    expect(result.url).toBe('https://proyecto.blob.vercel-storage.com/products/x.png');
-    expect(put).toHaveBeenCalledTimes(1);
-    const [name, buffer, opts] = put.mock.calls[0];
-    expect(name).toMatch(/^products\/\d+_test\.png$/);
-    expect(Buffer.isBuffer(buffer)).toBe(true);
-    expect(opts.contentType).toBe('image/webp');
-    expect(opts.access).toBe('public');
-    expect(opts.token).toBe('vercel_blob_test_token');
+    expect(result.isBlob).toBe(false);
+    expect(result.isBase64).toBe(true);
+    expect(result.url).toMatch(/^data:image\/webp;base64,/);
+    expect(put).not.toHaveBeenCalled();
   });
 
-  test('processFile usa fallback con URL relativa en dev cuando no hay token de Blob', async () => {
+  test('processFile guarda base64 en dev cuando no hay token de Blob', async () => {
     const { filePath: tmpFile } = makeTmpFile('test2.png');
 
     const result = await upload.processFile({
@@ -101,11 +94,12 @@ describe('Vercel Blob helpers', () => {
     });
 
     expect(result.isBlob).toBe(false);
-    expect(result.url).toBe('/uploads/imagenes/test2.webp');
+    expect(result.isBase64).toBe(true);
+    expect(result.url).toMatch(/^data:image\/webp;base64,/);
     expect(put).not.toHaveBeenCalled();
   });
 
-  test('processFile usa fallback con data URI base64 en producción si no hay Blob configurado', async () => {
+  test('processFile guarda base64 en producción', async () => {
     const originalNodeEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
     delete process.env.BLOB_READ_WRITE_TOKEN;
@@ -120,14 +114,14 @@ describe('Vercel Blob helpers', () => {
     });
 
     expect(result.isBlob).toBe(false);
-    expect(result.url).toMatch(/^data:image\/webp;base64,/);
     expect(result.isBase64).toBe(true);
+    expect(result.url).toMatch(/^data:image\/webp;base64,/);
     expect(put).not.toHaveBeenCalled();
 
     process.env.NODE_ENV = originalNodeEnv;
   });
 
-  test('processFile hace fallback a base64 en producción cuando falla subida a Blob', async () => {
+  test('processFile guarda base64 cuando falla subida a Blob', async () => {
     const originalNodeEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
     process.env.BLOB_READ_WRITE_TOKEN = 'vercel_blob_test_token';
@@ -144,15 +138,15 @@ describe('Vercel Blob helpers', () => {
     });
 
     expect(result.isBlob).toBe(false);
-    expect(result.url).toMatch(/^data:image\/webp;base64,/);
     expect(result.isBase64).toBe(true);
-    expect(put).toHaveBeenCalledTimes(1);
+    expect(result.url).toMatch(/^data:image\/webp;base64,/);
+    expect(put).not.toHaveBeenCalled();
 
     process.env.NODE_ENV = originalNodeEnv;
     delete process.env.BLOB_READ_WRITE_TOKEN;
   });
 
-  test('processFile borra el archivo optimizado en fallback de producción base64', async () => {
+  test('processFile borra el archivo optimizado al guardar base64', async () => {
     const originalNodeEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
     delete process.env.BLOB_READ_WRITE_TOKEN;
@@ -168,6 +162,7 @@ describe('Vercel Blob helpers', () => {
     });
 
     expect(result.isBlob).toBe(false);
+    expect(result.isBase64).toBe(true);
     expect(result.url).toMatch(/^data:image\/webp;base64,/);
     expect(fs.existsSync(optimizedPath)).toBe(false);
     if (fs.existsSync(tmpFile)) {
@@ -177,7 +172,7 @@ describe('Vercel Blob helpers', () => {
     process.env.NODE_ENV = originalNodeEnv;
   });
 
-  test('processFile no borra el archivo optimizado en fallback local dev', async () => {
+  test('processFile borra archivos temporales en dev al guardar base64', async () => {
     const { filePath: tmpFile } = makeTmpFile('test5.png');
     const optimizedPath = path.join(path.dirname(tmpFile), 'test5.webp');
 
@@ -189,8 +184,9 @@ describe('Vercel Blob helpers', () => {
     });
 
     expect(result.isBlob).toBe(false);
-    expect(result.url).toBe('/uploads/imagenes/test5.webp');
-    expect(fs.existsSync(optimizedPath)).toBe(true);
+    expect(result.isBase64).toBe(true);
+    expect(result.url).toMatch(/^data:image\/webp;base64,/);
+    expect(fs.existsSync(optimizedPath)).toBe(false);
     if (fs.existsSync(tmpFile)) {
       fs.unlinkSync(tmpFile);
     }

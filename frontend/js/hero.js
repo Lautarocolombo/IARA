@@ -110,8 +110,13 @@
         return siteTexts[key] !== undefined ? siteTexts[key] : fallback;
       };
 
+      const adminHeroImage = siteTexts.hero_image_url || '';
+      const adminFpImage = siteTexts.featured_product_image_url || '';
+      const dbHeroImage = card1.imagen || '';
+      const dbFpImage = card2.imagen || '';
+
       const block1 = {
-        imagen: featured1?.image || siteTexts.hero_image_url || card1.imagen || '',
+        imagen: adminHeroImage || dbHeroImage || featured1?.image || '',
         titulo: siteText('hero_card_1_name', siteText('hero_title', card1.titulo || defaults[0].titulo)),
         subtitulo: siteText('hero_card_1_price', siteText('hero_subtitle', card1.subtitulo || defaults[0].subtitulo)),
         cta_texto: siteText('hero_card_1_cta_text', siteText('hero_cta_text', card1.cta_texto || defaults[0].cta_texto)),
@@ -121,7 +126,7 @@
       };
 
       const block2 = {
-        imagen: featured2 ? featured2.image : (featured1 ? '' : (siteTexts.featured_product_image_url || card2.imagen || '')),
+        imagen: adminFpImage || dbFpImage || (featured2 ? featured2.image : '') || '',
         titulo: siteText('featured_product_name', card2.titulo || defaults[1].titulo),
         subtitulo: siteText('featured_product_description', card2.subtitulo || defaults[1].subtitulo),
         cta_texto: siteText('featured_product_cta_text', card2.cta_texto || defaults[1].cta_texto),
@@ -145,7 +150,11 @@
       const heroVisual = document.getElementById('heroCardsContainer');
       if (heroVisual) {
         const cardsHtml = data.map((card, i) => {
-          const imgSrc = card.imagen || '';
+          let imgSrc = card.imagen || '';
+          if (imgSrc && !imgSrc.startsWith('data:')) {
+            const separator = imgSrc.includes('?') ? '&' : '?';
+            imgSrc = imgSrc + separator + '_v=' + Date.now();
+          }
           const imgHtml = imgSrc
             ? window.renderProductImage(imgSrc, card.titulo || '', { style: 'width:100%;height:100%;object-fit:cover;' })
             : window.renderProductImage('', card.titulo || '', { style: 'width:100%;height:100%;object-fit:cover;', placeholder: i === 0 ? '📿' : '📿' });

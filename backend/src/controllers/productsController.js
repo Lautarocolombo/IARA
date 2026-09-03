@@ -297,7 +297,7 @@ const getFeaturedProducts = async (req, res) => {
   try {
     await ensureProductsSchema();
     await ensureProductImagesSchema();
-    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
     const result = await query(`SELECT * FROM products WHERE active = TRUE AND deleted = FALSE AND featured = TRUE AND tenant_id = COALESCE(current_setting('app.current_tenant', TRUE), 'default') ORDER BY id ASC LIMIT 2`);
     const enriched = await attachImagesToProducts(result.rows, baseUrl);
     if (applyETag(req, res, enriched)) return;
@@ -316,7 +316,7 @@ const getPublicProducts = async (req, res) => {
   try {
     await ensureProductsSchema();
     await ensureProductImagesSchema();
-    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
     const { category, minPrice, maxPrice } = req.query;
     let where = 'WHERE active = TRUE AND deleted = FALSE AND tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')';
     const params = [];
@@ -381,7 +381,7 @@ const searchProducts = async (req, res) => {
       where += ` AND price <= $${idx}`;
       params.push(Number(maxPrice));
     }
-    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
     const result = await query(`SELECT * FROM products ${where} ORDER BY id ASC`, params);
     const enriched = await attachImagesToProducts(result.rows, baseUrl);
     res.json(enriched);
@@ -397,7 +397,7 @@ const searchProducts = async (req, res) => {
 
 const getAdminProducts = async (req, res) => {
   try {
-    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
     const { sku, q, category, active, page, limit, sort_by, sort_order } = req.query;
 
     let where = 'WHERE deleted = FALSE';
@@ -463,7 +463,7 @@ const getAdminProducts = async (req, res) => {
 const getProductById = async (req, res) => {
   const id = Number(req.params.id);
   try {
-    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
     const result = await query('SELECT * FROM products WHERE id = $1 AND deleted = FALSE AND tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')', [id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
     const enriched = await attachImagesToProducts(result.rows, baseUrl);

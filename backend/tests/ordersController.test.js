@@ -159,6 +159,24 @@ describe('ordersController', () => {
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith({ error: 'Email es requerido para buscar pedidos' });
     });
+
+    test('filtra por order_token cuando se proporciona', async () => {
+      const req = { query: { email: 'test@example.com', order_token: 'abc-123' } };
+      const res = {
+        setHeader: jest.fn(),
+        json: jest.fn()
+      };
+
+      query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+
+      await getUserOrders(req, res);
+
+      expect(query).toHaveBeenCalledWith(
+        expect.stringContaining('order_token = $2'),
+        ['test@example.com', 'abc-123']
+      );
+      expect(res.json).toHaveBeenCalledWith([{ id: 1 }]);
+    });
   });
 
   describe('getOrderDetail', () => {

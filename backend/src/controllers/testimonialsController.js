@@ -1,6 +1,6 @@
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
-const { saveUploadedFile } = require('../lib/upload');
+const { saveUploadedFile, deleteImageAsset } = require('../lib/upload');
 const { syncBus } = require('../routes/sync');
 const { testimonialSchema } = require('../lib/validators');
 const { logAudit } = require('../lib/audit');
@@ -30,9 +30,12 @@ const getAdminTestimonials = async (req, res) => {
 };
 
 const createTestimonial = async (req, res) => {
-  let { name, comment, rating = 5, image = '', active = true, orden = 0 } = req.body || {};
+  let { name, comment, rating = 5, image = '', active = true, orden = 0, removeImage } = req.body || {};
   if (req.file) {
     image = await saveUploadedFile(req.file);
+  }
+  if (removeImage === 'true' || removeImage === true) {
+    image = '';
   }
   const parsed = testimonialSchema.safeParse({ name, comment, rating, image, active });
   if (!parsed.success) {
@@ -112,6 +115,10 @@ const updateTestimonial = async (req, res) => {
   if (req.file) {
     updates.image = await saveUploadedFile(req.file);
   }
+  if (updates.removeImage === 'true' || updates.removeImage === true) {
+    updates.image = '';
+    delete updates.removeImage;
+  }
   const fields = Object.keys(updates).filter(k => k !== 'id' && ALLOWED_TESTIMONIAL_COLUMNS.includes(k));
   if (!fields.length) return res.status(400).json({ error: 'Sin datos para actualizar' });
   if (fields.includes('name')) {
@@ -165,6 +172,13 @@ const updateTestimonial = async (req, res) => {
 const deleteTestimonial = async (req, res) => {
   const id = Number(req.params.id);
   try {
+    const existing = await query('SELECT * FROM testimonials WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Testimonio no encontrado' });
+    }
+    if (existing.rows[0].image) {
+      await deleteImageAsset(existing.rows[0]);
+    }
     const result = await query('DELETE FROM testimonials WHERE id = $1 RETURNING id', [id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Testimonio no encontrado' });
     res.json({ ok: true });
@@ -184,4 +198,70 @@ const deleteTestimonial = async (req, res) => {
   }
 };
 
-module.exports = { getPublicTestimonials, getAdminTestimonials, createTestimonial, updateTestimonial, deleteTestimonial, toggleTestimonialActive, updateTestimonialOrder, reorderTestimonials };
+const uploadTestimonialImage = async (req, res) => {
+  const id = Number(req.params.id);
+  try {
+    const existing = await query('SELECT * FROM testimonials WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Testimonio no encontrado' });
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se recibió imagen' });
+    }
+    if (existing.rows[0].image) {
+      await deleteImageAsset(existing.rows[0]);
+    }
+    const imageUrl = await saveUploadedFile(req.file);
+    const result = await query(
+      'UPDATE testimonials SET image = $1, avatar = $1, tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\') WHERE id = $2 RETURNING *',
+      [imageUrl, id]
+    );
+    res.json(result.rows[0]);
+    try { syncBus.emit('testimonials_updated', { id }); } catch (e) { /* noop */ }
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'upload_image',
+      entityType: 'testimonial',
+      entityId: id,
+      details: 'Imagen de testimonio subida',
+      ip: req.ip || '',
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
+  } catch (err) {
+    logger.error('Error subiendo imagen de testimonio:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+const deleteTestimonialImage = async (req, res) => {
+  const id = Number(req.params.id);
+  try {
+    const existing = await query('SELECT * FROM testimonials WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Testimonio no encontrado' });
+    }
+    if (existing.rows[0].image) {
+      await deleteImageAsset(existing.rows[0]);
+    }
+    const result = await query(
+      'UPDATE testimonials SET image = \'\', avatar = \'\', tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\') WHERE id = $1 RETURNING *',
+      [id]
+    );
+    res.json(result.rows[0]);
+    try { syncBus.emit('testimonials_updated', { id }); } catch (e) { /* noop */ }
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'delete_image',
+      entityType: 'testimonial',
+      entityId: id,
+      details: 'Imagen de testimonio eliminada',
+      ip: req.ip || '',
+      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+    }).catch(() => {});
+  } catch (err) {
+    logger.error('Error eliminando imagen de testimonio:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+module.exports = { getPublicTestimonials, getAdminTestimonials, createTestimonial, updateTestimonial, deleteTestimonial, toggleTestimonialActive, updateTestimonialOrder, reorderTestimonials, uploadTestimonialImage, deleteTestimonialImage };

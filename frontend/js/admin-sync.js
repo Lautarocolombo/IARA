@@ -9,7 +9,8 @@
     products: false,
     categories: false,
     testimonials: false,
-    sales: false
+    sales: false,
+    orders: false
   };
 
   window.__adminSavedState = {
@@ -17,7 +18,8 @@
     products: null,
     categories: null,
     testimonials: null,
-    sales: null
+    sales: null,
+    orders: null
   };
 
   window.__contentTabDirtyState = {
@@ -35,7 +37,7 @@
     products: ['saveProductBtn'],
     categories: ['editCategoryBtn', 'saveCategoryBtn'],
     testimonials: ['saveTestimonialBtn', 'saveSectionContentBtn'],
-    sales: ['saveSaleBtn']
+    orders: ['saveOrdersCloudBtn']
   };
 
   var SECTIONS = {
@@ -43,7 +45,8 @@
     'section-products': 'products',
     'section-categories': 'categories',
     'section-testimonials': 'testimonials',
-    'section-sales': 'sales'
+    'section-sales': 'sales',
+    'section-orders': 'orders'
   };
 
   function getCurrentSection() {
@@ -184,6 +187,13 @@
             throw new Error('Función de recarga de ganancias no disponible');
           }
           break;
+        case 'orders':
+          if (typeof window.saveAllOrdersChanges === 'function') {
+            await window.saveAllOrdersChanges();
+          } else {
+            throw new Error('Función de guardado de pedidos no disponible');
+          }
+          break;
         default:
           throw new Error('Sección no reconocida');
       }
@@ -253,6 +263,13 @@
             await window.reloadSales();
           } else {
             throw new Error('Función de recarga de ganancias no disponible');
+          }
+          break;
+        case 'orders':
+          if (typeof window.loadOrders === 'function') {
+            await window.loadOrders();
+          } else {
+            throw new Error('Función de recarga de pedidos no disponible');
           }
           break;
         default:

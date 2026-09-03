@@ -6,7 +6,7 @@ const { syncBus } = require('../routes/sync');
 async function getCarouselSlots(req, res) {
   try {
     const tenantId = req.tenantId || 'default';
-    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
     const result = await query(
       'SELECT * FROM carousel_images WHERE tenant_id = $1 ORDER BY slot ASC',
       [tenantId]
@@ -25,6 +25,39 @@ async function getCarouselSlots(req, res) {
     res.json({ slots });
   } catch (err) {
     logger.error('Error obteniendo carrusel:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+}
+
+async function getCarouselSlotsPublic(req, res) {
+  try {
+    const tenantId = req.tenantId || 'default';
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
+    const result = await query(
+      'SELECT slot, url, alt_text, link_url, caption, about_group FROM carousel_images WHERE tenant_id = $1 AND url IS NOT NULL AND url != \'\' ORDER BY slot ASC',
+      [tenantId]
+    );
+    const rows = result.rows || [];
+    const slots = {};
+    for (let i = 1; i <= 5; i++) {
+      const row = rows.find(r => Number(r.slot) === i);
+      if (row) {
+        slots[i] = {
+          slot: row.slot,
+          url: getPublicUrl(row.url, baseUrl),
+          alt_text: row.alt_text || '',
+          link_url: row.link_url || '',
+          caption: row.caption || '',
+          about_group: row.about_group
+        };
+      } else {
+        slots[i] = null;
+      }
+    }
+    res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=60');
+    res.json({ slots });
+  } catch (err) {
+    logger.error('Error obteniendo carrusel público:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 }
@@ -52,7 +85,7 @@ async function updateCarouselSlot(req, res) {
       await deleteImageAsset(old);
     }
 
-    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
     const processed = await processFile(req.file, baseUrl);
 
     const altText = (req.body.alt_text || '').trim();
@@ -119,7 +152,7 @@ async function updateCarouselSlotMeta(req, res) {
     }
 
     const updated = result.rows[0];
-    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
     updated.url = getPublicUrl(updated.url, baseUrl);
     const origin = req.headers.origin || req.headers.referer || '*';
     res.setHeader('Access-Control-Allow-Origin', origin);
@@ -161,6 +194,7 @@ async function deleteCarouselSlot(req, res) {
 
 module.exports = {
   getCarouselSlots,
+  getCarouselSlotsPublic,
   updateCarouselSlot,
   updateCarouselSlotMeta,
   deleteCarouselSlot

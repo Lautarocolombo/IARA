@@ -524,7 +524,7 @@ describe('hero.js', () => {
         { titulo: 'Card 1', imagen: 'card1.jpg', cta_texto: 'Ver', cta_url: '#catalog' }
       ]);
 
-      expect(window.renderProductImage).toHaveBeenCalledWith('card1.jpg', 'Card 1', expect.anything());
+      expect(window.renderProductImage).toHaveBeenCalledWith(expect.stringMatching(/^card1\.jpg\?_v=\d+$/), 'Card 1', expect.anything());
     });
 
     test('card con imagen pero titulo vacio (linea 150 card.titulo falsy)', async () => {
@@ -552,7 +552,7 @@ describe('hero.js', () => {
       `;
       await window.renderHeroCards([]);
 
-      expect(window.renderProductImage).toHaveBeenCalledWith('prod1.jpg', '', expect.anything());
+      expect(window.renderProductImage).toHaveBeenCalledWith(expect.stringMatching(/^prod1\.jpg\?_v=\d+$/), '', expect.anything());
     });
 
     test('sin hero-content en el DOM (linea 135 false)', async () => {

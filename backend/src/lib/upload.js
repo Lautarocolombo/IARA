@@ -118,24 +118,7 @@ async function deleteFromBlob(url) {
 
 async function deleteImageAsset(image) {
   if (!image) return false;
-  let deleted = false;
-
-  if (image.url) {
-    if (await deleteFromBlob(image.url)) deleted = true;
-  }
-
-  if (image.filename && !isBlobUrl(image.url)) {
-    const localPath = path.join(uploadsDir, image.filename);
-    try {
-      if (fs.existsSync(localPath)) {
-        fs.unlinkSync(localPath);
-        fileExistsCache.delete(`/uploads/imagenes/${image.filename}`);
-        deleted = true;
-      }
-    } catch (e) { /* noop */ }
-  }
-
-  return deleted;
+  return false;
 }
 
 const isVercel = process.env.VERCEL === 'true';
@@ -230,55 +213,18 @@ function handleUploadError(err, req, res, next) {
 }
 
 async function processFile(file, _baseUrl) {
-  const useBlob = isBlobConfigured();
-  let useBase64 = !useBlob && process.env.NODE_ENV === 'production';
-  logger.info('[Upload] processFile start:', { useBlob, useBase64, filename: file.originalname, size: file.size, NODE_ENV: process.env.NODE_ENV, isRender: !!process.env.RENDER_EXTERNAL_HOSTNAME });
-
-  if (useBlob) {
-    const blobResult = await uploadToBlob(file);
-    if (blobResult) {
-      try { fs.unlinkSync(file.path); } catch (e) { /* noop */ }
-      logger.info('[Upload] Subido a Vercel Blob:', { url: blobResult.url });
-      return { url: blobResult.url, filename: blobResult.filename, cloudinary_public_id: '', isCloudinary: false, isBlob: true };
-    }
-    logger.error('[Upload] Falló subida a Vercel Blob. Verificá BLOB_READ_WRITE_TOKEN en Render. Token presente: ' + (isBlobConfigured() ? 'sí' : 'no') + '. Revisá el log anterior para el código de error específico.');
-    if (process.env.NODE_ENV === 'production') {
-      logger.warn('[Upload] Haciendo fallback a base64 en base de datos');
-      useBase64 = true;
-    } else {
-      logger.warn('[Upload] Haciendo fallback a storage local en desarrollo');
-    }
-  }
-
-  if (!useBlob && process.env.NODE_ENV === 'production') {
-    logger.warn('[Upload] Sin blobstore configurado en producción. Las imágenes se guardan como base64 en la base de datos.');
-  }
-
   const optimizedPath = await optimizeImage(file.path, { format: 'webp' });
-
-  if (useBase64) {
-    const buffer = fs.readFileSync(optimizedPath);
-    const base64 = buffer.toString('base64');
-    const dataUri = 'data:image/webp;base64,' + base64;
-
-    if (optimizedPath !== file.path) {
-      try { fs.unlinkSync(file.path); } catch (e) { /* noop */ }
-    }
-    try { fs.unlinkSync(optimizedPath); } catch (e) { /* noop */ }
-
-    logger.info('[Upload] Imagen guardada como base64 en DB:', { size: dataUri.length });
-    return { url: dataUri, filename: file.originalname, cloudinary_public_id: '', isCloudinary: false, isBlob: false, isBase64: true };
-  }
-
-  const filename = path.basename(optimizedPath);
-  const relativeUrl = `/uploads/imagenes/${filename}`;
+  const buffer = fs.readFileSync(optimizedPath);
+  const base64 = buffer.toString('base64');
+  const dataUri = 'data:image/webp;base64,' + base64;
 
   if (optimizedPath !== file.path) {
     try { fs.unlinkSync(file.path); } catch (e) { /* noop */ }
   }
+  try { fs.unlinkSync(optimizedPath); } catch (e) { /* noop */ }
 
-  logger.info('[Upload] URL generada:', { url: relativeUrl });
-  return { url: relativeUrl, filename, cloudinary_public_id: '', isCloudinary: false, isBlob: false };
+  logger.info('[Upload] Imagen guardada como base64 en Neon:', { size: dataUri.length });
+  return { url: dataUri, filename: file.originalname, cloudinary_public_id: '', isCloudinary: false, isBlob: false, isBase64: true };
 }
 
 async function saveFile(req, res) {
@@ -301,7 +247,6 @@ const fileMissingCache = new Set();
 function getPublicUrl(relativePath, baseUrl) {
   if (!relativePath) return '';
   if (relativePath.startsWith('data:')) {
-    logger.warn('Se encontró una imagen en base64 en la base de datos. Ejecutá backend/src/scripts/migrateImages.js para convertirla a URL.');
     return relativePath;
   }
   if (relativePath.startsWith('http')) return relativePath;
