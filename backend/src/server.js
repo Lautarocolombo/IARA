@@ -484,9 +484,6 @@ app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUplo
   }
 });
 
-const isVercel = process.env.VERCEL === 'true';
-const isRender = !!process.env.RENDER_EXTERNAL_HOSTNAME;
-const isEphemeralProd = !isVercel && process.env.NODE_ENV === 'production';
 const uploadsStaticDir = path.join(__dirname, '..', '..', 'uploads');
 
 const UPLOAD_PLACEHOLDER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Imagen no disponible"><rect width="200" height="200" rx="14" fill="#fde8ef"/><text x="100" y="110" text-anchor="middle" font-family="system-ui,serif" font-size="40" fill="#d47090">📷</text><text x="100" y="150" text-anchor="middle" font-family="system-ui,serif" font-size="14" fill="#d47090">Imagen no disponible</text></svg>`;

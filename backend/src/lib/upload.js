@@ -62,6 +62,7 @@ async function uploadProofToBlob(file) {
   }
 }
 
+// eslint-disable-next-line no-unused-vars
 async function uploadToBlob(file) {
   const mod = getBlobModule();
   if (!mod || !isBlobConfigured()) {
@@ -223,10 +224,16 @@ async function processFile(file, _baseUrl) {
   const base64 = buffer.toString('base64');
   const dataUri = 'data:image/webp;base64,' + base64;
 
-  if (optimizedPath !== file.path) {
-    try { fs.unlinkSync(file.path); } catch (e) { /* noop */ }
+  const ext = path.extname(file.path);
+  const baseName = path.basename(file.path, ext);
+  const expectedOptimized = path.join(path.dirname(file.path), `${baseName}.webp`);
+
+  const targets = new Set([file.path, optimizedPath, expectedOptimized]);
+  for (const target of targets) {
+    try {
+      fs.rmSync(target, { force: true, maxRetries: 3, retryDelay: 50 });
+    } catch (e) { /* noop */ }
   }
-  try { fs.unlinkSync(optimizedPath); } catch (e) { /* noop */ }
 
   logger.info('[Upload] Imagen guardada como base64 en Neon:', { size: dataUri.length });
   return { url: dataUri, filename: file.originalname, cloudinary_public_id: '', isCloudinary: false, isBlob: false, isBase64: true };

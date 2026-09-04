@@ -90,7 +90,7 @@ const getUserOrders = async (req, res) => {
 
 const createOrder = async (req, res) => {
   logger.info('createOrder: inicio');
-  const { items, total, customer, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, shipping_cost, notes, idempotency_key, couponCode, payment_method } = req.body || {};
+  const { items, total, customer, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_province, shipping_email, shipping_cost, notes, idempotency_key, couponCode, payment_method } = req.body || {};
   logger.info('createOrder: body parseado');
 
   if (idempotency_key) {
@@ -123,6 +123,7 @@ const createOrder = async (req, res) => {
     if (shipping_email) customerData.email = shipping_email;
     if (shipping_zip) customerData.zip = shipping_zip;
     if (shipping_city) customerData.city = shipping_city;
+    if (shipping_province) customerData.province = shipping_province;
 
     const orderToken = idempotency_key || crypto.randomUUID();
 
@@ -155,10 +156,11 @@ const createOrder = async (req, res) => {
 
     let calculatedShipping = 0;
     if (calculatedSubtotal < freeShippingFrom) {
-      if (shipping_city) {
+      const provinceForLookup = shipping_province || shipping_city;
+      if (provinceForLookup) {
         const rateResult = await query(
           'SELECT shipping_cost FROM shipping_rates_by_province WHERE province = $1',
-          [shipping_city]
+          [provinceForLookup]
         );
         if (rateResult.rows.length > 0) {
           const provinceCost = Number(rateResult.rows[0].shipping_cost || 0);

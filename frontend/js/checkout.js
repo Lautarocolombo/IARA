@@ -329,7 +329,8 @@
           shipping_phone: shipping.phone,
           shipping_email: shipping.email || '',
           shipping_zip: shipping.zip,
-          shipping_city: shipping.province || shipping.city,
+          shipping_city: shipping.city || '',
+          shipping_province: shipping.province,
           subtotal,
           shipping_cost: shippingCost,
           total,
@@ -368,11 +369,16 @@
       const orderId = orderData.id || 'NUEVO';
       const orderNumber = `#${String(orderId).padStart(4, '0')}`;
       const customerName = shipping.name || 'Cliente';
-      const productList = items.map(i => `- ${i.name} x${i.qty} = ${formatARS(i.price * i.qty)}`).join('\n');
+      const productList = items.map(i => {
+        const line = `- ${i.name} x${i.qty} = ${formatARS(i.price * i.qty)}`;
+        return i.image ? `${line}\n  Imagen: ${i.image}` : line;
+      }).join('\n');
+      const addressLine = shipping.address ? `Dirección: ${shipping.address}, ${shipping.city || ''}, ${shipping.province || ''}` : '';
       const shippingLine = shippingCost > 0 && shipping.province
         ? `Diferencia de envío (${shipping.province}): ${formatARS(shippingCost)}`
         : (shippingCost === 0 ? 'Envío incluido en el precio' : `Envío: ${formatARS(shippingCost)}`);
-      const waMsg = encodeURIComponent(`Hola! Soy ${customerName}, acabo de hacer el pedido ${orderNumber}:\n${productList}\nSubtotal productos: ${formatARS(subtotal)}\n${shippingLine}\nTotal: ${formatARS(total)}\n${isCash ? 'Voy a pagar en efectivo al retirar/recibir.' : 'Les mando el comprobante de la transferencia.'}`);
+      const aliasLine = paymentConfig.alias ? `\nAlias Mercado Pago: ${paymentConfig.alias}` : '';
+      const waMsg = encodeURIComponent(`Hola! Soy ${customerName}, acabo de hacer el pedido ${orderNumber}:\n${productList}\nSubtotal productos: ${formatARS(subtotal)}\n${shippingLine}${addressLine ? '\n' + addressLine : ''}${aliasLine}\nTotal: ${formatARS(total)}\n${isCash ? 'Voy a pagar en efectivo al retirar/recibir.' : 'Les mando el comprobante de la transferencia.'}`);
 
       sessionStorage.setItem('ag_last_order', JSON.stringify({
         id: orderId,

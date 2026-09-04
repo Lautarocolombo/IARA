@@ -900,31 +900,7 @@ if (typeof document !== 'undefined') {
   });
 }
 
-async function loadHeroCards() {
-  try {
-    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/hero-cards`, {}, 2, 1000);
-    if (!res) return;
-    const cards = await res.json();
-    if (!Array.isArray(cards)) return;
 
-    cards.forEach(card => {
-      const cardNum = card.slot || card.id;
-      const nameEl = document.getElementById(`heroCard${cardNum}Name`);
-      const priceEl = document.getElementById(`heroCard${cardNum}Price`);
-      const imgEl = document.getElementById(`heroCard${cardNum}Img`);
-
-      if (nameEl && card.nombre) nameEl.textContent = card.nombre;
-      if (priceEl && card.precio) priceEl.textContent = card.precio;
-      if (imgEl && card.imagen) {
-        imgEl.innerHTML = window.renderProductImage(card.imagen, card.nombre || 'Card imagen', { style: 'width:100%;height:100%;object-fit:cover;' });
-      } else if (imgEl) {
-        imgEl.innerHTML = window.renderProductImage('', card.nombre || 'Card imagen', { placeholder: '📿', style: 'width:100%;height:100%;object-fit:cover;' });
-      }
-    });
-  } catch (err) {
-    console.error('Error cargando cards del hero:', err);
-  }
-}
 
 /* ==================== GLOBAL ERROR BOUNDARY ==================== */
 

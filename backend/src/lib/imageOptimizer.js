@@ -47,12 +47,17 @@ async function optimizeImage(filePath, options = {}) {
     await pipeline.toFile(optimizedPath);
 
     if (optimizedPath !== filePath && fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+      try {
+        fs.rmSync(filePath, { force: true, maxRetries: 3, retryDelay: 50 });
+      } catch (e) { /* noop */ }
     }
 
     return optimizedPath;
   } catch (err) {
     logger.warn({ err: err.message, stack: err.stack, file: filePath }, 'Sharp: error en optimización, usando archivo original');
+    try {
+      fs.rmSync(optimizedPath, { force: true, maxRetries: 3, retryDelay: 50 });
+    } catch (e) { /* noop */ }
     return filePath;
   }
 }

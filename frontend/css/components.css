@@ -254,7 +254,7 @@ html, body { overflow-x: hidden; }
 
 .hero-subtitle {
   font-size: 15px;
-  color: #7a6a7a;
+  color: var(--text-mid);
   line-height: 1.7;
   max-width: 420px;
   margin-bottom: 2.5rem;
@@ -488,6 +488,7 @@ html, body { overflow-x: hidden; }
 
 .highlight-item:last-child { border-right: none; }
 .highlight-item:hover { background: rgba(255,255,255,0.6); }
+[data-theme="dark"] .highlight-item:hover { background: rgba(255,255,255,0.05); }
 
 .highlight-icon {
   width: 36px;
@@ -1078,18 +1079,21 @@ html, body { overflow-x: hidden; }
 }
 
 .about-carousel-slide {
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   opacity: 0;
   transition: opacity 0.7s ease;
   pointer-events: none;
-  display: none;
+  visibility: hidden;
 }
 
 .about-carousel-slide.active {
   opacity: 1;
   pointer-events: auto;
-  display: block;
+  visibility: visible;
+  position: relative;
 }
 
 .about-carousel-slide img {
@@ -1122,6 +1126,13 @@ html, body { overflow-x: hidden; }
   box-shadow: 0 4px 12px rgba(180, 100, 130, 0.15);
 }
 
+[data-theme="dark"] .about-carousel-btn {
+  background: rgba(42, 28, 36, 0.92);
+  border-color: #5a3a48;
+  color: #e8b0c0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
 .about-carousel-btn:hover {
   background: var(--white);
   box-shadow: 0 8px 24px rgba(180, 100, 130, 0.35);
@@ -1143,6 +1154,10 @@ html, body { overflow-x: hidden; }
   background: rgba(255, 255, 255, 0.75);
   border-radius: 20px;
   backdrop-filter: blur(4px);
+}
+
+[data-theme="dark"] .about-carousel-dots {
+  background: rgba(42, 28, 36, 0.75);
 }
 
 .about-carousel-dot {
@@ -1695,6 +1710,10 @@ html, body { overflow-x: hidden; }
     gap: 1rem;
     box-shadow: var(--shadow-md);
     border-bottom: 1px solid var(--rose-light);
+  }
+  [data-theme="dark"] .navbar-menu {
+    background: rgba(26,16,20,0.98);
+    border-bottom-color: #3a2028;
   }
   .navbar-menu.active { display: flex; }
   .navbar-toggle { display: flex; }

@@ -11,6 +11,12 @@
   font-family: 'DM Sans', sans-serif;
 }
 
+[data-theme="dark"] .cookie-banner {
+  background: var(--cream);
+  border-top-color: #3a2028;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
+}
+
 .cookie-banner-content {
   max-width: 1200px;
   margin: 0 auto;
@@ -28,11 +34,19 @@
   color: #1f2937;
 }
 
+[data-theme="dark"] .cookie-banner-text h3 {
+  color: var(--text-dark);
+}
+
 .cookie-banner-text p {
   margin: 0;
   font-size: 0.875rem;
   color: #4b5563;
   line-height: 1.5;
+}
+
+[data-theme="dark"] .cookie-banner-text p {
+  color: var(--text-muted);
 }
 
 .cookie-banner-actions {

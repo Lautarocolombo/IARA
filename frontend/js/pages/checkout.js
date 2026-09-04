@@ -8,6 +8,7 @@
   }
 
   function init() {
+    if (typeof initSiteHeader === 'function') initSiteHeader({ showBackButton: true });
     if (typeof initNavbarScroll === 'function') initNavbarScroll();
     if (typeof initMobileNavbar === 'function') initMobileNavbar();
 

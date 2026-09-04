@@ -28,7 +28,7 @@ router.get('/', (req, res) => {
     order_created: (data) => send('order_created', data),
     order_status_updated: (data) => send('order_status_updated', data),
     testimonials_updated: (data) => send('testimonials_updated', data),
-    reviews_updated: (e) => send('reviews_updated', e.data),
+    reviews_updated: (data) => send('reviews_updated', data),
     carousel_updated: (data) => send('carousel_updated', data),
     sales_updated: (data) => send('sales_updated', data),
   };
@@ -39,7 +39,12 @@ router.get('/', (req, res) => {
 
   res.write(':\n\n');
 
+  const heartbeat = setInterval(() => {
+    try { res.write(':\n\n'); } catch (e) { /* client disconnected */ }
+  }, 30000);
+
   req.on('close', () => {
+    clearInterval(heartbeat);
     Object.entries(listeners).forEach(([event, handler]) => {
       syncBus.off(event, handler);
     });

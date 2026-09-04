@@ -45,12 +45,8 @@ async function runMigrations(query) {
         await query('INSERT INTO migrations (name) VALUES ($1) ON CONFLICT (name) DO NOTHING', [file]);
         logger.info({ migration: file }, 'Migración aplicada');
       } catch (err) {
-        logger.warn({ migration: file, err: err.message }, 'Migración falló, marcando como aplicada y continuando');
-        try {
-          await query('INSERT INTO migrations (name) VALUES ($1) ON CONFLICT (name) DO NOTHING', [file]);
-        } catch (insertErr) {
-          logger.error({ migration: file, err: insertErr.message }, 'No se pudo marcar migración como aplicada');
-        }
+        logger.error({ migration: file, err: err.message }, 'Migración falló');
+        throw new Error(`Migración ${file} falló: ${err.message}`);
       }
     }
   } catch (err) {

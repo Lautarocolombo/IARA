@@ -475,10 +475,6 @@
     <!-- ============== SCRIPTS ============== -->
     <script src="js/cookie-consent.js"></script>
     <script src="js/ui.js"></script>
-    <script>
-      if (typeof initNavbarScroll === 'function') initNavbarScroll();
-      if (typeof initMobileNavbar === 'function') initMobileNavbar();
-    </script>
     <script src="js/wishlist.js"></script>
    <script src="js/cart.js"></script>
    <script src="js/products.js"></script>
@@ -547,42 +543,8 @@
     })();
   </script>
   <script>
-    if (typeof initSSESync === 'function') initSSESync();
-
-    if (typeof loadSiteTexts === 'function') {
-      loadSiteTexts();
-    }
-    if (typeof loadHeroCards === 'function') {
-      loadHeroCards();
-    }
-    if (typeof loadTestimonials === 'function') {
-      loadTestimonials();
-    }
-    startDataSync('hero-cards', loadHeroCards);
-    startDataSync('site-texts', loadSiteTexts);
-    startDataSync('testimonials', loadTestimonials);
-
-    onSyncMessage('products_updated', () => {
-      if (typeof fetchProducts === 'function') {
-        fetchProducts().then(() => {
-          if (typeof renderProducts === 'function') renderProducts(getProducts());
-          if (typeof renderFeaturedProducts === 'function') renderFeaturedProducts();
-        });
-      }
-    });
-
-    onSyncMessage('site_texts_updated', (data) => {
-      if (typeof loadSiteTexts === 'function') loadSiteTexts();
-      if (typeof loadHeroCards === 'function') loadHeroCards();
-    });
-
-    onSyncMessage('settings_updated', () => {
-      if (typeof loadSiteSettings === 'function') loadSiteSettings();
-    });
-
-    onSyncMessage('wishlist_updated', () => {
-      if (typeof renderWishlist === 'function') renderWishlist();
-    });
+    /* home-init.js (module) handles: initSSESync, loadSiteTexts, loadHeroCards,
+       loadTestimonials, startDataSync, and all onSyncMessage handlers */
   </script>
   <script>
     if (typeof CONFIG !== 'undefined' && CONFIG.ANALYTICS && CONFIG.ANALYTICS.SENTRY_DSN) {
