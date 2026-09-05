@@ -259,7 +259,7 @@ function renderFeaturedProducts() {
         unit: 'u',
         qty: 1
       };
-      if (typeof addToCart === 'function') addToCart(product);
+      if (typeof window.addToCart === 'function') window.addToCart(product);
     });
 
     document.getElementById('productsGrid')?.addEventListener('click', (e) => {

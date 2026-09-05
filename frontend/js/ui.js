@@ -431,8 +431,8 @@ function openModalScrollLock(overlayEl, closeFn) {
 
 // Update Cart Count Badge (definido en cart.js)
 window.addToCartAndUpdate = function (product) {
-  if (typeof addToCart === 'function') addToCart(product);
-  if (typeof updateCartBadge === 'function') updateCartBadge();
+  if (typeof window.addToCart === 'function') window.addToCart(product);
+  if (typeof window.updateCartBadge === 'function') window.updateCartBadge();
 };
 
 // Sakura interaction (Hero)
@@ -462,7 +462,7 @@ function initUI() {
   initNewsletterForm();
   initSmoothScroll();
   initProductFilters();
-  if (typeof updateCartBadge === 'function') updateCartBadge();
+  if (typeof window.updateCartBadge === 'function') window.updateCartBadge();
   initSakuraInteraction();
 }
 
@@ -475,8 +475,8 @@ if (document.readyState === 'loading') {
 // Detectar cambios en el carrito y wishlist (para actualizar en tiempo real entre pestañas y en la misma página)
 window.addEventListener('storage', (e) => {
   if (typeof CONFIG !== 'undefined' && CONFIG.CART && e.key === CONFIG.CART.STORAGE_KEY) {
-    if (typeof updateCartBadge === 'function') updateCartBadge();
-    if (typeof updateCartDisplay === 'function') updateCartDisplay();
+    if (typeof window.updateCartBadge === 'function') window.updateCartBadge();
+    if (typeof window.updateCartDisplay === 'function') window.updateCartDisplay();
   }
   if (e.key === 'ag_wishlist') {
     if (typeof updateWishlistBadge === 'function') updateWishlistBadge();
@@ -918,10 +918,13 @@ if (typeof document !== 'undefined') {
 })();
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { escapeHtml, unescapeHtml, sanitizeAboutText, getFetchErrorMessage, showToast, safeFetch, fetchWithRetry, initMobileNavbar, initContactForm };
+  module.exports = { escapeHtml, unescapeHtml, sanitizeAboutText, getFetchErrorMessage, showToast, safeFetch, fetchWithRetry, initRevealAnimation, initNavbarScroll, initMobileNavbar, initContactForm };
 }
 
 if (typeof window !== 'undefined') {
+  window.initRevealAnimation = initRevealAnimation;
+  window.initNavbarScroll = initNavbarScroll;
+  window.initMobileNavbar = initMobileNavbar;
   window.initSSESync = initSSESync;
   window.destroySSESync = destroySSESync;
   window.startDataSync = startDataSync;

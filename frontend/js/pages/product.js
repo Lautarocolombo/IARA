@@ -197,8 +197,8 @@
         unit: 'u',
         qty: 1
       };
-      if (typeof addToCart === 'function') {
-        addToCart(product);
+      if (typeof window.addToCart === 'function') {
+        window.addToCart(product);
         setTimeout(updateFreeShippingHint, 100);
       }
     });
@@ -289,7 +289,8 @@
     });
 
     window.addEventListener('storage', (e) => {
-      if (e.key === 'ag_cart') {
+      const storageKey = (typeof CONFIG !== 'undefined' && CONFIG && CONFIG.CART && CONFIG.CART.STORAGE_KEY) ? CONFIG.CART.STORAGE_KEY : 'ag_cart';
+      if (e.key === storageKey) {
         updateFreeShippingHint();
       }
     });

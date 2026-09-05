@@ -10,8 +10,10 @@ try {
 }
 
 function saveCart() {
-  localStorage.setItem(CONFIG.CART.STORAGE_KEY, JSON.stringify(cart));
+  const storageKey = (typeof CONFIG !== 'undefined' && CONFIG && CONFIG.CART && CONFIG.CART.STORAGE_KEY) ? CONFIG.CART.STORAGE_KEY : 'ag_cart';
+  localStorage.setItem(storageKey, JSON.stringify(cart));
   updateCartBadge();
+  console.log('[cart] saveCart — items persistidos en localStorage:', cart.length);
 }
 
 function updateCartBadge() {
@@ -24,6 +26,7 @@ function updateCartBadge() {
 }
 
 function addToCart(product) {
+  console.log('[cart] addToCart llamado — product:', product && product.id, product && product.name);
   const existing = cart.find(item => item.id === product.id);
   const productStock = Number(product.stock) > 0 ? Number(product.stock) : Infinity;
   if (existing) {
@@ -46,6 +49,7 @@ function addToCart(product) {
 }
 
 function updateCartQty(productId, qty) {
+  console.log('[cart] updateCartQty llamado — productId:', productId, 'qty:', qty);
   const item = cart.find(item => item.id === productId);
   if (item) {
     const productStock = Number(item.stock) > 0 ? Number(item.stock) : Infinity;
@@ -57,12 +61,15 @@ function updateCartQty(productId, qty) {
     item.qty = newQty;
     saveCart();
   }
-  if (typeof updateCartDisplay === 'function') {
+  if (typeof window.updateCartDisplay === 'function') {
+    window.updateCartDisplay();
+  } else if (typeof updateCartDisplay === 'function') {
     updateCartDisplay();
   }
 }
 
 function removeFromCart(productId) {
+  console.log('[cart] removeFromCart llamado — productId:', productId);
   cart = cart.filter(item => item.id !== productId);
   saveCart();
 }
@@ -85,6 +92,8 @@ window.getCart = getCart;
 window.updateCartBadge = updateCartBadge;
 window.clearCart = clearCart;
 window.saveCart = saveCart;
+window.updateCartQty = updateCartQty;
+window.removeFromCart = removeFromCart;
 
 // Exportar para Node.js (si aplica)
 if (typeof module !== 'undefined' && module.exports) {

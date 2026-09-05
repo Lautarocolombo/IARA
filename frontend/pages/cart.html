@@ -26,7 +26,18 @@
   <script src="../js/safeImage.js" type="module"></script>
   <script src="../js/header.js" type="module"></script>
   <script>
-    initSiteHeader({ showBackButton: true, cartHref: '#' });
+    // header.js es un módulo (diferido): se ejecuta DESPUÉS del parseo.
+    // Este script clásico corre DURANTE el parseo, por lo que initSiteHeader
+    // aún no está definido. Reintamos hasta DOMContentLoaded (cuando el módulo
+    // ya expuso window.initSiteHeader) para evitar "initSiteHeader is not defined".
+    function applyHeaderConfig() {
+      if (typeof initSiteHeader === 'function') {
+        initSiteHeader({ showBackButton: true, cartHref: '#' });
+      } else {
+        document.addEventListener('DOMContentLoaded', applyHeaderConfig);
+      }
+    }
+    applyHeaderConfig();
   </script>
   <script src="../js/theme.js" type="module"></script>
   <main class="cart-section" id="home">
@@ -41,10 +52,10 @@
         <p class="section-subtitle reveal">Revisá tus productos antes de comprar</p>
       </div>
 
-      <div id="emptyCart" class="empty-cart-container reveal">
+      <div id="emptyCart" class="empty-cart-container reveal" style="display:none;">
         <h2 class="cart-empty-title">Tu carrito está vacío</h2>
-        <p class="cart-empty-text">Aún no has agregado productos. Continúa comprando.</p>
-        <a href="../index.html#catalog" class="btn-primary">Explorar Productos</a>
+        <p class="cart-empty-text">Aún no has agregado productos.</p>
+        <a href="../index.html#catalog" class="btn-primary">Seguir Comprando</a>
       </div>
 
       <div id="cartContent">
