@@ -454,7 +454,7 @@ app.get('/ready', async (req, res) => {
   }
 });
 
-app.post('/api/admin/upload', require('./middleware/auth').adminAuth, handleUploadError, uploadSingle, async (req, res) => {
+app.post('/api/admin/upload', require('./middleware/auth').adminAuth, uploadSingle, handleUploadError, async (req, res) => {
   try {
     const origin = req.headers.origin || req.headers.referer || 'unknown';
     logger.debug('[Upload] CORS origin recibido:', origin);

@@ -1,6 +1,6 @@
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
-const { saveUploadedFile, deleteImageAsset } = require('../lib/upload');
+const { saveUploadedFile, deleteImageAsset, getPublicUrl } = require('../lib/upload');
 const { syncBus } = require('../routes/sync');
 const { testimonialSchema } = require('../lib/validators');
 const { logAudit } = require('../lib/audit');
@@ -11,8 +11,15 @@ const ALLOWED_TESTIMONIAL_COLUMNS = ['name', 'comment', 'rating', 'image', 'avat
 const getPublicTestimonials = async (req, res) => {
   try {
     const result = await query('SELECT * FROM testimonials WHERE active = TRUE ORDER BY orden ASC, created_at DESC');
-    if (applyETag(req, res, result.rows)) return;
-    res.json(result.rows);
+    const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
+    const rows = result.rows.map((row) => ({
+      ...row,
+      image: getPublicUrl(row.image, baseUrl),
+      avatar: getPublicUrl(row.avatar, baseUrl),
+      product_image_url: getPublicUrl(row.product_image_url, baseUrl)
+    }));
+    if (applyETag(req, res, rows)) return;
+    res.json(rows);
   } catch (err) {
     logger.error('Error obteniendo testimonios:', err);
     res.status(500).json({ error: 'Error interno del servidor' });

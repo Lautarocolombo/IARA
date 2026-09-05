@@ -3,18 +3,8 @@ const logger = require('../lib/logger');
 const { safeJsonParse } = require('../lib/parser');
 const { syncBus } = require('../routes/sync');
 const { logAudit } = require('../lib/audit');
-const path = require('path');
 const fs = require('fs');
-
-const isVercel = process.env.VERCEL === 'true';
-const isRender = !!process.env.RENDER_EXTERNAL_HOSTNAME;
-const comprobantesDir = (isVercel || isRender) ? '/tmp/uploads/comprobantes' : path.join(__dirname, '..', '..', 'uploads', 'comprobantes');
-
-function ensureComprobantesDir() {
-  if (!fs.existsSync(comprobantesDir)) {
-    fs.mkdirSync(comprobantesDir, { recursive: true });
-  }
-}
+const { uploadProofToBlob, processFile } = require('../lib/upload');
 
 async function getAdminPaymentProofs(req, res) {
   try {
@@ -55,7 +45,6 @@ async function getAdminPaymentProofs(req, res) {
 }
 
 async function uploadPaymentProof(req, res) {
-  ensureComprobantesDir();
   try {
     const orderId = Number(req.params.orderId || req.params.id);
     const orderIdNum = orderId;
@@ -74,8 +63,22 @@ async function uploadPaymentProof(req, res) {
       return res.status(400).json({ error: 'No se recibió el comprobante' });
     }
 
-    const filename = path.basename(req.file.path);
-    const proofUrl = `/uploads/comprobantes/${filename}`;
+    const mime = req.file.mimetype || 'application/octet-stream';
+    let proofUrl = null;
+
+    const blobResult = await uploadProofToBlob(req.file);
+    if (blobResult && blobResult.url) {
+      proofUrl = blobResult.url;
+      try { fs.rmSync(req.file.path, { force: true, maxRetries: 3, retryDelay: 50 }); } catch (e) { /* noop */ }
+    } else if (mime.startsWith('image/')) {
+      const processed = await processFile(req.file, '');
+      proofUrl = processed.url;
+    } else {
+      const buffer = fs.readFileSync(req.file.path);
+      proofUrl = `data:${mime};base64,${buffer.toString('base64')}`;
+      try { fs.rmSync(req.file.path, { force: true, maxRetries: 3, retryDelay: 50 }); } catch (e) { /* noop */ }
+    }
+
     const amount = Number(order.total || 0);
     const customerData = safeJsonParse(order.customer, {});
     const customerNameStr = ((req.body && req.body.customerName) || '').toString().trim() || (customerData.name || '');

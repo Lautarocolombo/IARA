@@ -18,6 +18,6 @@ router.get('/admin/activity-log', adminAuth, adminOnly, getAdminActivityLog);
 router.post('/admin/payment-proofs/:id/approve', adminAuth, adminOnly, approvePaymentProof);
 router.post('/admin/payment-proofs/:id/reject', adminAuth, adminOnly, rejectPaymentProof);
 
-router.post('/payments/proofs/:orderId', requireOrderToken, handleUploadError, uploadSingleProof, uploadPaymentProof);
+router.post('/payments/proofs/:orderId', requireOrderToken, uploadSingleProof, handleUploadError, uploadPaymentProof);
 
 module.exports = router;

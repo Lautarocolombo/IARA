@@ -19,7 +19,10 @@ jest.mock('../src/routes/sync', () => ({
 jest.mock('fs', () => ({
   existsSync: jest.fn(() => true),
   mkdirSync: jest.fn(),
-  createReadStream: jest.fn()
+  createReadStream: jest.fn(),
+  readFileSync: jest.fn(() => Buffer.from('abc')),
+  rmSync: jest.fn(),
+  unlinkSync: jest.fn()
 }));
 
 jest.mock('path', () => ({
@@ -29,7 +32,13 @@ jest.mock('path', () => ({
   join: jest.fn()
 }));
 
+jest.mock('../src/lib/upload', () => ({
+  uploadProofToBlob: jest.fn(),
+  processFile: jest.fn()
+}));
+
 const { query } = require('../src/lib/db');
+const { uploadProofToBlob, processFile } = require('../src/lib/upload');
 const {
   getAdminPaymentProofs,
   uploadPaymentProof,
@@ -42,6 +51,8 @@ const {
 describe('paymentProofsController', () => {
   beforeEach(() => {
     query.mockReset();
+    uploadProofToBlob.mockReset();
+    processFile.mockReset();
   });
 
   describe('getAdminPaymentProofs', () => {
@@ -90,10 +101,10 @@ describe('paymentProofsController', () => {
   });
 
   describe('uploadPaymentProof', () => {
-    test('sube comprobante exitosamente', async () => {
+    test('sube comprobante exitosamente vía Vercel Blob', async () => {
       const req = {
         params: { orderId: '1' },
-        file: { path: '/uploads/comprobantes/proof.jpg' },
+        file: { path: '/tmp/comprobantes/proof.jpg', mimetype: 'image/jpeg' },
         body: { customerName: 'Juan' },
         headers: { 'x-tenant-id': 'default' },
         user: {},
@@ -107,14 +118,70 @@ describe('paymentProofsController', () => {
       query.mockResolvedValueOnce({ rows: [{ id: 1, total: 100, customer: '{"name":"Juan"}' }] });
       query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
       query.mockResolvedValueOnce({ rows: [] });
+      uploadProofToBlob.mockResolvedValueOnce({ url: 'https://abc.blob.vercel-storage.com/comprobantes/x.jpg', isBlob: true });
 
       await uploadPaymentProof(req, res);
 
       expect(res.status).toHaveBeenCalledWith(201);
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ ok: true }));
+      const insertCall = query.mock.calls.find((c) => c[0].includes('INSERT INTO payment_proofs'));
+      expect(insertCall[1]).toEqual([1, 'Juan', 100, 'https://abc.blob.vercel-storage.com/comprobantes/x.jpg']);
       const lastCall = query.mock.calls[query.mock.calls.length - 1];
       expect(lastCall[0]).toContain('INSERT INTO activity_log');
       expect(lastCall[1]).toEqual(['cliente', 'upload', 'payment_proof', 1, 'Comprobante subido para pedido #1', '127.0.0.1', 'default']);
+    });
+
+    test('usa fallback base64 (processFile) si Blob no está disponible para imágenes', async () => {
+      const req = {
+        params: { orderId: '1' },
+        file: { path: '/tmp/comprobantes/proof.jpg', mimetype: 'image/jpeg' },
+        body: { customerName: 'Juan' },
+        headers: { 'x-tenant-id': 'default' },
+        user: {},
+        ip: '127.0.0.1'
+      };
+      const res = {
+        status: jest.fn(() => res),
+        json: jest.fn()
+      };
+
+      query.mockResolvedValueOnce({ rows: [{ id: 1, total: 100, customer: '{"name":"Juan"}' }] });
+      query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+      query.mockResolvedValueOnce({ rows: [] });
+      uploadProofToBlob.mockResolvedValueOnce(null);
+      processFile.mockResolvedValueOnce({ url: 'data:image/webp;base64,AAA' });
+
+      await uploadPaymentProof(req, res);
+
+      const insertCall = query.mock.calls.find((c) => c[0].includes('INSERT INTO payment_proofs'));
+      expect(insertCall[1]).toEqual([1, 'Juan', 100, 'data:image/webp;base64,AAA']);
+      expect(res.status).toHaveBeenCalledWith(201);
+    });
+
+    test('usa base64 raw para PDF si Blob no está disponible', async () => {
+      const req = {
+        params: { orderId: '1' },
+        file: { path: '/tmp/comprobantes/proof.pdf', mimetype: 'application/pdf' },
+        body: { customerName: 'Juan' },
+        headers: { 'x-tenant-id': 'default' },
+        user: {},
+        ip: '127.0.0.1'
+      };
+      const res = {
+        status: jest.fn(() => res),
+        json: jest.fn()
+      };
+
+      query.mockResolvedValueOnce({ rows: [{ id: 1, total: 100, customer: '{"name":"Juan"}' }] });
+      query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+      query.mockResolvedValueOnce({ rows: [] });
+      uploadProofToBlob.mockResolvedValueOnce(null);
+
+      await uploadPaymentProof(req, res);
+
+      const insertCall = query.mock.calls.find((c) => c[0].includes('INSERT INTO payment_proofs'));
+      expect(insertCall[1][3]).toBe('data:application/pdf;base64,YWJj');
+      expect(res.status).toHaveBeenCalledWith(201);
     });
 
     test('retorna 400 si el ID de pedido es inválido', async () => {

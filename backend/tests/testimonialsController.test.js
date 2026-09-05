@@ -14,7 +14,8 @@ jest.mock('../src/lib/audit', () => ({
 
 jest.mock('../src/lib/upload', () => ({
   saveUploadedFile: jest.fn().mockResolvedValue('/uploads/testimonial-image.webp'),
-  deleteImageAsset: jest.fn().mockResolvedValue(true)
+  deleteImageAsset: jest.fn().mockResolvedValue(true),
+  getPublicUrl: jest.fn((url) => url)
 }));
 
 jest.mock('../src/routes/sync', () => ({
