@@ -206,4 +206,33 @@ describe('Vercel Blob helpers', () => {
     expect(r).toBe(true);
     expect(del).toHaveBeenCalledWith('https://proyecto.blob.vercel-storage.com/products/x.png', { token: 'vercel_blob_test_token' });
   });
+
+  test('deleteImageAsset borra archivos legacy /uploads del filesystem', async () => {
+    const uploadsImagesDir = path.join(__dirname, '..', 'uploads', 'imagenes');
+    fs.mkdirSync(uploadsImagesDir, { recursive: true });
+    const target = path.join(uploadsImagesDir, '_delete_asset_test.webp');
+    fs.writeFileSync(target, 'x');
+    const r = await upload.deleteImageAsset({ url: '/uploads/imagenes/_delete_asset_test.webp' });
+    expect(r).toBe(true);
+    expect(fs.existsSync(target)).toBe(false);
+  });
+
+  test('deleteImageAsset devuelve true para base64 (en Neon) sin borrar nada externo', async () => {
+    const r = await upload.deleteImageAsset({ url: 'data:image/webp;base64,AAAA' });
+    expect(r).toBe(true);
+    expect(del).not.toHaveBeenCalled();
+  });
+
+  test('deleteImageAsset borra de Vercel Blob cuando la URL es de Blob', async () => {
+    process.env.BLOB_READ_WRITE_TOKEN = 'vercel_blob_test_token';
+    del.mockResolvedValue();
+    const r = await upload.deleteImageAsset({ url: 'https://proyecto.blob.vercel-storage.com/products/x.png' });
+    expect(r).toBe(true);
+    expect(del).toHaveBeenCalledWith('https://proyecto.blob.vercel-storage.com/products/x.png', { token: 'vercel_blob_test_token' });
+  });
+
+  test('deleteImageAsset ignora rutas fuera del directorio base', async () => {
+    const r = await upload.deleteImageAsset({ url: '/uploads/../../somewhere' });
+    expect(r).toBe(false);
+  });
 });

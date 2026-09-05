@@ -119,6 +119,33 @@ async function deleteFromBlob(url) {
 
 async function deleteImageAsset(image) {
   if (!image) return false;
+  const url = image.url || image.public_url || '';
+  if (!url) return false;
+
+  // Imágenes en base64 viven en la DB (se reemplazan con el UPDATE/INSERT): no hay nada externo que borrar
+  if (url.startsWith('data:')) return true;
+
+  // URLs de Vercel Blob
+  if (isBlobUrl(url)) return deleteFromBlob(url);
+
+  // Archivos legacy en filesystem (/uploads/...)
+  if (url.startsWith('/uploads/')) {
+    const baseDir = (isVercel || isRender || isEphemeralProd) ? '/tmp' : path.join(__dirname, '..', '..');
+    const root = path.normalize(baseDir) + path.sep;
+    const resolved = path.normalize(path.join(baseDir, url));
+    if (!resolved.startsWith(root)) {
+      logger.warn('deleteImageAsset: ruta fuera del directorio base ignorada:', url);
+      return false;
+    }
+    try {
+      fs.rmSync(resolved, { force: true, maxRetries: 3, retryDelay: 50 });
+      return true;
+    } catch (err) {
+      logger.warn('Error eliminando imagen del filesystem:', err.message);
+      return false;
+    }
+  }
+
   return false;
 }
 
