@@ -354,7 +354,7 @@
 
 .product-image-large {
   width: 100%;
-  aspect-ratio: 1;
+  aspect-ratio: 2 / 3;
   border-radius: var(--radius-md);
   background: linear-gradient(135deg, var(--blush), var(--mint));
   border: 1px solid #f4c8d4;
@@ -494,7 +494,7 @@
 
 .product-image-main {
   flex: 1;
-  aspect-ratio: 1;
+  aspect-ratio: 2 / 3;
   border-radius: var(--radius-md);
   background: linear-gradient(135deg, var(--blush), var(--mint));
   border: 1px solid #f4c8d4;
@@ -525,7 +525,7 @@
 .product-image-thumbs img {
   width: 64px;
   height: 64px;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: var(--radius-sm);
   border: 1.5px solid transparent;
   cursor: pointer;
@@ -544,8 +544,7 @@
     grid-template-columns: 1fr;
   }
   .product-image-large {
-    aspect-ratio: auto;
-    overflow: visible;
+    aspect-ratio: 2 / 3;
   }
   .product-image-gallery {
     flex-direction: column;
