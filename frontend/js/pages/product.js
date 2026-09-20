@@ -38,7 +38,7 @@
         ).join('');
         const imageHtml = images.length
           ? `<div class="product-image-gallery"><div class="product-image-main">${window.renderProductImage(principalImage ? principalImage.url : '', product.name, { id: 'productMainImage', lazy: false, placeholder: '📿' })}</div><div class="product-image-thumbs" id="productThumbs">${thumbsHtml}</div></div>`
-           : `${window.renderProductImage('', product.name, { style: 'width:100%;aspect-ratio:1;object-fit:contain;object-position:center;', placeholder: '📿' })}`;
+           : `${window.renderProductImage('', product.name, { style: 'width:100%;height:100%;object-fit:contain;object-position:center;', placeholder: '📿' })}`;
           const freeShippingThreshold = Number(CONFIG.CART.SHIPPING_THRESHOLD) || 0;
           const freeShippingHint = document.getElementById('freeShippingHint');
           const freeShippingText = document.getElementById('freeShippingText');

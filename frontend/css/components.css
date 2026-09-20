@@ -807,7 +807,7 @@ html, body { overflow-x: hidden; }
 
 .product-image {
   width: 100%;
-  aspect-ratio: 1/1;
+  aspect-ratio: 2 / 3;
   border-radius: 16px 16px 0 0;
   display: flex;
   align-items: center;
@@ -815,28 +815,28 @@ html, body { overflow-x: hidden; }
   font-size: 2rem;
   overflow: hidden;
   position: relative;
-  background: linear-gradient(135deg, #fde8ef, #f8d5e4);
+  background: #fdf3f6;
   padding: 6px;
   box-sizing: border-box;
 }
 
-.product-image.cat-pulseras { background: linear-gradient(135deg, #fde8ef, #f8d5e4); }
-.product-image.cat-accesorios { background: linear-gradient(135deg, var(--blush), var(--mint)); }
-.product-image.cat-souvenirs { background: linear-gradient(135deg, #f0eeff, #e4dcff); }
+.product-image.cat-pulseras,
+.product-image.cat-accesorios,
+.product-image.cat-souvenirs { background: #fdf3f6; }
 
 .product-image img {
   width: 100%;
   height: 100%;
   max-width: 100%;
   max-height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   object-position: center;
   background: transparent;
   display: block;
   transition: transform .6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.product-card:hover .product-image img { transform: scale(1.05); }
+.product-card:hover .product-image img { transform: none; }
 
 .product-info {
   padding: 16px 18px 14px;

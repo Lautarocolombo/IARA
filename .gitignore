@@ -76,3 +76,6 @@ frontend/assets/*.json
 
 # Image folder
 image/
+
+.vercel
+.env*
