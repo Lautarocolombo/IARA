@@ -90,7 +90,7 @@
               <p class="product-detail-price">${formatARS(product.price)}</p>
               <div class="product-detail-actions">
                 <button class="btn-primary btn-add-cart" data-product-id="${product.id}" data-product-name="${product.name.replace(/"/g, '&quot;')}" data-product-price="${product.price}" data-product-emoji="${product.emoji||'📿'}" data-product-image="${(product.image||'').replace(/"/g, '&quot;')}" data-product-stock="${product.stock||0}">Agregar al carrito</button>
-                <a href="https://api.whatsapp.com/send?phone=${CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g,'')}&text=${encodeURIComponent(`Hola! Me interesa la pulsera ${product.name}.`)}" target="_blank" class="btn-outline" rel="noopener">Consultar por WhatsApp</a>
+                <a href="https://web.whatsapp.com/send?phone=${CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g,'')}&text=${encodeURIComponent(`Hola! Me interesa la pulsera ${product.name}.`)}" target="_blank" class="btn-outline" rel="noopener">Consultar por WhatsApp</a>
               </div>
             </div>
           </div>

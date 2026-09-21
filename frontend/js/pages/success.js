@@ -63,7 +63,7 @@
 
       if (order.waNumber && order.waMsg) {
         const waBtn = document.getElementById('successWhatsappBtn');
-        if (waBtn) waBtn.href = `https://api.whatsapp.com/send?phone=${order.waNumber}&text=${order.waMsg}`;
+        if (waBtn) waBtn.href = `https://web.whatsapp.com/send?phone=${order.waNumber}&text=${order.waMsg}`;
       } else {
         const waBtn = document.getElementById('successWhatsappBtn');
         if (waBtn && CONFIG && CONFIG.CONTACT && CONFIG.CONTACT.WHATSAPP) {

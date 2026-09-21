@@ -40,7 +40,7 @@ describe('config.js', () => {
   describe('getWhatsAppLink', () => {
     test('genera link base de WhatsApp con mensaje default', () => {
       const link = config.getWhatsAppLink();
-      expect(link).toContain('https://api.whatsapp.com/send?phone=');
+      expect(link).toContain('https://web.whatsapp.com/send?phone=');
       expect(link).toContain('text=');
     });
 
@@ -50,7 +50,7 @@ describe('config.js', () => {
         const phone = config.CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g, '');
 
         expect(link).toBe(
-          `https://wa.me/${phone}?text=${encodeURIComponent('Hola, quiero consultar')}`
+          `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent('Hola, quiero consultar')}`
         );
       });
     });
@@ -61,7 +61,7 @@ describe('config.js', () => {
         const phone = config.CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g, '');
 
         expect(link).toBe(
-          `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent('Hola desde la web')}`
+          `whatsapp://send?phone=${phone}&text=${encodeURIComponent('Hola desde la web')}`
         );
       });
     });

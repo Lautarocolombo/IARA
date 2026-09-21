@@ -8,15 +8,15 @@
   let includedShippingCost = 0;
 
   function getWhatsAppAlternativeLink(phone, encodedMessage) {
-    return `https://wa.me/${phone}?text=${encodedMessage}`;
-  }
-
-  function getWhatsAppLink(phone, encodedMessage) {
     return `https://api.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
   }
 
-  function getWhatsAppWebLink(phone, encodedMessage) {
+  function getWhatsAppLink(phone, encodedMessage) {
     return `https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
+  }
+
+  function getWhatsAppWebLink(phone, encodedMessage) {
+    return `whatsapp://send?phone=${phone}&text=${encodedMessage}`;
   }
 
   function setWhatsAppLinks(phone, encodedMessage) {
