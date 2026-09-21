@@ -19,6 +19,28 @@
     return `https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
   }
 
+  function setWhatsAppLinks(phone, encodedMessage) {
+    const links = [
+      ['whatsappComprobanteBtn', getWhatsAppLink(phone, encodedMessage)],
+      ['whatsappComprobanteAlternativeBtn', getWhatsAppAlternativeLink(phone, encodedMessage)],
+      ['whatsappComprobanteWebBtn', getWhatsAppWebLink(phone, encodedMessage)],
+      ['transferReceiptBtn', getWhatsAppLink(phone, encodedMessage)],
+      ['transferReceiptAlternativeBtn', getWhatsAppAlternativeLink(phone, encodedMessage)],
+      ['transferReceiptWebBtn', getWhatsAppWebLink(phone, encodedMessage)]
+    ];
+
+    links.forEach(([id, href]) => {
+      const link = document.getElementById(id);
+      if (link) link.href = href;
+    });
+  }
+
+  function initializeWhatsAppLinks() {
+    const phone = String(CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, '');
+    const message = encodeURIComponent('Hola! Quiero consultar por sus pulseras.');
+    if (phone) setWhatsAppLinks(phone, message);
+  }
+
   async function fetchShippingDiff(province) {
     if (!province) {
       shippingDiff = 0;
@@ -553,14 +575,7 @@
         fetchShippingDiff(order.shippingProvince);
       }
       if (order.waNumber && order.waMsg) {
-        const primaryLink = getWhatsAppLink(order.waNumber, order.waMsg);
-        const alternativeLink = getWhatsAppAlternativeLink(order.waNumber, order.waMsg);
-        document.getElementById('whatsappComprobanteBtn').href = primaryLink;
-        document.getElementById('transferReceiptBtn').href = primaryLink;
-        document.getElementById('whatsappComprobanteAlternativeBtn').href = alternativeLink;
-        document.getElementById('transferReceiptAlternativeBtn').href = alternativeLink;
-        document.getElementById('whatsappComprobanteWebBtn').href = getWhatsAppWebLink(order.waNumber, order.waMsg);
-        document.getElementById('transferReceiptWebBtn').href = getWhatsAppWebLink(order.waNumber, order.waMsg);
+        setWhatsAppLinks(order.waNumber, order.waMsg);
         document.getElementById('transferReceiptBtn').dataset.orderNumber = order.number;
         document.getElementById('transferReceiptBtn').dataset.orderId = order.id || '';
       }
@@ -580,6 +595,7 @@
 
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', async () => {
+        initializeWhatsAppLinks();
         if (typeof window.loadPaymentConfig === 'function') {
           await window.loadPaymentConfig();
         }
@@ -588,6 +604,7 @@
       });
     } else {
       (async () => {
+        initializeWhatsAppLinks();
         if (typeof window.loadPaymentConfig === 'function') {
           await window.loadPaymentConfig();
         }
