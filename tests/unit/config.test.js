@@ -44,6 +44,17 @@ describe('config.js', () => {
       expect(link).toContain('text=');
     });
 
+    describe('getWhatsAppAlternativeLink', () => {
+      test('genera enlace alternativo con el mismo número y mensaje', () => {
+        const link = config.getWhatsAppAlternativeLink('Hola, quiero consultar');
+        const phone = config.CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g, '');
+
+        expect(link).toBe(
+          `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent('Hola, quiero consultar')}`
+        );
+      });
+    });
+
     test('usa el número de WhatsApp de CONFIG', () => {
       const link = config.getWhatsAppLink();
       const phone = config.CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g, '');

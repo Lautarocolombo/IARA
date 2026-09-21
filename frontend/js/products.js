@@ -109,8 +109,8 @@ function renderProducts(productsToRender) {
       : window.renderProductImage('', product.name, { className: 'product-card-img', placeholder: product.emoji || '📿' });
     const catClass = product.category ? `cat-${product.category}` : '';
     const badgeHtml = product.badge ? `<span class="product-badge">${product.badge}</span>` : '';
-    const waMessage = encodeURIComponent(`Hola! Me interesa el producto: ${product.name} - ${formatARS(product.price)}`);
-    const waLink = `https://wa.me/${CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g, '')}?text=${waMessage}`;
+    const waMessage = `Hola! Me interesa el producto: ${product.name} - ${formatARS(product.price)}`;
+    const waLink = getWhatsAppLink(waMessage);
 return `
     <div class="product-card reveal" data-product-id="${product.id}">
       <a href="pages/product.html?id=${product.id}" style="text-decoration:none;color:inherit;">

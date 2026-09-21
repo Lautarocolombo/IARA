@@ -119,6 +119,12 @@ function getWhatsAppLink(message = '') {
   return `https://wa.me/${phone}?text=${msg}`;
 }
 
+function getWhatsAppAlternativeLink(message = '') {
+  const phone = CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g, '');
+  const msg = encodeURIComponent(message || 'Hola! Quisiera más información sobre tus productos.');
+  return `https://api.whatsapp.com/send?phone=${phone}&text=${msg}`;
+}
+
 // Función auxiliar para enviar email
 function getMailtoLink(subject = '', body = '') {
   return `mailto:${CONFIG.CONTACT.EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -137,11 +143,12 @@ if (typeof window !== 'undefined') {
   window.CONFIG = CONFIG;
   window.formatARS = formatARS;
   window.getWhatsAppLink = getWhatsAppLink;
+  window.getWhatsAppAlternativeLink = getWhatsAppAlternativeLink;
   window.getMailtoLink = getMailtoLink;
   window.getGoogleWriteReviewLink = getGoogleWriteReviewLink;
 }
 
 // Exportar para uso en Node.js (si aplica)
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { CONFIG, getWhatsAppLink, getMailtoLink, getGoogleWriteReviewLink, formatARS };
+  module.exports = { CONFIG, getWhatsAppLink, getWhatsAppAlternativeLink, getMailtoLink, getGoogleWriteReviewLink, formatARS };
 }

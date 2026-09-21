@@ -38,10 +38,8 @@
   }
 
   function whatsAppLink(product) {
-    var phone = '';
-    if (window.CONFIG && window.CONFIG.CONTACT) phone = String(window.CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, '');
-    var msg = encodeURIComponent('Hola! Me interesa el producto: ' + (product.name || 'Producto') + ' - ' + formatPrice(product.price));
-    return 'https://wa.me/' + phone + '?text=' + msg;
+    var message = 'Hola! Me interesa el producto: ' + (product.name || 'Producto') + ' - ' + formatPrice(product.price);
+    return getWhatsAppLink(message);
   }
 
   function buildCard(product) {
