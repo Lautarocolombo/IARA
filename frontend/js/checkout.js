@@ -8,6 +8,10 @@
   let includedShippingCost = 0;
 
   function getWhatsAppAlternativeLink(phone, encodedMessage) {
+    return `https://wa.me/${phone}?text=${encodedMessage}`;
+  }
+
+  function getWhatsAppLink(phone, encodedMessage) {
     return `https://api.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
   }
 
@@ -445,7 +449,7 @@
 
       const comprobanteBtn = document.getElementById('whatsappComprobanteBtn');
       if (comprobanteBtn) {
-        comprobanteBtn.href = `https://wa.me/${waNumber}?text=${waMsg}`;
+        comprobanteBtn.href = getWhatsAppLink(waNumber, waMsg);
         comprobanteBtn.textContent = isCash ? 'Coordinar pago por WhatsApp' : 'Enviar comprobante por WhatsApp';
       }
       const comprobanteAlternativeBtn = document.getElementById('whatsappComprobanteAlternativeBtn');
@@ -454,7 +458,7 @@
       }
       const transferReceiptBtn = document.getElementById('transferReceiptBtn');
       if (transferReceiptBtn) {
-        transferReceiptBtn.href = `https://wa.me/${waNumber}?text=${waMsg}`;
+        transferReceiptBtn.href = getWhatsAppLink(waNumber, waMsg);
         transferReceiptBtn.dataset.orderNumber = orderNumber;
         transferReceiptBtn.dataset.orderId = orderId;
         transferReceiptBtn.style.display = isCash ? 'none' : '';
@@ -536,7 +540,7 @@
         fetchShippingDiff(order.shippingProvince);
       }
       if (order.waNumber && order.waMsg) {
-        const primaryLink = `https://wa.me/${order.waNumber}?text=${order.waMsg}`;
+        const primaryLink = getWhatsAppLink(order.waNumber, order.waMsg);
         const alternativeLink = getWhatsAppAlternativeLink(order.waNumber, order.waMsg);
         document.getElementById('whatsappComprobanteBtn').href = primaryLink;
         document.getElementById('transferReceiptBtn').href = primaryLink;

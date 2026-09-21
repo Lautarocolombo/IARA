@@ -116,13 +116,13 @@ function getGoogleWriteReviewLink(){
 function getWhatsAppLink(message = '') {
   const phone = CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g, '');
   const msg = encodeURIComponent(message || 'Hola! Quisiera más información sobre tus productos.');
-  return `https://wa.me/${phone}?text=${msg}`;
+  return `https://api.whatsapp.com/send?phone=${phone}&text=${msg}`;
 }
 
 function getWhatsAppAlternativeLink(message = '') {
   const phone = CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g, '');
   const msg = encodeURIComponent(message || 'Hola! Quisiera más información sobre tus productos.');
-  return `https://api.whatsapp.com/send?phone=${phone}&text=${msg}`;
+  return `https://wa.me/${phone}?text=${msg}`;
 }
 
 // Función auxiliar para enviar email
