@@ -15,6 +15,10 @@
     return `https://api.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
   }
 
+  function getWhatsAppWebLink(phone, encodedMessage) {
+    return `https://web.whatsapp.com/send?phone=${phone}&text=${encodedMessage}`;
+  }
+
   async function fetchShippingDiff(province) {
     if (!province) {
       shippingDiff = 0;
@@ -456,6 +460,10 @@
       if (comprobanteAlternativeBtn) {
         comprobanteAlternativeBtn.href = getWhatsAppAlternativeLink(waNumber, waMsg);
       }
+      const comprobanteWebBtn = document.getElementById('whatsappComprobanteWebBtn');
+      if (comprobanteWebBtn) {
+        comprobanteWebBtn.href = getWhatsAppWebLink(waNumber, waMsg);
+      }
       const transferReceiptBtn = document.getElementById('transferReceiptBtn');
       if (transferReceiptBtn) {
         transferReceiptBtn.href = getWhatsAppLink(waNumber, waMsg);
@@ -467,6 +475,11 @@
       if (transferReceiptAlternativeBtn) {
         transferReceiptAlternativeBtn.href = getWhatsAppAlternativeLink(waNumber, waMsg);
         transferReceiptAlternativeBtn.style.display = isCash ? 'none' : '';
+      }
+      const transferReceiptWebBtn = document.getElementById('transferReceiptWebBtn');
+      if (transferReceiptWebBtn) {
+        transferReceiptWebBtn.href = getWhatsAppWebLink(waNumber, waMsg);
+        transferReceiptWebBtn.style.display = isCash ? 'none' : '';
       }
 
       document.getElementById('paymentInstructions').style.display = 'block';
@@ -546,6 +559,8 @@
         document.getElementById('transferReceiptBtn').href = primaryLink;
         document.getElementById('whatsappComprobanteAlternativeBtn').href = alternativeLink;
         document.getElementById('transferReceiptAlternativeBtn').href = alternativeLink;
+        document.getElementById('whatsappComprobanteWebBtn').href = getWhatsAppWebLink(order.waNumber, order.waMsg);
+        document.getElementById('transferReceiptWebBtn').href = getWhatsAppWebLink(order.waNumber, order.waMsg);
         document.getElementById('transferReceiptBtn').dataset.orderNumber = order.number;
         document.getElementById('transferReceiptBtn').dataset.orderId = order.id || '';
       }

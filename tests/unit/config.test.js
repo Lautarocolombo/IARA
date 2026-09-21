@@ -55,6 +55,17 @@ describe('config.js', () => {
       });
     });
 
+    describe('getWhatsAppWebLink', () => {
+      test('genera enlace de WhatsApp Web con el número y mensaje', () => {
+        const link = config.getWhatsAppWebLink('Hola desde la web');
+        const phone = config.CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g, '');
+
+        expect(link).toBe(
+          `https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent('Hola desde la web')}`
+        );
+      });
+    });
+
     test('usa el número de WhatsApp de CONFIG', () => {
       const link = config.getWhatsAppLink();
       const phone = config.CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g, '');
