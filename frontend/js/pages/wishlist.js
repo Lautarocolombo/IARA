@@ -25,23 +25,10 @@
       .replace(/'/g, '&#39;');
   }
 
-  function productImage(product) {
-    var alt = product.name || 'Producto';
-    var placeholder = product.emoji || '📿';
-    if (typeof window.renderProductImage === 'function') {
-      return window.renderProductImage(product.image || '', alt, { className: 'product-card-img', placeholder: placeholder });
-    }
-    var uri = (typeof window.getPlaceholderDataUri === 'function')
-      ? window.getPlaceholderDataUri(placeholder)
-      : '';
-    return '<img src="' + uri + '" alt="' + escapeHtml(alt) + '" class="product-card-img" loading="lazy" decoding="async" />';
-  }
-
   function whatsAppLink(product) {
-    var phone = '';
-    if (window.CONFIG && window.CONFIG.CONTACT) phone = String(window.CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, '');
-    var msg = encodeURIComponent('Hola! Me interesa el producto: ' + (product.name || 'Producto') + ' - ' + formatPrice(product.price));
-    return 'https://wa.me/' + phone + '?text=' + msg;
+    return window.buildWhatsAppLink({
+      message: 'Hola! Me interesa el producto *' + (product.name || 'Producto') + '* (' + formatPrice(product.price) + '). ¿Está disponible?'
+    });
   }
 
   function buildCard(product) {
@@ -52,19 +39,21 @@
     var catClass = product.category ? 'cat-' + product.category : '';
     var detailHref = 'product.html?id=' + encodeURIComponent(id);
 
-    var imageHtml = productImage(product);
+    var imageLayers = window.buildProductImageLayers(product);
     var priceHtml = formatPrice(price);
     var waLink = whatsAppLink(product);
     var nameEsc = escapeHtml(name);
     var imgEsc = escapeHtml(product.image || '');
-    var badgeHtml = product.badge ? '<span class="product-badge">' + escapeHtml(product.badge) + '</span>' : '';
+    var badgeHtml = product.badge ? '<span class="product-badge" aria-hidden="true">' + escapeHtml(product.badge) + '</span>' : '';
 
     return ''
       + '<div class="product-card reveal" data-product-id="' + id + '">'
-      + '  <a href="' + detailHref + '" style="text-decoration:none;color:inherit;">'
-      + '    <div class="product-image ' + catClass + '" aria-hidden="true">' + imageHtml + '</div>'
+      + '  <div class="product-image ' + catClass + '">'
+      + '    <a href="' + detailHref + '" aria-label="Ver ' + nameEsc + '" style="text-decoration:none;color:inherit;">'
+      + '      ' + imageLayers
+      + '    </a>'
       + '    ' + badgeHtml
-      + '  </a>'
+      + '  </div>'
       + '  <div class="product-info">'
       + '    <span class="product-category">' + escapeHtml(product.category || '') + '</span>'
       + '    <a href="' + detailHref + '" style="text-decoration:none;color:inherit;">'
@@ -81,7 +70,7 @@
       + '      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>'
       + '    </button>'
       + '    <button class="btn-wishlist" data-action="remove-from-wishlist" data-product-id="' + id + '" aria-label="Quitar ' + nameEsc + ' de favoritos" title="Quitar de favoritos">❤️</button>'
-      + '    <a href="' + waLink + '" target="_blank" class="btn-outline btn-sm" rel="noopener" title="Consultar por WhatsApp">💬</a>'
+      + '    <a href="' + waLink + '" target="_blank" class="btn-outline btn-sm btn-whatsapp" rel="noopener noreferrer" title="Consultar por WhatsApp" aria-label="Consultar ' + nameEsc + ' por WhatsApp">💬</a>'
       + '  </div>'
       + '</div>';
   }
@@ -169,6 +158,28 @@
     var grid = document.getElementById('wishlistGrid');
     if (grid) {
       grid.addEventListener('click', function (e) {
+        var whatsapp = e.target.closest('.btn-whatsapp');
+        if (whatsapp) {
+          e.stopPropagation();
+          return;
+        }
+        var image = e.target.closest('.product-image');
+        if (image && window.matchMedia('(hover: none)').matches) {
+          // En táctil, el toque en la imagen alterna .is-open sin navegar;
+          // "Ver producto" y los botones siguen funcionando con normalidad.
+          e.preventDefault();
+          e.stopPropagation();
+          var card = image.closest('.product-card');
+          if (card) {
+            var wasOpen = card.classList.contains('is-open');
+            grid.querySelectorAll('.product-card.is-open').forEach(function (other) {
+              if (other !== card) other.classList.remove('is-open');
+            });
+            card.classList.toggle('is-open', !wasOpen);
+          }
+          return;
+        }
+
         var removeBtn = e.target.closest('[data-action="remove-from-wishlist"]');
         if (removeBtn) {
           var pid = Number(removeBtn.getAttribute('data-product-id'));
