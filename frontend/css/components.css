@@ -1,3 +1,5 @@
+@import url('./components/index.css');
+
 html, body { overflow-x: hidden; }
 
 /* ==================== COMPONENTS ==================== */
@@ -787,71 +789,295 @@ html, body { overflow-x: hidden; }
 }
 
 .product-card {
+  --info-h: 160px;
+  --actions-h: 56px;
+  --image-aspect: 3 / 4;
+  /* Variables del fix hover+borde (alcance: solo la tarjeta). */
+  --card-border: var(--border);
+  --card-border-hover: var(--rose);
+  --card-radius: 16px;
+  --fx-duration: 400ms;
+  --fx-ease: cubic-bezier(.4, 0, .2, 1);
+
   background: var(--white);
-  border-radius: 16px;
-  border: none;
-  overflow: visible;
+  border-radius: var(--card-radius);
+  /* Borde rosa pastel siempre visible; border-box para no alterar el tamaño. */
+  border: 1px solid var(--card-border);
+  box-sizing: border-box;
+  overflow: hidden;
   box-shadow: 0 6px 20px rgba(212, 112, 144, 0.10);
-  transition: var(--transition);
+  position: relative;
   display: flex;
   flex-direction: column;
-  position: relative;
-  height: 100%;
-  animation: fadeInUp 0.5s ease both;
+  isolation: isolate;
+  /*
+   * Stacking dentro de .product-card (isolation: isolate crea contexto):
+   * z:0  → .product-card-bg (capa desenfocada)
+   * z:1  → .glass-tint (velo esmerilado sobre el fondo)
+   * z:2  → .product-image > a > .product-card-img (imagen principal)
+   * z:3  → .product-info (texto; en hover se vuelve invisible y la foto
+   *          expandida se ve a través)
+   * z:4  → .product-actions (botones de acción, siempre visibles)
+   * z:5  → .product-badge (etiqueta, siempre visible)
+   */
 }
 
-.product-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 16px 40px rgba(212, 112, 144, 0.18);
-}
+/* Fallbacks, táctil y accesibilidad de .product-card: ver bloques dedicados
+   más abajo (después del bloque táctil .is-open). */
+
+/* ==================== MEDIA LAYER (imagen) ==================== */
 
 .product-image {
-  width: 100%;
-  aspect-ratio: 1/1;
-  border-radius: 16px 16px 0 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2rem;
-  overflow: hidden;
   position: relative;
-  background: linear-gradient(135deg, #fde8ef, #f8d5e4);
-  padding: 6px;
-  box-sizing: border-box;
+  width: 100%;
+  aspect-ratio: var(--image-aspect);
+  /*La imagen puede salir de su recuadro; la tarjeta la recorta con overflow hidden. */
+  overflow: visible;
+  border-radius: 16px 16px 0 0;
+  background: var(--cream);
+  z-index: 2;
+  transform-origin: center top;
 }
 
-.product-image.cat-pulseras { background: linear-gradient(135deg, #fde8ef, #f8d5e4); }
-.product-image.cat-accesorios { background: linear-gradient(135deg, var(--blush), var(--mint)); }
-.product-image.cat-souvenirs { background: linear-gradient(135deg, #f0eeff, #e4dcff); }
+.product-image.cat-pulseras { background: #fdf3f6; }
+.product-image.cat-accesorios { background: #fdf3f6; }
+.product-image.cat-souvenirs { background: #fdf3f6; }
 
-.product-image img {
+/* El <a> es el recorte activo de las capas fotográficas: con overflow:hidden y
+   border-radius heredado corta (clip) el fondo desenfocado y el glass-tint al
+   marco 3/4, mientras el badge (hermano del <a>, overflow visible) queda visible. */
+.product-image > a {
+  position: absolute;
+  inset: 0;
+  display: block;
+  z-index: 2;
+  overflow: hidden;
+  border-radius: 16px 16px 0 0;
+  /* Solo se anima el inset inferior (propiedad permitida): 0 → -info-h. */
+  transition: bottom var(--fx-duration) var(--fx-ease);
+}
+
+.product-card-bg,
+.product-card-img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
-  max-width: 100%;
-  max-height: 100%;
   object-fit: cover;
   object-position: center;
-  background: transparent;
   display: block;
-  transition: transform .6s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 1;
+  transition:
+    opacity var(--fx-duration) var(--fx-ease),
+    transform var(--fx-duration) var(--fx-ease);
 }
 
-.product-card:hover .product-image img { transform: scale(1.05); }
+/* photo-bg: foto desenfocada + ampliada. Oculta en reposo (opacity 0) y se
+   revela al hover para rellenar los huecos que deja la foto en `contain`. */
+.product-card-bg {
+  z-index: 0;
+  filter: blur(28px) saturate(170%) brightness(0.9);
+  transform: scale(1.2);
+  opacity: 0;
+}
+
+/* photo-fg: foto real. Cover en reposo (recortada); al hover pasa a `contain`
+   (foto completa) con scale(0.98) para no tocar el borde del marco. */
+.product-card-img {
+  z-index: 2;
+}
+
+/* glass-tint: overlay de vidrio esmerilado entre la capa de fondo y la foto.
+   Oculta en reposo (opacity 0); al hover se funde dando el look "frosted" a los
+   huecos de la foto en `contain`. */
+.glass-tint {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(6px) saturate(140%);
+  -webkit-backdrop-filter: blur(6px) saturate(140%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--fx-duration) var(--fx-ease);
+}
+
+/* ==================== INFO LAYER (texto) ====================
+   En reposo: bloque sólido sobre fondo de la tarjeta. En hover/táctil se
+   desenfoca y desvanece con fondo transparente (sin bloque blanco); la
+   imagen expandida se ve a través al quedar esta capa invisible. */
 
 .product-info {
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  height: var(--info-h);
   padding: 16px 18px 14px;
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  background-color: var(--white);
+  box-sizing: border-box;
+  z-index: 3;
+  opacity: 1;
+  filter: blur(0);
+  transform: translateY(0);
+  /* Solo se animan opacity, filter, transform y background-color.
+     visibility conmuta con retardo para un fade-out limpio. */
+  transition:
+    opacity var(--fx-duration) var(--fx-ease),
+    filter var(--fx-duration) var(--fx-ease),
+    transform var(--fx-duration) var(--fx-ease),
+    background-color var(--fx-duration) var(--fx-ease),
+    visibility 0s linear var(--fx-duration);
+  /* visibility y pointer-events se retrasan para que el fade-out sea limpio */
+  transition-delay: 0s;
 }
 
-.product-category {
-  font-size: 10px;
-  color: var(--text-muted);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+/* ============ BORDE: intensificación leve en hover (sin cambiar tamaño) ============ */
+@media (hover: hover) and (pointer: fine) {
+  .product-card:hover {
+    border-color: var(--card-border-hover);
+  }
+}
+
+/* ==================== HOVER (solo puntero fino) ====================
+   Técnica sin layout shift: la tarjeta conserva su altura (el .product-info
+   sigue en flujo con su --info-h). Solo el marco interno (.product-image > a)
+   estira su inset inferior exactamente --info-h, tapando el texto desvanecido.
+   La fila .product-actions no se toca: no se mueve ni se tapa. */
+@media (hover: hover) and (pointer: fine) {
+  /* Marco de foto expandido: cubre imagen + texto, hasta el borde superior
+     de la fila de acciones. */
+  .product-card:hover .product-image > a {
+    bottom: calc(var(--info-h) * -1);
+  }
+
+  /* Relleno de huecos del `contain`: foto ampliada + velo esmerilado. */
+  .product-card:hover .product-card-bg,
+  .product-card:hover .glass-tint {
+    opacity: 1;
+  }
+
+  /* Foto completa, sin recortes, con margen interno para no tocar el marco. */
+  .product-card:hover .product-card-img {
+    object-fit: contain;
+    transform: scale(0.98);
+  }
+
+  /* Texto: blur + fade hasta invisible; fondo a transparente (sin bloque
+     blanco) y despublicado con visibility retrasada + pointer-events none. */
+  .product-card:hover .product-info {
+    opacity: 0;
+    filter: blur(10px);
+    transform: translateY(8px);
+    background-color: transparent;
+    pointer-events: none;
+    visibility: hidden;
+  }
+
+  /* Acciones: estado estable e intacto (sin desplazamientos). */
+  .product-card:hover .product-actions {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+
+  /* will-change solo durante el hover (capas animadas). */
+  .product-card:hover .product-card-bg,
+  .product-card:hover .product-card-img,
+  .product-card:hover .glass-tint,
+  .product-card:hover .product-info {
+    will-change: opacity, transform, filter;
+  }
+}
+
+/* ==================== TÁCTIL: .is-open replica el hover ====================
+   El JS solo alterna .is-open al tocar la imagen; nunca interfiere con
+   "Ver producto" ni con los botones de .product-actions. */
+.product-card.is-open .product-image > a {
+  bottom: calc(var(--info-h) * -1);
+}
+
+.product-card.is-open .product-card-bg,
+.product-card.is-open .glass-tint {
+  opacity: 1;
+}
+
+.product-card.is-open .product-card-img {
+  object-fit: contain;
+  transform: scale(0.98);
+}
+
+.product-card.is-open .product-info {
+  opacity: 0;
+  filter: blur(10px);
+  transform: translateY(8px);
+  background-color: transparent;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.product-card.is-open .product-actions {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* ==================== FALLBACK sin backdrop-filter ====================
+   El blur del velo lo aporta .glass-tint; sin soporte se sube su fondo
+   para que los huecos del `contain` nunca queden blancos. */
+@supports not (backdrop-filter: blur(1px)) {
+  .product-card .glass-tint {
+    background: rgba(255, 255, 255, 0.35);
+  }
+}
+
+/* ==================== ACCESIBILIDAD ====================
+   Decisión :focus-within: con teclado el texto SIEMPRE queda visible para
+   que "Ver producto" sea alcanzable y operable. Esta regla va después del
+   hover a igual especificidad para que el foco prevalezca sobre el hover.
+   (Con mouse puro no hay foco dentro y el efecto hover se aplica normal.) */
+@media (hover: hover) and (pointer: fine) {
+  .product-card:focus-within .product-image > a {
+    bottom: 0;
+  }
+  .product-card:focus-within .product-card-bg,
+  .product-card:focus-within .glass-tint {
+    opacity: 0;
+  }
+  .product-card:focus-within .product-card-img {
+    transform: none;
+  }
+  .product-card:focus-within .product-info {
+    opacity: 1;
+    filter: blur(0);
+    transform: none;
+    background-color: var(--white);
+    pointer-events: auto;
+    visibility: visible;
+  }
+}
+
+/* Movimiento reducido: sin zoom, sin blur animado ni transiciones. */
+@media (prefers-reduced-motion: reduce) {
+  .product-card .product-card-bg,
+  .product-card .product-card-img,
+  .product-card .glass-tint,
+  .product-card .product-info,
+  .product-card .product-image > a {
+    transition-duration: 0.01ms;
+  }
+  .product-card:hover .product-card-img,
+  .product-card.is-open .product-card-img {
+    transform: none;
+  }
+  .product-card:hover .product-info,
+  .product-card.is-open .product-info {
+    filter: none;
+    transform: none;
+  }
 }
 
 .product-name {
@@ -860,6 +1086,10 @@ html, body { overflow-x: hidden; }
   font-weight: 700;
   line-height: 1.35;
   margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .product-description {
@@ -889,14 +1119,24 @@ html, body { overflow-x: hidden; }
   letter-spacing: -0.01em;
 }
 
+/* ==================== ACTIONS LAYER (botones) ==================== */
+
 .product-actions {
+  position: relative;
+  left: auto;
+  right: auto;
+  bottom: auto;
+  height: var(--actions-h);
   display: flex;
   gap: 0.5rem;
-  padding: 0.75rem;
+  padding: 0.5rem 0.75rem;
   align-items: center;
-  border-top: 1px solid var(--border);
+  justify-content: center;
+  /* Línea fina rosa sobre la fila de acciones (mismo tono del borde). */
+  border-top: 1px solid var(--card-border, var(--border));
   background: var(--blush);
-  border-radius: 0 0 16px 16px;
+  box-sizing: border-box;
+  z-index: 4;
 }
 
 .product-cta {
@@ -978,6 +1218,13 @@ html, body { overflow-x: hidden; }
 }
 
 .btn-wishlist:active { transform: scale(0.95); }
+
+/* Sombra suave a los íconos de acción para mantener legibilidad sobre el overlay más transparente. */
+.product-actions .btn-add-cart svg,
+.product-actions .btn-wishlist,
+.product-actions .btn-whatsapp {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+}
 
 .btn-wishlist-detail {
   padding: 13px 18px;
