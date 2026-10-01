@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Seguimiento de pedido | Artesanías Gualeguay</title>
+  <meta name="description" content="Consultá el estado de tu pedido de Artesanías Gualeguay." />
+  <link rel="canonical" href="https://artesania-gualeguay-v3.vercel.app/pages/order-tracking.html" />
+  <link rel="stylesheet" href="../css/variables.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/pill-buttons.css" />
+  <link rel="stylesheet" href="../css/animations.css" />
+  <link rel="stylesheet" href="../css/pages.css" />
+  <link rel="stylesheet" href="../css/orders.css" />
+  <script src="../js/config.js" type="module"></script>
+  <script src="../js/safeImage.js" type="module"></script>
+  <script src="../js/header.js" type="module"></script>
+  <script src="../js/theme.js" type="module"></script>
+  <script src="../js/ui.js" type="module"></script>
+  <script src="../js/tracking.js" type="module"></script>
+</head>
+<body>
+  <a href="#trackingContent" class="skip-link">Saltar al contenido principal</a>
+  <main id="trackingContent" class="tracking-wrap">
+    <div class="tracking-container">
+      <nav aria-label="Breadcrumb" class="breadcrumb"><a href="../index.html">Inicio</a><span aria-hidden="true">/</span><span>Seguimiento</span></nav>
+      <a href="../index.html" class="back-link">Volver al sitio</a>
+      <div class="section-header"><span class="section-tag">Seguimiento</span><h1 class="section-title">Estado del pedido</h1><p class="section-subtitle">Ingresá el número de pedido para consultar su estado.</p></div>
+      <div id="trackingLookup"><form id="trackingLookupForm" class="orders-form"><input type="text" id="trackingOrderId" placeholder="Ej: 1234" required /><button type="submit" class="btn-primary">Buscar pedido</button></form></div>
+      <div id="trackingContainer" style="display:none;"></div>
+      <div id="trackingFallback" style="display:none;"><div class="empty-orders"><h2>Pedido no encontrado</h2><p>Verificá el número e intentá nuevamente.</p><a href="../index.html#catalog" class="btn-primary" style="margin-top:1rem;">Ver catálogo</a></div></div>
+    </div>
+  </main>
+  <footer class="footer"><div class="footer-content"><div class="footer-section"><h4>Artesanías Gualeguay</h4><p>Creando pulseras y souvenirs únicos desde el corazón de Gualeguay, Entre Ríos.</p></div><div class="footer-section"><h4>Enlaces</h4><ul><li><a href="../index.html#home">Inicio</a></li><li><a href="../index.html#catalog">Catálogo</a></li><li><a href="orders.html">Mis pedidos</a></li></ul></div><div class="footer-section"><h4>Información</h4><ul><li><a href="privacy.html">Política de Privacidad</a></li><li><a href="terms.html">Términos de Servicio</a></li><li><a href="faq.html">Preguntas Frecuentes</a></li></ul></div></div><div class="footer-bottom"><p>&copy; 2026 Artesanías Gualeguay. Todos los derechos reservados.</p></div></footer>
+  <div id="toastContainer" class="toast-container"></div>
+</body>
+</html>

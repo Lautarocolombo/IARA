@@ -8,7 +8,7 @@ describe('Frontend checkout', () => {
     global.CONFIG = {
       CART: { SHIPPING_THRESHOLD: 15000, SHIPPING_COST: 3000, FREE_SHIPPING_TEXT: 'GRATIS' },
       API: { BASE: 'http://localhost' },
-      CONTACT: { WHATSAPP: '+5493444634444' }
+      CONTACT: { WHATSAPP: '+543444634444' }
     };
     document.body.innerHTML = `
       <form id="shippingForm"></form>

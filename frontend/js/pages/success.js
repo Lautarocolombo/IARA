@@ -1,3 +1,4 @@
+/* global normalizeWhatsAppPhone */
 (function() {
   initSiteHeader({ showBackButton: true });
 
@@ -63,12 +64,16 @@
 
       if (order.waNumber && order.waMsg) {
         const waBtn = document.getElementById('successWhatsappBtn');
-        if (waBtn) waBtn.href = `https://wa.me/${order.waNumber}?text=${order.waMsg}`;
+        if (waBtn) {
+          const waPhone = normalizeWhatsAppPhone(order.waNumber || '');
+          waBtn.href = `https://wa.me/${waPhone}?text=${encodeURIComponent(order.waMsg)}`;
+        }
       } else {
         const waBtn = document.getElementById('successWhatsappBtn');
         if (waBtn && CONFIG && CONFIG.CONTACT && CONFIG.CONTACT.WHATSAPP) {
           const waMessage = encodeURIComponent('Hola! Quiero confirmar mi pago y enviar mi comprobante de transferencia.');
-          waBtn.href = `https://wa.me/${CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g, '')}?text=${waMessage}`;
+          const waPhone = normalizeWhatsAppPhone(CONFIG.CONTACT.WHATSAPP);
+          waBtn.href = `https://wa.me/${waPhone}?text=${waMessage}`;
         }
       }
 

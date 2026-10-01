@@ -6,6 +6,7 @@ describe('Admin content - image previews', () => {
   var siteTexts;
 
   beforeEach(() => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.resetModules();
     global.CONFIG = {
       API: { BASE: 'http://localhost', BACKEND_URL: 'http://localhost' },
@@ -170,5 +171,9 @@ describe('Admin content - image previews', () => {
     expect(heroImg.style.display).toBe('none');
     expect(document.getElementById('heroImageError').style.display).toBe('block');
     expect(window.URL.createObjectURL).not.toHaveBeenCalled();
+  });
+
+  afterEach(() => {
+    console.error.mockRestore();
   });
 });

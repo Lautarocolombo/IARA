@@ -460,3 +460,30 @@ describe('safeImage.js', () => {
     });
   });
 });
+
+describe('buildProductImageLayers (shared image helper)', () => {
+  beforeEach(() => {
+    jest.resetModules();
+  });
+
+  test('expone buildProductImageLayers en window', () => {
+    require('../../frontend/js/safeImage');
+    expect(typeof window.buildProductImageLayers).toBe('function');
+  });
+
+  test('apila bg, glass-tint y fg con el mismo src (orden correcto)', () => {
+    require('../../frontend/js/safeImage');
+    const html = window.buildProductImageLayers({ id: 1, name: 'Pulsera', image: 'pulsera.jpg', emoji: '📿' });
+    expect(html.indexOf('product-card-bg')).toBeLessThan(html.indexOf('glass-tint'));
+    expect(html.indexOf('glass-tint')).toBeLessThan(html.indexOf('product-card-img'));
+    expect(html.match(/src="pulsera\.jpg"/g).length).toBe(2);
+  });
+
+  test('usa placeholder cuando no hay imagen', () => {
+    require('../../frontend/js/safeImage');
+    const html = window.buildProductImageLayers({ name: 'Sin foto', image: '' });
+    expect(html).toContain('product-card-bg');
+    expect(html).toContain('glass-tint');
+    expect(html).toContain('product-card-img');
+  });
+});

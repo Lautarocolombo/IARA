@@ -226,10 +226,11 @@
       return;
     }
 
-    if (!confirm('¿Estás seguro de descartar los cambios sin guardar?')) return;
-
-    try {
-      switch (current) {
+    var doDiscard = function (section) {
+      var target = section || current;
+      return (async function () {
+        try {
+      switch (target) {
         case 'content':
           if (typeof window.reloadContent === 'function') {
             await window.reloadContent();
@@ -276,12 +277,23 @@
           throw new Error('Sección no reconocida');
       }
 
-      window.__adminDirtyState[current] = false;
+      window.__adminDirtyState[section || current] = false;
       updateUnsavedUI();
       window.showToast('✅', 'Cambios descartados', 'success');
     } catch (err) {
       console.error('[Sync] Error descartando cambios:', err);
       window.showToast('❌', err.message || 'Error al descartar cambios', 'error');
+    }
+        })();
+    };
+
+    var proceedDiscard = function () { doDiscard(current); };
+    if (typeof window.showConfirmModal === 'function') {
+      window.showConfirmModal('Descartar cambios', '¿Estás seguro de descartar los cambios sin guardar?', proceedDiscard);
+      return;
+    }
+    if (window.confirm('¿Estás seguro de descartar los cambios sin guardar?')) {
+      await doDiscard(current);
     }
   }
 

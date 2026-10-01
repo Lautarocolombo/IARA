@@ -20,7 +20,7 @@ test('checkout crea pedido con transferencia', async ({ page }) => {
       API: { BASE: 'http://localhost:3000' },
       ANIMATIONS: { TOAST_DURATION: 3000, REVEAL_THRESHOLD: 0.15, TRANSITION_SPEED: 0.4 },
       CART: { STORAGE_KEY: 'ag_cart', SHIPPING_COST: 200, SHIPPING_THRESHOLD: 2000, FREE_SHIPPING_TEXT: 'Envío Gratis' },
-      CONTACT: { WHATSAPP: '+5493444634444', WHATSAPP_ALIAS: 'iara-salgueiro', PHONE: '+54 (3444) 634-4444', EMAIL: 'noreply@artesaniagualeguay.com', ADDRESS: 'San Antonio Norte 473, Gualeguay, Entre Ríos, Argentina', COORDINATES: { lat: -33.1400009, lng: -59.3136349 }, GOOGLE_MAPS_API_KEY: '' }
+       CONTACT: { WHATSAPP: '+543444634444', WHATSAPP_ALIAS: 'iara-salgueiro', PHONE: '+54 (3444) 634-4444', EMAIL: 'noreply@artesaniagualeguay.com', ADDRESS: 'San Antonio Norte 473, Gualeguay, Entre Ríos, Argentina', COORDINATES: { lat: -33.1400009, lng: -59.3136349 }, GOOGLE_MAPS_API_KEY: '' }
     };
     window.getAuthToken = () => 'fake-token';
     window.fetchWithRetry = async (url, options = {}) => {
@@ -35,7 +35,7 @@ test('checkout crea pedido con transferencia', async ({ page }) => {
       return '$ ' + number.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     };
     window.showToast = () => {};
-    window.loadMpAlias = async () => ({ active: true, transferAlias: 'artesaniagualeguay', holderName: 'Artesanía Gualeguay', whatsapp: '5493444634444', message: 'Transferí el total exacto y enviá el comprobante por WhatsApp para confirmar tu pedido.' });
+        window.loadMpAlias = async () => ({ active: true, transferAlias: 'artesaniagualeguay', holderName: 'Artesanías Gualeguay', whatsapp: '543444634444', message: 'Transferí el total exacto y enviá el comprobante por WhatsApp para confirmar tu pedido.' });
     window.copyTransferField = () => {};
     window.copyMpAlias = () => {};
     window.renderProductImage = () => '';
@@ -76,8 +76,8 @@ test('checkout crea pedido con transferencia', async ({ page }) => {
       body: JSON.stringify({
         active: true,
         transferAlias: 'artesaniagualeguay',
-        holderName: 'Artesanía Gualeguay',
-        whatsapp: '5493444634444',
+holderName: 'Artesanías Gualeguay',
+         whatsapp: '543444634444',
         message: 'Transferí el total exacto y enviá el comprobante por WhatsApp para confirmar tu pedido.'
       }),
     });

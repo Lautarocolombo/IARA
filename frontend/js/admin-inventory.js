@@ -107,7 +107,9 @@
       }
       loadAlerts();
     } catch (err) {
-      alert(err.message);
+      if (typeof window.showToast === 'function') window.showToast('❌', err.message || 'Error resolviendo alerta', 'error');
+      // eslint-disable-next-line no-console
+      else console.error('[inventory]', err.message || err);
     }
   }
 

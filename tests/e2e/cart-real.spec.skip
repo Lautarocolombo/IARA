@@ -1,0 +1,48 @@
+const { test, expect } = require('@playwright/test');
+
+test.describe('DEBUG: real add->navigate flow', () => {
+  test('add on home then navigate to cart', async ({ page }) => {
+    const errors = [];
+    const pageErrors = [];
+    page.on('console', msg => {
+      if (msg.type() === 'error' || msg.type() === 'warning') errors.push(`[${msg.type()}] ${msg.text()}`);
+    });
+    page.on('pageerror', err => pageErrors.push('[pageerror] ' + err.message));
+
+    // Start on home page (classic scripts -> addToCart is global)
+    await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(800);
+
+    // Seed a product via the real window.addToCart (classic-script global on home)
+    const added = await page.evaluate(() => {
+      window.addToCart({ id: 42, name: 'Pulsera Real', price: 2500, qty: 1, emoji: '🧵', image: '', stock: 99, description: 'desc real' });
+      return JSON.parse(window.localStorage.getItem('ag_cart'));
+    });
+    console.log('home addToCart result localStorage:', JSON.stringify(added));
+
+    // Navigate to cart page
+    await page.goto('/pages/cart.html');
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
+
+    const itemsHTML = await page.$eval('#cartItems', el => el.innerHTML).catch(() => null);
+    const cartItemsCount = await page.$$eval('#cartItems .cart-item', els => els.length);
+    const itemsText = await page.$eval('#cartItems', el => el.textContent.trim()).catch(() => null);
+    const subtotal = await page.$eval('#subtotal', el => el.textContent).catch(() => 'NULL');
+    const total = await page.$eval('#total', el => el.textContent).catch(() => 'NULL');
+    const emptyCartVisible = await page.isVisible('#emptyCart').catch(() => 'err');
+
+    console.log('\n===== DEBUG REAL FLOW =====');
+    console.log('pageerrors:', JSON.stringify(pageErrors));
+    console.log('console err/warn (first 12):', JSON.stringify(errors.slice(0,12)));
+    console.log('#cartItems innerHTML length:', itemsHTML ? itemsHTML.length : 'NULL');
+    console.log('#cartItems .cart-item count:', cartItemsCount);
+    console.log('#cartItems textContent:', JSON.stringify(itemsText));
+    console.log('emptyCart visible:', emptyCartVisible);
+    console.log('subtotal:', subtotal, '| total:', total);
+    console.log('===== END =====\n');
+
+    expect(cartItemsCount).toBeGreaterThan(0);
+  });
+});

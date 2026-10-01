@@ -157,7 +157,7 @@ describe('email', () => {
 
       const call = global.fetch.mock.calls[0];
       const body = JSON.parse(call[1].body);
-      expect(body.subject).toBe('Pedido confirmado #0005 - Artesanía Gualeguay');
+      expect(body.subject).toBe('Pedido confirmado #0005 - Artesanías Gualeguay');
       expect(body.html).toContain('#0005');
       expect(body.html).toContain('$100.50');
     });

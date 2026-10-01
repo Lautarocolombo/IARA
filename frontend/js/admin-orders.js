@@ -60,8 +60,30 @@
   }
 
   function getCustomerName(order) {
-    var customer = typeof order.customer === 'string' ? JSON.parse(order.customer) : (order.customer || {});
+    var customer = {};
+    try {
+      customer = typeof order.customer === 'string' ? JSON.parse(order.customer) : (order.customer || {});
+    } catch (e) {
+      customer = {};
+    }
     return escapeHtml(customer.name || order.shipping_name || 'Sin nombre');
+  }
+
+  function getPaymentAlias(cfg) {
+    cfg = cfg || {};
+    return cfg.transferAlias || cfg.mpAlias || cfg.transfer_alias || cfg.mp_alias || '';
+  }
+
+  function getPaymentHolder(cfg) {
+    cfg = cfg || {};
+    return cfg.holderName || cfg.holder_name || '';
+  }
+
+  function isPaymentEnabled(cfg) {
+    cfg = cfg || {};
+    if (cfg.mpEnabled !== undefined) return !!cfg.mpEnabled;
+    if (cfg.mp_enabled !== undefined) return !!cfg.mp_enabled;
+    return true;
   }
 
   function isPaymentValidated(order) {
@@ -88,8 +110,9 @@
       return { status: 'pending', label: 'Pendiente' };
     }
     if (step === 3) {
-      if (validated || hasComp) return { status: 'completed', label: 'Completado' };
-      return { status: validated ? 'completed' : (hasComp ? 'in-progress' : 'pending'), label: validated ? 'Completado' : (hasComp ? 'En curso' : 'Pendiente') };
+      if (validated) return { status: 'completed', label: 'Completado' };
+      if (hasComp) return { status: 'in-progress', label: 'En curso' };
+      return { status: 'pending', label: 'Pendiente' };
     }
     if (step === 4) {
       if (validated && (shipOk || whatsappChecked)) return { status: 'completed', label: 'Completado' };
@@ -383,9 +406,9 @@
   }
 
   function renderPaymentDetails(order) {
-    var alias = paymentConfig.mp_alias || '—';
-    var holder = paymentConfig.holder_name || '—';
-    var mpEnabled = !!paymentConfig.mp_enabled;
+    var alias = getPaymentAlias(paymentConfig) || '—';
+    var holder = getPaymentHolder(paymentConfig) || '—';
+    var mpEnabled = isPaymentEnabled(paymentConfig);
 
     var aliasEl = document.getElementById('mpAliasDisplay');
     if (aliasEl) {
@@ -402,12 +425,18 @@
     if (orderTotalDisplay) orderTotalDisplay.textContent = formatCurrency(order.total);
 
     var qrContainer = document.getElementById('qrCodeDisplay');
+    if (!qrContainer) return;
     qrContainer.innerHTML = '';
+    function qrFallbackText() {
+      qrContainer.textContent = alias && alias !== '—' ? alias : 'Sin alias configurado';
+    }
     try {
-      if (typeof QRCode !== 'undefined' && alias && alias !== '—') {
+      if (!alias || alias === '—') {
+        qrContainer.textContent = 'Sin alias configurado';
+      } else if (typeof QRCode !== 'undefined' && typeof QRCode.toDataURL === 'function') {
         QRCode.toDataURL(alias, { width: 180, margin: 1 }, function (err, url) {
-          if (err) {
-            qrContainer.textContent = alias;
+          if (err || !url) {
+            qrFallbackText();
             return;
           }
           var img = document.createElement('img');
@@ -415,15 +444,20 @@
           img.alt = 'QR Alias MP';
           img.style.border = '1px solid var(--border)';
           img.style.borderRadius = '8px';
+          img.onerror = function () { qrFallbackText(); };
           qrContainer.appendChild(img);
         });
-      } else if (alias && alias !== '—') {
-        qrContainer.textContent = alias;
+      } else if (typeof QRCode === 'function') {
+        try {
+          new QRCode(qrContainer, { text: alias, width: 180, height: 180 });
+        } catch (e2) {
+          qrFallbackText();
+        }
       } else {
-        qrContainer.textContent = 'Sin alias configurado';
+        qrFallbackText();
       }
     } catch (e) {
-      qrContainer.textContent = alias && alias !== '—' ? alias : 'Sin alias configurado';
+      qrFallbackText();
     }
 
     if (currentReceipt && currentReceipt.url) {
@@ -621,16 +655,36 @@
     }
   }
 
+  function askRejectReason(orderId, onSubmit) {
+    if (typeof window.openModal === 'function') {
+      var wrap = document.createElement('div');
+      wrap.innerHTML = '<div class="form-group"><label>Motivo del rechazo (opcional)</label><textarea id="orderRejectReason" rows="3" style="width:100%" placeholder="Ej: comprobante ilegible"></textarea></div><p class="form-hint">Pedido #' + orderId + '</p>';
+      window.openModal({
+        title: 'Rechazar pago',
+        content: wrap,
+        actions: [
+          { label: 'Cancelar', className: 'btn btn-secondary', close: true },
+          { label: 'Rechazar pago', className: 'btn btn-danger', onClick: function () { onSubmit(wrap.querySelector('#orderRejectReason').value || ''); } }
+        ]
+      });
+      return;
+    }
+    if (typeof window.showConfirmModal === 'function') {
+      window.showConfirmModal(
+        'Rechazar pago',
+        '¿Confirmás el rechazo del pago del pedido #' + orderId + '? (sin motivo)',
+        function () { onSubmit(''); }
+      );
+      return;
+    }
+    onSubmit('');
+  }
+
   async function rejectPayment() {
     if (!selectedOrderId) return;
-    var reason = prompt('Motivo del rechazo (opcional):');
-    if (reason === null) return;
-
-    window.showConfirmModal(
-      'Rechazar pago',
-      '¿Confirmás el rechazo del pago del pedido #' + selectedOrderId + '?',
-      function () { processReject(selectedOrderId, reason || ''); }
-    );
+    askRejectReason(selectedOrderId, function (reason) {
+      processReject(selectedOrderId, reason || '');
+    });
   }
 
   async function processReject(id, reason) {
@@ -856,7 +910,7 @@
     var msg = document.getElementById('confirmModalMessage');
     var actionBtn = document.getElementById('confirmModalAction');
     if (modal) {
-      if (msg) msg.innerHTML = '<strong>Cómo generar el comprobante desde tu banco:</strong><br>1) Ingresá a la app de tu banco.<br>2) Buscá la transferencia realizada a <strong>' + escapeHtml(paymentConfig.mp_alias || 'el alias configurado') + '</strong>.<br>3) Descargá o capturá el comprobante de la operación.<br>4) Subilo acá con el botón "Subir Comprobante".';
+      if (msg) msg.innerHTML = '<strong>Cómo generar el comprobante desde tu banco:</strong><br>1) Ingresá a la app de tu banco.<br>2) Buscá la transferencia realizada a <strong>' + escapeHtml(getPaymentAlias(paymentConfig) || 'el alias configurado') + '</strong>.<br>3) Descargá o capturá el comprobante de la operación.<br>4) Subilo acá con el botón "Subir Comprobante".';
       if (actionBtn) {
         actionBtn.textContent = 'Entendido';
         actionBtn.className = 'btn btn-primary';

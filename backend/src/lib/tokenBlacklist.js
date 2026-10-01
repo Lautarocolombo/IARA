@@ -51,6 +51,7 @@ function scheduleMemoryCleanup() {
     memoryBlacklist.clear();
     cleanupTimeout = null;
   }, JWT_TTL_MS);
+  cleanupTimeout.unref();
 }
 
 async function add(token) {

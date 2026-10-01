@@ -18,7 +18,7 @@ router.put('/admin/orders/:id/notes', adminAuth, updateOrderNotes);
 router.post('/admin/orders/:id/activity', adminAuth, addOrderActivity);
 router.get('/admin/orders/:id/activity', adminAuth, getOrderActivities);
 router.get('/admin/orders/:id', adminAuth, getOrderDetail);
-router.delete('/admin/orders/:id', adminAuth, deleteOrder);
 router.delete('/admin/orders/batch', adminAuth, batchDeleteOrders);
+router.delete('/admin/orders/:id', adminAuth, deleteOrder);
 
 module.exports = router;

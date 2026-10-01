@@ -1744,6 +1744,13 @@ html, body { overflow-x: hidden; }
   border-radius: var(--radius-md);
   overflow: hidden;
   background: var(--blush);
+  cursor: pointer;
+  position: relative;
+  transition: var(--transition);
+}
+
+.testimonial-product-image-wrap:hover {
+  box-shadow: var(--shadow-md);
 }
 
 .testimonial-product-image {
@@ -1752,6 +1759,34 @@ html, body { overflow-x: hidden; }
   max-height: 320px;
   object-fit: cover;
   display: block;
+  transition: transform 0.3s ease;
+}
+
+.testimonial-product-image-wrap:hover .testimonial-product-image {
+  transform: scale(1.03);
+}
+
+.testimonial-product-image-zoom {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.testimonial-product-image-wrap:hover .testimonial-product-image-zoom {
+  opacity: 1;
 }
 
 [data-theme="dark"] .testimonial-product-image-wrap {
@@ -2287,6 +2322,108 @@ html, body { overflow-x: hidden; }
   padding: 0.35rem 0.6rem;
   border-radius: 999px;
   border: 1px solid var(--rose-light);
+
+/* ==================== TESTIMONIAL LIGHTBOX ==================== */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(23, 12, 18, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.lightbox-overlay.active {
+  display: flex;
+}
+
+.lightbox-overlay .lightbox-card {
+  position: relative;
+  max-width: 90vw;
+  max-height: 85vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  animation: lightbox-in 220ms ease-out;
+}
+
+.lightbox-overlay .lightbox-img {
+  max-width: 100%;
+  max-height: 85vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  display: block;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  z-index: 2;
+}
+
+.lightbox-close:hover,
+.lightbox-close:focus {
+  background: rgba(0, 0, 0, 0.75);
+  outline: none;
+}
+
+.lightbox-close:focus-visible {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.55);
+}
+
+@keyframes lightbox-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lightbox-overlay .lightbox-card {
+    animation: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .lightbox-overlay {
+    padding: 0;
+  }
+  .lightbox-overlay .lightbox-card {
+    max-width: 100vw;
+    max-height: 92vh;
+    border-radius: 0;
+  }
+  .lightbox-img {
+    max-height: 92vh;
+  }
+}
   background: var(--white);
   color: var(--text-mid);
   transition: all 0.2s;

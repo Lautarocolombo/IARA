@@ -569,7 +569,7 @@ const exportOrders = async (req, res) => {
       const stream = fs.createWriteStream(filepath);
       doc.pipe(stream);
 
-      doc.fontSize(16).font('Helvetica-Bold').text('Reporte de Pedidos - Artesanía Gualeguay');
+      doc.fontSize(16).font('Helvetica-Bold').text('Reporte de Pedidos - Artesanías Gualeguay');
       doc.moveDown();
       doc.fontSize(10).font('Helvetica').text(`Total: ${result.rows.length} pedidos`);
       doc.moveDown();

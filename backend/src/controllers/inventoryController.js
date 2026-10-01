@@ -1,4 +1,4 @@
-const { query } = require('../lib/db');
+const { query, isLocal } = require('../lib/db');
 const logger = require('../lib/logger');
 
 async function logInventoryMovement(productId, type, quantity, previousStock, newStock, reason, referenceId) {
@@ -72,11 +72,13 @@ const getInventoryMovements = async (req, res) => {
 
 const getInventoryAlerts = async (req, res) => {
   try {
-    const tableCheck = await query(
-      `SELECT COUNT(*) AS count FROM information_schema.tables WHERE table_name = 'inventory_alerts' AND table_schema = 'public'`
-    );
-    if (tableCheck.rows[0].count === 0) {
-      return res.json({ alerts: [] });
+    if (!isLocal) {
+      const tableCheck = await query(
+        `SELECT COUNT(*) AS count FROM information_schema.tables WHERE table_name = 'inventory_alerts' AND table_schema = 'public'`
+      );
+      if (tableCheck.rows[0].count === 0) {
+        return res.json({ alerts: [] });
+      }
     }
 
     const resolved = req.query.resolved === 'true';

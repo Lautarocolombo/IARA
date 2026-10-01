@@ -1,8 +1,7 @@
 function cspMiddleware(req, res, next) {
-  const nonce = req.nonce || '';
   const csp = [
     "default-src 'self'",
-    `script-src 'self' https://cdn.jsdelivr.net https://cdn.vercel-insights.com https://www.googletagmanager.com https://*.googletagmanager.com https://*.google-analytics.com https://maps.googleapis.com 'nonce-${nonce}'`,
+    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.vercel-insights.com https://www.googletagmanager.com https://*.googletagmanager.com https://*.google-analytics.com https://maps.googleapis.com",
     "style-src 'self' https://fonts.googleapis.com https://cdn.jsdelivr.net 'unsafe-inline'",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https: blob:",

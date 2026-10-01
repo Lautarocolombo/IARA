@@ -39,6 +39,9 @@
         const imageHtml = images.length
           ? `<div class="product-image-gallery"><div class="product-image-main">${window.renderProductImage(principalImage ? principalImage.url : '', product.name, { id: 'productMainImage', lazy: false, placeholder: '📿' })}</div><div class="product-image-thumbs" id="productThumbs">${thumbsHtml}</div></div>`
            : `${window.renderProductImage('', product.name, { style: 'width:100%;aspect-ratio:1;object-fit:contain;object-position:center;', placeholder: '📿' })}`;
+          const whatsappLink = window.buildWhatsAppLink({
+            message: `Hola! Me interesa el producto *${product.name}* (${formatARS(product.price)}). ¿Está disponible?`
+          });
           const freeShippingThreshold = Number(CONFIG.CART.SHIPPING_THRESHOLD) || 0;
           const freeShippingHint = document.getElementById('freeShippingHint');
           const freeShippingText = document.getElementById('freeShippingText');
@@ -81,7 +84,7 @@
             <div class="product-detail-actions">
               <button class="btn-primary btn-add-cart" data-product-id="${product.id}" data-product-name="${product.name.replace(/"/g, '&quot;')}" data-product-price="${product.price}" data-product-emoji="${product.emoji||'📿'}" data-product-image="${(product.image||'').replace(/"/g, '&quot;')}" data-product-stock="${product.stock||0}">Agregar al carrito</button>
               <button class="btn-outline btn-wishlist-detail" data-product-id="${product.id}" data-product-name="${product.name.replace(/"/g, '&quot;')}" data-product-price="${product.price}" data-product-emoji="${product.emoji||'📿'}" data-product-image="${(product.image||'').replace(/"/g, '&quot;')}" aria-label="Favoritos">${window.isInWishlist(product.id) ? '❤️' : '🤍'}</button>
-              <a href="https://wa.me/${CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g,'')}?text=Hola! Me interesa el producto: ${product.name}" target="_blank" class="btn-outline" rel="noopener">Consultar por WhatsApp</a>
+              <a href="${whatsappLink}" target="_blank" class="btn-outline btn-whatsapp" rel="noopener noreferrer" aria-label="Consultar ${escapeHtml(product.name)} por WhatsApp" onclick="event.stopPropagation()">Consultar por WhatsApp</a>
             </div>
           </div>
         </div>

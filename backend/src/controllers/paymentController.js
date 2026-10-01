@@ -1,15 +1,21 @@
-const { query, transaction } = require('../lib/db');
+const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const crypto = require('crypto');
 const { enqueueWebhook } = require('../queues/webhookQueue');
-const { sendOrderStatusEmail } = require('../lib/email');
 
 async function confirmTransferPayment(req, res) {
   try {
-    const { orderId, amount, reference } = req.body || {};
+    const { orderId, amount, reference, idempotency_key } = req.body || {};
 
     if (!orderId || !amount) {
       return res.status(400).json({ error: 'orderId y amount son requeridos' });
+    }
+
+    if (idempotency_key) {
+      const existing = await query('SELECT id, status FROM webhook_events WHERE event_id = $1', [`transfer_${idempotency_key}`]);
+      if (existing.rows.length > 0 && existing.rows[0].status === 'processed') {
+        return res.status(200).json({ accepted: true, cached: true, message: 'Solicitud ya procesada' });
+      }
     }
 
     const orderResult = await query(
@@ -33,7 +39,7 @@ async function confirmTransferPayment(req, res) {
 
     const eventId = reference || crypto.randomUUID();
 
-    const webhookPayload = { orderId, amount, reference: eventId, source: 'transfer' };
+    const webhookPayload = { orderId, amount, reference: eventId, source: 'transfer', idempotency_key };
 
     try {
       await enqueueWebhook(webhookPayload);
@@ -50,38 +56,49 @@ async function confirmTransferPayment(req, res) {
 }
 
 async function processWebhookSync(payload) {
-  const { orderId, amount, reference } = payload;
-  await transaction(async (client) => {
-    await query(
+  const { orderId, amount, reference, idempotency_key } = payload;
+  const eventId = idempotency_key || reference || crypto.randomUUID();
+
+  await require('../lib/db').transaction(async (client) => {
+    const checkResult = await client.query(
+      'SELECT id, status FROM webhook_events WHERE event_id = $1',
+      [eventId]
+    );
+    if (checkResult.rows.length > 0 && checkResult.rows[0].status === 'processed') {
+      return;
+    }
+
+    await client.query(
       'INSERT INTO webhook_events (event_id, source, payload, status, tenant_id) VALUES ($1, $2, $3, $4, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) ON CONFLICT (event_id) DO NOTHING RETURNING status',
-      [reference, 'transfer', JSON.stringify({ orderId, amount, reference }), 'processing'],
+      [eventId, 'transfer', JSON.stringify({ orderId, amount, reference }), 'processing'],
       client
     );
 
-    const updateResult = await query(
+    const updateResult = await client.query(
       'UPDATE orders SET status = $1 WHERE id = $2 AND status != $1 RETURNING id, shipping_email, customer',
       ['confirmed', Number(orderId)],
       client
     );
 
     if (updateResult.rowCount > 0) {
-      await query(
+      await client.query(
         'UPDATE webhook_events SET status = $1, processed_at = CURRENT_TIMESTAMP WHERE event_id = $2',
-        ['processed', reference],
+        ['processed', eventId],
         client
       );
 
       const updatedOrder = updateResult.rows[0];
       const customerEmail = updatedOrder.shipping_email || (typeof updatedOrder.customer === 'string' ? '' : updatedOrder.customer?.email) || '';
       if (customerEmail) {
-        sendOrderStatusEmail({ id: Number(orderId), total: amount }, customerEmail, 'confirmed').catch(err => {
+        const emailService = require('../services/emailService');
+        emailService.sendOrderStatusEmail({ id: Number(orderId), total: amount }, customerEmail, 'confirmed').catch(err => {
           logger.warn({ err: err.message, orderId }, 'No se pudo enviar email de estado por transferencia');
         });
       }
     } else {
-      await query(
+      await client.query(
         'UPDATE webhook_events SET status = $1 WHERE event_id = $2',
-        ['already_confirmed', reference],
+        ['already_confirmed', eventId],
         client
       );
     }

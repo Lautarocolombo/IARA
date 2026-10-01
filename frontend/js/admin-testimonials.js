@@ -9,7 +9,6 @@
   var draggedId = null;
   var _testimonialsInit = false;
   var pendingPhotoFile = null;
-  var pendingProductPhotoFile = null;
   var sectionContent = { title: '', subtitle: '' };
 
   function escapeHtml(str) {
@@ -119,19 +118,15 @@
         stars += i < Number(t.rating || 0) ? '⭐' : '☆';
       }
       var commentText = escapeHtml(t.comment || '');
-      var avatarCell = t.image
+      var photoCell = t.image
         ? '<img src="' + escapeAttr(t.image) + '" alt="' + escapeAttr(t.name) + '" class="testimonial-thumb" onerror="this.style.display=\'none\'" />'
-        : '<span style="color:var(--text-muted);">—</span>';
-      var productCell = t.product_image_url
-        ? '<img src="' + escapeAttr(t.product_image_url) + '" alt="Producto" class="testimonial-thumb" onerror="this.style.display=\'none\'" />'
         : '<span style="color:var(--text-muted);">—</span>';
       return '<tr data-id="' + t.id + '" draggable="true" class="testimonial-row">' +
         '<td class="text-center" style="cursor:grab;user-select:none;">↕</td>' +
         '<td>' + escapeHtml(t.name || '') + '</td>' +
         '<td>' + escapeHtml(t.role || '') + '</td>' +
         '<td title="' + commentText + '">' + commentText + '</td>' +
-        '<td class="text-center">' + avatarCell + '</td>' +
-        '<td class="text-center">' + productCell + '</td>' +
+        '<td class="text-center">' + photoCell + '</td>' +
         '<td class="text-center">' + stars + '</td>' +
         '<td class="text-center">' +
           '<label class="toggle-field toggle-field--sm">' +
@@ -282,7 +277,7 @@
     }
     var src = imageUrl || URL.createObjectURL(file);
     var img = new Image();
-    img.alt = 'Foto del cliente';
+    img.alt = 'Foto del producto en uso';
     img.loading = 'lazy';
     img.style.maxWidth = '100%';
     img.style.maxHeight = '120px';
@@ -305,7 +300,7 @@
   window.removeTestimonialPhoto = function() {
     window.showConfirmModal(
       'Eliminar foto',
-      '¿Estás seguro de eliminar la foto de este testimonio?',
+      '¿Estás seguro de eliminar la foto del producto en uso?',
       function() {
         pendingPhotoFile = null;
         var photoInput = document.getElementById('testimonialPhotoFile');
@@ -316,57 +311,6 @@
           if (t) t.image = '';
         }
         renderPhotoPreview(null, null);
-      }
-    );
-  };
-
-  function renderProductPhotoPreview(file, imageUrl) {
-    var preview = document.getElementById('testimonialProductPhotoPreview');
-    var removeBtn = document.getElementById('testimonialRemoveProductPhotoBtn');
-    var uploadBtn = document.getElementById('testimonialUploadProductPhotoBtn');
-    if (!preview) return;
-    if (!file && !imageUrl) {
-      preview.innerHTML = '<div class="testimonial-photo-empty">Sin imagen</div>';
-      if (removeBtn) removeBtn.classList.add('hidden');
-      if (uploadBtn) uploadBtn.textContent = '📷 Subir foto';
-      return;
-    }
-    var src = imageUrl || URL.createObjectURL(file);
-    var img = new Image();
-    img.alt = 'Foto del producto en uso';
-    img.loading = 'lazy';
-    img.style.maxWidth = '100%';
-    img.style.maxHeight = '120px';
-    img.style.borderRadius = '8px';
-    img.style.objectFit = 'cover';
-    img.onerror = function() {
-      preview.innerHTML = '<div class="testimonial-photo-empty">Sin imagen</div>';
-      if (removeBtn) removeBtn.classList.add('hidden');
-      if (uploadBtn) uploadBtn.textContent = '📷 Subir foto';
-    };
-    if (file) {
-      img.onload = function () { URL.revokeObjectURL(src); };
-    }
-    preview.innerHTML = '';
-    preview.appendChild(img);
-    if (removeBtn) removeBtn.classList.remove('hidden');
-    if (uploadBtn) uploadBtn.textContent = '🔄 Cambiar foto';
-  }
-
-  window.removeTestimonialProductPhoto = function() {
-    window.showConfirmModal(
-      'Eliminar foto del producto',
-      '¿Estás seguro de eliminar la foto del producto en uso?',
-      function() {
-        pendingProductPhotoFile = null;
-        var photoInput = document.getElementById('testimonialProductPhotoFile');
-        if (photoInput) photoInput.value = '';
-        window._testimonialRemoveProductImageFlag = true;
-        if (editingId) {
-          var t = testimonials.find(function(x) { return x.id === editingId; });
-          if (t) t.product_image_url = '';
-        }
-        renderProductPhotoPreview(null, null);
       }
     );
   };
@@ -399,20 +343,12 @@
     if (activeEl) activeEl.checked = t.active !== false;
 
     pendingPhotoFile = null;
-    pendingProductPhotoFile = null;
     var photoInput = document.getElementById('testimonialPhotoFile');
     if (photoInput) photoInput.value = '';
-    var productPhotoInput = document.getElementById('testimonialProductPhotoFile');
-    if (productPhotoInput) productPhotoInput.value = '';
     if (t.image) {
       renderPhotoPreview(null, t.image);
     } else {
       renderPhotoPreview(null, null);
-    }
-    if (t.product_image_url) {
-      renderProductPhotoPreview(null, t.product_image_url);
-    } else {
-      renderProductPhotoPreview(null, null);
     }
 
     if (saveBtn) {
@@ -498,10 +434,6 @@
         payload.removeImage = true;
         window._testimonialRemoveImageFlag = false;
       }
-      if (window._testimonialRemoveProductImageFlag) {
-        payload.removeProductImage = true;
-        window._testimonialRemoveProductImageFlag = false;
-      }
 
       var formData = new FormData();
       Object.keys(payload).forEach(function (key) {
@@ -511,10 +443,6 @@
       if (pendingPhotoFile) {
         formData.append('image', pendingPhotoFile);
         pendingPhotoFile = null;
-      }
-      if (pendingProductPhotoFile) {
-        formData.append('productImage', pendingProductPhotoFile);
-        pendingProductPhotoFile = null;
       }
 
       var res = await window.adminFetch(url, {
@@ -531,17 +459,12 @@
         if (idx >= 0) testimonials[idx] = saved;
       } else {
         testimonials.push(saved);
-        editingId = saved.id;
+        resetTestimonialForm();
       }
       if (saved.image) {
         renderPhotoPreview(null, saved.image);
       } else {
         renderPhotoPreview(null, null);
-      }
-      if (saved.product_image_url) {
-        renderProductPhotoPreview(null, saved.product_image_url);
-      } else {
-        renderProductPhotoPreview(null, null);
       }
       if (saveBtn) {
         saveBtn.textContent = 'Guardar cambios';
@@ -563,12 +486,10 @@
     }
   }
 
-  function resetTestimonialForm() {
+function resetTestimonialForm() {
     editingId = null;
     pendingPhotoFile = null;
-    pendingProductPhotoFile = null;
     window._testimonialRemoveImageFlag = false;
-    window._testimonialRemoveProductImageFlag = false;
     var nameEl = document.getElementById('testimonialName');
     var roleEl = document.getElementById('testimonialRole');
     var commentEl = document.getElementById('testimonialComment');
@@ -577,8 +498,6 @@
     var saveBtn = document.getElementById('saveTestimonialBtn');
     var photoInput = document.getElementById('testimonialPhotoFile');
     var removeBtn = document.getElementById('testimonialRemovePhotoBtn');
-    var productPhotoInput = document.getElementById('testimonialProductPhotoFile');
-    var removeProductBtn = document.getElementById('testimonialRemoveProductPhotoBtn');
     if (nameEl) nameEl.value = '';
     if (roleEl) roleEl.value = '';
     if (commentEl) commentEl.value = '';
@@ -586,13 +505,10 @@
     if (activeEl) activeEl.checked = true;
     if (photoInput) photoInput.value = '';
     if (removeBtn) removeBtn.classList.add('hidden');
-    if (productPhotoInput) productPhotoInput.value = '';
-    if (removeProductBtn) removeProductBtn.classList.add('hidden');
     renderPhotoPreview(null, null);
-    renderProductPhotoPreview(null, null);
     if (saveBtn) {
       saveBtn.disabled = false;
-      saveBtn.textContent = 'Crear testimonio';
+      saveBtn.textContent = ' crear testimonio';
       delete saveBtn.dataset.editingId;
     }
     updatePreview();
@@ -647,8 +563,8 @@
             photoInput.value = '';
             return;
           }
-          if (pendingPhotoFile.size > 2 * 1024 * 1024) {
-            window.showToast('❌', 'La imagen es muy grande (máximo 2MB)', 'error');
+          if (pendingPhotoFile.size > 5 * 1024 * 1024) {
+            window.showToast('❌', 'La imagen es muy grande (máximo 5MB)', 'error');
             pendingPhotoFile = null;
             photoInput.value = '';
             return;
@@ -666,42 +582,6 @@
     if (removePhotoBtn) {
       removePhotoBtn.addEventListener('click', function() {
         window.removeTestimonialPhoto();
-      });
-    }
-
-    var productPhotoInput = document.getElementById('testimonialProductPhotoFile');
-    var removeProductPhotoBtn = document.getElementById('testimonialRemoveProductPhotoBtn');
-    var uploadProductPhotoBtn = document.getElementById('testimonialUploadProductPhotoBtn');
-    if (productPhotoInput) {
-      productPhotoInput.addEventListener('change', function (e) {
-        pendingProductPhotoFile = e.target.files[0] || null;
-        if (pendingProductPhotoFile) {
-          var allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-          if (allowedTypes.indexOf(pendingProductPhotoFile.type) === -1) {
-            window.showToast('❌', 'Formato no permitido. Usá JPG, PNG o WEBP.', 'error');
-            pendingProductPhotoFile = null;
-            productPhotoInput.value = '';
-            return;
-          }
-          if (pendingProductPhotoFile.size > 5 * 1024 * 1024) {
-            window.showToast('❌', 'La imagen es muy grande (máximo 5MB)', 'error');
-            pendingProductPhotoFile = null;
-            productPhotoInput.value = '';
-            return;
-          }
-          window._testimonialRemoveProductImageFlag = false;
-          renderProductPhotoPreview(pendingProductPhotoFile);
-        }
-      });
-    }
-    if (uploadProductPhotoBtn) {
-      uploadProductPhotoBtn.addEventListener('click', function() {
-        if (productPhotoInput) productPhotoInput.click();
-      });
-    }
-    if (removeProductPhotoBtn) {
-      removeProductPhotoBtn.addEventListener('click', function() {
-        window.removeTestimonialProductPhoto();
       });
     }
 

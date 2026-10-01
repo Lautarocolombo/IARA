@@ -1,4 +1,4 @@
-# Guía de Migraciones - Artesanía Gualeguay
+# Guía de Migraciones - Artesanías Gualeguay
 
 ## Orden deMigraciones
 

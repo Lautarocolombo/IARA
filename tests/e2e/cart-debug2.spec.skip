@@ -1,0 +1,38 @@
+const { test, expect } = require('@playwright/test');
+
+const seed = [{ id: 1, name: 'Pulsera Test', price: 1500, qty: 2, emoji: '🧵', image: '', description: 'Pulsera de prueba', stock: 99 }];
+
+test('DEBUG remove flow', async ({ page }) => {
+  page.on('console', msg => console.log('[PAGE]', msg.type(), msg.text().slice(0, 200)));
+  page.on('pageerror', err => console.log('[PAGEERROR]', err.message));
+
+  await page.goto('/pages/cart.html');
+  await page.evaluate(cart => localStorage.setItem('ag_cart', JSON.stringify(cart)), seed);
+  await page.reload();
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForTimeout(1500);
+
+  const state = await page.evaluate(() => ({
+    nRemoveFromCart: typeof window.removeFromCart,
+    nUpdateCartQty: typeof window.updateCartQty,
+    nGetCart: typeof window.getCart,
+    cart: window.getCart ? window.getCart() : null
+  }));
+  console.log('STATE:', JSON.stringify(state));
+
+  // Direct call to removeFromCart
+  const after = await page.evaluate(() => {
+    if (typeof window.removeFromCart === 'function') {
+      window.removeFromCart(1);
+      return { ok: true, after: window.getCart() };
+    }
+    return { ok: false, after: window.getCart() };
+  });
+  console.log('AFTER DIRECT remove:', JSON.stringify(after));
+
+  // Now check DOM
+  const count = await page.$$eval('#cartItems .cart-item', els => els.length);
+  const html = await page.$eval('#cartItems', el => el.innerHTML.slice(0, 200)).catch(() => null);
+  const empty = await page.isVisible('#emptyCart');
+  console.log('DOM count:', count, '| empty:', empty, '| html head:', html);
+});

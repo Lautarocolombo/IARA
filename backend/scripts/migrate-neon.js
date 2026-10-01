@@ -1,23 +1,10 @@
 'use strict';
 
-const { spawnSync } = require('child_process');
-const path = require('path');
-
-const fixScript = path.join(__dirname, 'fix-pgmigrations.js');
-
-try {
-  const fixResult = spawnSync(process.execPath, [fixScript], {
-    stdio: 'inherit',
-    timeout: 60000
-  });
-
-  if (fixResult.status !== 0 && fixResult.status !== null) {
-    console.error('[migrate-neon] fix-pgmigrations falló, abortando migraciones');
-    process.exit(fixResult.status || 1);
-  }
-} catch (err) {
-  console.warn('[migrate-neon] No se pudo ejecutar fix-pgmigrations:', err.message);
-}
+// Script de utilidad para ejecutar migraciones manualmente en Neon/Postgres.
+// Usa node-pg-migrate con la tabla de control 'pgmigrations'.
+// NOTA: En producción, el backend ejecuta migraciones automáticamente al arrancar
+// via backend/src/lib/migrator.js (tabla 'migrations'). Este script es solo para
+// mantenimiento manual o para bases de datos que no usan el backend.
 
 const { runMigrations } = require('./run-migrations');
 

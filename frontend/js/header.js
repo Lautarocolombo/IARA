@@ -29,7 +29,7 @@ function initSiteHeader(options) {
   html += '<div class="navbar-brand">';
   html += '<a href="' + (isHome ? '#home' : backHref) + '" class="logo">';
   html += '<span class="logo-dot" aria-hidden="true"></span>';
-  html += '<span class="logo-text">Artesanía Gualeguay</span>';
+  html += '<span class="logo-text">Artesanías Gualeguay</span>';
   html += '</a>';
   html += '</div>';
 

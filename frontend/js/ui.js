@@ -1,4 +1,5 @@
 /* ==================== UI.JS ==================== */
+/* global openWhatsAppSafe */
 
 // Toast Notification System
 function showToast(icon, message, type = 'default', options = {}) {
@@ -31,6 +32,92 @@ function showToast(icon, message, type = 'default', options = {}) {
     setTimeout(close, ms);
   }
 }
+
+/* ==================== TESTIMONIAL LIGHTBOX ==================== */
+(function () {
+  'use strict';
+
+  var overlay = null;
+  var lastFocused = null;
+  var keyHandler = null;
+
+  function ensureOverlay() {
+    if (overlay) return overlay;
+    overlay = document.createElement('div');
+    overlay.className = 'lightbox-overlay';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', 'Imagen ampliada del testimonio');
+    overlay.style.display = 'none';
+    overlay.innerHTML =
+      '<div class="lightbox-card">' +
+        '<img class="lightbox-img" alt="" />' +
+        '<button type="button" class="lightbox-close" aria-label="Close image lightbox">×</button>' +
+      '</div>';
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay) closeLightbox();
+    });
+    overlay.querySelector('.lightbox-close').addEventListener('click', closeLightbox);
+    document.body.appendChild(overlay);
+    return overlay;
+  }
+
+  function trapFocus() {
+    var focusable = Array.from(overlay.querySelectorAll('.lightbox-close, .lightbox-img'))
+      .filter(function (el) { return !el.disabled && el.offsetParent !== null; });
+    if (!focusable.length) return;
+    var first = focusable[0];
+    var last = focusable[focusable.length - 1];
+    keyHandler = function (e) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeLightbox();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', keyHandler);
+  }
+
+  function openLightbox(src, alt) {
+    var el = ensureOverlay();
+    var img = el.querySelector('.lightbox-img');
+    img.src = src;
+    img.alt = alt || '';
+    lastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    el.classList.add('active');
+    el.style.display = '';
+    document.body.classList.add('modal-open');
+    trapFocus();
+    var closeBtn = el.querySelector('.lightbox-close');
+    if (closeBtn) closeBtn.focus();
+  }
+
+  function closeLightbox() {
+    if (!overlay) return;
+    overlay.classList.remove('active');
+    overlay.style.display = 'none';
+    document.body.classList.remove('modal-open');
+    if (keyHandler) {
+      document.removeEventListener('keydown', keyHandler);
+      keyHandler = null;
+    }
+    if (lastFocused && typeof lastFocused.focus === 'function') {
+      lastFocused.focus();
+    }
+    lastFocused = null;
+  }
+
+  window.openTestimonialLightbox = openLightbox;
+  window.closeTestimonialLightbox = closeLightbox;
+})();
 
 // Reveal Animation on Scroll
 function initRevealAnimation() {
@@ -842,16 +929,16 @@ function renderTestimonials(testimonials) {
   }
 
   grid.innerHTML = testimonials.map(t => {
-    const avatarContent = t.image
-      ? `<img src="${escapeHtml(t.image)}" alt="${escapeHtml(t.name)}" class="testimonial-avatar-img" loading="lazy" onerror="this.style.display='none';this.parentElement.textContent='😊'" />`
-      : (t.avatar || '😊');
-    const productImageHtml = t.product_image_url
-      ? `<div class="testimonial-product-image-wrap"><img src="${escapeHtml(t.product_image_url)}" alt="${escapeHtml(t.name)} con su producto" class="testimonial-product-image" loading="lazy" onerror="this.parentElement.style.display='none'" /></div>`
+    const productImageHtml = t.image
+      ? `<div class="testimonial-product-image-wrap" role="button" tabindex="0" aria-label="Ampliar foto de ${escapeHtml(t.name)}">
+          <img src="${escapeHtml(t.image)}" alt="${escapeHtml(t.alt || (t.name + ' con su producto'))}" class="testimonial-product-image" loading="lazy" onerror="this.parentElement.style.display='none'" />
+          <button type="button" class="testimonial-product-image-zoom" aria-label="Ampliar foto" aria-hidden="true">🔍</button>
+        </div>`
       : '';
     return `
     <div class="testimonial-card reveal">
       <div class="testimonial-header">
-        <div class="testimonial-avatar">${avatarContent}</div>
+        <div class="testimonial-avatar">😊</div>
         <div>
           <div class="testimonial-name">${escapeHtml(t.name)}</div>
           ${t.role ? `<div style="font-size:0.8rem;color:var(--text-muted);">${escapeHtml(t.role)}</div>` : ''}
@@ -870,6 +957,20 @@ function renderTestimonials(testimonials) {
       }
     });
   }
+
+  grid.querySelectorAll('.testimonial-product-image-wrap').forEach(function (wrap) {
+    wrap.addEventListener('click', function () {
+      const img = wrap.querySelector('.testimonial-product-image');
+      if (img && img.src) window.openTestimonialLightbox(img.src, img.alt || 'Imagen del producto');
+    });
+    wrap.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        const img = wrap.querySelector('.testimonial-product-image');
+        if (img && img.src) window.openTestimonialLightbox(img.src, img.alt || 'Imagen del producto');
+      }
+    });
+  });
 }
 
 window.loadSiteSettings = loadSiteSettings;
@@ -932,3 +1033,53 @@ if (typeof window !== 'undefined') {
   window.emitSync = emitSync;
   window.onSyncMessage = onSyncMessage;
 }
+
+// Intercepta clicks en enlaces wa.me para detectar popup bloqueado (Brave, etc.)
+(function() {
+  if (window.__waBlockInterceptorInstalled) return;
+  window.__waBlockInterceptorInstalled = true;
+
+  document.addEventListener('click', function(e) {
+    const link = e.target.closest('a[href^="https://wa.me"]');
+    if (!link) return;
+    if (e.defaultPrevented) return;
+
+    const primary = link.href;
+    if (!primary) return;
+
+    const fallback = primary.replace('wa.me/', 'api.whatsapp.com/send?phone=');
+    const textMatch = primary.match(/[?&]text=([^&]+)/);
+    const message = textMatch ? decodeURIComponent(textMatch[1]) : '';
+    const fullFallback = fallback + (message ? '&text=' + encodeURIComponent(message) : '');
+
+    if (typeof openWhatsAppSafe === 'function') {
+      e.preventDefault();
+      openWhatsAppSafe(primary, fullFallback, null);
+      return;
+    }
+
+    const opened = window.open(primary, '_blank', 'noopener,noreferrer');
+    if (!opened || opened.closed || typeof opened.closed === 'undefined') {
+      e.preventDefault();
+      window.open(fullFallback, '_blank', 'noopener,noreferrer');
+    }
+  });
+})();
+
+// Intercepta clicks en enlaces de redes sociales sin URL asignada
+(function() {
+  if (window.__socialPlaceholderInstalled) return;
+  window.__socialPlaceholderInstalled = true;
+
+  document.addEventListener('click', function(e) {
+    const link = e.target.closest('a[href="#"]');
+    if (!link) return;
+    const id = link.id || '';
+    if (id.includes('instagram') || id.includes('facebook') || id.includes('twitter') || id.includes('social')) {
+      e.preventDefault();
+      if (typeof showToast === 'function') {
+        showToast('📢', 'Red social en desarrollo. Contactanos por WhatsApp.', 'default', { duration: 4000 });
+      }
+    }
+  });
+})();

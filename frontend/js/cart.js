@@ -13,7 +13,6 @@ function saveCart() {
   const storageKey = (typeof CONFIG !== 'undefined' && CONFIG && CONFIG.CART && CONFIG.CART.STORAGE_KEY) ? CONFIG.CART.STORAGE_KEY : 'ag_cart';
   localStorage.setItem(storageKey, JSON.stringify(cart));
   updateCartBadge();
-  console.log('[cart] saveCart — items persistidos en localStorage:', cart.length);
 }
 
 function updateCartBadge() {
@@ -26,7 +25,6 @@ function updateCartBadge() {
 }
 
 function addToCart(product) {
-  console.log('[cart] addToCart llamado — product:', product && product.id, product && product.name);
   const existing = cart.find(item => item.id === product.id);
   const productStock = Number(product.stock) > 0 ? Number(product.stock) : Infinity;
   if (existing) {
@@ -49,7 +47,6 @@ function addToCart(product) {
 }
 
 function updateCartQty(productId, qty) {
-  console.log('[cart] updateCartQty llamado — productId:', productId, 'qty:', qty);
   const item = cart.find(item => item.id === productId);
   if (item) {
     const productStock = Number(item.stock) > 0 ? Number(item.stock) : Infinity;
@@ -69,7 +66,6 @@ function updateCartQty(productId, qty) {
 }
 
 function removeFromCart(productId) {
-  console.log('[cart] removeFromCart llamado — productId:', productId);
   cart = cart.filter(item => item.id !== productId);
   saveCart();
 }

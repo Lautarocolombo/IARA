@@ -438,6 +438,7 @@ async function initDB() {
       activo BOOLEAN DEFAULT TRUE,
       titulo TEXT DEFAULT '',
       subtitulo TEXT DEFAULT '',
+      descripcion TEXT DEFAULT '',
       cta_texto TEXT DEFAULT '',
       cta_url TEXT DEFAULT '',
       slot INTEGER DEFAULT 0,
@@ -459,6 +460,20 @@ async function initDB() {
       tenant_id TEXT DEFAULT 'default',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
+    await query(`CREATE TABLE IF NOT EXISTS carousel_images (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      slot INTEGER NOT NULL CHECK (slot BETWEEN 1 AND 5),
+      url TEXT NOT NULL,
+      public_id TEXT DEFAULT '',
+      alt_text TEXT DEFAULT '',
+      link_url TEXT DEFAULT '',
+      caption TEXT DEFAULT '',
+      about_group INTEGER DEFAULT 0,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      tenant_id TEXT DEFAULT 'default'
+    )`);
+    await query('CREATE UNIQUE INDEX IF NOT EXISTS idx_carousel_images_slot ON carousel_images(slot, tenant_id)');
+    await query('CREATE INDEX IF NOT EXISTS idx_carousel_images_slot_order ON carousel_images(slot)');
     await query(`CREATE TABLE IF NOT EXISTS webhook_events (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       event_id TEXT UNIQUE NOT NULL,
@@ -709,6 +724,11 @@ async function initDB() {
        logger.debug({ err: err.message }, 'Columna cta_texto ya existe o no se pudo agregar (SQLite)');
      }
      try {
+       await query('ALTER TABLE hero_cards ADD COLUMN descripcion TEXT DEFAULT \'\'');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Columna descripcion ya existe o no se pudo agregar en hero_cards (SQLite)');
+     }
+     try {
        await query('ALTER TABLE hero_cards ADD COLUMN cta_url TEXT DEFAULT \'\'');
      } catch (err) {
        logger.debug({ err: err.message }, 'Columna cta_url ya existe o no se pudo agregar (SQLite)');
@@ -759,9 +779,39 @@ async function initDB() {
         logger.debug({ err: err.message }, 'Columna sku ya existe o no se pudo agregar (SQLite)');
       }
       try {
-        await query('ALTER TABLE testimonials ADD COLUMN orden INTEGER DEFAULT 0');
+        await query('ALTER TABLE testimonials ADD COLUMN product_image_url TEXT DEFAULT \'\'');
       } catch (err) {
-        logger.debug({ err: err.message }, 'Columna orden ya existe o no se pudo agregar (SQLite)');
+        logger.debug({ err: err.message }, 'Columna product_image_url ya existe o no se pudo agregar (SQLite)');
+      }
+      try {
+        await query('ALTER TABLE site_texts ADD COLUMN tenant_id TEXT DEFAULT \'default\'');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna tenant_id ya existe o no se pudo agregar en site_texts (SQLite)');
+      }
+      try {
+        await query('ALTER TABLE section_content ADD COLUMN tenant_id TEXT DEFAULT \'default\'');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna tenant_id ya existe o no se pudo agregar en section_content (SQLite)');
+      }
+      try {
+        await query('ALTER TABLE users ADD COLUMN tenant_id TEXT DEFAULT \'default\'');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna tenant_id ya existe o no se pudo agregar en users (SQLite)');
+      }
+      try {
+        await query('ALTER TABLE receipts ADD COLUMN tenant_id TEXT DEFAULT \'default\'');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna tenant_id ya existe o no se pudo agregar en receipts (SQLite)');
+      }
+      try {
+        await query('ALTER TABLE coupons ADD COLUMN tenant_id TEXT DEFAULT \'default\'');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna tenant_id ya existe o no se pudo agregar en coupons (SQLite)');
+      }
+      try {
+        await query('ALTER TABLE carousel_images ADD COLUMN tenant_id TEXT DEFAULT \'default\'');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna tenant_id ya existe o no se pudo agregar en carousel_images (SQLite)');
       }
      try {
        await query('ALTER TABLE orders ADD COLUMN payment_method TEXT DEFAULT \'\'');
@@ -1103,4 +1153,94 @@ async function initDB() {
     }
   }
 
-  module.exports = { query, initDB, pool, connectionString: !!connectionString, getClient, transaction, isLocal, setTenant, closeDB };
+  async function seedLocalData() {
+    if (!isLocal) return;
+    try {
+      const existing = await query('SELECT COUNT(*) as count FROM products');
+      const count = parseInt(existing.rows[0].count);
+      if (count > 0) return;
+
+      const products = [
+        ['Pulsera Minimalista', 'pulsera-minimalista', 'pulseras', 4500, 'Pulsera artesanal minimalista', 12, true, '📿'],
+        ['Pulsera Hilo Natural', 'pulsera-hilo-natural', 'pulseras', 3800, 'Pulsera de hilo natural', 8, false, '📿'],
+        ['Pulsera Turquesa', 'pulsera-turquesa', 'pulseras', 5100, 'Pulsera con turquesa artesanal', 7, false, '📿'],
+        ['Accesorio Cerámico', 'accesorio-ceramico', 'accesorios', 5200, 'Accesorio de cerámica artesanal', 6, true, '💎'],
+        ['Set Artesanal', 'set-artesanal', 'accesorios', 7900, 'Set de accesorios artesanales', 10, false, '🎁'],
+        ['Llaverec Artesanal', 'llavero-artesanal', 'souvenirs', 2500, 'Llavero hecho a mano', 15, false, '🔑'],
+        ['Souvenir Gualeguay', 'souvenir-gualeguay', 'souvenirs', 3200, 'Souvenir de nuestra ciudad', 9, false, '🏛️']
+      ];
+
+      for (const [name, slug, category, price, description, stock, featured, emoji] of products) {
+        await query(
+          'INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, TRUE, $11, FALSE, $12)',
+          [name, slug, category, price, description, emoji, '', '', stock, featured, '', 'default']
+        );
+      }
+
+      const categories = [
+        ['Pulseras', 'pulseras', 'Pulseras artesanales'],
+        ['Accesorios', 'accesorios', 'Accesorios hechos a mano'],
+        ['Souvenirs', 'souvenirs', 'Souvenirs de Gualeguay']
+      ];
+      for (const [name, slug, description] of categories) {
+        await query(
+          'INSERT OR IGNORE INTO categories (name, slug, description, active, tenant_id) VALUES ($1, $2, $3, TRUE, $4)',
+          [name, slug, description, 'default']
+        );
+      }
+
+      const siteTexts = [
+        ['hero_title', 'Regalos artesanales que cuentan historias', 'default'],
+        ['hero_subtitle', 'Artesanía Gualeguay nació en el corazón de Entre Ríos con la misión de crear pulseras, souvenirs y accesorios únicos que capturen la esencia de nuestra tierra.', 'default'],
+        ['hero_cta_text', 'Explorar Catálogo', 'default'],
+        ['products_title', 'Nuestros Productos', 'default'],
+        ['products_subtitle', 'Descubrí piezas únicas hechas a mano', 'default'],
+        ['contact_title', '¿Preguntas?', 'default'],
+        ['contact_subtitle', 'Nos encantaría saber de ti', 'default'],
+        ['footer_brand', 'Artesanías Gualeguay', 'default'],
+        ['footer_description', 'Creando pulseras y souvenirs únicos desde el corazón de Gualeguay, Entre Ríos.', 'default'],
+        ['about_title', 'Sobre Nosotros', 'default'],
+        ['about_subtitle', 'La historia detrás de cada creación', 'default'],
+        ['about_text', 'En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.', 'default'],
+        ['shipping_title', 'Envíos', 'default'],
+        ['shipping_subtitle', 'Información sobre envíos y entregas', 'default'],
+        ['terms_title', 'Términos y Condiciones', 'default'],
+        ['privacy_title', 'Política de Privacidad', 'default'],
+        ['returns_title', 'Cambios y Devoluciones', 'default'],
+        ['faq_title', 'Preguntas Frecuentes', 'default'],
+        ['devoluciones_title', 'Cambios y Devoluciones', 'default'],
+        ['cesion_ubicacion_title', 'Cesión de Ubicación', 'default']
+      ];
+      for (const [key, value, tenant_id] of siteTexts) {
+        await query(
+          'INSERT OR IGNORE INTO site_texts (key, value, tenant_id) VALUES ($1, $2, $3)',
+          [key, value, tenant_id]
+        );
+      }
+
+      await query(
+        "INSERT OR IGNORE INTO section_content (section_key, title, subtitle, tenant_id) VALUES ('testimonials', 'Lo que dicen nuestros clientes', 'Historias reales de personas que confiaron en nosotros', 'default')"
+      );
+      await query(
+        "INSERT OR IGNORE INTO section_content (section_key, title, subtitle, tenant_id) VALUES ('featured', 'Produtos Destacados', 'Nuestras piezas más elegidas', 'default')"
+      );
+      await query(
+        "INSERT OR IGNORE INTO section_content (section_key, title, subtitle, tenant_id) VALUES ('catalog', 'Catálogo', 'Nuestros productos', 'default')"
+      );
+      await query(
+        "INSERT OR IGNORE INTO section_content (section_key, title, subtitle, tenant_id) VALUES ('about', 'Nosotros', 'Sobre Nosotros', 'default')"
+      );
+      await query(
+        "INSERT OR IGNORE INTO section_content (section_key, title, subtitle, tenant_id) VALUES ('contact', 'Contacto', 'Contáctanos', 'default')"
+      );
+      await query(
+        "INSERT OR IGNORE INTO section_content (section_key, title, subtitle, tenant_id) VALUES ('process', 'Proceso', 'Cómo funciona', 'default')"
+      );
+
+      logger.info('Datos locales sembrados correctamente (productos, categorías, texts, sections)');
+    } catch (err) {
+      logger.warn({ err: err.message }, 'Error sembrando datos locales');
+    }
+  }
+
+  module.exports = { query, initDB, pool, connectionString: !!connectionString, getClient, transaction, isLocal, setTenant, closeDB, seedLocalData };

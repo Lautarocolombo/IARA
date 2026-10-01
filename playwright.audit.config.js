@@ -13,6 +13,12 @@ module.exports = defineConfig({
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
   },
+  webServer: {
+    command: 'node tests/e2e/start-backend.js',
+    url: 'http://localhost:3000/api/health',
+    reuseExistingServer: false,
+    timeout: 120000,
+  },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } }
   ],

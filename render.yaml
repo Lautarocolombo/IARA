@@ -17,20 +17,45 @@ services:
         generateValue: true
       - key: ADMIN_USER
         value: Iara
+      # CRÍTICO: Pegar bcrypt hash en Render Dashboard → Environment
+      # Generar: npx bcrypt-cli hash
+      # Última rotación: 2026-09-22
       - key: ADMIN_PASS_HASH
         sync: false
+      # CRÍTICO: Configurar conexión PostgreSQL (Neon) en Render Dashboard → Environment
       - key: DATABASE_URL
         sync: false
+      # CRÍTICO: Crear un Vercel Blob Store en https://vercel.com/dashboard/stores
+      # y pegar el token de read+write aquí. No usar generateValue.
+      # Sin esto, las subidas de imágenes/comprobantes fallan o caen a base64.
       - key: BLOB_READ_WRITE_TOKEN
         sync: false
-        # IMPORTANTE: Crear un Vercel Blob Store en https://vercel.com/dashboard/stores
-        # y pegar el token de read+write aquí. No uses generateValue porque requiere un token real.
+      # CSRF_SECRET (opcional pero recomendado): generar con:
+      # node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+      # Última rotación: 2026-09-22
+      - key: CSRF_SECRET
+        sync: false
+        generateValue: true
       - key: SITE_URL
         value: https://artesania-gualeguay-v3.vercel.app
       - key: BACKEND_URL
         value: https://iara-os3h.onrender.com
       - key: ALLOWED_ORIGINS
         value: https://artesania-gualeguay-v3.vercel.app,https://*.vercel.app,https://artesaniagualeguay.com,http://localhost:3000,http://localhost:5173
+      - key: BUSINESS_NAME
+        value: Artesanías Gualeguay
+      - key: BUSINESS_EMAIL
+        value: contacto@artesaniagualeguay.com
+      # WhatsApp: formato E.164 SIN 9 para Argentina → 543444634444
+      # El 9 intermedio es para links tel: (llamadas normales), NO para wa.me
+      - key: WHATSAPP
+        value: "+543444634444"
+      - key: INSTAGRAM_URL
+        value: "https://www.instagram.com/artesaniagualeguay"
+      - key: FACEBOOK_URL
+        value: "https://www.facebook.com/artesaniagualeguay"
+      - key: TWITTER_URL
+        value: ""
       - key: SHIPPING_COST
         value: "200"
       - key: SHIPPING_THRESHOLD
@@ -42,11 +67,26 @@ services:
       - key: RESEND_API_KEY
         value: ""
         sync: false
+      - key: ADMIN_EMAIL
+        value: admin@artesaniagualeguay.com
       - key: REDIS_URL
         value: ""
         sync: false
-      - key: WHATSAPP
-        value: "+5493444634444"
+      - key: MP_ACCESS_TOKEN
+        value: ""
+        sync: false
+      - key: MP_PUBLIC_KEY
+        value: ""
+        sync: false
+      - key: MP_INTEGRATOR_ID
+        value: ""
+        sync: false
+      - key: SENTRY_DSN
+        value: ""
+        sync: false
+      - key: METRICS_TOKEN
+        value: ""
+        sync: false
       - key: LOG_LEVEL
         value: info
     autoDeploy: true

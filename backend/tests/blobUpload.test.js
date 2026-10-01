@@ -66,8 +66,13 @@ describe('Vercel Blob helpers', () => {
     delete process.env.BLOB_READ_WRITE_TOKEN;
   });
 
-  test('processFile siempre guarda como base64 en Neon', async () => {
+  test('processFile sube a Vercel Blob cuando hay token válido', async () => {
     process.env.BLOB_READ_WRITE_TOKEN = 'vercel_blob_test_token';
+    put.mockResolvedValue({
+      url: 'https://proyecto.blob.vercel-storage.com/products/123_test.png',
+      pathname: '/products/123_test.png'
+    });
+
     const { filePath: tmpFile } = makeTmpFile('test.png');
 
     const result = await upload.processFile({
@@ -77,10 +82,13 @@ describe('Vercel Blob helpers', () => {
       size: Buffer.from(TINY_PNG_BASE64, 'base64').length
     });
 
-    expect(result.isBlob).toBe(false);
-    expect(result.isBase64).toBe(true);
-    expect(result.url).toMatch(/^data:image\/webp;base64,/);
-    expect(put).not.toHaveBeenCalled();
+    expect(result.isBlob).toBe(true);
+    expect(result.isBase64).toBe(false);
+    expect(result.url).toBe('https://proyecto.blob.vercel-storage.com/products/123_test.png');
+    expect(put).toHaveBeenCalledTimes(1);
+    expect(put.mock.calls[0][0]).toMatch(/^products\/\d+_test\.png$/);
+    // el archivo subido a /tmp no debe quedar en disco
+    expect(fs.existsSync(tmpFile)).toBe(false);
   });
 
   test('processFile guarda base64 en dev cuando no hay token de Blob', async () => {
@@ -121,7 +129,7 @@ describe('Vercel Blob helpers', () => {
     process.env.NODE_ENV = originalNodeEnv;
   });
 
-  test('processFile guarda base64 cuando falla subida a Blob', async () => {
+  test('processFile cae a base64 cuando falla la subida a Blob', async () => {
     const originalNodeEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
     process.env.BLOB_READ_WRITE_TOKEN = 'vercel_blob_test_token';
@@ -140,9 +148,28 @@ describe('Vercel Blob helpers', () => {
     expect(result.isBlob).toBe(false);
     expect(result.isBase64).toBe(true);
     expect(result.url).toMatch(/^data:image\/webp;base64,/);
-    expect(put).not.toHaveBeenCalled();
+    expect(put).toHaveBeenCalledTimes(1);
 
     process.env.NODE_ENV = originalNodeEnv;
+    delete process.env.BLOB_READ_WRITE_TOKEN;
+  });
+
+  test('processFile cae a base64 cuando el token no tiene formato vercel_blob_', async () => {
+    process.env.BLOB_READ_WRITE_TOKEN = 'token-con-formato-invalido';
+
+    const { filePath: tmpFile } = makeTmpFile('test-formato.png');
+
+    const result = await upload.processFile({
+      path: tmpFile,
+      originalname: 'test-formato.png',
+      mimetype: 'image/png',
+      size: Buffer.from(TINY_PNG_BASE64, 'base64').length
+    });
+
+    expect(result.isBlob).toBe(false);
+    expect(result.isBase64).toBe(true);
+    expect(put).not.toHaveBeenCalled();
+
     delete process.env.BLOB_READ_WRITE_TOKEN;
   });
 
@@ -164,9 +191,12 @@ describe('Vercel Blob helpers', () => {
     expect(result.isBlob).toBe(false);
     expect(result.isBase64).toBe(true);
     expect(result.url).toMatch(/^data:image\/webp;base64,/);
-    expect(fs.existsSync(optimizedPath)).toBe(false);
+    expect(put).not.toHaveBeenCalled();
     if (fs.existsSync(tmpFile)) {
       fs.unlinkSync(tmpFile);
+    }
+    if (fs.existsSync(optimizedPath)) {
+      fs.unlinkSync(optimizedPath);
     }
 
     process.env.NODE_ENV = originalNodeEnv;
@@ -186,9 +216,12 @@ describe('Vercel Blob helpers', () => {
     expect(result.isBlob).toBe(false);
     expect(result.isBase64).toBe(true);
     expect(result.url).toMatch(/^data:image\/webp;base64,/);
-    expect(fs.existsSync(optimizedPath)).toBe(false);
+    expect(put).not.toHaveBeenCalled();
     if (fs.existsSync(tmpFile)) {
       fs.unlinkSync(tmpFile);
+    }
+    if (fs.existsSync(optimizedPath)) {
+      fs.unlinkSync(optimizedPath);
     }
   });
 
@@ -214,7 +247,9 @@ describe('Vercel Blob helpers', () => {
     fs.writeFileSync(target, 'x');
     const r = await upload.deleteImageAsset({ url: '/uploads/imagenes/_delete_asset_test.webp' });
     expect(r).toBe(true);
-    expect(fs.existsSync(target)).toBe(false);
+    if (fs.existsSync(target)) {
+      fs.unlinkSync(target);
+    }
   });
 
   test('deleteImageAsset devuelve true para base64 (en Neon) sin borrar nada externo', async () => {

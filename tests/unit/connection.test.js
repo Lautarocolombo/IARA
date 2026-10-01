@@ -20,6 +20,7 @@ describe('connection.js', () => {
   let originalNavigatorOnLine;
 
   beforeEach(() => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.clearAllMocks();
     jest.resetModules();
     originalNavigatorOnLine = navigator.onLine;
@@ -27,6 +28,7 @@ describe('connection.js', () => {
   });
 
   afterEach(() => {
+    console.error.mockRestore();
     Object.defineProperty(navigator, 'onLine', {
       value: originalNavigatorOnLine,
       writable: true,

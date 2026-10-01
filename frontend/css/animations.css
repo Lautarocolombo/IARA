@@ -110,6 +110,11 @@
 .product-card:nth-child(7) { animation-delay: 0.42s; }
 .product-card:nth-child(8) { animation-delay: 0.49s; }
 
+/* Reduced motion — overrides the stagger animation above */
+@media (prefers-reduced-motion: reduce) {
+  .product-card { animation: none; }
+}
+
 /* Highlight cards */
 .highlight-item {
   animation: ag-fadeUp 0.5s ease both;

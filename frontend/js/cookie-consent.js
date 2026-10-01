@@ -48,12 +48,21 @@
   }
 
   function openSettings() {
-    const choice = confirm('¿Aceptás cookies de análisis y marketing?\n\nAceptar = Sí a todas\nCancelar = Solo esenciales');
-    if (choice) {
-      acceptAll();
-    } else {
-      rejectNonEssential();
+    if (typeof window.showConfirmModal === 'function') {
+      window.showConfirmModal(
+        'Preferencias de cookies',
+        '¿Aceptás cookies de análisis y marketing? Confirmar = Sí a todas. Cancelar = Solo esenciales.',
+        acceptAll
+      );
+      return;
     }
+    const banner = document.getElementById(BANNER_ID);
+    if (banner) {
+      banner.style.display = 'block';
+      banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      return;
+    }
+    acceptAll();
   }
 
   function init() {

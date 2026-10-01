@@ -23,12 +23,17 @@ describe('hero.js', () => {
   let fetchWithRetryMock;
 
   beforeEach(() => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.clearAllMocks();
     jest.resetModules();
     fetchWithRetryMock = jest.fn();
     global.fetchWithRetry = fetchWithRetryMock;
     global.renderProductImage = jest.fn(() => '<img src="" alt="product" />');
     document.body.innerHTML = '';
+  });
+
+  afterEach(() => {
+    console.error.mockRestore();
   });
 
   describe('sanitizeHtml', () => {

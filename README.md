@@ -1,4 +1,4 @@
-# IARA - Artesanía Gualeguay
+# IARA - Artesanías Gualeguay
 
 Sitio web de artesanías con panel de administración integrado.
 
@@ -95,9 +95,9 @@ npm start             # Iniciar servidor
 
 | Suite | Comando | Tests |
 |-------|---------|-------|
-| Frontend unit | `npm test` | 326 specs |
-| Backend unit | `cd backend && npm test` | 427 specs |
-| E2E | `npm run e2e` | 12 specs |
+| Frontend unit | `npm test` | 543 specs |
+| Backend unit | `cd backend && npm test` | 512 specs |
+| E2E | `npm run e2e` | 101 specs |
 
 ## Despliegue
 
@@ -113,16 +113,17 @@ Configurar en **Vercel Dashboard > Settings > Environment Variables**:
 |----------|-------|-----------|
 | `NODE_ENV` | `production` | Sí |
 | `JWT_SECRET` | string seguro aleatorio | Sí |
+| `CSRF_SECRET` | string aleatorio (32+ chars) | 🟡 Recomendado |
 | `ADMIN_USER` | tu usuario admin | Sí |
 | `ADMIN_PASS_HASH` | hash bcrypt de tu contraseña | Sí |
-| `ALLOWED_ORIGINS` | `https://artesania-gualeguay-v3.vercel.app,http://localhost:3000,http://localhost:5173` | Sí |
+| `ALLOWED_ORIGINS` | `https://artesania-gualeguay-v3.vercel.app,https://*.vercel.app,https://artesaniagualeguay.com,http://localhost:3000,http://localhost:5173` | Sí |
 | `DATABASE_URL` | connection string de PostgreSQL | Sí |
 | `SITE_URL` | `https://artesania-gualeguay-v3.vercel.app` | Sí |
 | `BACKEND_URL` | `https://iara-os3h.onrender.com` | Sí |
 | `RESEND_API_KEY` | API key de Resend | No |
 | `EMAIL_FROM` | `noreply@artesaniagualeguay.com` | No |
 | `ADMIN_NOTIFICATION_EMAIL` | `admin@artesaniagualeguay.com` | No |
-| `WHATSAPP` | `+5493444634444` | No |
+| `WHATSAPP` | `+543444634444` | No |
 | `BLOB_READ_WRITE_TOKEN` | token de Vercel Blob | Sí (en producción) |
 
 > Importante: No subas `backend/.env` a Git. Usá `vercel env add` o el Dashboard.
@@ -135,9 +136,10 @@ Configurar en **Render Dashboard > Environment**:
 |----------|-------|
 | `DATABASE_URL` | connection string de PostgreSQL |
 | `JWT_SECRET` | mismo que Vercel |
+| `CSRF_SECRET` | mismo que Vercel (opcional, recomendado) |
 | `ADMIN_USER` | mismo que Vercel |
 | `ADMIN_PASS_HASH` | mismo que Vercel |
-| `ALLOWED_ORIGINS` | `https://artesania-gualeguay-v3.vercel.app,https://artesania-gualeguay.vercel.app,http://localhost:3000,http://localhost:5173` |
+| `ALLOWED_ORIGINS` | `https://artesania-gualeguay-v3.vercel.app,https://*.vercel.app,https://artesaniagualeguay.com,http://localhost:3000,http://localhost:5173` |
 | `SITE_URL` | `https://artesania-gualeguay-v3.vercel.app` |
 | `BACKEND_URL` | `https://iara-os3h.onrender.com` |
 | `BLOB_READ_WRITE_TOKEN` | Obligatorio en producción (Render). Crear un Vercel Blob Store y pegar el token read+write. |
@@ -208,3 +210,6 @@ GitHub Actions workflows incluidos:
 - SSE sync entre pestañas
 - WhatsApp integration
 - Cookie consent + políticas legales
+- Tests unitarios frontend (543 tests, Jest + jsdom)
+- Tests unitarios backend (512 tests, Jest)
+- Tests E2E (101 tests, Playwright)

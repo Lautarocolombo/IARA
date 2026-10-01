@@ -156,7 +156,10 @@
     grid.querySelectorAll('[data-action="delete-slot"]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var slot = Number(btn.dataset.slot);
-        if (confirm('¿Estás seguro de eliminar la imagen del slot ' + slot + '?')) {
+        var msg = '¿Estás seguro de eliminar la imagen del slot ' + slot + '?';
+        if (typeof window.showConfirmModal === 'function') {
+          window.showConfirmModal('Eliminar imagen', msg, function () { deleteCarouselSlot(slot); });
+        } else if (window.confirm(msg)) {
           deleteCarouselSlot(slot);
         }
       });

@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Dashboard | Artesanía Gualeguay</title>
-  <meta name="description" content="Panel de administración de Artesanía Gualeguay" />
+  <title>Dashboard | Artesanías Gualeguay</title>
+  <meta name="description" content="Panel de administración de Artesanías Gualeguay" />
   <link rel="canonical" href="https://artesania-gualeguay-v3.vercel.app/pages/dashboard.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,6 +26,29 @@
     <script src="../js/admin.js"></script>
   </head>
  <body>
+  <div class="login-overlay" id="loginOverlay">
+    <div class="login-card">
+      <h2>🌸 Artesanías Admin</h2>
+      <p id="loginMessage">Iniciá sesión para continuar</p>
+      <form id="loginForm" autocomplete="on">
+        <div class="form-group">
+          <label for="loginUser">Usuario</label>
+          <input type="text" id="loginUser" placeholder="Usuario" autocomplete="username" />
+        </div>
+        <div class="form-group password-group">
+          <label for="loginPass">Contraseña</label>
+          <div class="password-input-wrapper">
+            <input type="password" id="loginPass" placeholder="Contraseña" autocomplete="current-password" />
+            <button type="button" class="password-toggle" id="passwordToggle" aria-label="Mostrar contraseña">Mostrar</button>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full" id="loginBtn">Ingresar</button>
+      </form>
+      <p class="login-hint" id="loginHint">Verificando...</p>
+      <p id="loginError" class="login-error login-error-muted"></p>
+      <a href="../index.html" class="btn btn-secondary btn-full login-back-link">← Volver al sitio</a>
+    </div>
+  </div>
    <a href="#adminContent" class="skip-link">Saltar al contenido principal</a>
    <div class="admin-panel">
     <!-- Mobile sidebar toggle -->
@@ -38,7 +61,7 @@
     <aside class="admin-sidebar" id="adminSidebar">
       <div class="sidebar-brand">
         <span>🌸</span>
-        <span>Artesanía Admin</span>
+        <span>Artesanías Admin</span>
       </div>
       <nav class="sidebar-nav" id="adminNav">
         <a href="#" class="active" data-section="content">
@@ -291,12 +314,11 @@
                    <div class="form-grid-2">
                      <div class="form-group col-span-full">
                        <label>Texto principal <span class="required">*</span></label>
-                       <div id="about_text_editor" class="quill-editor-container"></div>
+                        <div id="about_text_editor" class="quill-editor-container"></div>
+                        </div>
                        </div>
-                      </div>
-                    </div>
 
-                    <div class="form-grid-2">
+                     <div class="form-grid-2">
                       <div class="form-group col-span-full">
                         <label>Imágenes del carrusel (Sobre Nosotros)</label>
                         <div class="about-images-grid" id="aboutImagesGrid">
@@ -748,24 +770,14 @@
                         </select>
                       </div>
                         <div class="form-group">
-                           <label>Foto del cliente (opcional)</label>
-                           <div id="testimonialPhotoPreview" class="testimonial-photo-preview"></div>
-                           <div class="testimonial-photo-actions">
-                             <button type="button" class="btn btn-secondary btn-sm" id="testimonialUploadPhotoBtn">📷 Subir foto</button>
-                             <button type="button" class="btn btn-danger btn-sm hidden" id="testimonialRemovePhotoBtn">🗑️ Eliminar foto</button>
-                           </div>
-                           <input type="file" id="testimonialPhotoFile" accept="image/jpeg,image/png,image/webp" class="hidden" />
-                           <small class="form-hint">JPG, PNG o WEBP. Máx 2MB.</small>
-                        </div>
-                        <div class="form-group">
-                           <label>Foto del producto en uso (opcional)</label>
-                           <div id="testimonialProductPhotoPreview" class="testimonial-photo-preview"></div>
-                           <div class="testimonial-photo-actions">
-                             <button type="button" class="btn btn-secondary btn-sm" id="testimonialUploadProductPhotoBtn">📷 Subir foto</button>
-                             <button type="button" class="btn btn-danger btn-sm hidden" id="testimonialRemoveProductPhotoBtn">🗑️ Eliminar foto</button>
-                           </div>
-                           <input type="file" id="testimonialProductPhotoFile" accept="image/jpeg,image/png,image/webp" class="hidden" />
-                           <small class="form-hint">JPG, PNG o WEBP. Máx 5MB.</small>
+                          <label>Foto del producto (opcional)</label>
+                          <div id="testimonialPhotoPreview" class="testimonial-photo-preview"></div>
+                          <div class="testimonial-photo-actions">
+                            <button type="button" class="btn btn-secondary btn-sm" id="testimonialUploadPhotoBtn">📷 Subir foto</button>
+                            <button type="button" class="btn btn-danger btn-sm hidden" id="testimonialRemovePhotoBtn">🗑️ Eliminar foto</button>
+                          </div>
+                          <input type="file" id="testimonialPhotoFile" accept="image/jpeg,image/png,image/webp" class="hidden" />
+                          <small class="form-hint">Subí una foto del producto en uso, por ejemplo la pulsera en la muñeca del cliente. JPG, PNG o WEBP. Máx 5MB.</small>
                         </div>
                       <div class="form-group col-span-full">
                         <label>Comentario <span class="required">*</span></label>
@@ -801,8 +813,7 @@
                         <th>Nombre</th>
                         <th>Cargo</th>
                         <th>Comentario</th>
-                        <th class="text-center">Avatar</th>
-                        <th class="text-center">Producto</th>
+                        <th class="text-center">Foto</th>
                         <th class="text-center">Rating</th>
                         <th class="text-center">Estado</th>
                         <th class="text-center">Acciones</th>
@@ -1599,18 +1610,20 @@
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 <span>Agregar más imágenes</span>
                 <small>JPG, PNG o WEBP. Máx 5MB c/u. Hasta 5 imágenes en total.</small>
+                <small class="form-hint">Recomendado: imagen vertical 2:3 (ej. 800x1200 px)</small>
               </div>
             </div>
             <div id="modalImageGallery" class="modal-image-gallery"></div>
           </div>
 
-          <div id="productExistingImagesSection" class="product-existing-images-section">
+<div id="productExistingImagesSection" class="product-existing-images-section">
             <div class="admin-section-title">Galería del producto</div>
             <div id="productImageGallery" class="product-image-gallery"></div>
              <div class="product-image-actions product-image-actions--top">
-              <button type="button" class="btn btn-secondary btn-sm" id="addMoreImagesBtn">+ Agregar imágenes</button>
-              <input type="file" id="addMoreImagesInput" accept="image/jpeg,image/png,image/webp" multiple class="hidden" />
-            </div>
+               <button type="button" class="btn btn-secondary btn-sm" id="addMoreImagesBtn">+ Agregar imágenes</button>
+               <input type="file" id="addMoreImagesInput" accept="image/jpeg,image/png,image/webp" multiple class="hidden" />
+             </div>
+            <small class="form-hint">Recomendado: imagen vertical 2:3 (ej. 800x1200 px)</small>
             <div id="productImageUploadProgress" class="product-image-upload-progress">
               <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
               <div class="progress-text">0%</div>
@@ -1653,6 +1666,14 @@
       </div>
       <div class="modal-body">
         <form id="categoryForm">
+          <div class="form-group">
+            <label>Nombre <span class="required">*</span></label>
+            <input type="text" id="cat_name" placeholder="Ej: Pulseras" />
+          </div>
+          <div class="form-group">
+            <label>Slug <span class="required">*</span></label>
+            <input type="text" id="cat_slug" placeholder="Ej: pulseras" />
+          </div>
           <div class="form-group">
             <label>Descripción</label>
             <textarea id="cat_description" rows="2" placeholder="Descripción breve..."></textarea>
@@ -1714,6 +1735,7 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
   <script src="../js/admin-dashboard.js"></script>
   <script src="../js/admin-sync.js"></script>
   <script src="../js/admin-content.js"></script>

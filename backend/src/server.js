@@ -18,19 +18,25 @@ const { csrfProtection } = require('./middleware/csrf');
 const { sanitizeBody } = require('./middleware/xssClean');
 const { nonceMiddleware } = require('./middleware/nonce');
 const { cspMiddleware } = require('./middleware/csp');
+const { apiVersioningMiddleware } = require('./middleware/apiVersioning');
 
 const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
 
 const blobConfigured = isBlobConfigured();
-const blobTokenPreview = blobConfigured
-  ? process.env.BLOB_READ_WRITE_TOKEN.slice(0, 8) + '...' + process.env.BLOB_READ_WRITE_TOKEN.slice(-4)
-  : null;
 logger.info('[Blob] Configuración al arrancar:', {
   configured: blobConfigured,
-  tokenPreview: blobTokenPreview,
   NODE_ENV: process.env.NODE_ENV,
   isRender: !!process.env.RENDER_EXTERNAL_HOSTNAME
 });
+if (!blobConfigured && process.env.NODE_ENV === 'production') {
+  logger.warn('[Blob] BLOB_READ_WRITE_TOKEN ausente en producción: las imágenes se guardan como base64 en DB (funciona pero sin CDN).');
+}
+if (!process.env.RESEND_API_KEY) {
+  logger.warn('[Email] RESEND_API_KEY ausente: los emails se omiten con log (verificación/pedidos siguen funcionando).');
+}
+if (!process.env.GOOGLE_ANALYTICS_ID && !process.env.FACEBOOK_PIXEL_ID) {
+  logger.info('[Analytics] Sin GOOGLE_ANALYTICS_ID ni FACEBOOK_PIXEL_ID en env (pueden configurarse en panel admin > Integraciones). Tracking desactivado.');
+}
 
 let Sentry = null;
 if (process.env.SENTRY_DSN) {
@@ -260,7 +266,7 @@ const ordersLimiter = rateLimit({
 
 const adminLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 30,
+  max: 120,
   standardHeaders: true,
   legacyHeaders: false,
   store: rateLimitStore,
@@ -268,13 +274,13 @@ const adminLimiter = rateLimit({
 });
 
 const publicLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 200,
-  standardHeaders: true,
-  legacyHeaders: false,
-  store: rateLimitStore,
-  message: { error: 'Demasiadas solicitudes, intentá de nuevo en unos minutos' }
-});
+    windowMs: 15 * 60 * 1000,
+    max: process.env.NODE_ENV === 'test' ? 10000 : 200,
+    standardHeaders: true,
+    legacyHeaders: false,
+    store: rateLimitStore,
+    message: { error: 'Demasiadas solicitudes, intentá de nuevo en unos minutos' }
+  });
 
 app.use('/api', publicLimiter);
 app.use('/api/auth/login', authLimiter);
@@ -338,8 +344,54 @@ app.use('/api', (req, res, next) => {
   next();
 });
 
+// API versioning middleware - applies to both /api and /api/v1
+app.use('/api', apiVersioningMiddleware);
+app.use('/api/v1', apiVersioningMiddleware);
+
+// Mount routes at /api/v1 (current version)
+app.use('/api/v1/auth', require('./routes/auth'));
+app.use('/api/v1/admin', require('./routes/auth'));
+app.use('/api/v1', tenantContext);
+app.use('/api/v1', csrfProtection);
+app.use('/api/v1', require('./routes/products'));
+app.use('/api/v1', require('./routes/orders'));
+app.use('/api/v1', require('./routes/payments'));
+app.use('/api/v1', require('./routes/paymentProofs'));
+app.use('/api/v1', require('./routes/siteTexts'));
+app.use('/api/v1', require('./routes/testimonials'));
+app.use('/api/v1', require('./routes/sectionContent'));
+app.use('/api/v1', require('./routes/newsletter'));
+app.use('/api/v1', require('./routes/contact'));
+app.use('/api/v1', require('./routes/siteConfig'));
+app.use('/api/v1', require('./routes/siteSettings'));
+app.use('/api/v1', require('./routes/shipping'));
+app.use('/api/v1', require('./routes/sitemap'));
+app.use('/api/v1', require('./routes/reviews'));
+app.use('/api/v1', require('./routes/productImages'));
+app.use('/api/v1', require('./routes/health'));
+app.use('/api/v1', require('./routes/categories'));
+app.use('/api/v1', require('./routes/reports'));
+app.use('/api/v1', require('./routes/receipts'));
+app.use('/api/v1', require('./routes/heroCards'));
+app.use('/api/v1', require('./routes/sales'));
+app.use('/api/v1', require('./routes/earnings'));
+app.use('/api/v1', require('./routes/carousel'));
+app.use('/api/v1', require('./routes/users'));
+app.use('/api/v1', require('./routes/docs'));
+app.use('/api/v1', require('./routes/config'));
+
+app.use('/api/v1-docs', require('./routes/docs'));
+
+app.use('/api/v1/sync', require('./routes/sync'));
+
+app.use('/api/v1/admin', require('./routes/coupons'));
+app.use('/api/v1/admin/inventory', require('./routes/inventory'));
+
+// Backward compatibility: mount at /api with deprecation headers
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/admin', require('./routes/auth'));
+app.use('/api', tenantContext);
+app.use('/api', csrfProtection);
 app.use('/api', require('./routes/products'));
 app.use('/api', require('./routes/orders'));
 app.use('/api', require('./routes/payments'));
@@ -363,10 +415,13 @@ app.use('/api', require('./routes/heroCards'));
 app.use('/api', require('./routes/sales'));
 app.use('/api', require('./routes/earnings'));
 app.use('/api', require('./routes/carousel'));
-app.use('/api/sync', require('./routes/sync'));
+app.use('/api', require('./routes/users'));
+app.use('/api', require('./routes/docs'));
+app.use('/api', require('./routes/config'));
 
-app.use('/api', tenantContext);
-app.use('/api', csrfProtection);
+app.use('/api-docs', require('./routes/docs'));
+
+app.use('/api/sync', require('./routes/sync'));
 
 app.use('/api/admin', require('./routes/coupons'));
 app.use('/api/admin/inventory', require('./routes/inventory'));
@@ -403,7 +458,7 @@ app.get('/metrics', (req, res) => {
 
 let gitCommit = '';
 try {
-  gitCommit = require('child_process').execSync('git rev-parse HEAD', { encoding: 'utf8' }).trim();
+  gitCommit = require('child_process').execSync('git rev-parse HEAD', { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
 } catch (e) {
   gitCommit = 'unknown';
 }
@@ -428,17 +483,8 @@ app.get('/health', async (req, res) => {
 
   health.checks.sentry = Sentry ? 'ok' : 'disabled';
 
-  const blobCheck = {
-    configured: blobConfigured,
-    tokenPreview: blobTokenPreview ? `${blobTokenPreview.slice(0, 8)}...` : null
-  };
-  if (blobConfigured) {
-    health.checks.blob = 'configured';
-  } else {
-    health.checks.blob = 'not_configured';
-    health.status = 'degraded';
-  }
-  health.blob = blobCheck;
+  health.checks.blob = blobConfigured ? 'configured' : 'not_configured';
+  health.blob = { configured: blobConfigured };
 
   res.setHeader('X-Commit', gitCommit);
   res.status(health.status === 'ok' ? 200 : 503).json(health);
@@ -538,38 +584,45 @@ if (Sentry) {
 app.use(errorHandler);
 
 const dbReady = initDB().then(async () => {
-  logger.info('Base de datos inicializada correctamente');
-  try {
-    const { query } = require('./lib/db');
-    const result = await query('SELECT COUNT(*) FROM users');
-    if ((result.rows[0]?.count || 0) === 0 && process.env.ADMIN_USER && process.env.ADMIN_PASS_HASH) {
-      try {
-        await query(
-          'INSERT INTO users (username, password_hash, role, permissions, active) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (username) DO NOTHING',
-          [process.env.ADMIN_USER, process.env.ADMIN_PASS_HASH, 'admin', JSON.stringify({ all: true }), true]
-        );
-      } catch (err) {
-        if (!err.message.includes('UNIQUE constraint failed') && !err.message.includes('duplicate key')) {
-          throw err;
-        }
-      }
-      logger.info(`Usuario admin inicial creado: ${process.env.ADMIN_USER}`);
-    } else if (process.env.ADMIN_USER && process.env.ADMIN_PASS_HASH) {
-      const existing = await query('SELECT password_hash, permissions FROM users WHERE username = $1', [process.env.ADMIN_USER]);
-      if (existing.rows.length > 0) {
-        const needsUpdate = existing.rows[0].password_hash !== process.env.ADMIN_PASS_HASH || existing.rows[0].permissions !== JSON.stringify({ all: true });
-        if (needsUpdate) {
-          await query('UPDATE users SET password_hash = $1, permissions = $2, updated_at = CURRENT_TIMESTAMP WHERE username = $3', [process.env.ADMIN_PASS_HASH, JSON.stringify({ all: true }), process.env.ADMIN_USER]);
-          logger.info(`Hash/permisos de admin actualizados para: ${process.env.ADMIN_USER}`);
-        }
-      }
+    logger.info('Base de datos inicializada correctamente');
+    try {
+      const { seedLocalData } = require('./lib/db');
+      await seedLocalData();
+    } catch (err) {
+      logger.warn({ err: err.message }, 'No se pudo sembrar datos locales');
     }
-  } catch (err) {
-    logger.warn({ err: err.message }, 'No se pudo verificar/crear usuario admin inicial');
-  }
-}).catch(err => {
-  logger.error({ err: err.message, stack: err.stack }, 'Error inicializando DB');
-});
+    try {
+      const { query } = require('./lib/db');
+      const result = await query('SELECT COUNT(*) FROM users');
+      if ((result.rows[0]?.count || 0) === 0 && process.env.ADMIN_USER && process.env.ADMIN_PASS_HASH) {
+        try {
+          await query(
+            'INSERT INTO users (username, password_hash, role, permissions, active) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (username) DO NOTHING',
+            [process.env.ADMIN_USER, process.env.ADMIN_PASS_HASH, 'admin', JSON.stringify({ all: true }), true]
+          );
+        } catch (err) {
+          if (!err.message.includes('UNIQUE constraint failed') && !err.message.includes('duplicate key')) {
+            throw err;
+          }
+        }
+        logger.info(`Usuario admin inicial creado: ${process.env.ADMIN_USER}`);
+      } else if (process.env.ADMIN_USER && process.env.ADMIN_PASS_HASH) {
+        const existing = await query('SELECT password_hash, permissions FROM users WHERE username = $1', [process.env.ADMIN_USER]);
+        if (existing.rows.length > 0) {
+          const needsUpdate = existing.rows[0].password_hash !== process.env.ADMIN_PASS_HASH || existing.rows[0].permissions !== JSON.stringify({ all: true });
+          if (needsUpdate) {
+            await query('UPDATE users SET password_hash = $1, permissions = $2, updated_at = CURRENT_TIMESTAMP WHERE username = $3', [process.env.ADMIN_PASS_HASH, JSON.stringify({ all: true }), process.env.ADMIN_USER]);
+            logger.info(`Hash/permisos de admin actualizados para: ${process.env.ADMIN_USER}`);
+          }
+        }
+      }
+    } catch (err) {
+      logger.warn({ err: err.message }, 'No se pudo verificar/crear usuario admin inicial');
+    }
+  }).catch(err => {
+    logger.error({ err: err.message, stack: err.stack }, 'Error inicializando DB');
+    throw err;
+  });
 
 if (process.env.REDIS_URL) {
   try {

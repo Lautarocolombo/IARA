@@ -1,0 +1,59 @@
+.toast-container {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 11000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: min(390px, calc(100vw - 2.5rem));
+  pointer-events: none;
+}
+.toast {
+  position: relative;
+  display: grid;
+  grid-template-columns: 28px 1fr 32px;
+  align-items: start;
+  gap: 0.65rem;
+  padding: 0.9rem;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--text-muted);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  color: var(--text-body);
+  pointer-events: auto;
+  animation: toast-in 180ms ease-out;
+}
+.toast-icon { font-weight: 700; text-align: center; }
+.toast-body { min-width: 0; }
+.toast-message { font-size: 0.9rem; line-height: 1.45; overflow-wrap: anywhere; }
+.toast-close,
+.toast-retry {
+  border: 0;
+  background: transparent;
+  color: var(--text-mid);
+  cursor: pointer;
+  font: inherit;
+}
+.toast-close { width: 32px; height: 32px; border-radius: 50%; }
+.toast-close:hover { background: var(--blush); color: var(--rose-dark); }
+.toast-retry { margin-top: 0.35rem; padding: 0.25rem 0.5rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.78rem; }
+.toast-retry:hover { background: var(--blush); }
+.toast--success { border-left-color: #10b981; }
+.toast--success .toast-icon { color: #10b981; }
+.toast--error { border-left-color: #dc2626; }
+.toast--error .toast-icon { color: #dc2626; }
+.toast--info { border-left-color: #3b82f6; }
+.toast--info .toast-icon { color: #3b82f6; }
+.toast--warning { border-left-color: #f59e0b; }
+.toast--warning .toast-icon { color: #f59e0b; }
+.toast--closing { opacity: 0; transform: translateX(12px); transition: opacity 200ms ease, transform 200ms ease; }
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (max-width: 560px) {
+  .toast-container { right: 0.75rem; bottom: 0.75rem; width: calc(100vw - 1.5rem); }
+  .toast { grid-template-columns: 24px 1fr 28px; }
+}

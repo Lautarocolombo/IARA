@@ -224,6 +224,7 @@ CREATE TABLE IF NOT EXISTS hero_cards (
   activo BOOLEAN DEFAULT TRUE,
   titulo TEXT DEFAULT '',
   subtitulo TEXT DEFAULT '',
+  descripcion TEXT DEFAULT '',
   cta_texto TEXT DEFAULT '',
   cta_url TEXT DEFAULT '',
   slot INTEGER DEFAULT 0,

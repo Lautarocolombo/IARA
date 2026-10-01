@@ -1,0 +1,107 @@
+.account-wrap,
+.blog-wrap,
+.gift-wrap,
+.success-mp-wrap {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 100px 24px 56px;
+}
+.account-tabs,
+.blog-layout,
+.gift-layout {
+  display: grid;
+  gap: 1.25rem;
+}
+.account-tabs { grid-template-columns: 210px minmax(0, 1fr); align-items: start; }
+.account-tab-list { display: grid; gap: 0.45rem; }
+.account-tab-list button { width: 100%; padding: 0.75rem 0.9rem; border: 1px solid var(--border); border-radius: 10px; background: var(--white); color: var(--text-body); text-align: left; cursor: pointer; font: inherit; }
+.account-tab-list button.is-active { border-color: var(--rose-mid); background: var(--blush); color: var(--rose-dark); font-weight: 700; }
+.account-panel[hidden] { display: none; }
+.account-card,
+.blog-card,
+.gift-card,
+.success-mp-card { padding: 1.5rem; background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+.account-card h2,
+.blog-card h2,
+.gift-card h2,
+.success-mp-card h2 { margin: 0 0 0.4rem; color: var(--text-dark); font-size: 1.35rem; }
+.account-card > p,
+.blog-card > p,
+.gift-card > p,
+.success-mp-card > p { margin: 0 0 1.25rem; color: var(--text-muted); line-height: 1.6; }
+.account-form,
+.gift-form,
+.success-mp-actions { display: grid; gap: 0.9rem; }
+.account-form .form-row,
+.gift-form .form-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem; }
+.field-label { display: grid; gap: 0.35rem; color: var(--text-label); font-size: 0.88rem; font-weight: 600; }
+.field-label input,
+.field-label select,
+.field-label textarea { width: 100%; min-height: 42px; padding: 0.65rem 0.75rem; border: 1px solid var(--border); border-radius: 8px; background: var(--white); color: var(--text-dark); font: inherit; }
+.field-label textarea { min-height: 100px; resize: vertical; }
+.field-label input:focus,
+.field-label select:focus,
+.field-label textarea:focus { border-color: var(--rose-mid); box-shadow: 0 0 0 3px rgba(212,112,144,0.14); outline: none; }
+.account-status,
+.gift-amount-preview,
+.success-mp-status { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.85rem 1rem; border-radius: 9px; background: var(--blush); color: var(--text-body); font-size: 0.9rem; }
+.account-status strong,
+.gift-amount-preview strong,
+.success-mp-status strong { color: var(--text-dark); }
+.account-actions,
+.blog-actions,
+.gift-actions,
+.success-mp-actions { display: flex; flex-wrap: wrap; gap: 0.7rem; }
+.account-actions .btn,
+.blog-actions .btn,
+.gift-actions .btn,
+.success-mp-actions .btn { justify-content: center; }
+.blog-toolbar { display: flex; align-items: end; flex-wrap: wrap; gap: 0.75rem; }
+.blog-toolbar .search-bar { flex: 1; min-width: 230px; }
+.blog-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.blog-card { display: flex; flex-direction: column; min-height: 100%; }
+.blog-card h2 { font-size: 1.15rem; line-height: 1.35; }
+.blog-card h2 a { color: inherit; text-decoration: none; }
+.blog-card h2 a:hover { color: var(--rose-dark); }
+.blog-card time { color: var(--text-muted); font-size: 0.78rem; }
+.blog-card p { flex: 1; color: var(--text-body); font-size: 0.9rem; line-height: 1.6; }
+.blog-card .blog-read-more { align-self: flex-start; }
+.blog-article { max-width: 780px; margin: 0 auto; }
+.blog-article-body { color: var(--text-body); font-size: 1rem; line-height: 1.85; }
+.blog-article-body p { margin-bottom: 1rem; }
+.blog-article-body h2 { margin: 1.5rem 0 0.5rem; color: var(--text-dark); font-size: 1.35rem; }
+.gift-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+.gift-option { position: relative; padding: 1.25rem; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--white); cursor: pointer; text-align: left; font: inherit; }
+.gift-option:hover,
+.gift-option.is-selected { border-color: var(--rose-mid); box-shadow: 0 0 0 3px rgba(212,112,144,0.12); }
+.gift-option.is-selected::after { content: '✓'; position: absolute; top: 0.75rem; right: 0.75rem; display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: var(--rose-dark); color: var(--white); font-weight: 700; }
+.gift-option strong { display: block; margin-bottom: 0.3rem; color: var(--text-dark); font-family: var(--font-title); font-size: 1.15rem; }
+.gift-option span { color: var(--text-muted); font-size: 0.86rem; }
+.gift-art { display: grid; place-items: center; min-height: 150px; margin-bottom: 1rem; border-radius: 12px; background: linear-gradient(135deg, var(--blush), var(--mint)); color: var(--rose-dark); font-size: 3rem; }
+.success-mp-status.is-approved { background: #dcfce7; color: #166534; }
+.success-mp-status.is-rejected { background: #fee2e2; color: #991b1b; }
+.success-mp-status.is-pending { background: #fef3c7; color: #92400e; }
+@media (max-width: 800px) {
+  .account-tabs { grid-template-columns: 1fr; }
+  .account-tab-list { display: flex; overflow-x: auto; }
+  .account-tab-list button { flex: 0 0 auto; width: auto; }
+  .blog-grid,
+  .gift-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .account-wrap,
+  .blog-wrap,
+  .gift-wrap,
+  .success-mp-wrap { padding: 82px 16px 40px; }
+  .account-card,
+  .blog-card,
+  .gift-card,
+  .success-mp-card { padding: 1rem; }
+  .blog-grid,
+  .gift-grid,
+  .account-form .form-row,
+  .gift-form .form-row { grid-template-columns: 1fr; }
+  .account-status,
+  .gift-amount-preview,
+  .success-mp-status { align-items: flex-start; flex-direction: column; }
+}

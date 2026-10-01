@@ -14,11 +14,18 @@ global.CONFIG = {
   ANIMATIONS: { TOAST_DURATION: 3000, REVEAL_THRESHOLD: 0.15 }
 };
 
+function setReadyState(value) {
+  Object.defineProperty(document, 'readyState', {
+    configurable: true,
+    value
+  });
+}
+
 describe('navbar-init.js', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.resetModules();
-    document.readyState = 'complete';
+    setReadyState('complete');
     document.body.innerHTML = '';
     window.__skipNavbarInit = true;
   });
@@ -77,7 +84,7 @@ describe('navbar-init.js', () => {
   });
 
   test('el módulo registra listener DOMContentLoaded cuando el documento está cargando', () => {
-    document.readyState = 'loading';
+    setReadyState('loading');
     global.initNavbarScroll = jest.fn();
     global.initMobileNavbar = jest.fn();
     jest.resetModules();
@@ -88,7 +95,7 @@ describe('navbar-init.js', () => {
   });
 
   test('el módulo llama init directamente cuando el documento está completo', () => {
-    document.readyState = 'complete';
+    setReadyState('complete');
     global.initNavbarScroll = jest.fn();
     global.initMobileNavbar = jest.fn();
     jest.resetModules();
@@ -99,7 +106,7 @@ describe('navbar-init.js', () => {
   });
 
   test('no registra listener duplicado cuando ya está completo', () => {
-    document.readyState = 'complete';
+    setReadyState('complete');
     const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
     jest.resetModules();
     window.__skipNavbarInit = false;

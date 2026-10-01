@@ -86,13 +86,14 @@ describe('config.js', () => {
   });
 
   describe('getGoogleWriteReviewLink', () => {
-    test('retorna "#" si no hay GOOGLE_WRITE_REVIEW_URL ni GOOGLE_PLACE_ID', () => {
+    test('retorna "" si no hay GOOGLE_WRITE_REVIEW_URL ni GOOGLE_PLACE_ID', () => {
       const originalUrl = config.CONFIG.REVIEWS.GOOGLE_WRITE_REVIEW_URL;
       const originalPlaceId = config.CONFIG.REVIEWS.GOOGLE_PLACE_ID;
       config.CONFIG.REVIEWS.GOOGLE_WRITE_REVIEW_URL = '';
       config.CONFIG.REVIEWS.GOOGLE_PLACE_ID = '';
       const link = config.getGoogleWriteReviewLink();
-      expect(link).toBe('#');
+      expect(link).toBe('');
+      expect(config.isReviewConfigured()).toBe(false);
       config.CONFIG.REVIEWS.GOOGLE_WRITE_REVIEW_URL = originalUrl;
       config.CONFIG.REVIEWS.GOOGLE_PLACE_ID = originalPlaceId;
     });
@@ -120,15 +121,23 @@ describe('config.js', () => {
       config.CONFIG.REVIEWS.GOOGLE_PLACE_ID = originalPlaceId;
     });
 
-    test('retorna "#" si Place ID tiene solo espacios', () => {
+    test('retorna "" si Place ID tiene solo espacios', () => {
       const originalUrl = config.CONFIG.REVIEWS.GOOGLE_WRITE_REVIEW_URL;
       const originalPlaceId = config.CONFIG.REVIEWS.GOOGLE_PLACE_ID;
       config.CONFIG.REVIEWS.GOOGLE_WRITE_REVIEW_URL = '';
       config.CONFIG.REVIEWS.GOOGLE_PLACE_ID = '   ';
       const link = config.getGoogleWriteReviewLink();
-      expect(link).toBe('#');
+      expect(link).toBe('');
+      expect(config.isReviewConfigured()).toBe(false);
       config.CONFIG.REVIEWS.GOOGLE_WRITE_REVIEW_URL = originalUrl;
       config.CONFIG.REVIEWS.GOOGLE_PLACE_ID = originalPlaceId;
+    });
+
+    test('isReviewConfigured es true con URL directa', () => {
+      const originalUrl = config.CONFIG.REVIEWS.GOOGLE_WRITE_REVIEW_URL;
+      config.CONFIG.REVIEWS.GOOGLE_WRITE_REVIEW_URL = 'https://example.com/review';
+      expect(config.isReviewConfigured()).toBe(true);
+      config.CONFIG.REVIEWS.GOOGLE_WRITE_REVIEW_URL = originalUrl;
     });
   });
 

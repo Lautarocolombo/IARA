@@ -34,11 +34,18 @@
   }
 
   function redirectToLogin() {
-    if (window.doLogout) window.doLogout();
+    if (window.__setAdminToken) window.__setAdminToken('');
+    var overlay = document.getElementById('loginOverlay');
+    if (overlay) overlay.classList.remove('hidden');
     window.location.href = '../pages/admin.html';
   }
 
   async function checkAuth() {
+    if (!isTokenPresent()) {
+      var overlay = document.getElementById('loginOverlay');
+      if (overlay) overlay.classList.remove('hidden');
+      return false;
+    }
     try {
       var res = await window.adminFetch('/api/admin/site-texts', { method: 'GET' });
       if (!res || !res.ok) {
@@ -147,6 +154,11 @@
     if (target) {
       target.classList.remove('admin-section-inactive');
       target.classList.add('admin-section-active');
+    }
+
+    var scrollArea = document.scrollingElement || document.documentElement;
+    if (scrollArea && scrollArea.scrollTop > 0) {
+      scrollArea.scrollTo({ top: 0, left: 0, behavior: 'auto' });
     }
 
     var navLinks = document.querySelectorAll('#adminNav a');

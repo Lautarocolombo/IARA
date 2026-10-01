@@ -1,6 +1,6 @@
--- Script de reparación para el conflicto de migraciones
+-- Script de reparación para el conflicto de migraciones (legacy, mantenido como red seguridad)
 -- Ejecutar en la base de datos de producción (Neon/Postgres) si el backend no levanta
--- por conflicto entre "001_init_schema" y "001_add_order_token"
+-- por conflicto de orden de migraciones.
 
 -- 1. Asegurar que la tabla de migraciones existe
 CREATE TABLE IF NOT EXISTS migrations (
@@ -14,9 +14,9 @@ CREATE TABLE IF NOT EXISTS migrations (
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'orders')
-     AND NOT EXISTS (SELECT 1 FROM migrations WHERE name = '001_init_schema.sql') THEN
-    INSERT INTO migrations (name, applied_at) VALUES ('001_init_schema.sql', CURRENT_TIMESTAMP);
-    RAISE NOTICE 'Migración 001_init_schema.sql marcada como aplicada.';
+     AND NOT EXISTS (SELECT 1 FROM migrations WHERE name = '001_init_schema') THEN
+    INSERT INTO migrations (name, applied_at) VALUES ('001_init_schema', CURRENT_TIMESTAMP);
+    RAISE NOTICE 'Migración 001_init_schema marcada como aplicada.';
   END IF;
 END $$;
 
@@ -43,7 +43,12 @@ INSERT INTO migrations (name) VALUES
   ('008_add_users_last_login.sql'),
   ('009_carousel_images.sql'),
   ('009_section_content.sql'),
-  ('010_add_carousel_fields.sql')
+  ('010_add_carousel_fields.sql'),
+  ('011_fix_utf8_encoding.sql'),
+  ('012_fix_remaining_encoding.sql'),
+  ('012_inventory_tables.sql'),
+  ('013_add_testimonials_product_image.sql'),
+  ('014_add_site_texts_tenant_id.sql')
 ON CONFLICT (name) DO NOTHING;
 
 -- 5. Verificación: mostrar el estado actual de las migraciones

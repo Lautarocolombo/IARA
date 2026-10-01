@@ -56,11 +56,11 @@
   var DEFAULT_SETTINGS = {
     email: 'CONFIGURAR_EMAIL',
     phone: '+54 (3444) 634-4444',
-    whatsapp: '+5493444634444',
+    whatsapp: '+543444634444',
     address: 'San Antonio Norte 473, Gualeguay, Entre Ríos, Argentina',
     instagram: '',
     facebook: '',
-    business_name: 'Artesanía Gualeguay'
+    business_name: 'Artesanías Gualeguay'
   };
 
   var textsCache = {};
@@ -249,9 +249,14 @@
       el.value = val || '';
     });
 
-    var fpKeys = ['featured_product_name', 'featured_product_description', 'featured_product_cta_text', 'featured_product_cta_url'];
-    fpKeys.forEach(function (key) {
-      var el = document.getElementById(key);
+    var fpMap = {
+      featured_product_name: 'fp_name',
+      featured_product_description: 'fp_description',
+      featured_product_cta_text: 'fp_cta_text',
+      featured_product_cta_url: 'fp_cta_url'
+    };
+    Object.keys(fpMap).forEach(function (key) {
+      var el = document.getElementById(fpMap[key]);
       if (!el) return;
       var val = textsCache[key] !== undefined ? textsCache[key] : DEFAULT_TEXTS[key];
       el.value = val || '';
@@ -840,10 +845,19 @@
     setButtonState(btnId, loadingId, true, 'Guardar cambios', 'Guardando...');
     showSaveStatus(statusId, 'saving', 'Guardando cambios...');
 
+    var whatsappRaw = document.getElementById('contact_whatsapp')?.value.trim() || '';
+    var whatsappClean = whatsappRaw.replace(/[^\d]/g, '');
+    if (whatsappRaw && whatsappClean.length < 8) {
+      showSaveStatus(statusId, 'error', 'El número de WhatsApp debe tener al menos 8 dígitos');
+      window.showToast('❌', 'Número de WhatsApp inválido', 'error');
+      setButtonState(btnId, loadingId, false, 'Guardar cambios', 'Guardando...');
+      return;
+    }
+
     var payload = {
       email: document.getElementById('contact_email')?.value.trim() || '',
       phone: document.getElementById('contact_phone')?.value.trim() || '',
-      whatsapp: document.getElementById('contact_whatsapp')?.value.trim() || '',
+      whatsapp: whatsappRaw,
       address: document.getElementById('contact_address')?.value.trim() || '',
       instagram: document.getElementById('contact_instagram')?.value.trim() || '',
       facebook: document.getElementById('contact_facebook')?.value.trim() || ''

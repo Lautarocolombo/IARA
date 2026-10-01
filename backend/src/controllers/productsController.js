@@ -1,4 +1,4 @@
-const { query } = require('../lib/db');
+const { query, isLocal } = require('../lib/db');
 const { productSchema } = require('../lib/validators');
 const logger = require('../lib/logger');
 const { deleteImageAsset, getPublicUrl } = require('../lib/upload');
@@ -17,7 +17,12 @@ let productImagesSchemaVerified = false;
 async function ensureProductsSchema() {
   if (productsSchemaVerified) return;
   try {
-    const colsResult = await query(`SELECT column_name FROM information_schema.columns WHERE table_name = 'products' AND table_schema = 'public'`);
+    const schemaResult = isLocal
+      ? await query('PRAGMA table_info(products)')
+      : await query(`SELECT column_name FROM information_schema.columns WHERE table_name = 'products' AND table_schema = 'public'`);
+    const colsResult = isLocal
+      ? { rows: (schemaResult.rows || []).map(row => ({ column_name: row.name })) }
+      : schemaResult;
     if (!colsResult || !Array.isArray(colsResult.rows) || colsResult.rows.length === 0) {
       return;
     }
@@ -48,8 +53,13 @@ async function ensureProductsSchema() {
           logger.debug({ col, err: e.message }, 'No se pudo agregar columna');
         }
       }
-      const verifyResult = await query(`SELECT column_name FROM information_schema.columns WHERE table_name = 'products' AND table_schema = 'public'`);
-      const currentExisting = new Set((verifyResult.rows || []).map(r => r.column_name));
+      const verifyResult = isLocal
+        ? await query('PRAGMA table_info(products)')
+        : await query(`SELECT column_name FROM information_schema.columns WHERE table_name = 'products' AND table_schema = 'public'`);
+      const verifyRows = isLocal
+        ? (verifyResult.rows || []).map(row => ({ column_name: row.name }))
+        : (verifyResult.rows || []);
+      const currentExisting = new Set(verifyRows.map(r => r.column_name));
       const stillMissing = needed.filter(c => !currentExisting.has(c));
       if (stillMissing.length === 0) {
         productsSchemaVerified = true;
@@ -65,7 +75,12 @@ async function ensureProductsSchema() {
 async function ensureProductImagesSchema() {
   if (productImagesSchemaVerified) return;
   try {
-    const colsResult = await query(`SELECT column_name FROM information_schema.columns WHERE table_name = 'product_images' AND table_schema = 'public'`);
+    const schemaResult = isLocal
+      ? await query('PRAGMA table_info(product_images)')
+      : await query(`SELECT column_name FROM information_schema.columns WHERE table_name = 'product_images' AND table_schema = 'public'`);
+    const colsResult = isLocal
+      ? { rows: (schemaResult.rows || []).map(row => ({ column_name: row.name })) }
+      : schemaResult;
     if (!colsResult || !Array.isArray(colsResult.rows) || colsResult.rows.length === 0) {
       return;
     }
@@ -89,8 +104,13 @@ async function ensureProductImagesSchema() {
           logger.debug({ col, err: e.message }, 'No se pudo agregar columna en product_images');
         }
       }
-      const verifyResult = await query(`SELECT column_name FROM information_schema.columns WHERE table_name = 'product_images' AND table_schema = 'public'`);
-      const currentExisting = new Set((verifyResult.rows || []).map(r => r.column_name));
+      const verifyResult = isLocal
+        ? await query('PRAGMA table_info(product_images)')
+        : await query(`SELECT column_name FROM information_schema.columns WHERE table_name = 'product_images' AND table_schema = 'public'`);
+      const verifyRows = isLocal
+        ? (verifyResult.rows || []).map(row => ({ column_name: row.name }))
+        : (verifyResult.rows || []);
+      const currentExisting = new Set(verifyRows.map(r => r.column_name));
       const stillMissing = needed.filter(c => !currentExisting.has(c));
       if (stillMissing.length === 0) {
         productImagesSchemaVerified = true;

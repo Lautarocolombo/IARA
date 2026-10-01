@@ -12,7 +12,7 @@ const WINDOW_GLOBALS = [
   'onSyncMessage', 'emitSync', 'startDataSync', 'stopDataSync', 'initSSESync', 'destroySSESync',
   'safeFetch', 'fetchWithRetry', 'getFetchErrorMessage', 'addToCartAndUpdate',
   'escapeHtml', 'unescapeHtml', 'sanitizeAboutText',
-  'renderProductImage', 'getProductImageUrl', 'getPlaceholderDataUri',
+  'renderProductImage', 'getProductImageUrl', 'buildProductImageLayers', 'getPlaceholderDataUri',
   'getWishlist', 'saveWishlist', 'addToWishlist', 'removeFromWishlist', 'isInWishlist', 'updateWishlistBadge',
   'addToCart', 'updateCartBadge', 'updateCartDisplay', 'renderWishlist', 'revealObserver'
 ];
@@ -45,6 +45,7 @@ function setupDOM() {
 }
 
 function loadSharedModules() {
+  require(path.join(JS_DIR, 'safeImage.js'));
   require(path.join(JS_DIR, 'config.js'));
   require(path.join(JS_DIR, 'ui.js'));
   require(path.join(JS_DIR, 'wishlist.js'));
@@ -165,6 +166,7 @@ describe('Wishlist page (pages/wishlist.js)', () => {
     require(path.join(JS_DIR, 'config.js'));
     require(path.join(JS_DIR, 'ui.js'));
     require(path.join(JS_DIR, 'wishlist.js'));
+    require(path.join(JS_DIR, 'safeImage.js'));
     window.addToCart = jest.fn();
     window.renderProductImage = jest.fn(function () { return '<img class="product-card-img" />'; });
 

@@ -1,0 +1,76 @@
+const { test, expect } = require('@playwright/test');
+
+const seed = [{
+  id: 1,
+  name: 'Pulsera Test',
+  price: 1500,
+  qty: 2,
+  emoji: '🧵',
+  image: '',
+  description: 'Pulsera de prueba',
+  stock: 99
+}];
+
+test.describe('DEBUG: cart page rendering + interaction (built dist)', () => {
+  test('items render on load, qty +/- updates subtotal real-time, remove works, empty state', async ({ page }) => {
+    const errors = [];
+    page.on('console', msg => {
+      const type = msg.type();
+      if (type === 'error' || type === 'warning') errors.push(`[${type}] ${msg.text()}`);
+    });
+    page.on('pageerror', err => errors.push('[pageerror] ' + err.message));
+
+    await page.goto('/pages/cart.html');
+    await page.evaluate(cart => { localStorage.setItem('ag_cart', JSON.stringify(cart)); }, seed);
+    await page.reload();
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForTimeout(1500);
+
+    // [LOAD] render on load
+    const count = await page.$$eval('#cartItems .cart-item', els => els.length);
+    const name = await page.$eval('#cartItems .item-details h4', el => el.textContent);
+    const qtyInput = await page.$eval('#cartItems input[type="number"]', el => el.value);
+    const subtotal = await page.$eval('#subtotal', el => el.textContent);
+    const norm = s => (s || '').replace(/[\s\u00a0\u202f]+/g, ' ').trim();
+    console.log('\n[LOAD] cart-item count:', count, '| name:', name, '| qty:', qtyInput, '| subtotal:', subtotal);
+    expect(count).toBe(1);
+    expect(name).toBe('Pulsera Test');
+    expect(qtyInput).toBe('2');
+    expect(norm(subtotal)).toBe('$ 3.000,00');
+
+    // Click "+" -> qty 3, subtotal $4.500
+    await page.click('#cartItems button[data-cart-action="qty"][data-delta="1"]');
+    await page.waitForTimeout(500);
+    const qtyPlus = await page.$eval('#cartItems input[type="number"]', el => el.value);
+    const subPlus = await page.$eval('#subtotal', el => el.textContent);
+    console.log('[CLICK +] qty:', qtyPlus, '| subtotal:', subPlus);
+    expect(qtyPlus).toBe('3');
+    expect(norm(subPlus)).toBe('$ 4.500,00');
+
+    // Click "−" -> qty 2, subtotal $3.000
+    await page.click('#cartItems button[data-cart-action="qty"][data-delta="-1"]');
+    await page.waitForTimeout(500);
+    const qtyMinus = await page.$eval('#cartItems input[type="number"]', el => el.value);
+    const subMinus = await page.$eval('#subtotal', el => el.textContent);
+    console.log('[CLICK −] qty:', qtyMinus, '| subtotal:', subMinus);
+    expect(qtyMinus).toBe('2');
+    expect(norm(subMinus)).toBe('$ 3.000,00');
+
+    // Click remove -> item gone, empty state, totals 0
+    await page.click('#cartItems button[data-cart-action="remove"]');
+    await page.waitForTimeout(500);
+    const countAfter = await page.$$eval('#cartItems .cart-item', els => els.length);
+    const emptyVisible = await page.isVisible('#emptyCart');
+    const subAfter = await page.$eval('#subtotal', el => el.textContent);
+    console.log('[CLICK REMOVE] count:', countAfter, '| emptyCart visible:', emptyVisible, '| subtotal:', subAfter);
+    expect(countAfter).toBe(0);
+    expect(emptyVisible).toBe(true);
+    expect(norm(subAfter)).toBe('$ 0,00');
+
+    // 5) Console error check (filter out unrelated 404/API-env errors from static server)
+    const cartErrors = errors.filter(e => !e.includes('404') && !e.includes('<!DOCTYPE') && !e.includes('[SSE]') && !e.includes('payment-config') && !e.includes('settings') && !e.includes('site-texts') && !e.includes('productos') && !e.includes('Testimonial') && !e.includes('Hero') && !e.includes('carrusel') && !e.includes('imagen'));
+    console.log('[CONSOLE ERRORS (cart-related):]', JSON.stringify(cartErrors, null, 2));
+
+    console.log('===== ALL ASSERTIONS PASSED =====\n');
+  });
+});
