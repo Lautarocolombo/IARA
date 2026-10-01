@@ -116,7 +116,7 @@ jobs:
           $max = 30; $i = 0
           while ($i -lt $max) {
             try {
-              $r = Invoke-WebRequest -Uri "$siteUrl/health" -UseBasicParsing
+              $r = Invoke-WebRequest -Uri "$siteUrl/api/health" -UseBasicParsing
               if ($r.StatusCode -eq 200) { Write-Host "Health check OK"; break }
             } catch {}
             Start-Sleep -Seconds 2

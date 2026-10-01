@@ -115,6 +115,42 @@ describe('siteSettingsController', () => {
       expect(res.json).toHaveBeenCalledWith({ ok: true });
     });
 
+    test('persiste claves de integraciones (analytics/reviews)', async () => {
+      const req = {
+        body: {
+          business_name: 'Test',
+          google_analytics_id: 'G-TEST123',
+          facebook_pixel_id: '123456',
+          google_place_id: 'ChIJtest',
+          google_write_review_url: 'https://example.com/review'
+        }
+      };
+      const res = { json: jest.fn() };
+
+      query.mockResolvedValue({ rows: [] });
+
+      await updateSiteSettings(req, res);
+
+      const calls = query.mock.calls.map((c) => c[1] && c[1][0]).filter(Boolean);
+      expect(calls).toContain('google_analytics_id');
+      expect(calls).toContain('google_place_id');
+      expect(res.json).toHaveBeenCalledWith({ ok: true });
+    });
+
+    test('getSiteSettings expone integraciones', async () => {
+      const req = { query: {} };
+      const res = { setHeader: jest.fn(), json: jest.fn() };
+
+      query.mockResolvedValueOnce({ rows: [{ key: 'google_analytics_id', value: 'G-ABC' }] });
+      query.mockResolvedValueOnce({ rows: [{ mp_alias: 'a' }] });
+
+      await getSiteSettings(req, res);
+
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+        google_analytics_id: 'G-ABC'
+      }));
+    });
+
     test('maneja error de base de datos', async () => {
       const req = { body: { business_name: 'Test' } };
       const res = {
@@ -179,7 +215,7 @@ describe('siteSettingsController', () => {
   });
 
   describe('updateAdminPaymentConfig', () => {
-    test('actualiza config de pago', async () => {
+    test('actualiza solo los campos enviados y responde con el estado persistido', async () => {
       const req = {
         body: {
           mpAlias: 'nuevo-alias',
@@ -190,16 +226,58 @@ describe('siteSettingsController', () => {
       };
       const res = { json: jest.fn() };
 
+      // 1) lectura de la fila actual, 2) UPDATE, 3) lectura del estado ya persistido
       query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
-      query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+      query.mockResolvedValueOnce({ rows: [] });
+      query.mockResolvedValueOnce({
+        rows: [{
+          id: 1,
+          mp_alias: 'nuevo-alias',
+          transfer_alias: 'nuevo-transfer',
+          cbu_cvu: '000111222333444555666',
+          message: 'Mensaje que no viene en el body',
+          cash_enabled: true,
+          shipping_cost: 500,
+          included_shipping_cost: 1500
+        }]
+      });
 
       await updateAdminPaymentConfig(req, res);
+
+      const updateCall = query.mock.calls[1];
+      expect(updateCall[0]).toContain('UPDATE payment_config SET');
+      expect(updateCall[0]).not.toContain('cbu_cvu =');
+      expect(updateCall[0]).not.toContain('message =');
+      expect(updateCall[1]).toEqual(['nuevo-alias', 'nuevo-transfer', true, 500, 1]);
 
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
         ok: true,
         mpAlias: 'nuevo-alias',
         cashEnabled: true,
-        shippingCost: 500
+        shippingCost: 500,
+        cbuCvu: '000111222333444555666',
+        message: 'Mensaje que no viene en el body',
+        includedShippingCost: 1500
+      }));
+    });
+
+    test('no borra campos cuando el body viene vacío', async () => {
+      const req = { body: {} };
+      const res = { json: jest.fn() };
+
+      query.mockResolvedValueOnce({ rows: [{ id: 1, cbu_cvu: 'cbu-intacto' }] });
+      query.mockResolvedValueOnce({
+        rows: [{ id: 1, cbu_cvu: 'cbu-intacto', message: 'mensaje-intacto' }]
+      });
+
+      await updateAdminPaymentConfig(req, res);
+
+      const statements = query.mock.calls.map(call => String(call[0]));
+      expect(statements.some(sql => sql.includes('UPDATE payment_config'))).toBe(false);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
+        ok: true,
+        cbuCvu: 'cbu-intacto',
+        message: 'mensaje-intacto'
       }));
     });
 

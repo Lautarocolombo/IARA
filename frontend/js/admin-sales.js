@@ -212,6 +212,10 @@ transactions.forEach(function (t) {
     /* Bar chart (principal) */
     var ctx = document.getElementById('salesChart');
     if (ctx) {
+      if (typeof Chart === 'undefined') {
+        ctx.parentNode.innerHTML = '<p class="form-hint">Gráficos no disponibles (CDN Chart.js bloqueado). Los números de arriba siguen funcionando.</p>';
+        return;
+      }
       if (salesChart) salesChart.destroy();
 
       salesChart = new Chart(ctx, {
@@ -300,6 +304,10 @@ transactions.forEach(function (t) {
   function renderDonut(data) {
     var donutCtx = document.getElementById('salesDonut');
     if (!donutCtx) return;
+    if (typeof Chart === 'undefined') {
+      donutCtx.parentNode.innerHTML = '<p class="form-hint">Gráfico no disponible (CDN bloqueado).</p>';
+      return;
+    }
 
     if (salesDonut) salesDonut.destroy();
 

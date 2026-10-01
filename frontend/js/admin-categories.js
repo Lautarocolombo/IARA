@@ -218,11 +218,16 @@
     if (title) title.textContent = category ? 'Editar categoría' : 'Nueva categoría';
     form.dataset.editId = category ? category.id : '';
     form.dataset.imageUrl = category ? (category.image_url || '') : '';
-    document.getElementById('cat_name').value = category ? category.name : '';
-    document.getElementById('cat_slug').value = category ? category.slug : '';
-    document.getElementById('cat_description').value = category ? (category.description || '') : '';
-    document.getElementById('cat_emoji').value = category ? (category.emoji || '') : '';
-    document.getElementById('cat_active').checked = category ? !!category.active : true;
+    var nameEl = document.getElementById('cat_name');
+    if (nameEl) nameEl.value = category ? category.name : '';
+    var slugEl = document.getElementById('cat_slug');
+    if (slugEl) slugEl.value = category ? category.slug : '';
+    var descEl = document.getElementById('cat_description');
+    if (descEl) descEl.value = category ? (category.description || '') : '';
+    var emojiEl = document.getElementById('cat_emoji');
+    if (emojiEl) emojiEl.value = category ? (category.emoji || '') : '';
+    var activeEl = document.getElementById('cat_active');
+    if (activeEl) activeEl.checked = category ? !!category.active : true;
 
     var parentSelect = document.getElementById('cat_parent_id');
     if (parentSelect) {
@@ -270,17 +275,25 @@
   async function saveCategory() {
     if (saving) return;
     saving = true;
-    var editId = document.getElementById('categoryForm').dataset.editId;
-    var btnId = editId ? 'editCategoryBtn' : 'createCategoryBtn';
-    var loadId = btnId + 'Loading';
+    var formEl = document.getElementById('categoryForm');
+    var editId = formEl ? formEl.dataset.editId : '';
+    var btnId = 'saveCategoryBtn';
+    var loadId = 'saveCategoryBtnLoading';
     setLoading(btnId, loadId, true);
 
+    function fieldVal(id) {
+      var el = document.getElementById(id);
+      if (!el) return '';
+      if (el.type === 'checkbox') return el.checked;
+      return (el.value || '').trim();
+    }
+
     var payload = {
-      name: document.getElementById('cat_name').value.trim(),
-      slug: document.getElementById('cat_slug').value.trim(),
-      description: document.getElementById('cat_description').value.trim(),
-      emoji: document.getElementById('cat_emoji').value.trim(),
-      active: document.getElementById('cat_active').checked,
+      name: fieldVal('cat_name'),
+      slug: fieldVal('cat_slug'),
+      description: fieldVal('cat_description'),
+      emoji: fieldVal('cat_emoji'),
+      active: (function () { var a = document.getElementById('cat_active'); return a ? a.checked : true; })(),
       parent_id: document.getElementById('cat_parent_id') ? document.getElementById('cat_parent_id').value || null : null
     };
 

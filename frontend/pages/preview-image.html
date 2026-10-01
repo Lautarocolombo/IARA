@@ -26,40 +26,83 @@
       gap: 1.25rem;
     }
     .product-card {
+      --info-h: 140px;
+      --actions-h: 56px;
+      --image-aspect: 1 / 1;
       background: var(--white);
       border-radius: 16px;
+      border: none;
+      overflow: hidden;
       box-shadow: 0 6px 20px rgba(212, 112, 144, 0.10);
+      position: relative;
       display: flex;
       flex-direction: column;
-      overflow: hidden;
     }
     .product-image {
+      position: relative;
       width: 100%;
-      aspect-ratio: 1/1;
-      background: linear-gradient(135deg, #fde8ef, #f8d5e4);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 6px;
+      aspect-ratio: var(--image-aspect);
+      overflow: hidden;
+      border-radius: 16px 16px 0 0;
+      background: var(--cream);
+      z-index: 1;
+      transform-origin: center center;
     }
-    .product-image img {
+    .product-image > a {
+      position: absolute;
+      inset: 0;
+      display: block;
+      z-index: 2;
+    }
+    .product-card-bg {
+      position: absolute;
+      inset: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
       object-position: center;
-      border-radius: 12px;
+      filter: blur(18px);
+      transform: scale(1.15);
+      z-index: 0;
+    }
+    .product-card-img {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
       display: block;
+      transition: transform 0.3s ease;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .product-card:hover .product-card-img,
+      .product-card:focus-within .product-card-img {
+        transform: scale(1.08);
+      }
     }
     .product-info {
-      padding: 1rem;
+      position: relative;
+      left: auto;
+      right: auto;
+      bottom: auto;
+      height: var(--info-h);
+      padding: 16px 18px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      background: var(--white);
+      box-sizing: border-box;
+      z-index: 2;
     }
     .product-name {
       font-weight: 600;
       font-size: 1rem;
-      margin-bottom: 0.25rem;
+      margin: 0;
     }
     .product-price {
-      color: var(--blush);
+      color: var(--rose-dark);
       font-weight: 700;
     }
   </style>
@@ -71,11 +114,46 @@
     <div class="products-grid">
       <div class="product-card">
         <div class="product-image">
-          <img src="../assets/pulsera-con-tigo-tengo.jpg" alt="Pulsera Con tigo tengo" />
+          <a href="#" aria-label="Ver Pulsera Con tigo tengo" style="text-decoration:none;color:inherit;">
+            <img src="../assets/pulsera-con-tigo-tengo.jpg" alt="" class="product-card-bg" aria-hidden="true">
+            <img src="../assets/pulsera-con-tigo-tengo.jpg" alt="" class="product-card-img" aria-hidden="true">
+          </a>
         </div>
         <div class="product-info">
-          <div class="product-name">Pulsera Con tigo tengo</div>
-          <div class="product-price">$ 450</div>
+          <span class="product-category">SOUVENIRS</span>
+          <h3 class="product-name">Pulsera Con tigo tengo</h3>
+          <p class="product-description">Pulsera artesanal única con diseño de tigo tengo, hecha a mano en Gualeguay.</p>
+          <div class="product-footer">
+            <span class="product-price">$ 450</span>
+            <a href="#" class="product-cta">Ver producto</a>
+          </div>
+        </div>
+        <div class="product-actions">
+          <button class="btn-add-cart" aria-label="Agregar al carrito">+</button>
+          <button class="btn-wishlist" aria-label="Agregar a favoritos">❤️</button>
+          <a href="#" class="btn-outline btn-sm btn-whatsapp" aria-label="Consultar por WhatsApp">💬</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-image">
+          <a href="#" aria-label="Ver Pulsera Con tigo tengo" style="text-decoration:none;color:inherit;">
+            <img src="../assets/pulsera-con-tigo-tengo.jpg" alt="" class="product-card-bg" aria-hidden="true">
+            <img src="../assets/pulsera-con-tigo-tengo.jpg" alt="" class="product-card-img" aria-hidden="true">
+          </a>
+        </div>
+        <div class="product-info">
+          <span class="product-category">PULSERAS</span>
+          <h3 class="product-name">Pulsera Minimalista de Plata</h3>
+          <p class="product-description">Diseño limpio y versátil, ideal para cualquier ocasión. Hecha a mano con plata .925.</p>
+          <div class="product-footer">
+            <span class="product-price">$ 1.200</span>
+            <a href="#" class="product-cta">Ver producto</a>
+          </div>
+        </div>
+        <div class="product-actions">
+          <button class="btn-add-cart" aria-label="Agregar al carrito">+</button>
+          <button class="btn-wishlist" aria-label="Agregar a favoritos">🤍</button>
+          <a href="#" class="btn-outline btn-sm btn-whatsapp" aria-label="Consultar por WhatsApp">💬</a>
         </div>
       </div>
     </div>

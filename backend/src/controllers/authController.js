@@ -220,7 +220,8 @@ const requestPasswordReset = async (req, res) => {
     );
 
     RESET_TOKENS.set(resetToken, { userId: user.id, username: user.username, expires: Date.now() + RESET_TOKEN_EXPIRY });
-    setTimeout(() => RESET_TOKENS.delete(resetToken), RESET_TOKEN_EXPIRY);
+    const resetTimeout = setTimeout(() => RESET_TOKENS.delete(resetToken), RESET_TOKEN_EXPIRY);
+    resetTimeout.unref();
 
     const resetLink = `${process.env.SITE_URL || 'http://localhost:3000'}/reset-password.html?token=${resetToken}`;
     const html = `
@@ -231,7 +232,7 @@ const requestPasswordReset = async (req, res) => {
       <p>Este enlace vence en 15 minutos.</p>
       <p>Si no solicitaste este cambio, ignorá este email.</p>
     `;
-    await require('../lib/email').sendEmail({ to: email, subject: 'Recuperación de contraseña - Artesanía Gualeguay', html });
+    await require('../lib/email').sendEmail({ to: email, subject: 'Recuperación de contraseña - Artesanías Gualeguay', html });
 
     res.json({ ok: true, message: 'Si el email existe, recibirás un enlace de recuperación.' });
   } catch (err) {

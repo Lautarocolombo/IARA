@@ -1,5 +1,6 @@
-describe('about-carousel', () => {
+ describe('about-carousel', () => {
   beforeEach(() => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.resetModules();
     jest.useFakeTimers();
     window.__aboutImages = {};
@@ -28,6 +29,7 @@ describe('about-carousel', () => {
   });
 
   afterEach(() => {
+    console.error.mockRestore();
     jest.clearAllTimers();
     jest.useRealTimers();
     delete global.fetchWithRetry;

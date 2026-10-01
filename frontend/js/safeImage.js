@@ -96,7 +96,7 @@
   //   - onerror fallback to the inline SVG placeholder
   //   - empty/invalid src -> inline placeholder src directly (no error flash)
   //
-  // opts: { className, style, placeholder(emoji), lazy, id }
+  // opts: { className, style, placeholder(emoji), lazy, id, ariaHidden }
    window.renderProductImage = function (src, alt, opts) {
      opts = opts || {};
       var hasSrc = !!(src && String(src).trim());
@@ -108,6 +108,7 @@
      if (opts.id) attrs.push(' id="' + escapeAttr(opts.id) + '"');
      if (opts.className) attrs.push(' class="' + escapeAttr(opts.className) + '"');
      if (opts.style) attrs.push(' style="' + escapeAttr(opts.style) + '"');
+     if (opts.ariaHidden === true) attrs.push(' aria-hidden="true"');
      attrs.push(' loading="' + (opts.lazy === false ? 'eager' : 'lazy') + '"');
      attrs.push(' decoding="async"');
      attrs.push(' data-fallback="' + escapeAttr(symbol) + '"');
@@ -136,6 +137,22 @@
       }
      return '';
    };
+
+  // Shared markup for the image layers of EVERY product card (home, catálogo,
+  // búsqueda, favoritos, destacados…). Apila tres capas dentro del <a> de la card:
+  //   1) .product-card-bg → foto desenfocada + ampliada (rellena los huecos)
+  //   2) .glass-tint       → overlay de vidrio esmerilado (translúcido + blur)
+  //   3) .product-card-img  → foto real (cover en reposo → contain al hover)
+  // La opacidad/posición se controla vía CSS (.product-card:hover); aquí sólo se
+  // genera la estructura. Ambos <img> comparten src → el navegador descarga una vez.
+  window.buildProductImageLayers = function (product) {
+    var placeholder = (product && product.emoji && product.emoji !== 'null') ? product.emoji : DEFAULT_SYMBOL;
+    var src = (typeof window.getProductImageUrl === 'function' && window.getProductImageUrl(product)) || '';
+    var bg = window.renderProductImage(src, '', { className: 'product-card-bg', placeholder: placeholder, ariaHidden: true });
+    var tint = '<div class="glass-tint" aria-hidden="true"></div>';
+    var fg = window.renderProductImage(src, (product && product.name) || '', { className: 'product-card-img', placeholder: placeholder });
+    return bg + tint + fg;
+  };
 
   // Programmatic DOM element version (same guarantees, real event listener).
   window.createSafeImage = function (src, alt, opts) {

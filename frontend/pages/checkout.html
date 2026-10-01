@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Finalizar compra | Artesanía Gualeguay</title>
-  <meta name="description" content="Finalizá tu compra en Artesanía Gualeguay. Completá tus datos de envío y pagá por transferencia bancaria." />
+  <title>Finalizar compra | Artesanías Gualeguay</title>
+  <meta name="description" content="Finalizá tu compra en Artesanías Gualeguay. Completá tus datos de envío y pagá por transferencia bancaria." />
   <meta name="theme-color" content="#d47090" />
   <link rel="canonical" href="https://artesania-gualeguay-v3.vercel.app/pages/checkout.html" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -154,10 +154,27 @@
             <span>Total a pagar</span>
             <span class="payment-total-amount" id="paymentTotalAmount">ARS 0,00</span>
           </div>
-          <p class="payment-note" id="paymentInstructionsText">Transferí el total exacto y envíanos el comprobante por WhatsApp para confirmar tu pedido.</p>
-          <a id="whatsappComprobanteBtn" href="javascript:void(0)" target="_blank" class="btn btn-primary btn-full">Enviar comprobante por WhatsApp</a>
+<p class="payment-note" id="paymentInstructionsText">Transferí el total exacto y envíanos el comprobante por WhatsApp para confirmar tu pedido.</p>
+            <a id="whatsappComprobanteBtn" href="javascript:void(0)" target="_blank" class="btn btn-primary btn-full">Enviar comprobante por WhatsApp</a>
+            <div id="whatsappFallback"></div>
 
-          <a href="cart.html" class="btn btn-secondary btn-full" style="margin-top:0.5rem;">Volver al carrito</a>
+            <div class="receipt-upload-section" style="margin-top: 1.5rem; padding: 1rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+              <h4 style="margin: 0 0 0.75rem; font-size: 0.95rem;">Subir comprobante al sitio (opcional)</h4>
+              <p style="margin: 0 0 0.75rem; font-size: 0.85rem; color: #64748b;">
+                Podés subir la captura o PDF de la transferencia directamente acá. El equipo lo verá en el panel de admin.
+              </p>
+              <div class="form-group">
+                <label for="receiptFile">Comprobante (imagen JPG/PNG/WEBP o PDF, máx. 5 MB)</label>
+                <input type="file" id="receiptFile" accept="image/jpeg,image/png,image/webp,application/pdf" />
+                <div class="field-error" id="receiptFileError"></div>
+              </div>
+              <button type="button" class="btn btn-secondary btn-full" id="uploadReceiptBtn" style="margin-top: 0.5rem;" disabled>
+                Subir comprobante
+              </button>
+              <p id="receiptUploadStatus" style="margin-top: 0.5rem; font-size: 0.85rem; display: none;"></p>
+            </div>
+
+            <a href="cart.html" class="btn btn-secondary btn-full" style="margin-top:0.5rem;">Volver al carrito</a>
        </div>
 
          <div class="checkout-card reveal" id="orderSummaryCard">
@@ -211,8 +228,25 @@
                 <button class="btn btn-secondary btn-sm" id="copyHolderBtn" data-copy-target="holderName">📋 Copiar</button>
              </div>
            </div>
-          <p class="transfer-note" id="transferNote">Una vez realizada la transferencia, enviá el comprobante por WhatsApp para confirmar tu pedido.</p>
-          <a id="transferReceiptBtn" href="javascript:void(0)" target="_blank" class="btn btn-primary btn-full">Ya transferí, enviar comprobante</a>
+<p class="transfer-note" id="transferNote">Una vez realizada la transferencia, enviá el comprobante por WhatsApp para confirmar tu pedido.</p>
+            <a id="transferReceiptBtn" href="javascript:void(0)" target="_blank" class="btn btn-primary btn-full">Ya transferí, enviar comprobante</a>
+            <div id="whatsappFallbackTransfer"></div>
+
+            <div class="receipt-upload-section" style="margin-top: 1.5rem; padding: 1rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;">
+              <h4 style="margin: 0 0 0.75rem; font-size: 0.95rem;">Subir comprobante al sitio (opcional)</h4>
+              <p style="margin: 0 0 0.75rem; font-size: 0.85rem; color: #64748b;">
+                Podés subir la captura o PDF de la transferencia directamente acá. El equipo lo verá en el panel de admin.
+              </p>
+              <div class="form-group">
+                <label for="receiptFileTransfer">Comprobante (imagen JPG/PNG/WEBP o PDF, máx. 5 MB)</label>
+                <input type="file" id="receiptFileTransfer" accept="image/jpeg,image/png,image/webp,application/pdf" />
+                <div class="field-error" id="receiptFileTransferError"></div>
+              </div>
+              <button type="button" class="btn btn-secondary btn-full" id="uploadReceiptBtnTransfer" style="margin-top: 0.5rem;" disabled>
+                Subir comprobante
+              </button>
+              <p id="receiptUploadStatusTransfer" style="margin-top: 0.5rem; font-size: 0.85rem; display: none;"></p>
+            </div>
 
            <!-- FASE 2 — Modal movido a success.html -->
            <!--
@@ -249,10 +283,10 @@
   <footer class="footer">
     <div class="footer-content">
       <div class="footer-section">
-        <h4>Artesanía Gualeguay</h4>
+        <h4>Artesanías Gualeguay</h4>
         <p>Creando pulseras y souvenirs únicos desde el corazón de Gualeguay, Entre Ríos.</p>
         <div class="social-links">
-          <a href="https://wa.me/5493444634444" title="WhatsApp" class="social-icon" aria-label="WhatsApp">💬</a>
+          <a href="https://wa.me/543444634444" title="WhatsApp" class="social-icon" aria-label="WhatsApp">💬</a>
           <a href="javascript:void(0)" id="instagramLink" title="Instagram" class="social-icon" aria-label="Instagram">📷</a>
           <a href="javascript:void(0)" id="facebookLink" title="Facebook" class="social-icon" aria-label="Facebook">👍</a>
           <a href="javascript:void(0)" id="twitterLink" title="Twitter" class="social-icon" aria-label="Twitter">🐦</a>
@@ -278,7 +312,7 @@
       </div>
     </div>
     <div class="footer-bottom">
-      <p>&copy; 2026 Artesanía Gualeguay. Todos los derechos reservados.</p>
+      <p>&copy; 2026 Artesanías Gualeguay. Todos los derechos reservados.</p>
       <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #64748b;">
         <a href="../pages/terms.html" style="margin-right: 1rem;">Términos y Condiciones</a>
         <a href="../pages/privacy.html" style="margin-right: 1rem;">Política de Privacidad</a>

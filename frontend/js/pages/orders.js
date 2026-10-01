@@ -82,7 +82,7 @@
       if (currentOrderEmail && document.getElementById('ordersContainer')) {
         loadOrders(currentOrderEmail);
       }
-    });
+    }, false);
   }
 
   onSyncMessage('order_created', () => {

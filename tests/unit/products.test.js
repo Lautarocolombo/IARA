@@ -7,6 +7,7 @@ describe('products.js', () => {
   let originalGetElementById;
 
   beforeEach(() => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.resetModules();
     global.fetch = jest.fn();
     global.CONFIG = {
@@ -28,6 +29,7 @@ describe('products.js', () => {
   });
 
   afterEach(() => {
+    console.error.mockRestore();
     jest.clearAllMocks();
     document.getElementById = originalGetElementById;
     document.body.innerHTML = '';
@@ -94,6 +96,7 @@ describe('products.js', () => {
     grid.id = 'productsGrid';
     document.body.appendChild(grid);
     document.getElementById = (id) => id === 'productsGrid' ? grid : null;
+    require('../../frontend/js/safeImage');
 
     productsModule.setProducts([
       { id: 1, name: 'Pulsera', category: 'pulseras', price: 100, description: 'Desc', emoji: '📿', image: '', featured: false, badge: '', stock: 10 }

@@ -1,6 +1,24 @@
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 
+// ⚠️ NÚMERO WhatsApp: formato E.164 SIN 9 para Argentina → 543444634444
+// CONFIRMAR con el dueño antes de producción.
+function normalizeWhatsAppPhone(phone) {
+  let cleaned = String(phone || '').replace(/[^\d]/g, '');
+  if (cleaned.startsWith('549')) {
+    cleaned = cleaned.slice(3);
+  } else if (cleaned.startsWith('54')) {
+    cleaned = cleaned.slice(2);
+  }
+  if (cleaned.startsWith('15')) {
+    cleaned = cleaned.slice(2);
+  }
+  if (!cleaned.startsWith('54') && cleaned.length >= 10) {
+    cleaned = `54${cleaned}`;
+  }
+  return cleaned;
+}
+
 const getSiteConfig = async (req, res) => {
   try {
     const result = await query('SELECT key, value FROM site_texts');
@@ -25,11 +43,14 @@ const getSiteConfig = async (req, res) => {
       payment: {
         mpAlias: paymentConfig.mp_alias || config['mp_alias'] || '',
         holderName: paymentConfig.holder_name || '',
-        whatsapp: (paymentConfig.whatsapp || process.env.WHATSAPP || '+5493444634444').replace(/[^\d]/g, ''),
+        whatsapp: normalizeWhatsAppPhone(paymentConfig.whatsapp || process.env.WHATSAPP || '+543444634444'),
         message: paymentConfig.message || 'Transferí el total exacto y enviá el comprobante por WhatsApp para confirmar tu pedido.',
-        active: paymentConfig.active !== false
+        active: paymentConfig.active !== false,
+        notifyAdminNewProof: paymentConfig.notify_admin_new_proof !== false,
+        notifyClientApproved: paymentConfig.notify_client_approved !== false,
+        notifyClientRejected: paymentConfig.notify_client_rejected !== false
       },
-      siteName: 'Artesanía Gualeguay',
+      siteName: 'Artesanías Gualeguay',
       environment: process.env.NODE_ENV || 'development'
     };
 

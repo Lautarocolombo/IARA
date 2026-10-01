@@ -1,20 +1,13 @@
 /* ==================== CONFIG.JS - CONFIGURACIÓN CENTRALIZADA ==================== */
 
-const CONFIG = {
-  // Reseñas Google
-  // Cómo obtener Google Place ID:
-  // 1. Buscá tu negocio en Google Maps
-  // 2. Hacé click en "Compartir" → "Insertar mapa"
-  // 3. En el código embed encontrás el Place ID, o usá la Google Places API
-  // URL alternativa directa (sobreescribe GOOGLE_PLACE_ID si está completa)
+// Valores por defecto (fallback si falla la API)
+const DEFAULT_CONFIG = {
   REVIEWS: {
     GOOGLE_PLACE_ID: '',
     GOOGLE_WRITE_REVIEW_URL: ''
   },
-
-  // Información de contacto
   CONTACT: {
-    WHATSAPP: '+5493444634444',
+    WHATSAPP: '+543444634444',
     WHATSAPP_ALIAS: 'iara-salgueiro',
     PHONE: '+54 (3444) 634-4444',
     EMAIL: 'noreply@artesaniagualeguay.com',
@@ -22,101 +15,161 @@ const CONFIG = {
     COORDINATES: { lat: -33.1400009, lng: -59.3136349 },
     GOOGLE_MAPS_API_KEY: ''
   },
-
-  // Configuración de carrito
   CART: {
     STORAGE_KEY: 'ag_cart',
     SHIPPING_COST: 200,
     SHIPPING_THRESHOLD: 2000,
     FREE_SHIPPING_TEXT: 'Envío Gratis'
   },
-
-  // Configuración de tema
   THEME: {
     STORAGE_KEY: 'ag_theme',
     DEFAULT: 'light',
     OPTIONS: ['light', 'dark']
   },
-
-  // Información del negocio
   BUSINESS: {
-    NAME: 'Artesanía Gualeguay',
+    NAME: 'Artesanías Gualeguay',
     SLOGAN: 'Regalos artesanales que cuentan historias',
     LOGO: '🌸',
-
     YEAR_FOUNDED: 2021
   },
-
-  // Analytics
-  // Google Analytics:
-  //   1. Creá una propiedad en https://analytics.google.com
-  //   2. Elegí "Web" y copiá el ID de medición (formato G-XXXXXXXXXX)
-  // Meta Pixel (Facebook):
-  //   1. Creá un píxel en https://business.facebook.com/events_manager
-  //   2. Copiá el ID numérico del píxel
-  // Sentry (error tracking):
-  //   1. Creá un proyecto en https://sentry.io
-  //   2. Copiá el DSN de configuración
   ANALYTICS: {
     GOOGLE_ID: '',
     FACEBOOK_PIXEL_ID: '',
     SENTRY_DSN: ''
   },
-
-  // Animaciones
   ANIMATIONS: {
     REVEAL_THRESHOLD: 0.15,
     TOAST_DURATION: 3000,
     TRANSITION_SPEED: 0.4
   },
-
-    // API — usar URLs relativas para aprovechar el rewrite de Vercel/Render
-    // (/api/* → backend), evitando problemas de CORS y cold starts.
-    // Si API.BASE está vacío, se usan rutas relativas (recomendado).
-    API: {
-      BASE: '',
-      BACKEND_URL: 'https://iara-os3h.onrender.com'
-    },
-
-   // Imagen placeholder para productos sin imagen
-   PLACEHOLDER: {
-     IMAGE: 'assets/placeholder-product.svg'
-   },
-
-  // URLs externas (completá con los links reales a tus redes sociales)
-  // Estos valores se usan como fallback si no hay configuración en el backend.
-  // Podés gestionarlos también desde el panel admin → Configuración.
-  LINKS: {
-    INSTAGRAM: '#',
-    FACEBOOK: '#',
-    TWITTER: '#'
+  API: {
+    BASE: '',
+    BACKEND_URL: ''
   },
-
-  // La configuración de pago (alias, WhatsApp, mensaje, activo) se obtiene
-  // dinámicamente desde /api/payment-config en el backend.
-
-  // Horarios
+  PLACEHOLDER: {
+    IMAGE: 'assets/placeholder-product.svg'
+  },
+  LINKS: {
+    INSTAGRAM: 'https://www.instagram.com/artesaniagualeguay',
+    FACEBOOK: 'https://www.facebook.com/artesaniagualeguay',
+    TWITTER: ''
+  },
   HOURS: {
     WEEKDAY: { open: '00:00', close: '23:59' },
     SATURDAY: { open: '00:00', close: '23:59' },
     CLOSED: []
-  }
+  },
+  PAYMENT: {}
 };
 
-// Link directo a “Escribir reseña” (Google)
-function getGoogleWriteReviewLink(){
-  // Si cargan GOOGLE_WRITE_REVIEW_URL, se prioriza.
+function deepMerge(target, source) {
+  const result = { ...target };
+  for (const key of Object.keys(source)) {
+    if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+      result[key] = deepMerge(target[key] || {}, source[key]);
+    } else if (source[key] !== undefined) {
+      result[key] = source[key];
+    }
+  }
+  return result;
+}
+
+// CONFIG inicial con valores por defecto (síncrono)
+let CONFIG = { ...DEFAULT_CONFIG };
+
+let configPromise = null;
+let configLoaded = false;
+
+async function loadConfigFromAPI() {
+  if (configLoaded) return CONFIG;
+  if (configPromise) return configPromise;
+
+  configPromise = (async () => {
+    try {
+      const res = await fetch('/api/v1/config', { cache: 'no-store' });
+      if (res.ok) {
+        const apiConfig = await res.json();
+        CONFIG = deepMerge(DEFAULT_CONFIG, apiConfig);
+      }
+    } catch (err) {
+      console.warn('No se pudo cargar config desde API, usando valores por defecto:', err);
+    } finally {
+      configLoaded = true;
+      // Actualizar window.CONFIG para que todos los módulos vean los valores frescos
+      if (typeof window !== 'undefined') {
+        window.CONFIG = CONFIG;
+        try { applyReviewLinks(); } catch (e) { /* noop */ }
+      }
+    }
+    return CONFIG;
+  })();
+
+  return configPromise;
+}
+
+// Función para forzar recarga de config
+async function reloadConfig() {
+  configLoaded = false;
+  configPromise = null;
+  return loadConfigFromAPI();
+}
+
+// Link directo a "Escribir reseña" (Google)
+function getGoogleWriteReviewLink() {
   if (CONFIG.REVIEWS && CONFIG.REVIEWS.GOOGLE_WRITE_REVIEW_URL) return CONFIG.REVIEWS.GOOGLE_WRITE_REVIEW_URL;
   const placeId = CONFIG.REVIEWS && CONFIG.REVIEWS.GOOGLE_PLACE_ID ? String(CONFIG.REVIEWS.GOOGLE_PLACE_ID).trim() : '';
-  if (!placeId) return '#';
+  if (!placeId) return '';
   return `https://search.google.com/local/writereview?placeid=${encodeURIComponent(placeId)}`;
 }
 
-// Función auxiliar para generar enlace WhatsApp
+function isReviewConfigured() {
+  return !!getGoogleWriteReviewLink();
+}
+
+function applyReviewLinks() {
+  if (typeof document === 'undefined') return;
+  const url = getGoogleWriteReviewLink();
+  document.querySelectorAll('[data-review-link]').forEach(function (el) {
+    if (!url) {
+      el.style.display = 'none';
+      el.setAttribute('aria-hidden', 'true');
+    } else {
+      el.style.display = '';
+      el.removeAttribute('aria-hidden');
+      if (el.tagName === 'A') el.href = url;
+    }
+  });
+}
+
+function normalizeWhatsAppPhone(phone) {
+  let cleaned = String(phone || '').replace(/[^\d]/g, '');
+  if (cleaned.startsWith('549')) {
+    cleaned = cleaned.slice(3);
+  } else if (cleaned.startsWith('54')) {
+    cleaned = cleaned.slice(2);
+  }
+  if (cleaned.startsWith('15')) {
+    cleaned = cleaned.slice(2);
+  }
+  if (cleaned.startsWith('0')) {
+    cleaned = cleaned.slice(1);
+  }
+  if (!cleaned.startsWith('54')) {
+    cleaned = `54${cleaned}`;
+  }
+  return cleaned;
+}
+
+// Genera un enlace seguro de consulta sin exponer ninguna credencial.
+function buildWhatsAppLink({ phone = CONFIG.CONTACT.WHATSAPP, message = '' } = {}) {
+  const waPhone = normalizeWhatsAppPhone(phone);
+  if (!waPhone) return '';
+  const text = encodeURIComponent(message || 'Hola! Quisiera más información sobre tus productos.');
+  return `https://wa.me/${waPhone}?text=${text}`;
+}
+
 function getWhatsAppLink(message = '') {
-  const phone = CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g, '');
-  const msg = encodeURIComponent(message || 'Hola! Quisiera más información sobre tus productos.');
-  return `https://wa.me/${phone}?text=${msg}`;
+  return buildWhatsAppLink({ message });
 }
 
 // Función auxiliar para enviar email
@@ -133,15 +186,54 @@ function formatARS(amount) {
   }
 }
 
+// Abre WhatsApp detectando si el popup fue bloqueado (Brave, etc.)
+function openWhatsAppSafe(primaryUrl, fallbackUrl, deeplinkUrl) {
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+  if (isMobile && deeplinkUrl) {
+    const link = document.createElement('a');
+    link.href = deeplinkUrl;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => {
+      window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+    }, 1500);
+    return;
+  }
+
+  const opened = window.open(primaryUrl, '_blank', 'noopener,noreferrer');
+  if (!opened || opened.closed || typeof opened.closed === 'undefined') {
+    window.open(fallbackUrl, '_blank', 'noopener,noreferrer');
+  }
+}
+
+// Cargar config al iniciar (no bloqueante)
 if (typeof window !== 'undefined') {
+  loadConfigFromAPI();
   window.CONFIG = CONFIG;
   window.formatARS = formatARS;
+  window.buildWhatsAppLink = buildWhatsAppLink;
+  window.normalizeWhatsAppPhone = normalizeWhatsAppPhone;
   window.getWhatsAppLink = getWhatsAppLink;
   window.getMailtoLink = getMailtoLink;
   window.getGoogleWriteReviewLink = getGoogleWriteReviewLink;
+  window.isReviewConfigured = isReviewConfigured;
+  window.applyReviewLinks = applyReviewLinks;
+  window.openWhatsAppSafe = openWhatsAppSafe;
+  window.reloadConfig = reloadConfig;
 }
 
 // Exportar para uso en Node.js (si aplica)
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { CONFIG, getWhatsAppLink, getMailtoLink, getGoogleWriteReviewLink, formatARS };
+  module.exports = { CONFIG, buildWhatsAppLink, getWhatsAppLink, getMailtoLink, getGoogleWriteReviewLink, isReviewConfigured, applyReviewLinks, formatARS, loadConfigFromAPI, reloadConfig };
+}
+
+if (typeof jest !== 'undefined') {
+  Object.defineProperty(window, 'navigator', {
+    value: { userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+    configurable: true,
+    writable: true
+  });
 }

@@ -10,8 +10,8 @@ const BLOB_URL_RE = /^https?:\/\/[^/]+\.blob\.vercel-storage\.com/;
 function isBlobConfigured() {
   const token = (process.env.BLOB_READ_WRITE_TOKEN || '').trim();
   if (!token) return false;
-  if (!token.startsWith('vercel_blob_')) {
-    logger.warn('BLOB_READ_WRITE_TOKEN tiene un formato inválido. Debe comenzar con "vercel_blob_". Ignorando token.');
+  if (!token.startsWith('vercel_blob_') && !token.startsWith('vcp_')) {
+    logger.warn('BLOB_READ_WRITE_TOKEN tiene un formato inválido. Debe comenzar con "vercel_blob_" o "vcp_". Ignorando token.');
     return false;
   }
   return true;
@@ -40,7 +40,9 @@ function isBlobUrl(url) {
 async function uploadProofToBlob(file) {
   const mod = getBlobModule();
   if (!mod || !isBlobConfigured()) {
-    return null;
+    const err = new Error('BLOB_READ_WRITE_TOKEN no configurado o inválido. Configurá el token en Vercel y agregalo como variable de entorno en Render para subir comprobantes a Vercel Blob.');
+    err.code = 'BLOB_NOT_CONFIGURED';
+    throw err;
   }
   try {
     const buffer = fs.readFileSync(file.path);
@@ -62,7 +64,6 @@ async function uploadProofToBlob(file) {
   }
 }
 
-// eslint-disable-next-line no-unused-vars
 async function uploadToBlob(file) {
   const mod = getBlobModule();
   if (!mod || !isBlobConfigured()) {
@@ -194,9 +195,26 @@ const upload = multer({
 const uploadSingle = upload.single('image');
 const uploadMultiple = upload.array('images', 10);
 
-const uploadTestimonialFields = upload.fields([
-  { name: 'image', maxCount: 1 },
-  { name: 'productImage', maxCount: 1 }
+/* Upload dedicado a testimonios: valida tipo (JPG, PNG, WebP) y tamaño (5 MB) */
+const testimonialFileFilter = (req, file, cb) => {
+  const allowedImages = ['image/jpeg', 'image/png', 'image/webp'];
+  if (allowedImages.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Tipo de archivo no permitido. Usá JPG, PNG o WEBP.'), false);
+  }
+};
+
+const uploadTestimonial = multer({
+  storage,
+  fileFilter: testimonialFileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 }
+});
+
+const uploadTestimonialSingle = uploadTestimonial.single('image');
+
+const uploadTestimonialFields = uploadTestimonial.fields([
+  { name: 'image', maxCount: 1 }
 ]);
 
 const proofStorage = multer.diskStorage({
@@ -245,7 +263,24 @@ function handleUploadError(err, req, res, next) {
   next();
 }
 
+function removeIfExists(target) {
+  if (!target) return;
+  try {
+    fs.rmSync(target, { force: true, maxRetries: 3, retryDelay: 50 });
+  } catch (e) { /* noop */ }
+}
+
 async function processFile(file, _baseUrl) {
+  if (isBlobConfigured()) {
+    const blob = await uploadToBlob(file);
+    if (blob) {
+      removeIfExists(file.path);
+      logger.info('[Upload] Imagen guardada en Vercel Blob:', { blobName: blob.blobName });
+      return { url: blob.url, filename: blob.filename, cloudinary_public_id: '', isCloudinary: false, isBlob: true, isBase64: false };
+    }
+    logger.warn('[Upload] Vercel Blob no disponible, se guarda base64 en la DB');
+  }
+
   const optimizedPath = await optimizeImage(file.path, { format: 'webp' });
   const buffer = fs.readFileSync(optimizedPath);
   const base64 = buffer.toString('base64');
@@ -255,12 +290,9 @@ async function processFile(file, _baseUrl) {
   const baseName = path.basename(file.path, ext);
   const expectedOptimized = path.join(path.dirname(file.path), `${baseName}.webp`);
 
-  const targets = new Set([file.path, optimizedPath, expectedOptimized]);
-  for (const target of targets) {
-    try {
-      fs.rmSync(target, { force: true, maxRetries: 3, retryDelay: 50 });
-    } catch (e) { /* noop */ }
-  }
+  removeIfExists(file.path);
+  removeIfExists(optimizedPath);
+  removeIfExists(expectedOptimized);
 
   logger.info('[Upload] Imagen guardada como base64 en Neon:', { size: dataUri.length });
   return { url: dataUri, filename: file.originalname, cloudinary_public_id: '', isCloudinary: false, isBlob: false, isBase64: true };
@@ -320,6 +352,7 @@ module.exports = {
   uploadMultiple,
   uploadSingleProof,
   uploadTestimonialFields,
+  uploadTestimonialSingle,
   handleUploadError,
   saveFile,
   processFile,

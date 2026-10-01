@@ -21,7 +21,7 @@ test('Home renderiza el menú completo y no el botón volver', async ({ page }) 
   const res = await page.goto('/');
   expect(res.status()).toBe(200);
   const nav = page.locator('nav.navbar');
-  await expect(nav).toContainText('Artesanía Gualeguay');
+  await expect(nav).toContainText('Artesanías Gualeguay');
   await Promise.all(MENU_TEXTS.map((label) => expect(nav).toContainText(label)));
   await expect(nav.locator('.navbar-menu')).toContainText('Contacto');
   await expect(page.locator('.nav-back')).toHaveCount(0);
@@ -34,7 +34,8 @@ for (const rel of NON_HOME) {
     const res = await page.goto(rel);
     expect(res.status()).toBe(200);
     const nav = page.locator('nav.navbar');
-    await expect(nav).toContainText('Artesanía Gualeguay');
+    await nav.waitFor({ state: 'visible', timeout: 10000 });
+    await expect(nav).toContainText('Artesanías Gualeguay');
     await expect(nav).toContainText('Volver al inicio');
     await expect(nav.locator('.nav-back')).toHaveCount(1);
     await expect(nav.locator('.navbar-menu')).toHaveCount(0);

@@ -1,0 +1,3 @@
+.confirm-dialog-overlay { z-index: 10500; }
+.confirm-dialog__message { margin: 0; color: var(--text-body); line-height: 1.6; }
+.confirm-dialog .modal-footer { justify-content: flex-end; }

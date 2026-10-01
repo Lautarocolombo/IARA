@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Usuarios | Artesanías Gualeguay</title>
+  <meta name="description" content="Administración de usuarios del panel de Artesanías Gualeguay." />
+  <link rel="stylesheet" href="../css/variables.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/admin-pages.css" />
+  <script src="../js/config.js"></script>
+  <script src="../js/theme.js"></script>
+  <script src="../js/ui.js"></script>
+  <script src="../js/components/LoadingSpinner.js"></script>
+  <script src="../js/components/EmptyState.js"></script>
+  <script src="../js/components/Pagination.js"></script>
+  <script src="../js/components/SearchBar.js"></script>
+  <script src="../js/components/Modal.js"></script>
+  <script src="../js/components/ConfirmDialog.js"></script>
+  <script src="../js/admin-pages.js"></script>
+  <script src="../js/admin-users.js"></script>
+</head>
+<body class="admin-page-shell">
+  <a href="#usersContent" class="skip-link">Saltar al contenido principal</a>
+  <div id="adminPageLogin" class="admin-page-login" hidden>
+    <div class="admin-login-card">
+      <h1>Acceso administrativo</h1>
+      <p>Iniciá sesión para gestionar los usuarios del sitio.</p>
+      <form id="adminPageLoginForm">
+        <label for="adminPageUsername">Usuario
+          <input id="adminPageUsername" name="username" type="text" autocomplete="username" required />
+        </label>
+        <label for="adminPagePassword">Contraseña
+          <input id="adminPagePassword" name="password" type="password" autocomplete="current-password" required />
+        </label>
+        <button id="adminPageLoginSubmit" class="btn btn-primary btn-full" type="submit">Ingresar</button>
+      </form>
+      <p id="adminPageLoginMessage" class="admin-login-message" aria-live="polite"></p>
+    </div>
+  </div>
+  <div class="admin-layout">
+    <aside class="admin-page-sidebar">
+      <div class="admin-page-brand">Artesanías Admin</div>
+      <nav class="admin-page-nav" aria-label="Administración">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="admin-users.html" class="is-active" aria-current="page">Usuarios</a>
+        <a href="admin-settings.html">Configuración</a>
+        <a href="dashboard.html#section-products">Productos</a>
+        <a href="dashboard.html#section-orders">Pedidos</a>
+        <a href="../index.html">Ver sitio</a>
+      </nav>
+      <div class="admin-page-sidebar-footer">
+        <button id="adminPageLogout" class="btn btn-secondary btn-full" type="button">Cerrar sesión</button>
+      </div>
+    </aside>
+    <main class="admin-page-main">
+      <header class="admin-page-header">
+        <div>
+          <h1>Usuarios</h1>
+          <p>Administrá accesos, roles y estados de la cuenta.</p>
+        </div>
+        <div class="admin-page-header-actions">
+          <button id="createUserBtn" class="btn btn-primary" type="button">Crear usuario</button>
+        </div>
+      </header>
+      <div id="usersContent" class="admin-page-content">
+        <section class="admin-page-card">
+          <div class="admin-page-card-header">
+            <div>
+              <h2>Listado de usuarios</h2>
+              <p>Buscá y filtrá las cuentas registradas.</p>
+            </div>
+          </div>
+          <div class="admin-page-toolbar">
+            <div id="usersSearch" class="search-bar search-bar--inline">
+              <input id="usersQuery" class="search-bar__input" type="search" placeholder="Buscar por usuario o email" aria-label="Buscar usuarios" />
+              <button class="search-bar__clear" type="button" aria-label="Limpiar búsqueda" hidden>&times;</button>
+              <button class="btn btn-secondary search-bar__submit" type="button">Buscar</button>
+            </div>
+            <div class="form-group">
+              <label for="usersRoleFilter">Rol</label>
+              <select id="usersRoleFilter">
+                <option value="">Todos</option>
+                <option value="admin">Admin</option>
+                <option value="editor">Editor</option>
+                <option value="viewer">Viewer</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="usersActiveFilter">Estado</label>
+              <select id="usersActiveFilter">
+                <option value="">Todos</option>
+                <option value="true">Activos</option>
+                <option value="false">Inactivos</option>
+              </select>
+            </div>
+            <button id="usersResetFilters" class="btn btn-outline" type="button">Limpiar filtros</button>
+          </div>
+          <div id="usersLoading"></div>
+          <div id="usersRoot">
+            <div id="usersEmpty" class="admin-page-empty" style="display:none;"></div>
+            <div class="admin-page-table-wrap" id="usersTable">
+              <table class="admin-page-table">
+                <thead>
+                  <tr>
+                    <th>ID</th><th>Usuario</th><th>Email</th><th>Rol</th><th>Estado</th><th>Alta</th><th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="usersTableBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div id="usersPagination" aria-label="Paginación de usuarios"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

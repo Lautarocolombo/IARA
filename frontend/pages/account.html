@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mi cuenta | Artesanías Gualeguay</title>
+  <meta name="description" content="Gestioná tu cuenta, pedidos y datos personales en Artesanías Gualeguay." />
+  <link rel="canonical" href="https://artesania-gualeguay-v3.vercel.app/pages/account.html" />
+  <link rel="stylesheet" href="../css/variables.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/pill-buttons.css" />
+  <link rel="stylesheet" href="../css/animations.css" />
+  <link rel="stylesheet" href="../css/pages.css" />
+  <link rel="stylesheet" href="../css/new-pages.css" />
+  <script src="../js/config.js" type="module"></script>
+  <script src="../js/safeImage.js" type="module"></script>
+  <script src="../js/header.js" type="module"></script>
+  <script src="../js/theme.js" type="module"></script>
+  <script src="../js/ui.js" type="module"></script>
+  <script src="../js/account.js" type="module"></script>
+</head>
+<body>
+  <a href="#accountContent" class="skip-link">Saltar al contenido principal</a>
+  <main id="accountContent" class="account-wrap">
+    <nav aria-label="Breadcrumb" class="breadcrumb">
+      <a href="../index.html">Inicio</a><span aria-hidden="true">/</span><span>Mi cuenta</span>
+    </nav>
+    <div class="section-header">
+      <span class="section-tag">Cuenta</span>
+      <h1 class="section-title">Mi cuenta</h1>
+      <p class="section-subtitle">Administrá tu perfil, pedidos y datos personales.</p>
+    </div>
+
+    <section id="accountLogin" class="account-card" hidden>
+      <h2>Ingresar</h2>
+      <p>Usá las credenciales de tu cuenta para acceder.</p>
+      <form id="accountLoginForm" class="account-form">
+        <label class="field-label" for="accountLoginUser">Usuario<input id="accountLoginUser" type="text" autocomplete="username" required /></label>
+        <label class="field-label" for="accountLoginPassword">Contraseña<input id="accountLoginPassword" type="password" autocomplete="current-password" required /></label>
+        <p id="accountLoginMessage" class="admin-login-message" aria-live="polite"></p>
+        <div class="account-actions"><button class="btn btn-primary" type="submit">Ingresar</button></div>
+      </form>
+    </section>
+
+    <div id="accountDashboard" class="account-tabs" hidden>
+      <aside class="account-tab-list" role="tablist" aria-label="Secciones de cuenta">
+        <button type="button" role="tab" data-account-tab="profile" class="is-active" aria-selected="true">Perfil</button>
+        <button type="button" role="tab" data-account-tab="orders">Pedidos</button>
+        <button type="button" role="tab" data-account-tab="privacy">Privacidad</button>
+      </aside>
+      <div>
+        <section class="account-card account-panel" data-account-panel="profile">
+          <h2>Perfil</h2>
+          <p>Tus datos de contacto para futuros pedidos.</p>
+          <form id="accountProfileForm" class="account-form">
+            <div class="form-row">
+              <label class="field-label" for="accountName">Nombre<input id="accountName" type="text" /></label>
+              <label class="field-label" for="accountEmail">Email<input id="accountEmail" type="email" /></label>
+              <label class="field-label" for="accountPhone">Teléfono<input id="accountPhone" type="tel" /></label>
+              <label class="field-label" for="accountAddress">Dirección<input id="accountAddress" type="text" /></label>
+            </div>
+            <div class="account-actions"><button class="btn btn-primary" type="submit">Guardar perfil</button></div>
+          </form>
+        </section>
+        <section class="account-card account-panel" data-account-panel="orders" hidden>
+          <h2>Pedidos</h2>
+          <p>Consultá el historial asociado a tu email.</p>
+          <form id="accountOrdersForm" class="account-form">
+            <label class="field-label" for="accountOrderEmail">Email del pedido<input id="accountOrderEmail" type="email" required /></label>
+            <div class="account-actions"><button class="btn btn-primary" type="submit">Buscar pedidos</button></div>
+          </form>
+          <div id="accountOrdersLoading" style="margin-top:1rem;"></div>
+          <div id="accountOrders" style="margin-top:1rem;"></div>
+        </section>
+        <section class="account-card account-panel" data-account-panel="privacy" hidden>
+          <h2>Privacidad y datos</h2>
+          <p>Exportá o eliminá la información asociada a tu cuenta.</p>
+          <div class="account-status"><span>Podés solicitar una copia de tus datos o eliminar tu cuenta.</span><strong>Acción sensible</strong></div>
+          <div class="account-actions" style="margin-top:1rem;">
+            <button id="accountExportBtn" class="btn btn-secondary" type="button">Exportar datos</button>
+            <button id="accountDeleteBtn" class="btn btn-danger" type="button">Eliminar cuenta</button>
+            <button id="accountLogout" class="btn btn-outline" type="button">Cerrar sesión</button>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-section"><h4>Artesanías Gualeguay</h4><p>Creando pulseras y souvenirs únicos desde el corazón de Gualeguay, Entre Ríos.</p></div>
+      <div class="footer-section"><h4>Enlaces</h4><ul><li><a href="../index.html#home">Inicio</a></li><li><a href="../index.html#catalog">Catálogo</a></li><li><a href="orders.html">Mis pedidos</a></li><li><a href="account.html">Mi cuenta</a></li></ul></div>
+      <div class="footer-section"><h4>Información</h4><ul><li><a href="privacy.html">Política de Privacidad</a></li><li><a href="terms.html">Términos de Servicio</a></li><li><a href="faq.html">Preguntas Frecuentes</a></li></ul></div>
+    </div>
+    <div class="footer-bottom"><p>&copy; 2026 Artesanías Gualeguay. Todos los derechos reservados.</p></div>
+  </footer>
+  <div id="toastContainer" class="toast-container"></div>
+</body>
+</html>

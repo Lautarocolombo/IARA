@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tarjetas de regalo | Artesanías Gualeguay</title>
+  <meta name="description" content="Regalá una experiencia artesanal con una tarjeta de regalo de Artesanías Gualeguay." />
+  <link rel="canonical" href="https://artesania-gualeguay-v3.vercel.app/pages/gift-cards.html" />
+  <link rel="stylesheet" href="../css/variables.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/pill-buttons.css" />
+  <link rel="stylesheet" href="../css/animations.css" />
+  <link rel="stylesheet" href="../css/pages.css" />
+  <link rel="stylesheet" href="../css/new-pages.css" />
+  <script src="../js/config.js" type="module"></script>
+  <script src="../js/safeImage.js" type="module"></script>
+  <script src="../js/header.js" type="module"></script>
+  <script src="../js/theme.js" type="module"></script>
+  <script src="../js/ui.js" type="module"></script>
+  <script src="../js/gift-cards.js" type="module"></script>
+</head>
+<body>
+  <a href="#giftContent" class="skip-link">Saltar al contenido principal</a>
+  <main id="giftContent" class="gift-wrap">
+    <nav aria-label="Breadcrumb" class="breadcrumb">
+      <a href="../index.html">Inicio</a><span aria-hidden="true">/</span><span>Tarjetas de regalo</span>
+    </nav>
+    <div class="section-header">
+      <span class="section-tag">Regalos</span>
+      <h1 class="section-title">Tarjetas de regalo</h1>
+      <p class="section-subtitle">Elegí un monto y enviá tu pedido para que preparemos un detalle único.</p>
+    </div>
+    <div class="gift-layout">
+      <section class="gift-card">
+        <h2>1. Elegí el monto</h2>
+        <p>Las tarjetas se coordinan de forma personalizada según disponibilidad.</p>
+        <div id="giftOptions" class="gift-grid"></div>
+      </section>
+      <section class="gift-card">
+        <h2>2. Personalizá tu regalo</h2>
+        <p>Envianos los datos y armamos la tarjeta con el mensaje que elijas.</p>
+        <form id="giftForm" class="gift-form">
+          <label class="field-label" for="giftRecipient">Nombre del destinatario<input id="giftRecipient" type="text" required /></label>
+          <label class="field-label" for="giftEmail">Email de entrega<input id="giftEmail" type="email" required /></label>
+          <label class="field-label" for="giftMessage">Mensaje<textarea id="giftMessage" rows="4" placeholder="Escribí una dedicatoria..." required></textarea></label>
+          <div class="gift-amount-preview" id="giftAmountPreview"><span>Monto seleccionado</span><strong></strong></div>
+          <div class="gift-actions"><button class="btn btn-primary" type="submit">Solicitar por WhatsApp</button></div>
+        </form>
+        <div id="giftConfirmation" class="success-mp-status" hidden><span>La solicitud por <strong id="giftConfirmationAmount"></strong> está lista.</span><strong>Revisá WhatsApp</strong></div>
+      </section>
+    </div>
+  </main>
+  <footer class="footer">
+    <div class="footer-content">
+      <div class="footer-section"><h4>Artesanías Gualeguay</h4><p>Creando pulseras y souvenirs únicos desde el corazón de Gualeguay, Entre Ríos.</p></div>
+      <div class="footer-section"><h4>Enlaces</h4><ul><li><a href="../index.html#home">Inicio</a></li><li><a href="../index.html#catalog">Catálogo</a></li><li><a href="blog.html">Blog</a></li><li><a href="account.html">Mi cuenta</a></li></ul></div>
+      <div class="footer-section"><h4>Información</h4><ul><li><a href="privacy.html">Política de Privacidad</a></li><li><a href="terms.html">Términos de Servicio</a></li><li><a href="faq.html">Preguntas Frecuentes</a></li></ul></div>
+    </div>
+    <div class="footer-bottom"><p>&copy; 2026 Artesanías Gualeguay. Todos los derechos reservados.</p></div>
+  </footer>
+  <div id="toastContainer" class="toast-container"></div>
+</body>
+</html>

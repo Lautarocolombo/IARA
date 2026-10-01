@@ -1,6 +1,9 @@
 'use strict';
 
   /* eslint-disable no-unused-vars */
+  /* global openWhatsAppSafe */
+
+  import { sanitizePhone, buildOrderMessage, buildWhatsAppLinks, copyToClipboard, getWhatsAppNumber } from './utils/whatsapp.js';
 
   let appliedCoupon = null;
   let shippingDiff = 0;
@@ -181,7 +184,7 @@
          if (holderField) holderField.textContent = holderName;
          if (holderRow) holderRow.style.display = '';
        }
-       return { alias, whatsapp, message, active, mpEnabled };
+        return { alias, whatsapp, message, active, mpEnabled, notifyAdminNewProof: data.notifyAdminNewProof !== false, notifyClientApproved: data.notifyClientApproved !== false, notifyClientRejected: data.notifyClientRejected !== false };
       } catch (err) {
        if (aliasEl) aliasEl.textContent = 'Error al cargar';
        if (transferAliasEl) transferAliasEl.textContent = 'Error al cargar';
@@ -365,20 +368,27 @@
 
       const isCash = paymentMethod === 'cash';
 
-      const waNumber = paymentConfig.whatsapp || (CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, '');
       const orderId = orderData.id || 'NUEVO';
       const orderNumber = `#${String(orderId).padStart(4, '0')}`;
       const customerName = shipping.name || 'Cliente';
-      const productList = items.map(i => {
-        const line = `- ${i.name} x${i.qty} = ${formatARS(i.price * i.qty)}`;
-        return i.image ? `${line}\n  Imagen: ${i.image}` : line;
-      }).join('\n');
-      const addressLine = shipping.address ? `Dirección: ${shipping.address}, ${shipping.city || ''}, ${shipping.province || ''}` : '';
-      const shippingLine = shippingCost > 0 && shipping.province
-        ? `Diferencia de envío (${shipping.province}): ${formatARS(shippingCost)}`
-        : (shippingCost === 0 ? 'Envío incluido en el precio' : `Envío: ${formatARS(shippingCost)}`);
-      const aliasLine = paymentConfig.alias ? `\nAlias Mercado Pago: ${paymentConfig.alias}` : '';
-      const waMsg = encodeURIComponent(`Hola! Soy ${customerName}, acabo de hacer el pedido ${orderNumber}:\n${productList}\nSubtotal productos: ${formatARS(subtotal)}\n${shippingLine}${addressLine ? '\n' + addressLine : ''}${aliasLine}\nTotal: ${formatARS(total)}\n${isCash ? 'Voy a pagar en efectivo al retirar/recibir.' : 'Les mando el comprobante de la transferencia.'}`);
+
+      const orderForMessage = {
+        orderNumber,
+        customerName,
+        items: items.map(i => ({ name: i.name, qty: i.qty, price: i.price })),
+        subtotal,
+        shippingCost,
+        shippingProvince: shipping.province,
+        shippingAddress: shipping.address,
+        shippingCity: shipping.city,
+        total,
+        paymentMethod,
+        alias: paymentConfig.alias
+      };
+
+      const waMsg = buildOrderMessage(orderForMessage);
+      const waNumber = await getWhatsAppNumber() || paymentConfig.whatsapp || sanitizePhone(CONFIG.CONTACT.WHATSAPP || '');
+      const waLinks = buildWhatsAppLinks(waNumber, waMsg);
 
       sessionStorage.setItem('ag_last_order', JSON.stringify({
         id: orderId,
@@ -387,6 +397,7 @@
         items: items.map(i => ({ name: i.name, qty: i.qty, price: i.price })),
         waNumber,
         waMsg,
+        waLinks,
         shippingName: shipping.name,
         shippingAddress: shipping.address,
         shippingCity: shipping.city,
@@ -438,34 +449,22 @@
         document.getElementById('transferOrderTotalHighlight').textContent = formatARS(total);
       }
 
-      const comprobanteBtn = document.getElementById('whatsappComprobanteBtn');
-      if (comprobanteBtn) {
-        comprobanteBtn.href = `https://wa.me/${waNumber}?text=${waMsg}`;
-        comprobanteBtn.textContent = isCash ? 'Coordinar pago por WhatsApp' : 'Enviar comprobante por WhatsApp';
-      }
-      const transferReceiptBtn = document.getElementById('transferReceiptBtn');
-      if (transferReceiptBtn) {
-        transferReceiptBtn.href = `https://wa.me/${waNumber}?text=${waMsg}`;
-        transferReceiptBtn.dataset.orderNumber = orderNumber;
-        transferReceiptBtn.dataset.orderId = orderId;
-        transferReceiptBtn.style.display = isCash ? 'none' : '';
-      }
+      const orderToken = (() => {
+        const raw = sessionStorage.getItem('ag_last_order');
+        if (!raw) return '';
+        try {
+          const order = JSON.parse(raw);
+          return order.orderToken || '';
+        } catch {
+          return '';
+        }
+      })();
 
       document.getElementById('paymentInstructions').style.display = 'block';
       document.getElementById('transferDataCard').style.display = isCash ? 'none' : 'block';
       document.getElementById('shippingForm').style.display = 'none';
 
       try {
-        const orderToken = (() => {
-          const raw = sessionStorage.getItem('ag_last_order');
-          if (!raw) return '';
-          try {
-            const order = JSON.parse(raw);
-            return order.orderToken || '';
-          } catch {
-            return '';
-          }
-        })();
         await window.fetchWithRetry(`${CONFIG.API.BASE}/api/payments/transfer`, {
           method: 'POST',
           headers: {
@@ -478,19 +477,238 @@
         console.warn('[checkout] No se pudo confirmar el pago automáticamente:', e);
       }
 
+      setupWhatsAppButtons(waNumber, waMsg, waLinks, orderNumber, orderId, isCash);
       emitSync('order_created');
      } catch (err) {
-      showToast('', window.getFetchErrorMessage(err) || 'Error al procesar tu compra. Intentá nuevamente o contactanos.', 'error');
-      console.error('Checkout error:', err);
-    } finally {
-      isSubmitting = false;
-      if (submitBtn) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'Continuar al pago';
+       showToast('', window.getFetchErrorMessage(err) || 'Error al procesar tu compra. Intentá nuevamente o contactanos.', 'error');
+       console.error('Checkout error:', err);
+     } finally {
+       isSubmitting = false;
+       if (submitBtn) {
+         submitBtn.disabled = false;
+         submitBtn.textContent = 'Continuar al pago';
+       }
+     }
+   });
+ }
+
+function setupWhatsAppButtons(waNumber, waMsg, waLinks, orderNumber, orderId, isCash) {
+    const comprobanteBtn = document.getElementById('whatsappComprobanteBtn');
+    const transferReceiptBtn = document.getElementById('transferReceiptBtn');
+    const fallbackContainer = document.getElementById('whatsappFallback');
+    const fallbackContainerTransfer = document.getElementById('whatsappFallbackTransfer');
+
+    const buttonText = isCash ? 'Coordinar pago por WhatsApp' : 'Enviar comprobante por WhatsApp';
+
+    if (comprobanteBtn) {
+      comprobanteBtn.href = waLinks.primary;
+      comprobanteBtn.textContent = buttonText;
+      comprobanteBtn.setAttribute('data-wa-primary', waLinks.primary);
+      comprobanteBtn.setAttribute('data-wa-fallback', waLinks.fallback);
+      comprobanteBtn.setAttribute('data-wa-deeplink', waLinks.deeplink);
+      comprobanteBtn.removeEventListener('click', handleWhatsAppClick);
+      comprobanteBtn.addEventListener('click', handleWhatsAppClick);
+    }
+
+    if (transferReceiptBtn) {
+      transferReceiptBtn.href = waLinks.primary;
+      transferReceiptBtn.textContent = buttonText;
+      transferReceiptBtn.setAttribute('data-wa-primary', waLinks.primary);
+      transferReceiptBtn.setAttribute('data-wa-fallback', waLinks.fallback);
+      transferReceiptBtn.setAttribute('data-wa-deeplink', waLinks.deeplink);
+      transferReceiptBtn.dataset.orderNumber = orderNumber;
+      transferReceiptBtn.dataset.orderId = orderId;
+      transferReceiptBtn.style.display = isCash ? 'none' : '';
+      transferReceiptBtn.removeEventListener('click', handleWhatsAppClick);
+      transferReceiptBtn.addEventListener('click', handleWhatsAppClick);
+    }
+
+    if (fallbackContainer) {
+      renderWhatsAppFallback(fallbackContainer, waNumber, waMsg, waLinks);
+    }
+
+    if (fallbackContainerTransfer) {
+      renderWhatsAppFallback(fallbackContainerTransfer, waNumber, waMsg, waLinks);
+    }
+  }
+
+ function handleWhatsAppClick(e) {
+    const btn = e.currentTarget;
+    const primary = btn.getAttribute('data-wa-primary');
+    const fallback = btn.getAttribute('data-wa-fallback');
+    const deeplink = btn.getAttribute('data-wa-deeplink');
+
+    if (!primary || !fallback) return;
+
+    e.preventDefault();
+
+    if (typeof openWhatsAppSafe === 'function') {
+      openWhatsAppSafe(primary, fallback, deeplink);
+      return;
+    }
+
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    if (isMobile && deeplink) {
+      const link = document.createElement('a');
+      link.href = deeplink;
+      link.style.display = 'none';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setTimeout(() => {
+        window.open(fallback, '_blank', 'noopener,noreferrer');
+      }, 1500);
+    } else {
+      window.open(primary, '_blank', 'noopener,noreferrer');
+    }
+  }
+
+function renderWhatsAppFallback(container, waNumber, waMsg, waLinks) {
+    const waPhone = waNumber.startsWith('54') ? waNumber : `54${waNumber}`;
+    const formattedNumber = waPhone.replace(/(\d{2})(\d{2})(\d{4,5})(\d{4})/, '+$1 $2 $3 $4');
+
+    container.innerHTML = `
+      <div class="whatsapp-fallback" style="margin-top: 1rem; padding: 1rem; background: #fef3f7; border: 1px solid #fbcfe8; border-radius: 8px;">
+        <h4 style="margin: 0 0 0.5rem; color: #9d174d; font-size: 0.95rem;">¿No se abrió WhatsApp?</h4>
+        <p style="margin: 0 0 0.75rem; font-size: 0.85rem; color: #7c2d4e;">
+          Se abrirá WhatsApp con tu pedido. Adjuntá ahí la captura o PDF de la transferencia.
+        </p>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
+          <a href="${waLinks.fallback}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="flex: 1; min-width: 140px; text-align: center;">
+            Abrir en api.whatsapp.com
+          </a>
+          <button type="button" class="btn btn-secondary btn-sm" id="copyPhoneBtn" style="flex: 1; min-width: 120px;" data-phone="${waPhone}">
+            📋 Copiar número
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" id="copyMessageBtn" style="flex: 1; min-width: 140px;" data-message="${waMsg.replace(/"/g, '"')}">
+            📋 Copiar mensaje del pedido
+          </button>
+        </div>
+        <div style="font-size: 0.85rem; color: #7c2d4e; word-break: break-all;">
+          <strong>Número:</strong> ${formattedNumber}
+        </div>
+      </div>
+    `;
+
+    const copyPhoneBtn = container.querySelector('#copyPhoneBtn');
+    const copyMessageBtn = container.querySelector('#copyMessageBtn');
+
+    if (copyPhoneBtn) {
+      copyPhoneBtn.addEventListener('click', async () => {
+        const result = await copyToClipboard(waPhone, 'Número');
+        showToast('', result.message, result.success ? 'success' : 'error');
+      });
+    }
+
+    if (copyMessageBtn) {
+      copyMessageBtn.addEventListener('click', async () => {
+        const result = await copyToClipboard(waMsg, 'Mensaje del pedido');
+        showToast('', result.message, result.success ? 'success' : 'error');
+      });
+    }
+  }
+
+  function setupReceiptUpload(orderId, orderToken) {
+    const fileInput = document.getElementById('receiptFile');
+    const fileInputTransfer = document.getElementById('receiptFileTransfer');
+    const uploadBtn = document.getElementById('uploadReceiptBtn');
+    const uploadBtnTransfer = document.getElementById('uploadReceiptBtnTransfer');
+    const errorEl = document.getElementById('receiptFileError');
+    const errorElTransfer = document.getElementById('receiptFileTransferError');
+    const statusEl = document.getElementById('receiptUploadStatus');
+    const statusElTransfer = document.getElementById('receiptUploadStatusTransfer');
+
+    function validateFile(file) {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+      const maxSize = 5 * 1024 * 1024;
+      if (!allowedTypes.includes(file.type)) {
+        return 'Tipo de archivo no permitido. Usá JPG, PNG, WEBP o PDF.';
+      }
+      if (file.size > maxSize) {
+        return 'El archivo es muy grande (máx. 5 MB).';
+      }
+      return null;
+    }
+
+    function handleFileSelect(input, btn, errEl) {
+      const file = input.files[0];
+      if (file) {
+        const err = validateFile(file);
+        if (err) {
+          errEl.textContent = err;
+          errEl.style.display = 'block';
+          btn.disabled = true;
+        } else {
+          errEl.textContent = '';
+          errEl.style.display = 'none';
+          btn.disabled = false;
+        }
+      } else {
+        btn.disabled = true;
       }
     }
-  });
-}
+
+    async function handleUpload(input, btn, statusEl) {
+      const file = input.files[0];
+      if (!file) return;
+      const err = validateFile(file);
+      if (err) {
+        statusEl.textContent = err;
+        statusEl.style.color = '#dc2626';
+        statusEl.style.display = 'block';
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Subiendo...';
+      statusEl.style.display = 'none';
+
+      const formData = new FormData();
+      formData.append('image', file);
+
+      try {
+        const res = await fetch(`${CONFIG.API.BASE}/api/payments/proofs/${orderId}`, {
+          method: 'POST',
+          headers: {
+            'X-Order-Token': orderToken || ''
+          },
+          body: formData
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({ error: 'Error al subir' }));
+          throw new Error(data.error || 'Error al subir comprobante');
+        }
+
+        statusEl.textContent = '✅ Comprobante subido correctamente. El equipo lo revisará.';
+        statusEl.style.color = '#16a34a';
+        statusEl.style.display = 'block';
+        input.value = '';
+        btn.disabled = true;
+        btn.textContent = 'Subir comprobante';
+        showToast('', 'Comprobante subido', 'success');
+      } catch (e) {
+        statusEl.textContent = '❌ ' + (e.message || 'Error al subir comprobante');
+        statusEl.style.color = '#dc2626';
+        statusEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Subir comprobante';
+        showToast('', e.message || 'Error al subir', 'error');
+      }
+    }
+
+    if (fileInput && uploadBtn) {
+      fileInput.addEventListener('change', () => handleFileSelect(fileInput, uploadBtn, errorEl));
+      uploadBtn.addEventListener('click', () => handleUpload(fileInput, uploadBtn, statusEl));
+    }
+
+    if (fileInputTransfer && uploadBtnTransfer) {
+      fileInputTransfer.addEventListener('change', () => handleFileSelect(fileInputTransfer, uploadBtnTransfer, errorElTransfer));
+      uploadBtnTransfer.addEventListener('click', () => handleUpload(fileInputTransfer, uploadBtnTransfer, statusElTransfer));
+    }
+  }
 
   window.addEventListener('storage', updateSummary);
 
@@ -522,10 +740,26 @@
         fetchShippingDiff(order.shippingProvince);
       }
       if (order.waNumber && order.waMsg) {
-        document.getElementById('whatsappComprobanteBtn').href = `https://wa.me/${order.waNumber}?text=${order.waMsg}`;
-        document.getElementById('transferReceiptBtn').href = `https://wa.me/${order.waNumber}?text=${order.waMsg}`;
-        document.getElementById('transferReceiptBtn').dataset.orderNumber = order.number;
-        document.getElementById('transferReceiptBtn').dataset.orderId = order.id || '';
+        const waLinks = order.waLinks || buildWhatsAppLinks(order.waNumber, order.waMsg);
+        const isCash = order.paymentMethod === 'cash';
+        setupWhatsAppButtons(order.waNumber, order.waMsg, waLinks, order.number, order.id || '', isCash);
+      } else if (order.waNumber) {
+        const waMsg = buildOrderMessage({
+          orderNumber: order.number,
+          customerName: order.shippingName || 'Cliente',
+          items: order.items || [],
+          subtotal: order.subtotal || 0,
+          shippingCost: order.shippingCost || 0,
+          shippingProvince: order.shippingProvince || '',
+          shippingAddress: order.shippingAddress || '',
+          shippingCity: order.shippingCity || '',
+          total: order.total || 0,
+          paymentMethod: order.paymentMethod || 'transfer',
+          alias: ''
+        });
+        const waLinks = buildWhatsAppLinks(order.waNumber, waMsg);
+        const isCash = order.paymentMethod === 'cash';
+        setupWhatsAppButtons(order.waNumber, waMsg, waLinks, order.number, order.id || '', isCash);
       }
       const paymentInstructionsEl = document.getElementById('paymentInstructions');
       const paymentTitleEl = paymentInstructionsEl ? paymentInstructionsEl.querySelector('h2') : null;

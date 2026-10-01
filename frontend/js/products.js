@@ -52,7 +52,7 @@ async function searchProducts(query, filters = {}) {
   try {
     const params = new URLSearchParams();
     params.set('q', trimmed);
-    if (filters.category) params.set('category', filters.category);
+    if (filters.category && filters.category !== 'all') params.set('category', filters.category);
     if (filters.minPrice !== undefined && filters.minPrice !== '') params.set('minPrice', filters.minPrice);
     if (filters.maxPrice !== undefined && filters.maxPrice !== '') params.set('maxPrice', filters.maxPrice);
     const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/search?${params.toString()}`, {}, 2, 1000);
@@ -103,20 +103,20 @@ function renderProducts(productsToRender) {
   }
 
   grid.innerHTML = productsToRender.map(product => {
-    const imgUrl = window.getProductImageUrl(product) || '';
-    const imageHtml = imgUrl
-      ? window.renderProductImage(imgUrl, product.name, { className: 'product-card-img', placeholder: product.emoji || '📿' })
-      : window.renderProductImage('', product.name, { className: 'product-card-img', placeholder: product.emoji || '📿' });
+    const imageLayers = window.buildProductImageLayers(product);
     const catClass = product.category ? `cat-${product.category}` : '';
-    const badgeHtml = product.badge ? `<span class="product-badge">${product.badge}</span>` : '';
-    const waMessage = encodeURIComponent(`Hola! Me interesa el producto: ${product.name} - ${formatARS(product.price)}`);
-    const waLink = `https://wa.me/${CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g, '')}?text=${waMessage}`;
+    const badgeHtml = product.badge ? `<span class="product-badge" aria-hidden="true">${product.badge}</span>` : '';
+    const waLink = window.buildWhatsAppLink({
+      message: `Hola! Me interesa el producto *${product.name}* (${formatARS(product.price)}). ¿Está disponible?`
+    });
 return `
-    <div class="product-card reveal" data-product-id="${product.id}">
-      <a href="pages/product.html?id=${product.id}" style="text-decoration:none;color:inherit;">
-        <div class="product-image ${catClass}" aria-hidden="true">${imageHtml}</div>
+    <div class="product-card reveal ${catClass}" data-product-id="${product.id}">
+      <div class="product-image ${catClass}">
+        <a href="pages/product.html?id=${product.id}" aria-label="Ver ${escapeHtml(product.name)}" style="text-decoration:none;color:inherit;">
+          ${imageLayers}
+        </a>
         ${badgeHtml}
-      </a>
+      </div>
       <div class="product-info">
         <span class="product-category">${escapeHtml(product.category)}</span>
         <a href="pages/product.html?id=${product.id}" style="text-decoration:none;color:inherit;">
@@ -129,9 +129,9 @@ return `
         </div>
       </div>
       <div class="product-actions">
-        <button class="btn-add-cart" data-product-id="${product.id}" data-product-name="${escapeHtml(product.name)}" data-product-price="${product.price}" data-product-emoji="${escapeHtml(product.emoji||'📿')}" data-product-image="${escapeHtml(product.image||'')}" data-product-stock="${product.stock||0}" aria-label="Agregar ${escapeHtml(product.name)} al carrito"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
-        <button class="btn-wishlist" data-product-id="${product.id}" data-product-name="${escapeHtml(product.name)}" data-product-price="${product.price}" data-product-emoji="${escapeHtml(product.emoji||'📿')}" data-product-image="${escapeHtml(product.image||'')}" aria-label="Agregar a favoritos">${window.isInWishlist(product.id) ? '❤️' : '🤍'}</button>
-        <a href="${waLink}" target="_blank" class="btn-outline btn-sm" rel="noopener" title="Consultar por WhatsApp">💬</a>
+        <button class="btn-add-cart" data-product-id="${product.id}" data-product-name="${escapeHtml(product.name)}" data-product-price="${product.price}" data-product-emoji="${escapeHtml(product.emoji||'📿')}" data-product-image="${escapeHtml(product.image||'')}" data-product-stock="${product.stock||0}" aria-label=" agregar ${escapeHtml(product.name)} al carrito"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg></button>
+        <button class="btn-wishlist" data-product-id="${product.id}" data-product-name="${escapeHtml(product.name)}" data-product-price="${product.price}" data-product-emoji="${escapeHtml(product.emoji||'📿')}" data-product-image="${escapeHtml(product.image||'')}" aria-label=" agregar a favoritos">${window.isInWishlist(product.id) ? '❤️' : '🤍'}</button>
+        <a href="${waLink}" target="_blank" class="btn-outline btn-sm btn-whatsapp" rel="noopener noreferrer" title="Consultar por WhatsApp" aria-label="Consultar ${escapeHtml(product.name)} por WhatsApp">💬</a>
       </div>
     </div>
   `;
@@ -245,6 +245,29 @@ function renderFeaturedProducts() {
     }
 
     document.getElementById('productsGrid')?.addEventListener('click', (e) => {
+      const whatsapp = e.target.closest('.btn-whatsapp');
+      if (whatsapp) {
+        e.stopPropagation();
+        return;
+      }
+      const image = e.target.closest('.product-image');
+      if (image && window.matchMedia('(hover: none)').matches) {
+        // En táctil, el toque en la imagen alterna el estado is-open
+        // sin redirigir a la página del producto.
+        e.preventDefault();
+        e.stopPropagation();
+        const card = image.closest('.product-card');
+        if (card) {
+          const wasOpen = card.classList.contains('is-open');
+          // Cierra otras tarjetas para evitar estados pegados.
+          const scope = e.currentTarget || document;
+          scope.querySelectorAll('.product-card.is-open').forEach((other) => {
+            if (other !== card) other.classList.remove('is-open');
+          });
+          card.classList.toggle('is-open', !wasOpen);
+        }
+        return;
+      }
       const btn = e.target.closest('.btn-add-cart');
       if (!btn) return;
       e.preventDefault();

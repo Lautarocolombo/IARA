@@ -1,9 +1,6 @@
 /* ==================== ADMIN DASHBOARD STYLES ==================== */
 /* Extiende admin.css con estilos específicos del dashboard */
 
-/* ==================== SPACING SYSTEM OVERRIDES ==================== */
-/* Aplica escala de espaciado consistente a todos los componentes del dashboard */
-
 .admin-section-active {
   display: block;
 }
@@ -13,7 +10,7 @@
 }
 
 .admin-content {
-  padding: var(--spacing-lg);
+  /* Layout definido en admin.css */
 }
 
 /* Cards: separación vertical uniforme entre paneles */
@@ -268,7 +265,7 @@
 
 .hero-image-preview {
   width: 120px;
-  height: 120px;
+  aspect-ratio: 3/4;
   border-radius: 12px;
   border: 1px solid var(--border);
   background: #f9fafb;
@@ -282,7 +279,8 @@
 .hero-image-preview img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
   display: block;
 }
 
@@ -681,26 +679,32 @@
 
 .sales-top-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--spacing-lg);
   align-items: start;
   margin-bottom: var(--spacing-lg);
+  width: 100%;
+  min-width: 0;
 }
 
 .sales-bottom-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--spacing-lg);
   align-items: start;
+  width: 100%;
+  min-width: 0;
 }
 
 /* ==================== PAYMENTS LAYOUT ==================== */
 
 .payments-grid {
   display: grid;
-  grid-template-columns: 1fr 1.2fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
   gap: var(--spacing-xl);
   align-items: start;
+  width: 100%;
+  min-width: 0;
 }
 
 .payments-col {
@@ -864,19 +868,21 @@
 
 .shipping-rates-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: var(--spacing-sm);
+  width: 100%;
+  min-width: 0;
 }
 
 @media (min-width: 1400px) {
   .shipping-rates-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   }
 }
 
 @media (max-width: 1024px) {
   .shipping-rates-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   }
 }
 
@@ -970,9 +976,11 @@
 
 .orders-layout {
   display: grid;
-  grid-template-columns: minmax(320px, 1fr) 2fr;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
   gap: var(--spacing-xl);
   align-items: start;
+  width: 100%;
+  min-width: 0;
 }
 
 .orders-col {
@@ -981,6 +989,7 @@
   gap: var(--spacing-lg);
   min-width: 0;
   overflow: hidden;
+  width: 100%;
 }
 
 .orders-col .card {
@@ -1017,7 +1026,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 200px;
 }
 
 .orders-col-right .empty-state {
@@ -1695,8 +1703,10 @@
 }
 
 #categoriesRoot {
-  max-width: 960px;
-  margin: 0 auto;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  margin: 0;
 }
 
 /* ==================== TESTIMONIALS CREATE FORM ==================== */
@@ -2195,10 +2205,10 @@
 }
 
 .testimonial-thumb {
-  width: 48px;
-  height: 48px;
+  width: 60px;
+  height: 60px;
   object-fit: cover;
-  border-radius: 6px;
+  border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--blush);
   display: inline-block;
@@ -2238,7 +2248,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 220px;
 }
 
 /* ================================================================
@@ -2736,35 +2745,10 @@ select.card-filter {
 
 .admin-sidebar-toggle {
   display: none;
-  position: fixed;
-  top: var(--spacing-sm);
-  left: var(--spacing-sm);
-  z-index: 200;
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background: var(--sidebar-bg);
-  color: var(--sidebar-text);
-  border: none;
-  cursor: pointer;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }
 
 .admin-sidebar-overlay {
   display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.4);
-  z-index: 140;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.admin-sidebar-overlay.active {
-  display: block;
-  opacity: 1;
 }
 
 /* ==================== 12. RESPONSIVE MEJORADO ==================== */
@@ -2788,51 +2772,8 @@ select.card-filter {
   }
 }
 
-@media (max-width: 900px) {
-  .admin-sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100vh;
-    z-index: 150;
-    transform: translateX(-100%);
-    transition: transform 0.3s ease;
-    box-shadow: 4px 0 20px rgba(0,0,0,0.15);
-  }
-
-  .admin-sidebar.open {
-    transform: translateX(0);
-  }
-
-  .admin-sidebar-toggle {
-    display: flex;
-  }
-
-  .admin-main {
-    margin-left: 0 !important;
-    width: 100%;
-  }
-
-  .admin-header {
-    padding-left: 3.5rem;
-  }
-}
-
+/* Component-specific responsive rules (not layout) */
 @media (max-width: 768px) {
-  .admin-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-sm) var(--spacing-md);
-    padding-left: 3.5rem;
-  }
-
-  .admin-header-right {
-    width: 100%;
-    justify-content: flex-start;
-    flex-wrap: wrap;
-  }
-
   .card-header {
     flex-direction: column;
     align-items: flex-start;
@@ -2887,10 +2828,6 @@ select.card-filter {
     grid-template-columns: 1fr 1fr;
   }
 
-  .admin-content {
-    padding: var(--spacing-sm);
-  }
-
   .card-body {
     padding: var(--spacing-md);
   }
@@ -2924,15 +2861,6 @@ select.card-filter {
     grid-template-columns: 1fr;
   }
 
-  .admin-header {
-    padding: var(--spacing-xs) var(--spacing-sm);
-    padding-left: 3.25rem;
-  }
-
-  .admin-content {
-    padding: var(--spacing-xs);
-  }
-
   .card-body {
     padding: var(--spacing-sm);
   }
@@ -2945,21 +2873,6 @@ select.card-filter {
   .btn-sm {
     padding: 0.3rem 0.6rem;
     font-size: var(--text-xs);
-  }
-
-  .header-actions {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-
-  .header-actions .btn {
-    flex: 1;
-    min-width: fit-content;
-  }
-
-  .user-info {
-    width: 100%;
-    text-align: center;
   }
 
   #productsTable {

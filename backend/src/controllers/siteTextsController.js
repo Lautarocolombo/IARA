@@ -28,7 +28,7 @@ function sanitizeText(text) {
     [/Gualeguay, Entre Ríos/g, 'Gualeguay, Entre Ríos'],
     [/CONFIGURAR_EMAIL/g, 'CONFIGURAR_EMAIL'],
     [/\+54 \(3444\) 634-4444/g, '+54 (3444) 634-4444'],
-    [/\+5493444634444/g, '+5493444634444']
+    [/\+5493444634444/g, '+543444634444'],
   ];
   let result = text;
   fixes.forEach(([pattern, replacement]) => {

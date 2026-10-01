@@ -14,7 +14,7 @@ describe('Frontend cart and wishlist', () => {
         FREE_SHIPPING_TEXT: 'GRATIS'
       },
       API: { BASE: 'http://localhost' },
-      CONTACT: { WHATSAPP: '+5493444634444' },
+      CONTACT: { WHATSAPP: '+543444634444' },
       ANIMATIONS: { TOAST_DURATION: 3000 }
     };
   });

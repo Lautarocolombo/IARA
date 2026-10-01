@@ -89,7 +89,19 @@ const sendReceiptWhatsApp = async (req, res) => {
     
     const order = result.rows[0];
     const customer = safeJsonParse(order.customer, {});
-    const phone = (customer?.phone || '').replace(/[^\d]/g, '');
+    const rawPhone = customer?.phone || '';
+    let phone = String(rawPhone).replace(/[^\d]/g, '');
+    if (phone.startsWith('549')) {
+      phone = phone.slice(3);
+    } else if (phone.startsWith('54')) {
+      phone = phone.slice(2);
+    }
+    if (phone.startsWith('15')) {
+      phone = phone.slice(2);
+    }
+    if (!phone.startsWith('54') && phone.length >= 10) {
+      phone = `54${phone}`;
+    }
     
     if (!phone) {
       return res.status(400).json({ error: 'El pedido no tiene teléfono de cliente' });

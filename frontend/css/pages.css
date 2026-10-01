@@ -354,9 +354,9 @@
 
 .product-image-large {
   width: 100%;
-  aspect-ratio: 1;
+  aspect-ratio: 2/3;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--blush), var(--mint));
+  background: #fdf3f6;
   border: 1px solid #f4c8d4;
   overflow: hidden;
 }
@@ -494,9 +494,9 @@
 
 .product-image-main {
   flex: 1;
-  aspect-ratio: 1;
+  aspect-ratio: 2/3;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, var(--blush), var(--mint));
+  background: #fdf3f6;
   border: 1px solid #f4c8d4;
   display: flex;
   align-items: center;
@@ -940,6 +940,27 @@
   border: 1px dashed var(--rose-light);
   overflow: visible;
   animation: none;
+}
+
+/* Adapta los layers al layout del skeleton */
+#wishlistSkeleton .product-image {
+  position: relative;
+  bottom: auto;
+  left: auto;
+  right: auto;
+  height: auto;
+  border-radius: 16px;
+  background: var(--cream);
+  padding: 0;
+}
+
+#wishlistSkeleton .product-info {
+  position: relative;
+  bottom: auto;
+  left: auto;
+  right: auto;
+  height: auto;
+  background: transparent;
 }
 
 #wishlistGrid .btn-wishlist {

@@ -36,7 +36,7 @@ global.CONFIG = {
   },
   API: { BASE: '' },
   CONTACT: {
-    WHATSAPP: '+5493444634444',
+    WHATSAPP: '+543444634444',
     WHATSAPP_ALIAS: 'iara-salgueiro'
   },
   ANIMATIONS: { TOAST_DURATION: 3000, REVEAL_THRESHOLD: 0.15 }
@@ -83,6 +83,7 @@ describe('checkout.js', () => {
   let checkout;
 
   beforeEach(() => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
     localStorage.clear();
     sessionStorage.clear();
     jest.clearAllMocks();
@@ -95,6 +96,7 @@ describe('checkout.js', () => {
   });
 
   afterEach(() => {
+    console.error.mockRestore();
     jest.clearAllMocks();
   });
 
@@ -300,7 +302,7 @@ describe('checkout.js', () => {
           transferAlias: 'test-alias',
           cbuCvu: 'CBU123',
           holderName: 'Juan Perez',
-          whatsapp: '+5493444634444',
+          whatsapp: '+543444634444',
           message: 'Transferí el total',
           active: true,
           mpEnabled: false

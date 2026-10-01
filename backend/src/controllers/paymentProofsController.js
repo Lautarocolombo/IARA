@@ -66,16 +66,27 @@ async function uploadPaymentProof(req, res) {
     const mime = req.file.mimetype || 'application/octet-stream';
     let proofUrl = null;
 
-    const blobResult = await uploadProofToBlob(req.file);
-    if (blobResult && blobResult.url) {
-      proofUrl = blobResult.url;
-      try { fs.rmSync(req.file.path, { force: true, maxRetries: 3, retryDelay: 50 }); } catch (e) { /* noop */ }
-    } else if (mime.startsWith('image/')) {
-      const processed = await processFile(req.file, '');
-      proofUrl = processed.url;
-    } else {
-      const buffer = fs.readFileSync(req.file.path);
-      proofUrl = `data:${mime};base64,${buffer.toString('base64')}`;
+    try {
+      const blobResult = await uploadProofToBlob(req.file);
+      if (blobResult && blobResult.url) {
+        proofUrl = blobResult.url;
+        try { fs.rmSync(req.file.path, { force: true, maxRetries: 3, retryDelay: 50 }); } catch (e) { /* noop */ }
+      }
+    } catch (blobErr) {
+      if (blobErr.code === 'BLOB_NOT_CONFIGURED') {
+        return res.status(503).json({ error: blobErr.message });
+      }
+      logger.warn({ err: blobErr.message }, 'Error subiendo a Vercel Blob, intentando fallback local');
+    }
+
+    if (!proofUrl) {
+      if (mime.startsWith('image/')) {
+        const processed = await processFile(req.file);
+        proofUrl = processed.url;
+      } else {
+        const buffer = fs.readFileSync(req.file.path);
+        proofUrl = `data:${mime};base64,${buffer.toString('base64')}`;
+      }
       try { fs.rmSync(req.file.path, { force: true, maxRetries: 3, retryDelay: 50 }); } catch (e) { /* noop */ }
     }
 

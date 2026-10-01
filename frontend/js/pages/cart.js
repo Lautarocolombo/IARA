@@ -2,13 +2,11 @@
 
 (function() {
   var updateCartDisplay = function() {
-    console.log('[cart] updateCartDisplay — inicio de render');
     var emptyCart = document.getElementById('emptyCart');
     var cartContent = document.getElementById('cartContent');
     // Acceso DEFENSIVO a getCart: en modo módulo el bare-name no siempre
     // resuelve a window; usamos window.getCart con fallback a [].
     var cartItems = (typeof window.getCart === 'function') ? window.getCart() : [];
-    console.log('[cart] items en carrito:', cartItems.length);
 
     if (!emptyCart || !cartContent) {
       console.warn('[cart] contenedores emptyCart/cartContent no encontrados en el DOM');
@@ -17,7 +15,14 @@
     if (cartItems.length === 0) {
       if (emptyCart) emptyCart.style.display = 'block';
       if (cartContent) cartContent.style.display = 'none';
-      console.log('[cart] carrito vacío — se muestra estado vacío');
+      var emptyItemsContainer = document.getElementById('cartItems');
+      if (emptyItemsContainer) emptyItemsContainer.innerHTML = '';
+      var emptySubtotal = document.getElementById('subtotal');
+      var emptyShipping = document.getElementById('shipping');
+      var emptyTotal = document.getElementById('total');
+      if (emptySubtotal) emptySubtotal.textContent = window.formatARS(0);
+      if (emptyShipping) emptyShipping.textContent = window.formatARS(0);
+      if (emptyTotal) emptyTotal.textContent = window.formatARS(0);
       return;
     }
 
@@ -25,7 +30,6 @@
     if (cartContent) cartContent.style.display = 'block';
 
     var itemsContainer = document.getElementById('cartItems');
-    console.log('[cart] contenedor #cartItems encontrado:', !!itemsContainer);
     if (itemsContainer) {
       try {
         itemsContainer.innerHTML = cartItems.map(function(item, index) {
@@ -54,7 +58,6 @@
           '</div>';
           return html;
         }).join('');
-        console.log('[cart] render ejecutado OK — items renderizados:', cartItems.length);
       } catch (err) {
         console.error('[cart] error renderizando la lista de items:', err);
         itemsContainer.innerHTML = '<p class="cart-render-error" style="padding:2rem;text-align:center;color:var(--text-muted);">No se pudieron cargar los productos del carrito. Probá recargar la página.</p>';
@@ -103,7 +106,6 @@
   window.updateCartDisplay = updateCartDisplay;
 
    function init() {
-    console.log('[cart] init — página carrito inicializada');
     if (typeof initNavbarScroll === 'function') initNavbarScroll();
     if (typeof initMobileNavbar === 'function') initMobileNavbar();
 
@@ -122,7 +124,6 @@
         if (!isNaN(delta) && input) {
           input.value = next;
         }
-        console.log('[cart] click qty — id:', id, 'delta:', delta, 'next:', next);
         if (typeof window.updateCartQty === 'function') {
           window.updateCartQty(id, isNaN(delta) ? current : next);
         } else {
@@ -130,7 +131,6 @@
         }
         updateCartDisplay();
       } else if (action === 'remove' && !isNaN(id)) {
-        console.log('[cart] click remove — id:', id);
         if (typeof window.removeFromCart === 'function') {
           window.removeFromCart(id);
         } else {
@@ -154,7 +154,6 @@
       if (e.target.matches('input[type="number"][data-product-id]')) {
         var id = parseInt(e.target.getAttribute('data-product-id'), 10);
         var val = e.target.value;
-        console.log('[cart] change qty — id:', id, 'value:', val);
         if (!isNaN(id) && typeof window.updateCartQty === 'function') {
           window.updateCartQty(id, val);
         } else if (!isNaN(id)) {
@@ -165,7 +164,6 @@
     });
 
      window.addEventListener('storage', function() {
-       console.log('[cart] evento storage detectado — re-render');
        updateCartDisplay();
      });
 

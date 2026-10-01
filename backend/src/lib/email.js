@@ -39,7 +39,7 @@ async function sendEmail({ to, subject, html, text }) {
 }
 
 async function sendOrderConfirmationEmail(order, customerEmail) {
-  const subject = `Pedido confirmado #${String(order.id).padStart(4, '0')} - Artesanía Gualeguay`;
+  const subject = `Pedido confirmado #${String(order.id).padStart(4, '0')} - Artesanías Gualeguay`;
   const html = `
     <h1>¡Gracias por tu pedido!</h1>
     <p>Tu pedido <strong>#${String(order.id).padStart(4, '0')}</strong> ha sido confirmado.</p>
@@ -47,7 +47,7 @@ async function sendOrderConfirmationEmail(order, customerEmail) {
     <p><strong>Estado:</strong> Pendiente de pago</p>
     <p>Te contactaremos pronto para coordinar el envío.</p>
     <hr/>
-    <p>Artesanía Gualeguay</p>
+    <p>Artesanías Gualeguay</p>
   `;
   return sendEmail({ to: customerEmail, subject, html });
 }
@@ -59,7 +59,7 @@ async function sendOrderStatusEmail(order, customerEmail, status) {
     <p>Tu pedido <strong>#${String(order.id).padStart(4, '0')}</strong> ahora está en estado: <strong>${status}</strong></p>
     <p><strong>Total:</strong> $${Number(order.total).toFixed(2)}</p>
     <hr/>
-    <p>Artesanía Gualeguay</p>
+    <p>Artesanías Gualeguay</p>
   `;
   return sendEmail({ to: customerEmail, subject, html });
 }

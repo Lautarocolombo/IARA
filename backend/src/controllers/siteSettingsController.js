@@ -32,7 +32,7 @@ const getSiteSettings = async (req, res) => {
 
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json({
-      business_name: settings.business_name || 'Artesanía Gualeguay',
+      business_name: settings.business_name || 'Artesanías Gualeguay',
       logo: settings.logo || '',
       email: settings.email || '',
       phone: settings.phone || '',
@@ -44,6 +44,12 @@ const getSiteSettings = async (req, res) => {
       twitter: settings.twitter || '',
       socials,
       shipping_zones: shippingZones,
+      google_analytics_id: settings.google_analytics_id || '',
+      facebook_pixel_id: settings.facebook_pixel_id || '',
+      sentry_dsn: settings.sentry_dsn || '',
+      google_place_id: settings.google_place_id || '',
+      google_write_review_url: settings.google_write_review_url || '',
+      google_maps_api_key: settings.google_maps_api_key || '',
       payment: {
         mp_alias: paymentConfig.mp_alias || '',
         mp_enabled: paymentConfig.mp_enabled !== false,
@@ -69,7 +75,7 @@ const updateSiteSettings = async (req, res) => {
     const payload = req.body || {};
     const settings = {};
 
-    const settingKeys = ['business_name', 'logo', 'email', 'phone', 'whatsapp', 'address', 'instagram', 'facebook', 'whatsapp_business', 'twitter'];
+    const settingKeys = ['business_name', 'logo', 'email', 'phone', 'whatsapp', 'address', 'instagram', 'facebook', 'whatsapp_business', 'twitter', 'google_analytics_id', 'facebook_pixel_id', 'sentry_dsn', 'google_place_id', 'google_write_review_url', 'google_maps_api_key', 'slogan', 'year_founded', 'lat', 'lng'];
     settingKeys.forEach(key => {
       if (payload[key] !== undefined) {
         settings[key] = payload[key];
@@ -152,21 +158,85 @@ async function getPaymentConfigRow() {
   return result.rows[0] || null;
 }
 
+const PAYMENT_CONFIG_FIELDS = [
+  { key: 'mpAlias', column: 'mp_alias', type: 'string' },
+  { key: 'transferAlias', column: 'transfer_alias', type: 'string' },
+  { key: 'holderName', column: 'holder_name', type: 'string' },
+  { key: 'cbuCvu', column: 'cbu_cvu', type: 'string' },
+  { key: 'whatsapp', column: 'whatsapp', type: 'string' },
+  { key: 'message', column: 'message', type: 'string' },
+  { key: 'active', column: 'active', type: 'boolean' },
+  { key: 'mpEnabled', column: 'mp_enabled', type: 'boolean' },
+  { key: 'cashEnabled', column: 'cash_enabled', type: 'boolean' },
+  { key: 'shippingCost', column: 'shipping_cost', type: 'number' },
+  { key: 'freeShippingFrom', column: 'free_shipping_from', type: 'number' },
+  { key: 'includedShippingCost', column: 'included_shipping_cost', type: 'number' },
+  { key: 'notifyAdminNewProof', column: 'notify_admin_new_proof', type: 'boolean' },
+  { key: 'notifyClientApproved', column: 'notify_client_approved', type: 'boolean' },
+  { key: 'notifyClientRejected', column: 'notify_client_rejected', type: 'boolean' }
+];
+
+const PAYMENT_CONFIG_DEFAULTS = {
+  mpAlias: '', transferAlias: '', holderName: '', cbuCvu: '', whatsapp: '', message: '',
+  active: true, mpEnabled: true, cashEnabled: true,
+  shippingCost: 0, freeShippingFrom: 0, includedShippingCost: 0,
+  notifyAdminNewProof: true, notifyClientApproved: true, notifyClientRejected: true
+};
+
+function castPaymentValue(value, type) {
+  if (type === 'boolean') return value !== false;
+  if (type === 'number') return Number(value) || 0;
+  return value || '';
+}
+
 const upsertPaymentConfig = async (data) => {
   const row = await getPaymentConfigRow();
+  const provided = PAYMENT_CONFIG_FIELDS.filter(f => data[f.key] !== undefined);
+
   if (!row) {
+    const values = PAYMENT_CONFIG_FIELDS.map(f => (
+      data[f.key] !== undefined ? castPaymentValue(data[f.key], f.type) : PAYMENT_CONFIG_DEFAULTS[f.key]
+    ));
     await query(
       `INSERT INTO payment_config (mp_alias, transfer_alias, holder_name, cbu_cvu, whatsapp, message, active, mp_enabled, cash_enabled, shipping_cost, free_shipping_from, included_shipping_cost, notify_admin_new_proof, notify_client_approved, notify_client_rejected)
-       VALUES ($1, $2, $3, $4, $5, $6, true, $7, $8, $9, $10, $11, $12, $13)`,
-      [data.mpAlias || '', data.transferAlias || '', data.holderName || '', data.cbuCvu || '', data.whatsapp || '', data.message || '', data.mpEnabled !== false, data.cashEnabled !== false, Number(data.shippingCost) || 0, Number(data.freeShippingFrom) || 0, Number(data.includedShippingCost) || 0, data.notifyAdminNewProof !== false, data.notifyClientApproved !== false, data.notifyClientRejected !== false]
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
+      values
     );
-  } else {
-    await query(
-      'UPDATE payment_config SET mp_alias = $1, transfer_alias = $2, holder_name = $3, cbu_cvu = $4, whatsapp = $5, message = $6, active = $7, mp_enabled = $8, cash_enabled = $9, shipping_cost = $10, free_shipping_from = $11, included_shipping_cost = $12, notify_admin_new_proof = $13, notify_client_approved = $14, notify_client_rejected = $15, updated_at = CURRENT_TIMESTAMP WHERE id = $16',
-      [data.mpAlias || '', data.transferAlias || '', data.holderName || '', data.cbuCvu || '', data.whatsapp || '', data.message || '', data.active !== false, data.mpEnabled !== false, data.cashEnabled !== false, Number(data.shippingCost) || 0, Number(data.freeShippingFrom) || 0, Number(data.includedShippingCost) || 0, data.notifyAdminNewProof !== false, data.notifyClientApproved !== false, data.notifyClientRejected !== false, row.id]
-    );
+    return;
   }
+
+  if (provided.length === 0) return;
+
+  const setParts = [];
+  const values = [];
+  provided.forEach((field, i) => {
+    setParts.push(`${field.column} = $${i + 1}`);
+    values.push(castPaymentValue(data[field.key], field.type));
+  });
+  values.push(row.id);
+  await query(
+    `UPDATE payment_config SET ${setParts.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = $${values.length}`,
+    values
+  );
 };
+
+const mapPaymentRow = (row) => ({
+  mpAlias: row.mp_alias || '',
+  transferAlias: row.transfer_alias || '',
+  holderName: row.holder_name || '',
+  cbuCvu: row.cbu_cvu || '',
+  whatsapp: row.whatsapp || '',
+  message: row.message || '',
+  active: row.active !== false,
+  mpEnabled: row.mp_enabled !== false,
+  cashEnabled: row.cash_enabled !== false,
+  shippingCost: Number(row.shipping_cost || 0),
+  freeShippingFrom: Number(row.free_shipping_from || 0),
+  includedShippingCost: Number(row.included_shipping_cost || 0),
+  notifyAdminNewProof: row.notify_admin_new_proof !== false,
+  notifyClientApproved: row.notify_client_approved !== false,
+  notifyClientRejected: row.notify_client_rejected !== false
+});
 
 const getAdminPaymentConfig = async (req, res) => {
   try {
@@ -177,23 +247,7 @@ const getAdminPaymentConfig = async (req, res) => {
       );
       row = await getPaymentConfigRow();
     }
-    res.json({
-      mpAlias: row.mp_alias || '',
-      transferAlias: row.transfer_alias || '',
-      holderName: row.holder_name || '',
-      cbuCvu: row.cbu_cvu || '',
-      whatsapp: row.whatsapp || '',
-      message: row.message || '',
-      active: row.active !== false,
-      mpEnabled: row.mp_enabled !== false,
-      cashEnabled: row.cash_enabled !== false,
-      shippingCost: Number(row.shipping_cost || 0),
-      freeShippingFrom: Number(row.free_shipping_from || 0),
-      includedShippingCost: Number(row.included_shipping_cost || 0),
-      notifyAdminNewProof: row.notify_admin_new_proof !== false,
-      notifyClientApproved: row.notify_client_approved !== false,
-      notifyClientRejected: row.notify_client_rejected !== false
-    });
+    res.json(mapPaymentRow(row));
   } catch (err) {
     logger.error('Error obteniendo config de pago admin:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -211,21 +265,7 @@ const updateAdminPaymentConfig = async (req, res) => {
     logger.info({ mpAlias, transferAlias, active, mpEnabled, cashEnabled }, 'updateAdminPaymentConfig: configuración de pago actualizada');
     res.json({
       ok: true,
-      mpAlias: mpAlias || '',
-      transferAlias: transferAlias || '',
-      holderName: holderName || '',
-      cbuCvu: cbuCvu || '',
-      whatsapp: whatsapp || '',
-      message: message || '',
-      active: active !== false,
-      mpEnabled: mpEnabled !== false,
-      cashEnabled: cashEnabled !== false,
-      shippingCost: Number(shippingCost) || 0,
-      freeShippingFrom: Number(freeShippingFrom) || 0,
-      includedShippingCost: Number(includedShippingCost) || 0,
-      notifyAdminNewProof: notifyAdminNewProof !== false,
-      notifyClientApproved: notifyClientApproved !== false,
-      notifyClientRejected: notifyClientRejected !== false
+      ...mapPaymentRow(await getPaymentConfigRow())
     });
     try { syncBus.emit('settings_updated', {}); } catch (e) { /* noop */ }
     logAudit({
@@ -243,6 +283,25 @@ const updateAdminPaymentConfig = async (req, res) => {
   }
 };
 
+function normalizeWhatsAppPhone(phone) {
+  let cleaned = String(phone || '').replace(/[^\d]/g, '');
+  if (cleaned.startsWith('549')) {
+    cleaned = cleaned.slice(3);
+  } else if (cleaned.startsWith('54')) {
+    cleaned = cleaned.slice(2);
+  }
+  if (cleaned.startsWith('15')) {
+    cleaned = cleaned.slice(2);
+  }
+  if (cleaned.startsWith('0')) {
+    cleaned = cleaned.slice(1);
+  }
+  if (!cleaned.startsWith('54') && cleaned.length >= 10) {
+    cleaned = `54${cleaned}`;
+  }
+  return cleaned;
+}
+
 const getPublicPaymentConfig = async (req, res) => {
   try {
     let row = await getPaymentConfigRow();
@@ -250,13 +309,16 @@ const getPublicPaymentConfig = async (req, res) => {
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
       res.json({
         transferAlias: '',
-        whatsapp: (process.env.WHATSAPP || '+5493444634444').replace(/[^\d]/g, ''),
+        whatsapp: normalizeWhatsAppPhone(process.env.WHATSAPP || '+543444634444'),
         message: 'Transferí el total exacto y enviá el comprobante por WhatsApp para confirmar tu pedido.',
         active: true,
         mpEnabled: false,
         cashEnabled: false,
         shippingCost: 0,
-        freeShippingFrom: 0
+        freeShippingFrom: 0,
+        notifyAdminNewProof: true,
+        notifyClientApproved: true,
+        notifyClientRejected: true
       });
       return;
     }
@@ -265,14 +327,17 @@ const getPublicPaymentConfig = async (req, res) => {
       transferAlias: row.transfer_alias || '',
       holderName: row.holder_name || '',
       cbuCvu: row.cbu_cvu || '',
-      whatsapp: (row.whatsapp || process.env.WHATSAPP || '+5493444634444').replace(/[^\d]/g, ''),
+      whatsapp: normalizeWhatsAppPhone(row.whatsapp || process.env.WHATSAPP || '+543444634444'),
       message: row.message || 'Transferí el total exacto y enviá el comprobante por WhatsApp para confirmar tu pedido.',
       active: row.active !== false,
       mpEnabled: row.mp_enabled !== false,
       cashEnabled: row.cash_enabled !== false,
       shippingCost: Number(row.shipping_cost || 0),
       freeShippingFrom: Number(row.free_shipping_from || 0),
-      includedShippingCost: Number(row.included_shipping_cost || 0)
+      includedShippingCost: Number(row.included_shipping_cost || 0),
+      notifyAdminNewProof: row.notify_admin_new_proof !== false,
+      notifyClientApproved: row.notify_client_approved !== false,
+      notifyClientRejected: row.notify_client_rejected !== false
     });
   } catch (err) {
     logger.error('Error obteniendo config de pago pública:', err);

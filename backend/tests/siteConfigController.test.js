@@ -13,12 +13,22 @@ const { query } = require('../src/lib/db');
 const { getSiteConfig } = require('../src/controllers/siteConfigController');
 
 describe('siteConfigController', () => {
+  const originalNodeEnv = process.env.NODE_ENV;
+
   beforeEach(() => {
     jest.clearAllMocks();
     delete process.env.GOOGLE_ANALYTICS_ID;
     delete process.env.FACEBOOK_PIXEL_ID;
     delete process.env.WHATSAPP;
     delete process.env.NODE_ENV;
+  });
+
+  afterAll(() => {
+    if (originalNodeEnv === undefined) {
+      delete process.env.NODE_ENV;
+    } else {
+      process.env.NODE_ENV = originalNodeEnv;
+    }
   });
 
   describe('getSiteConfig', () => {
@@ -41,7 +51,7 @@ describe('siteConfigController', () => {
             mpAlias: 'test-alias',
             holderName: 'Test'
           }),
-          siteName: 'Artesanía Gualeguay',
+          siteName: 'Artesanías Gualeguay',
           environment: 'development'
         })
       );
@@ -82,7 +92,7 @@ describe('siteConfigController', () => {
       await getSiteConfig(req, res);
 
       const calledWith = res.json.mock.calls[0][0];
-      expect(calledWith.payment.whatsapp).toBe('54934446344444');
+      expect(calledWith.payment.whatsapp).toBe('5434446344444');
     });
 
     test('crea payment_config por defecto si no existe', async () => {

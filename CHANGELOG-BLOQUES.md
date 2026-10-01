@@ -63,8 +63,6 @@
 
 ---
 
-## Resumen de commits
-
 ```
 7541d45 fix: cleanup optional chaining, audit logging y tests
 0b44c6a fix: auditoría producción - catálogo, contadores, SEO, mapa, redes, carrusel y testimonios
@@ -136,3 +134,81 @@ El backend no levantaba y TODOS los `/api/*` devolvían 502 en producción.
 - `SELECT name, run_on FROM pgmigrations ORDER BY run_on, id;` → debe listar los 11 nombres actuales.
 - Endpoints `/api/hero-cards`, `/api/site-texts`, `/api/testimonials`, `/api/products`,
   `/api/site-settings`, `/api/payment-config`, `/api/sync` → esperados 200 (no 502).
+
+---
+
+## Bloque 5 — Cierre de secrets y configuración de entorno (2026-09-22)
+
+### Cambios aplicados
+
+1. **Rotación de secrets**:
+   - `JWT_SECRET` → regenerado con `crypto.randomBytes(64)` (64 bytes hex).
+   - `CSRF_SECRET` → regenerado con `crypto.randomBytes(32)` (32 bytes hex).
+   - `ADMIN_PASS_HASH` → regenerado con bcrypt de `Arteguay2026!Prod`.
+   - Nuevos valores cargados en `backend/.env` (desarrollo local).
+   - Los valores reales deben cargarse en **Render Dashboard** (variables sensibles) y
+     **Vercel Dashboard** (variables públicas/build). `render.yaml` conserva `generateValue: true`
+     para `JWT_SECRET` y `CSRF_SECRET` como red de seguridad.
+
+2. **Unificación de migraciones**:
+   - Eliminado el directorio `migrations/` obsoleto de la raíz (duplicaba `001_init_schema.sql`
+     y causaba el conflicto de orden documentado en Bloque 4).
+   - Ahora existe un único sistema: `backend/migrations/`, leído por `backend/src/lib/migrator.js`.
+   - `backend/scripts/migrate-neon.js` simplificado: ya no invoca `fix-pgmigrations.js`
+     (eliminado). Usa el mismo `runMigrations` de `node-pg-migrate` con tabla `pgmigrations`.
+   - `backend/migrations/999_repair_migration_conflict.sql` actualizado con la lista completa
+     de 16 migraciones actuales (para reparación manual en Neon si se necesita).
+
+3. **Placeholders corregidos**:
+   - `BUSINESS_EMAIL`: `CONFIGURAR_EMAIL` → `contacto@artesaniagualeguay.com`.
+   - `INSTAGRAM_URL` / `FACEBOOK_URL`: `#` → URLs reales.
+   - `TWITTER_URL`: `#` → vacío (el frontend now oculta el icono si no hay URL).
+   - `og:image`: relativo → absoluto (`https://artesania-gualeguay-v3.vercel.app/imagenes/og-image.jpg`).
+   - `sameAs` en JSON-LD: URLs genéricas → URLs reales de redes sociales.
+   - `canonical`: ya apuntaba correctamente a `artesania-gualeguay-v3.vercel.app`.
+
+4. **Variables de entorno**:
+   - `.env.example` (raíz y backend) actualizado: sin placeholders de email, con URLs reales
+     de redes sociales y con comments sobre formato WhatsApp (sin 9 para wa.me).
+   - Variables detectadas en el código pero no documentadas: `MP_ACCESS_TOKEN`, `MP_PUBLIC_KEY`,
+     `MP_INTEGRATOR_ID`, `REDIS_URL`, `LOG_LEVEL`, `METRICS_TOKEN`, `METRICS_ALLOWED_IPS`,
+     `CLOUDINARY_CLOUD_NAME` — todas agregadas a `backend/.env.example`.
+
+5. **CORS**:
+   - El backend ya incluye `https://artesania-gualeguay-v3.vercel.app` en `defaultOrigins`
+     (hardcoded en `server.js:146-156`) y en `ALLOWED_ORIGINS` de `render.yaml`.
+   - El middleware CORS manual (preflight 204) cubre `/api/admin/upload` correctamente.
+
+### Pendiente (requiere acción manual en plataformas)
+- Cargar los secrets rotados en **Render Dashboard** y **Vercel Dashboard**.
+- Configurar `BLOB_READ_WRITE_TOKEN` real (Vercel Blob Store).
+- Configurar `RESEND_API_KEY` si se quiere email de contacto.
+- Confirmar número WhatsApp con el dueño (actual `+543444634444` sin 9).
+
+---
+
+## Bloque 6 — Tests al 100% y documentación (2026-09-22)
+
+### Tests
+
+- **Frontend unit**: 528/528 tests pasan (Jest + jsdom)
+- **Backend unit**: 510/510 tests pasan (Jest + Node)
+- **E2E**: 24/24 tests (Playwright)
+  - Nuevo `tests/e2e/admin-users.spec.js` — pruebas de navegación del panel de administración de usuarios
+  - Nuevo `tests/e2e/payments-mercadopago.spec.js` — pruebas de flujo de pagos
+- **Corrección de tests fallantes**:
+  - `carouselController.test.js`: 6 tests corregidos (mocks de `res.status` y `res.setHeader`)
+  - `blobUpload.test.js`: 3 tests corregidos (manejo de archivos temporales en Windows)
+
+### Documentación
+
+- **CONTRIBUTING.md** creado — guía completa para contribuyentes (estructura, requisitos, flujo, convenciones)
+- **README.md** actualizado — nuevos tests, features y conteos actualizados
+- **CHANGELOG-BLOQUES.md** actualizado — documentación del Bloque 6
+
+### Cobertura
+
+| Suite | Cobertura statements | Cobertura branches | Tests |
+|-------|---------------------|-------------------|-------|
+| Frontend | 46.25% | 44.47% | 528 |
+| Backend | 82.33% | 71.71% | 510 |

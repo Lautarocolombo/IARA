@@ -4,6 +4,7 @@
 
 describe('Frontend admin - auth state', () => {
   beforeEach(() => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.resetModules();
     global.CONFIG = {
       API: { BASE: 'http://localhost' },
@@ -57,10 +58,15 @@ describe('Frontend admin - auth state', () => {
     expect(window.getCurrentUser().username).toBe('');
     expect(window.getCurrentUser().role).toBe('');
   });
+
+  afterEach(() => {
+    console.error.mockRestore();
+  });
 });
 
 describe('Admin dashboard role-based visibility', () => {
   beforeEach(() => {
+    jest.spyOn(console, 'error').mockImplementation(() => {});
     jest.resetModules();
     global.CONFIG = {
       API: { BASE: 'http://localhost' },
@@ -154,6 +160,10 @@ describe('Admin dashboard role-based visibility', () => {
 
     var ordersLink = document.querySelector('#adminNav a[data-section="orders"]');
     expect(window.getComputedStyle(ordersLink).display).not.toBe('none');
+  });
+
+  afterEach(() => {
+    console.error.mockRestore();
   });
 });
 

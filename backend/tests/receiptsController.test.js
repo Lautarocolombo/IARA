@@ -226,7 +226,7 @@ describe('receiptsController', () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           ok: true,
-          whatsappUrl: expect.stringContaining('wa.me/5493444634444')
+          whatsappUrl: expect.stringContaining('wa.me/543444634444')
         })
       );
     });
@@ -258,7 +258,7 @@ describe('receiptsController', () => {
       expect(res.json).toHaveBeenCalledWith(
         expect.objectContaining({
           ok: true,
-          whatsappUrl: expect.stringContaining('wa.me/5493444634444')
+          whatsappUrl: expect.stringContaining('wa.me/543444634444')
         })
       );
     });

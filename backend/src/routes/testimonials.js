@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { adminAuth } = require('../middleware/auth');
-const { uploadSingle, uploadTestimonialFields, handleUploadError } = require('../lib/upload');
+const { uploadTestimonialSingle, uploadTestimonialFields, handleUploadError } = require('../lib/upload');
 const {
   getPublicTestimonials,
   getAdminTestimonials,
@@ -12,9 +12,7 @@ const {
   updateTestimonialOrder,
   reorderTestimonials,
   uploadTestimonialImage,
-  deleteTestimonialImage,
-  uploadTestimonialProductImage,
-  deleteTestimonialProductImage
+  deleteTestimonialImage
 } = require('../controllers/testimonialsController');
 
 router.get('/testimonials', getPublicTestimonials);
@@ -25,9 +23,7 @@ router.patch('/admin/testimonials/:id/active', adminAuth, toggleTestimonialActiv
 router.patch('/admin/testimonials/:id/order', adminAuth, updateTestimonialOrder);
 router.patch('/admin/testimonials/reorder', adminAuth, reorderTestimonials);
 router.delete('/admin/testimonials/:id', adminAuth, deleteTestimonial);
-router.post('/admin/testimonials/:id/image', adminAuth, uploadSingle, handleUploadError, uploadTestimonialImage);
+router.post('/admin/testimonials/:id/image', adminAuth, uploadTestimonialSingle, handleUploadError, uploadTestimonialImage);
 router.delete('/admin/testimonials/:id/image', adminAuth, deleteTestimonialImage);
-router.post('/admin/testimonials/:id/product-image', adminAuth, uploadSingle, handleUploadError, uploadTestimonialProductImage);
-router.delete('/admin/testimonials/:id/product-image', adminAuth, deleteTestimonialProductImage);
 
 module.exports = router;

@@ -71,8 +71,8 @@ describe('sanitizeAboutText (renderizado del texto principal de Sobre Nosotros)'
 
   test('extrae solo el primer párrafo cuando el texto contiene múltiples bloques', () => {
     delete global.DOMPurify;
-    const out = sanitize('<p>En cada pieza...</p><p>Artesanía Gualeguay nació...</p>');
+    const out = sanitize('<p>En cada pieza...</p><p>Artesanías Gualeguay nació...</p>');
     expect(out).toBe('<p>En cada pieza...</p>');
-    expect(out).not.toContain('Artesanía Gualeguay nació');
+    expect(out).not.toContain('Artesanías Gualeguay nació');
   });
 });

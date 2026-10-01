@@ -254,13 +254,45 @@
     return '<button class="' + cls + '" data-page="' + page + '">' + page + '</button>';
   }
 
+  function confirmAction(title, message, onConfirm) {
+    if (typeof window.showConfirmModal === 'function') {
+      window.showConfirmModal(title, message, onConfirm);
+      return;
+    }
+    if (window.confirm(message)) onConfirm();
+  }
+
+  function askReasonModal(title, onSubmit) {
+    if (typeof window.openModal === 'function') {
+      var wrap = document.createElement('div');
+      wrap.innerHTML = '<div class="form-group"><label>Motivo (opcional)</label><textarea id="rejectReasonInput" rows="3" style="width:100%" placeholder="Ej: comprobante ilegible"></textarea></div>';
+      window.openModal({
+        title: title,
+        content: wrap,
+        actions: [
+          { label: 'Cancelar', className: 'btn btn-secondary', close: true },
+          { label: 'Rechazar', className: 'btn btn-danger', onClick: function () { onSubmit(wrap.querySelector('#rejectReasonInput').value || ''); } }
+        ]
+      });
+      return;
+    }
+    var reason = window.prompt('Motivo del rechazo (opcional):');
+    if (reason === null) return;
+    onSubmit(reason || '');
+  }
+
   async function approveProof(proofId, orderId) {
     var amount = '0';
     var found = proofData.proofs.find(function (p) { return p.id === proofId; });
     if (found) amount = formatCurrency(found.amount || 0);
 
     var confirmMsg = '¿Confirmás la aprobación del pago de ' + amount + ' para el pedido #' + orderId + '?';
-    if (!window.confirm(confirmMsg)) return;
+    var run = function () { doApproveProof(proofId, orderId); };
+    confirmAction('Aprobar pago', confirmMsg, run);
+    return;
+  }
+
+  async function doApproveProof(proofId, orderId) {
 
     try {
       var res = await window.adminFetch('/api/admin/payment-proofs/' + proofId + '/approve', { method: 'POST' });
@@ -278,9 +310,13 @@
   }
 
   async function rejectProof(proofId, orderId) {
-    var reason = prompt('Motivo del rechazo (opcional):');
-    if (reason === null) return;
+    askReasonModal('Rechazar pago #' + orderId, function (reason) {
+      doRejectProof(proofId, orderId, reason);
+    });
+    return;
+  }
 
+  async function doRejectProof(proofId, orderId, reason) {
     try {
       var res = await window.adminFetch('/api/admin/payment-proofs/' + proofId + '/reject', {
         method: 'POST',

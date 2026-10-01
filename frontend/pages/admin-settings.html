@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configuración | Artesanías Gualeguay</title>
+  <meta name="description" content="Configuración del sitio y métodos de pago de Artesanías Gualeguay." />
+  <link rel="stylesheet" href="../css/variables.css" />
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/components.css" />
+  <link rel="stylesheet" href="../css/admin-pages.css" />
+  <script src="../js/config.js"></script>
+  <script src="../js/theme.js"></script>
+  <script src="../js/ui.js"></script>
+  <script src="../js/components/LoadingSpinner.js"></script>
+  <script src="../js/components/EmptyState.js"></script>
+  <script src="../js/admin-pages.js"></script>
+  <script src="../js/admin-settings.js"></script>
+</head>
+<body class="admin-page-shell">
+  <a href="#settingsContent" class="skip-link">Saltar al contenido principal</a>
+  <div id="adminPageLogin" class="admin-page-login" hidden>
+    <div class="admin-login-card">
+      <h1>Acceso administrativo</h1>
+      <p>Iniciá sesión para gestionar la configuración del sitio.</p>
+      <form id="adminPageLoginForm">
+        <label for="adminPageUsername">Usuario
+          <input id="adminPageUsername" name="username" type="text" autocomplete="username" required />
+        </label>
+        <label for="adminPagePassword">Contraseña
+          <input id="adminPagePassword" name="password" type="password" autocomplete="current-password" required />
+        </label>
+        <button id="adminPageLoginSubmit" class="btn btn-primary btn-full" type="submit">Ingresar</button>
+      </form>
+      <p id="adminPageLoginMessage" class="admin-login-message" aria-live="polite"></p>
+    </div>
+  </div>
+  <div class="admin-layout">
+    <aside class="admin-page-sidebar">
+      <div class="admin-page-brand">Artesanías Admin</div>
+      <nav class="admin-page-nav" aria-label="Administración">
+        <a href="dashboard.html">Dashboard</a>
+        <a href="admin-users.html">Usuarios</a>
+        <a href="admin-settings.html" class="is-active" aria-current="page">Configuración</a>
+        <a href="dashboard.html#section-products">Productos</a>
+        <a href="dashboard.html#section-orders">Pedidos</a>
+        <a href="../index.html">Ver sitio</a>
+      </nav>
+      <div class="admin-page-sidebar-footer">
+        <button id="adminPageLogout" class="btn btn-secondary btn-full" type="button">Cerrar sesión</button>
+      </div>
+    </aside>
+    <main class="admin-page-main">
+      <header class="admin-page-header">
+        <div>
+          <h1>Configuración del sitio</h1>
+          <p>Actualizá los datos públicos y las opciones de pago.</p>
+        </div>
+        <div class="admin-page-header-actions">
+          <button id="reloadSettingsBtn" class="btn btn-outline" type="button">Recargar</button>
+          <button id="saveSettingsBtn" class="btn btn-primary" type="button">Guardar cambios</button>
+        </div>
+      </header>
+      <div id="settingsContent" class="admin-page-content">
+        <section class="admin-page-card">
+          <div class="admin-page-card-header">
+            <div>
+              <h2>Datos del negocio</h2>
+              <p>Información visible en el sitio y canales de contacto.</p>
+            </div>
+          </div>
+          <div class="admin-form-grid">
+            <div class="admin-form-group"><label for="businessName">Nombre del negocio</label><input id="businessName" type="text" /></div>
+            <div class="admin-form-group"><label for="businessLogo">URL del logo</label><input id="businessLogo" type="url" placeholder="https://" /></div>
+            <div class="admin-form-group"><label for="businessEmail">Email</label><input id="businessEmail" type="email" /></div>
+            <div class="admin-form-group"><label for="businessPhone">Teléfono</label><input id="businessPhone" type="text" /></div>
+            <div class="admin-form-group"><label for="businessWhatsapp">WhatsApp</label><input id="businessWhatsapp" type="text" /></div>
+            <div class="admin-form-group"><label for="businessAddress">Dirección</label><input id="businessAddress" type="text" /></div>
+            <div class="admin-form-group"><label for="socialInstagram">Instagram</label><input id="socialInstagram" type="text" placeholder="URL o usuario" /></div>
+            <div class="admin-form-group"><label for="socialFacebook">Facebook</label><input id="socialFacebook" type="text" placeholder="URL o usuario" /></div>
+            <div class="admin-form-group"><label for="socialTwitter">Twitter / X</label><input id="socialTwitter" type="text" placeholder="URL o usuario" /></div>
+            <div class="admin-form-group full"><label for="shippingZones">Zonas de envío (JSON)</label><textarea id="shippingZones" rows="7"></textarea><span class="admin-form-help">Ejemplo: [{"name":"Gualeguay","cost":0}]</span></div>
+          </div>
+        </section>
+        <section class="admin-page-card">
+          <div class="admin-page-card-header">
+            <div>
+              <h2>Métodos de pago</h2>
+              <p>Configuración pública y datos para transferencia.</p>
+            </div>
+          </div>
+          <div class="admin-form-grid">
+            <div class="admin-form-group"><label for="mpAlias">Alias de Mercado Pago</label><input id="mpAlias" type="text" /></div>
+            <div class="admin-form-group"><label for="transferAlias">Alias de transferencia</label><input id="transferAlias" type="text" /></div>
+            <div class="admin-form-group"><label for="holderName">Titular de la cuenta</label><input id="holderName" type="text" /></div>
+            <div class="admin-form-group"><label for="cbuCvu">CBU / CVU</label><input id="cbuCvu" type="text" /></div>
+            <div class="admin-form-group full"><label for="paymentMessage">Mensaje de pago</label><textarea id="paymentMessage" rows="3"></textarea></div>
+            <div class="admin-form-group"><label for="shippingCost">Costo de envío base</label><input id="shippingCost" type="number" min="0" step="0.01" /></div>
+            <div class="admin-form-group"><label for="freeShippingFrom">Envío gratis desde</label><input id="freeShippingFrom" type="number" min="0" step="0.01" /></div>
+            <div class="admin-form-group"><label for="includedShippingCost">Envío incluido</label><input id="includedShippingCost" type="number" min="0" step="0.01" /></div>
+            <div class="admin-form-group"><label>Opciones</label><div class="admin-form-actions" style="justify-content:flex-start;margin-top:0;"><label class="admin-form-help"><input type="checkbox" id="paymentActive" /> Pago activo</label><label class="admin-form-help"><input type="checkbox" id="mpEnabled" /> Mercado Pago</label><label class="admin-form-help"><input type="checkbox" id="cashEnabled" /> Efectivo</label></div></div>
+            <div class="admin-form-group"><label>Notificaciones</label><div class="admin-form-actions" style="justify-content:flex-start;margin-top:0;"><label class="admin-form-help"><input type="checkbox" id="notifyAdminNewProof" /> Nuevo comprobante</label><label class="admin-form-help"><input type="checkbox" id="notifyClientApproved" /> Aprobado</label><label class="admin-form-help"><input type="checkbox" id="notifyClientRejected" /> Rechazado</label></div></div>
+          </div>
+          <div id="settingsSaveStatus" class="admin-save-status" aria-live="polite"></div>
+        </section>
+        <section class="admin-page-card">
+          <div class="admin-page-card-header">
+            <div>
+              <h2>Integraciones</h2>
+              <p>Analytics, reseñas de Google y mapas. Vacío = desactivado.</p>
+            </div>
+          </div>
+          <div class="admin-form-grid">
+            <div class="admin-form-group"><label for="googleAnalyticsId">Google Analytics ID (G-...)</label><input id="googleAnalyticsId" type="text" placeholder="G-XXXXXXX" /></div>
+            <div class="admin-form-group"><label for="facebookPixelId">Meta Pixel ID</label><input id="facebookPixelId" type="text" placeholder="123456789" /></div>
+            <div class="admin-form-group"><label for="sentryDsn">Sentry DSN (opcional)</label><input id="sentryDsn" type="text" placeholder="https://..." /></div>
+            <div class="admin-form-group"><label for="googlePlaceId">Google Place ID (reseñas)</label><input id="googlePlaceId" type="text" placeholder="ChIJ..." /></div>
+            <div class="admin-form-group full"><label for="googleReviewUrl">URL Escribir reseña (Google)</label><input id="googleReviewUrl" type="url" placeholder="https://search.google.com/local/writereview?placeid=..." /></div>
+            <div class="admin-form-group"><label for="googleMapsKey">Google Maps API Key (opcional)</label><input id="googleMapsKey" type="text" placeholder="" /></div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

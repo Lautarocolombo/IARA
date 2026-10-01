@@ -65,9 +65,9 @@
 
 .item-thumb {
   width: 44px;
-  height: 44px;
+  aspect-ratio: 2/3;
   border-radius: 8px;
-  background: linear-gradient(135deg, var(--blush), var(--mint));
+  background: #fdf3f6;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -80,7 +80,8 @@
 .item-thumb img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center;
 }
 
 .item-meta {

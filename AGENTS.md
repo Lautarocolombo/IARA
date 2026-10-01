@@ -32,4 +32,17 @@
 - Copy `.env.example` to `.env` and fill values
 - Backend requires: `DATABASE_URL`, `JWT_SECRET`, `ADMIN_USER`, `ADMIN_PASS_HASH`
 
-Always run both test suites and both linters before finalizing changes.
+ Always run both test suites and both linters before finalizing changes.
+
+ ## WhatsApp Integration
+
+ ### ⚠️ NÚMERO DE WHATSAPP — CONFIRMAR CON EL DUEÑO
+ El número configurado actualmente es `+543444634444` (formato E.164 sin el 9).
+ **CONFIRMAR con el dueño que este es el número real de WhatsApp Business.**
+ Las variables de entorno a actualizar son: `WHATSAPP` (backend) y `CONFIG.CONTACT.WHATSAPP` (frontend).
+
+ El formato E.164 para WhatsApp en Argentina es: `54` + código de área (sin 0) + número (sin 15), SIN el 9 intermedio.
+ Ejemplo: `543444634444` (Gualeguay, Entre Ríos).
+
+ El número con 9 (`+5493444634444`) es el formato para llamadas telefónicas NORMALES y causa ERR_CONNECTION_CLOSED en wa.me.
+ Para tel: links (llamadas telefónicas), el 9 SÍ se usa correctamente.

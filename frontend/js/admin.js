@@ -1,9 +1,15 @@
 const API_BASE = CONFIG.API.BASE;
 const BACKEND_DIRECT_URL = CONFIG.API.BACKEND_URL || '';
-let authToken = '';
+let authToken = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('adminToken')) || '';
 let currentUser = null;
 window.__setCurrentUser = function(user) { currentUser = user; };
-window.__setAdminToken = function(token) { authToken = token; };
+window.__setAdminToken = function(token) {
+  authToken = token || '';
+  if (typeof sessionStorage !== 'undefined') {
+    if (authToken) sessionStorage.setItem('adminToken', authToken);
+    else sessionStorage.removeItem('adminToken');
+  }
+};
 window.__getAdminToken = () => authToken;
 
 function getApiUrl(path) {
@@ -109,7 +115,7 @@ async function doLogin() {
       else if (res.status === 500) errorMsg = 'Error en el servidor. Recargá la página e intentá nuevamente.';
       throw new Error(errorMsg);
     }
-     authToken = data.token;
+    window.__setAdminToken(data.token);
      currentUser = { user: data.user, role: data.role, permissions: data.permissions };
      var userNameEl = document.getElementById('adminUserName');
      if (userNameEl && data.user) userNameEl.textContent = data.user;
@@ -166,6 +172,7 @@ async function adminFetch(url, opts = {}, isRetry = false) {
     if (isFormData) {
       delete finalHeaders['Content-Type'];
     }
+    if (authToken && !finalHeaders.Authorization) finalHeaders.Authorization = `Bearer ${authToken}`;
     const fetchOpts = { ...opts, headers: finalHeaders, signal: controller.signal, credentials: 'include' };
     if (isUpload) {
       fetchOpts.credentials = 'include';
@@ -180,19 +187,19 @@ async function adminFetch(url, opts = {}, isRetry = false) {
         });
         if (refreshRes.ok) {
           const refreshData = await refreshRes.json();
-          authToken = refreshData.token;
+          window.__setAdminToken(refreshData.token);
           return adminFetch(url, opts, true);
         }
       } catch (e) {
         console.warn('[adminFetch] Error refrescando token:', e);
       }
-      authToken = '';
+      window.__setAdminToken('');
       currentUser = null;
       document.getElementById('loginOverlay')?.classList.remove('hidden');
       throw new Error('Sesión expirada. Iniciá sesión nuevamente.');
     }
     if (res.status === 401) {
-      authToken = '';
+      window.__setAdminToken('');
       currentUser = null;
       document.getElementById('loginOverlay')?.classList.remove('hidden');
       throw new Error('Sesión expirada. Iniciá sesión nuevamente.');
@@ -360,6 +367,12 @@ window.showConfirmModal = showConfirmModal;
 window.hideConfirmModal = hideConfirmModal;
 
 document.addEventListener('DOMContentLoaded', () => {
+  const existingToken = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('adminToken');
+  const dashboardOverlay = document.getElementById('loginOverlay');
+  if (existingToken && dashboardOverlay && document.querySelector('.admin-panel')) {
+    dashboardOverlay.classList.add('hidden');
+  }
+
   const passwordToggle = document.getElementById('passwordToggle');
   if (passwordToggle) {
     passwordToggle.addEventListener('click', togglePasswordVisibility);

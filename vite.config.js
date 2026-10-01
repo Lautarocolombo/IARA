@@ -1,7 +1,14 @@
-import { defineConfig } from 'vite';
+import { createLogger, defineConfig } from 'vite';
 import { resolve } from 'path';
 import { readdirSync } from 'fs';
 import { copyFileSync, mkdirSync, existsSync, readdirSync as fsReaddirSync } from 'fs';
+
+const viteLogger = createLogger();
+const originalWarn = viteLogger.warn;
+viteLogger.warn = (msg, options) => {
+  if (msg.includes('can\'t be bundled without type="module" attribute')) return;
+  originalWarn(msg, options);
+};
 
 function copyRecursive(src, dest) {
   if (!existsSync(dest)) mkdirSync(dest, { recursive: true });
@@ -18,6 +25,7 @@ function copyRecursive(src, dest) {
 }
 
 export default defineConfig({
+  customLogger: viteLogger,
   root: resolve(__dirname, 'frontend'),
   publicDir: resolve(__dirname, 'frontend'),
   build: {
@@ -47,6 +55,15 @@ export default defineConfig({
     minify: 'esbuild',
     cssCodeSplit: true,
     sourcemap: true
+  },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000',
+        changeOrigin: true,
+        secure: false
+      }
+    }
   },
   plugins: [
     {

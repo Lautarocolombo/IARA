@@ -20,6 +20,7 @@ describe('admin-inventory.js', () => {
     window.adminFetch = adminFetchMock;
     window.getAuthToken = getAuthTokenMock;
     window.alert = jest.fn();
+    window.showToast = jest.fn();
 
     document.body.innerHTML = `
       <div id="toastContainer"></div>
@@ -179,7 +180,7 @@ describe('admin-inventory.js', () => {
       );
     });
 
-    test('muestra alerta cuando la resolución falla', async () => {
+    test('muestra toast cuando la resolución falla', async () => {
       require('../../frontend/js/admin-inventory');
 
       adminFetchMock.mockResolvedValue({
@@ -189,7 +190,7 @@ describe('admin-inventory.js', () => {
 
       await window.inventory.resolveAlert(5);
 
-      expect(window.alert).toHaveBeenCalledWith('Error');
+      expect(window.showToast).toHaveBeenCalledWith('❌', 'Error', 'error');
     });
   });
 
