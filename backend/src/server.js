@@ -351,6 +351,10 @@ app.use('/api/v1', apiVersioningMiddleware);
 // Mount routes at /api/v1 (current version)
 app.use('/api/v1/auth', require('./routes/auth'));
 app.use('/api/v1/admin', require('./routes/auth'));
+
+// Public config route (must be before tenantContext/csrfProtection)
+app.use('/api/v1', require('./routes/config'));
+
 app.use('/api/v1', tenantContext);
 app.use('/api/v1', csrfProtection);
 app.use('/api/v1', require('./routes/products'));
@@ -390,6 +394,10 @@ app.use('/api/v1/admin/inventory', require('./routes/inventory'));
 // Backward compatibility: mount at /api with deprecation headers
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/admin', require('./routes/auth'));
+
+// Public config route (must be before tenantContext/csrfProtection)
+app.use('/api', require('./routes/config'));
+
 app.use('/api', tenantContext);
 app.use('/api', csrfProtection);
 app.use('/api', require('./routes/products'));
