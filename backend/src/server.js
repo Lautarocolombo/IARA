@@ -146,7 +146,15 @@ if (Sentry) {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(sanitizeBody({ excludeKeys: ['about_text', 'hero_title'] }));
-app.use(require('compression')());
+// Skip compression for SSE streams (text/event-stream) and sync endpoints
+app.use(require('compression')({
+  filter: (req, res) => {
+    if (req.path === '/api/sync' || req.path === '/api/v1/sync') return false;
+    const ct = res.getHeader('Content-Type');
+    if (ct && String(ct).startsWith('text/event-stream')) return false;
+    return require('compression').filter(req, res);
+  }
+}));
 
 const envOrigins = (process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || '').split(',').filter(Boolean);
 const defaultOrigins = [
@@ -389,8 +397,6 @@ app.use('/api/v1', require('./routes/config'));
 
 app.use('/api/v1-docs', require('./routes/docs'));
 
-app.use('/api/v1/sync', require('./routes/sync'));
-
 app.use('/api/v1/admin', require('./routes/coupons'));
 app.use('/api/v1/admin/inventory', require('./routes/inventory'));
 
@@ -434,10 +440,6 @@ app.use('/api', require('./routes/docs'));
 app.use('/api', require('./routes/config'));
 
 app.use('/api-docs', require('./routes/docs'));
-
-// CRITICAL: mount /api/sync BEFORE /api/users so the literal path wins over
-// users' catch-all GET /:id (which would otherwise 401 every public SSE client).
-app.use('/api/sync', require('./routes/sync'));
 
 app.use('/api/admin', require('./routes/coupons'));
 app.use('/api/admin/inventory', require('./routes/inventory'));
