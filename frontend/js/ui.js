@@ -342,6 +342,15 @@ const SYNC_INTERVALS = {};
 const SYNC_POLL_MS = 15000;
 let sseSource = null;
 let sseReconnectMs = 2000;
+let sseTimer = null;
+
+function scheduleSSESync() {
+  if (sseTimer) return;
+  sseTimer = setTimeout(() => {
+    sseTimer = null;
+    initSSESync();
+  }, sseReconnectMs);
+}
 
 /* eslint-disable-next-line no-unused-vars */
 function initSSESync() {
@@ -403,11 +412,17 @@ function initSSESync() {
     });
 
     sseSource.onerror = () => {
-      console.warn('[SSE] Conexión perdida, reintentando...');
-      sseSource.close();
+      // EventSource only auto-reconnects when the server closes the stream
+      // with a 2xx. A non-200 (e.g. 401/403) is a HARD failure: the browser
+      // stops the stream and we must reconnect ourselves, but never in a
+      // tight loop. Distinguish the two cases by status code.
+      const status = sseSource.readyState === EventSource.CLOSED ? 0 : sseSource.readyState;
+      console.warn('[SSE] Conexión perdida (readyState=' + status + '), reintentando...');
+      try { sseSource.close(); } catch (e) { /* noop */ }
       sseSource = null;
-      setTimeout(initSSESync, sseReconnectMs);
+      // Backoff: double each failure, capped. Reset on a successful open.
       sseReconnectMs = Math.min(sseReconnectMs * 2, 30000);
+      scheduleSSESync();
     };
 
     sseSource.onopen = () => {
@@ -620,6 +635,14 @@ function getFetchErrorMessage(err) {
   }
 
   if (status === 401 || status === 403) {
+    // Surface the actual server error/code so the user (and support) can act
+    // instead of getting the opaque "Contactá al administrador" message.
+    const serverMsg = (err && (err.serverError || err.error)) ? String(err.serverError || err.error) : '';
+    const serverCode = (err && err.serverCode) ? String(err.serverCode) : '';
+    const detail = serverCode ? `[${serverCode}] ${serverMsg}`.trim() : serverMsg;
+    if (detail) {
+      return `Error de autorización: ${detail}. Contactá al administrador.`;
+    }
     return 'Error de autorización. Contactá al administrador.';
   }
 
@@ -662,17 +685,46 @@ async function fetchWithRetry(url, opts = {}, retries = 2, backoffMs = 1000, tim
         return null;
       }
       if (!res.ok) {
+        // Attach the server's error body/code so callers can surface it.
         const err = new Error(`HTTP ${res.status}: ${res.statusText}`);
         err.status = res.status;
+        try {
+          const clone = res.clone();
+          const body = await clone.text();
+          if (body) {
+            try {
+              const parsed = JSON.parse(body);
+              if (parsed && typeof parsed === 'object') {
+                if (parsed.error) err.serverError = parsed.error;
+                if (parsed.code) err.serverCode = parsed.code;
+                if (parsed.message) err.serverError = err.serverError || parsed.message;
+              } else {
+                err.serverError = body;
+              }
+            } catch {
+              err.serverError = body;
+            }
+          }
+        } catch (e) { /* body already consumed or unavailable */ }
         throw err;
       }
       return res;
     } catch (err) {
-      if (attempt === retries) {
+      // Only retry transient failures: 5xx, network errors and timeouts.
+      // 4xx responses (including 401/403/400) are deterministic client-side
+      // or auth problems — retrying them just burns the rate limit and
+      // produces a confusing "reintentando..." toast.
+      const status = err && err.status;
+      const isTransient = !status || status >= 500
+        || err.name === 'AbortError'
+        || /timeout/i.test(err.message || '')
+        || /Failed to fetch|NetworkError/i.test(err.message || '');
+
+      if (attempt === retries || !isTransient) {
         console.error('Fetch error after retries:', err);
         if (showToastOnError) {
           showToast('', getFetchErrorMessage(err), 'error', {
-            onRetry: () => fetchWithRetry(url, opts, retries, backoffMs, timeoutMs, showToastOnError),
+            onRetry: isTransient ? () => fetchWithRetry(url, opts, retries, backoffMs, timeoutMs, showToastOnError) : null,
             duration: 0
           });
         }

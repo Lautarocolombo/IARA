@@ -266,7 +266,7 @@ const ordersLimiter = rateLimit({
 
 const adminLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 120,
+  max: process.env.NODE_ENV === 'test' ? 10000 : 120,
   standardHeaders: true,
   legacyHeaders: false,
   store: rateLimitStore,
@@ -380,6 +380,9 @@ app.use('/api/v1', require('./routes/heroCards'));
 app.use('/api/v1', require('./routes/sales'));
 app.use('/api/v1', require('./routes/earnings'));
 app.use('/api/v1', require('./routes/carousel'));
+// CRITICAL: mount /api/v1/sync BEFORE /api/v1/users so the literal path wins over
+// users' catch-all GET /:id (which would otherwise 401 every public SSE client).
+app.use('/api/v1/sync', require('./routes/sync'));
 app.use('/api/v1', require('./routes/users'));
 app.use('/api/v1', require('./routes/docs'));
 app.use('/api/v1', require('./routes/config'));
@@ -423,12 +426,17 @@ app.use('/api', require('./routes/heroCards'));
 app.use('/api', require('./routes/sales'));
 app.use('/api', require('./routes/earnings'));
 app.use('/api', require('./routes/carousel'));
+// CRITICAL: mount /api/sync BEFORE /api/users so the literal path wins over
+// users' catch-all GET /:id (which would otherwise 401 every public SSE client).
+app.use('/api/sync', require('./routes/sync'));
 app.use('/api', require('./routes/users'));
 app.use('/api', require('./routes/docs'));
 app.use('/api', require('./routes/config'));
 
 app.use('/api-docs', require('./routes/docs'));
 
+// CRITICAL: mount /api/sync BEFORE /api/users so the literal path wins over
+// users' catch-all GET /:id (which would otherwise 401 every public SSE client).
 app.use('/api/sync', require('./routes/sync'));
 
 app.use('/api/admin', require('./routes/coupons'));

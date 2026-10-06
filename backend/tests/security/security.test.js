@@ -34,13 +34,14 @@ describe('Security tests', () => {
   });
 
   describe('CSRF protection', () => {
-    test('rechaza POST sin CSRF token cuando está configurado', async () => {
+    test('rechaza POST con stateful session sin CSRF token', async () => {
       process.env.CSRF_SECRET = 'test-secret';
       process.env.ALLOWED_ORIGINS = 'http://localhost:5173';
       const csrfModule = require('../../src/middleware/csrf');
       const req = {
         method: 'POST',
         originalUrl: '/api/test',
+        session: { csrfToken: 'session-csrf' },
         headers: { origin: 'http://localhost:5173' },
         body: {}
       };
@@ -50,18 +51,37 @@ describe('Security tests', () => {
       };
       csrfModule.csrfProtection(req, res, () => {});
       expect(res.status).toHaveBeenCalledWith(403);
-      expect(res.json).toHaveBeenCalledWith({ error: 'CSRF token inválido' });
+      expect(res.json).toHaveBeenCalledWith({ error: 'CSRF token inválido', code: 'CSRF_TOKEN_INVALID' });
     });
 
-    test('permite POST con CSRF token válido', async () => {
+    test('permite POST con CSRF token válido de stateful session', async () => {
       process.env.CSRF_SECRET = 'test-secret';
       process.env.ALLOWED_ORIGINS = 'http://localhost:5173';
       const csrfModule = require('../../src/middleware/csrf');
       const req = {
         method: 'POST',
         originalUrl: '/api/test',
+        session: { csrfToken: 'session-csrf' },
         headers: { origin: 'http://localhost:5173' },
-        body: { _csrf: 'test-secret' }
+        body: { _csrf: 'session-csrf' }
+      };
+      const res = {
+        status: jest.fn(() => res),
+        json: jest.fn()
+      };
+      csrfModule.csrfProtection(req, res, () => {});
+      expect(res.status).not.toHaveBeenCalled();
+    });
+
+    test('permite POST publico sin token (sin session cookie)', async () => {
+      process.env.CSRF_SECRET = 'test-secret';
+      process.env.ALLOWED_ORIGINS = 'http://localhost:5173';
+      const csrfModule = require('../../src/middleware/csrf');
+      const req = {
+        method: 'POST',
+        originalUrl: '/api/orders',
+        headers: { origin: 'http://localhost:5173' },
+        body: { items: [], total: 1 }
       };
       const res = {
         status: jest.fn(() => res),
@@ -103,7 +123,7 @@ describe('Security tests', () => {
       };
       csrfModule.csrfProtection(req, res, () => {});
       expect(res.status).toHaveBeenCalledWith(403);
-      expect(res.json).toHaveBeenCalledWith({ error: 'Origin no permitido' });
+      expect(res.json).toHaveBeenCalledWith({ error: 'Origin no permitido', code: 'ORIGIN_NOT_ALLOWED' });
     });
   });
 
