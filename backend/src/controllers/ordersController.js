@@ -7,6 +7,7 @@ const { safeJsonParse } = require('../lib/parser');
 const path = require('path');
 const fs = require('fs');
 const PDFDocument = require('pdfkit');
+const { uploadProofToBlob, processFile } = require('../lib/upload');
 const { sendOrderConfirmationEmail } = require('../lib/email');
 const { logInventoryMovement } = require('../controllers/inventoryController');
 
@@ -633,4 +634,88 @@ const getPublicOrderTrack = async (req, res) => {
   }
 };
 
-module.exports = { getOrders, getUserOrders, createOrder, updateOrderStatus, deleteOrder, batchDeleteOrders, updateOrderNotes, updateOrder, getOrderDetail, exportOrders, addOrderActivity, getOrderReceipt, getOrderActivities, getPublicOrderTrack };
+const uploadPublicReceipt = async (req, res) => {
+  try {
+    const orderId = Number(req.params.id);
+    if (!orderId || orderId <= 0) {
+      return res.status(400).json({ error: 'ID de pedido inválido' });
+    }
+
+    const orderResult = await query('SELECT * FROM orders WHERE id = $1', [orderId]);
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Pedido no encontrado' });
+    }
+    const order = orderResult.rows[0];
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se recibió el comprobante' });
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+    if (req.file.size > maxSize) {
+      return res.status(400).json({ error: 'El archivo es muy grande (máx. 5 MB).' });
+    }
+
+    const mime = req.file.mimetype || 'application/octet-stream';
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!allowedTypes.includes(mime)) {
+      return res.status(400).json({ error: 'Tipo de archivo no permitido. Usá JPG, PNG, WEBP o PDF.' });
+    }
+
+    let proofUrl = null;
+
+    try {
+      const blobResult = await uploadProofToBlob(req.file);
+      if (blobResult && blobResult.url) {
+        proofUrl = blobResult.url;
+        try { fs.rmSync(req.file.path, { force: true, maxRetries: 3, retryDelay: 50 }); } catch (e) { /* noop */ }
+      }
+    } catch (blobErr) {
+      if (blobErr.code === 'BLOB_NOT_CONFIGURED') {
+        return res.status(503).json({ error: blobErr.message });
+      }
+      logger.warn({ err: blobErr.message }, 'Error subiendo a Vercel Blob, intentando fallback local');
+    }
+
+    if (!proofUrl) {
+      if (mime.startsWith('image/')) {
+        const processed = await processFile(req.file);
+        proofUrl = processed.url;
+      } else {
+        const buffer = fs.readFileSync(req.file.path);
+        proofUrl = `data:${mime};base64,${buffer.toString('base64')}`;
+      }
+      try { fs.rmSync(req.file.path, { force: true, maxRetries: 3, retryDelay: 50 }); } catch (e) { /* noop */ }
+    }
+
+    const amount = Number(order.total || 0);
+    const customerData = safeJsonParse(order.customer, {});
+    const customerNameStr = ((req.body && req.body.customerName) || '').toString().trim() || (customerData.name || '');
+
+    const insertResult = await query(
+      'INSERT INTO payment_proofs (order_id, customer_name, amount, proof_url, tenant_id) VALUES ($1, $2, $3, $4, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) RETURNING id',
+      [orderId, customerNameStr, amount, proofUrl]
+    );
+
+    const proofId = insertResult.rows[0]?.id || orderId;
+
+    await query(
+      'INSERT INTO activity_log (username, action, entity_type, entity_id, details, related_order_id, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      ['Cliente', 'Comprobante subido', 'payment_proof', proofId, `Pedido #${orderId}`, orderId, req.headers['x-tenant-id'] || 'default']
+    );
+
+    await query(
+      'UPDATE orders SET receipt_url = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [proofUrl, orderId]
+    );
+
+    try { syncBus.emit('payment_proof_uploaded', { orderId, proofId }); } catch (e) { /* noop */ }
+
+    res.status(201).json({ ok: true, url: proofUrl, id: proofId });
+  } catch (err) {
+    logger.error({ err: err.message }, 'Error subiendo comprobante público');
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+module.exports = { getOrders, getUserOrders, createOrder, updateOrderStatus, deleteOrder, batchDeleteOrders, updateOrderNotes, updateOrder, getOrderDetail, exportOrders, addOrderActivity, getOrderReceipt, getOrderActivities, getPublicOrderTrack, uploadPublicReceipt };

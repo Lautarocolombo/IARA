@@ -1,11 +1,11 @@
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
-const { getPublicUrl, deleteImageAsset, processFile } = require('../lib/upload');
+const { getPublicUrl, deleteImageAsset, handleImageUpload, getTenantId } = require('../lib/imageService');
 const { syncBus } = require('../routes/sync');
 
 async function getCarouselSlots(req, res) {
   try {
-    const tenantId = req.tenantId || 'default';
+    const tenantId = getTenantId(req);
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
     const result = await query(
       'SELECT * FROM carousel_images WHERE tenant_id = $1 ORDER BY slot ASC',
@@ -31,7 +31,7 @@ async function getCarouselSlots(req, res) {
 
 async function getCarouselSlotsPublic(req, res) {
   try {
-    const tenantId = req.tenantId || 'default';
+    const tenantId = getTenantId(req);
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
     const result = await query(
       'SELECT slot, url, alt_text, link_url, caption, about_group FROM carousel_images WHERE tenant_id = $1 AND url IS NOT NULL AND url != \'\' ORDER BY slot ASC',
@@ -69,7 +69,7 @@ async function updateCarouselSlot(req, res) {
       return res.status(400).json({ error: 'El slot debe ser un número entre 1 y 5' });
     }
 
-    const tenantId = req.tenantId || 'default';
+    const tenantId = getTenantId(req);
 
     if (!req.file) {
       return res.status(400).json({ error: 'No se recibió imagen' });
@@ -86,7 +86,7 @@ async function updateCarouselSlot(req, res) {
     }
 
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
-    const processed = await processFile(req.file, baseUrl);
+    const publicUrl = await handleImageUpload(req.file, baseUrl);
 
     const altText = (req.body.alt_text || '').trim();
     const linkUrl = (req.body.link_url || '').trim();
@@ -94,18 +94,17 @@ async function updateCarouselSlot(req, res) {
     const aboutGroup = Number(req.body.about_group || 0);
 
     const result = await query(
-      `INSERT INTO carousel_images (slot, url, public_id, alt_text, link_url, caption, about_group, updated_at, tenant_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), $8)
+      `INSERT INTO carousel_images (slot, url, alt_text, link_url, caption, about_group, updated_at, tenant_id)
+       VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7)
        ON CONFLICT (slot, tenant_id) DO UPDATE SET
          url = EXCLUDED.url,
-         public_id = EXCLUDED.public_id,
          alt_text = EXCLUDED.alt_text,
          link_url = EXCLUDED.link_url,
          caption = EXCLUDED.caption,
          about_group = EXCLUDED.about_group,
          updated_at = EXCLUDED.updated_at
        RETURNING *`,
-      [slot, processed.url, processed.public_id || processed.blobName || '', altText, linkUrl, caption, aboutGroup, tenantId]
+      [slot, publicUrl, altText, linkUrl, caption, aboutGroup, tenantId]
     );
 
     const updated = result.rows[0];
@@ -127,7 +126,7 @@ async function updateCarouselSlotMeta(req, res) {
       return res.status(400).json({ error: 'El slot debe ser un número entre 1 y 5' });
     }
 
-    const tenantId = req.tenantId || 'default';
+    const tenantId = getTenantId(req);
     const altText = (req.body.alt_text || '').trim();
     const linkUrl = (req.body.link_url || '').trim();
     const caption = (req.body.caption || '').trim();
@@ -146,8 +145,8 @@ async function updateCarouselSlotMeta(req, res) {
       );
     } else {
       result = await query(
-        `INSERT INTO carousel_images (slot, url, public_id, alt_text, link_url, caption, about_group, updated_at, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), $8) RETURNING *`,
-        [slot, '', '', altText, linkUrl, caption, aboutGroup, tenantId]
+        `INSERT INTO carousel_images (slot, url, alt_text, link_url, caption, about_group, updated_at, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7) RETURNING *`,
+        [slot, '', altText, linkUrl, caption, aboutGroup, tenantId]
       );
     }
 
@@ -171,7 +170,7 @@ async function deleteCarouselSlot(req, res) {
       return res.status(400).json({ error: 'El slot debe ser un número entre 1 y 5' });
     }
 
-    const tenantId = req.tenantId || 'default';
+    const tenantId = getTenantId(req);
     const existing = await query(
       'SELECT * FROM carousel_images WHERE slot = $1 AND tenant_id = $2',
       [slot, tenantId]

@@ -72,6 +72,13 @@
         switchSection(link.getAttribute('data-section'));
       });
     });
+    if (window.adminSidebar && typeof window.adminSidebar.setActiveSection === 'function') {
+      window.adminSidebar.setActiveSection(
+        document.querySelector('#adminNav a.is-active, #adminNav a.active')
+          ? document.querySelector('#adminNav a.is-active, #adminNav a.active').getAttribute('data-section')
+          : 'content'
+      );
+    }
   }
 
   function setupContentTabs() {
@@ -141,6 +148,19 @@
         el.style.display = 'none';
       }
     });
+
+    updateSectionGroupVisibility();
+  }
+
+  function updateSectionGroupVisibility() {
+    var groups = document.querySelectorAll('#adminNav [data-section-group]');
+    Array.prototype.forEach.call(groups, function (group) {
+      var links = group.querySelectorAll('a[data-section]');
+      var hidden = Array.prototype.filter.call(links, function (link) {
+        return link.style.display === 'none';
+      }).length;
+      group.style.display = (links.length > 0 && hidden === links.length) ? 'none' : '';
+    });
   }
 
   function switchSection(section) {
@@ -165,6 +185,10 @@
     navLinks.forEach(function (link) {
       link.classList.toggle('active', link.getAttribute('data-section') === section);
     });
+
+    if (window.adminSidebar && typeof window.adminSidebar.setActiveSection === 'function') {
+      window.adminSidebar.setActiveSection(section);
+    }
 
     var info = SECTION_MAP[section] || {};
     var titleEl = document.getElementById('headerTitle');
@@ -193,9 +217,13 @@
         var user = window.getCurrentUser ? window.getCurrentUser() : { username: 'Admin', role: 'admin' };
         var tokenEl = document.getElementById('adminUserName');
         if (tokenEl && user.username) tokenEl.textContent = user.username;
+        if (window.adminSidebar && typeof window.adminSidebar.setUser === 'function') {
+          window.adminSidebar.setUser(user);
+        }
       }
     });
     updateLowStockIndicator();
+    updatePendingOrdersBadge();
   }
 
   async function updateLowStockIndicator() {
@@ -205,6 +233,9 @@
       var data = await res.json();
       var products = (data.products || []).filter(function (p) { return !p.deleted; });
       var lowStock = products.filter(function (p) { return Number(p.stock || 0) <= 5; });
+      if (window.adminSidebar && typeof window.adminSidebar.setBadges === 'function') {
+        window.adminSidebar.setBadges({ lowStock: lowStock.length });
+      }
       var indicator = document.getElementById('lowStockIndicator');
       if (indicator) {
         if (lowStock.length > 0) {
@@ -223,7 +254,22 @@
     }
   }
 
+  async function updatePendingOrdersBadge() {
+    try {
+      var res = await window.adminFetch('/api/admin/orders?limit=100', { method: 'GET' });
+      if (!res || !res.ok) return;
+      var data = await res.json();
+      var pending = (data.orders || []).filter(function (o) { return o.status === 'pending'; }).length;
+      if (window.adminSidebar && typeof window.adminSidebar.setBadges === 'function') {
+        window.adminSidebar.setBadges({ ordersPending: pending });
+      }
+    } catch (err) {
+      console.error('[Dashboard] Error cargando pedidos pendientes:', err);
+    }
+  }
+
   window.updateLowStockIndicator = updateLowStockIndicator;
+  window.updatePendingOrdersBadge = updatePendingOrdersBadge;
   window.applyRoleVisibility = applyRoleVisibility;
   window.getCurrentRole = getCurrentRole;
   window.SECTION_ROLES = SECTION_ROLES;

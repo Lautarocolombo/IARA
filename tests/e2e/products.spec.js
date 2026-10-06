@@ -12,7 +12,7 @@ test('products: filtro por categoría pulseras muestra solo pulseras', async ({ 
   await page.goto('/#catalog');
   await page.locator('.filter-btn[data-filter="pulseras"]').click();
   await page.waitForTimeout(500);
-  const cards = page.locator('.product-card');
+  const cards = page.locator('#productsGrid .product-card');
   const count = await cards.count();
   expect(count).toBeGreaterThan(0);
   for (let i = 0; i < count; i++) {
@@ -24,7 +24,7 @@ test('products: filtro por categoría accesorios muestra solo accesorios', async
   await page.goto('/#catalog');
   await page.locator('.filter-btn[data-filter="accesorios"]').click();
   await page.waitForTimeout(500);
-  const cards = page.locator('.product-card');
+  const cards = page.locator('#productsGrid .product-card');
   const count = await cards.count();
   expect(count).toBeGreaterThan(0);
   for (let i = 0; i < count; i++) {
@@ -36,7 +36,7 @@ test('products: filtro por categoría souvenirs muestra solo souvenirs', async (
   await page.goto('/#catalog');
   await page.locator('.filter-btn[data-filter="souvenirs"]').click();
   await page.waitForTimeout(500);
-  const cards = page.locator('.product-card');
+  const cards = page.locator('#productsGrid .product-card');
   const count = await cards.count();
   expect(count).toBeGreaterThan(0);
   for (let i = 0; i < count; i++) {

@@ -1,5 +1,7 @@
 'use strict';
 
+export const WA_PHONE = '5493444634444';
+
 export const MAX_URL_LENGTH = 1800;
 export const MAX_MESSAGE_LENGTH = 1600;
 
@@ -132,7 +134,12 @@ export function truncateMessageForUrl(message, maxLength) {
 
 export function buildWhatsAppLinks(phone, message) {
   const cleanPhone = sanitizePhone(phone);
-  const waPhone = cleanPhone.startsWith('54') ? cleanPhone : `54${cleanPhone}`;
+  let waPhone = cleanPhone.startsWith('54') ? cleanPhone : `54${cleanPhone}`;
+
+  if (waPhone.startsWith('54') && !waPhone.startsWith('549')) {
+    waPhone = '549' + waPhone.slice(2);
+  }
+
   const encodedMessage = encodeURIComponent(message);
 
   const primary = `https://wa.me/${waPhone}?text=${encodedMessage}`;

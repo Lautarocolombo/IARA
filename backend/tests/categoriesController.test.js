@@ -9,7 +9,9 @@ jest.mock('../src/lib/logger', () => ({
 }));
 
 jest.mock('../src/lib/upload', () => ({
-  saveUploadedFile: jest.fn().mockResolvedValue('/uploads/category-image.webp')
+  saveUploadedFile: jest.fn().mockResolvedValue('/uploads/category-image.webp'),
+  getPublicUrl: jest.fn((url) => url || ''),
+  deleteImageAsset: jest.fn().mockResolvedValue(true)
 }));
 
 const { query } = require('../src/lib/db');

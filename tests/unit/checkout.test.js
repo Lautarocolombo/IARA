@@ -285,12 +285,9 @@ describe('checkout.js', () => {
   describe('loadMpAlias', () => {
     beforeEach(() => {
       document.body.innerHTML = `
-        <div id="mpAliasValue"></div>
-        <div id="transferAlias"></div>
-        <div id="transferCbuCvu"></div>
-        <div id="cbuCvuField" style="display:none"></div>
-        <div id="transferHolder"></div>
-        <div id="holderField" style="display:none"></div>
+        <div id="paymentAliasValue"></div>
+        <div id="paymentHolderValue"></div>
+        <div id="holderBox" style="display:none"></div>
       `;
       checkout = require('../../frontend/js/checkout');
     });
@@ -300,7 +297,6 @@ describe('checkout.js', () => {
         ok: true,
         json: async () => ({
           transferAlias: 'test-alias',
-          cbuCvu: 'CBU123',
           holderName: 'Juan Perez',
           whatsapp: '+543444634444',
           message: 'Transferí el total',
@@ -309,21 +305,21 @@ describe('checkout.js', () => {
         })
       };
       fetchWithRetryMock.mockResolvedValue(mockRes);
-      const result = await checkout.loadMpAlias();
+      const result = await checkout.loadPaymentConfig();
       expect(result.alias).toBe('test-alias');
-      expect(document.getElementById('transferAlias').textContent).toBe('test-alias');
+      expect(document.getElementById('paymentAliasValue').textContent).toBe('test-alias');
     });
 
     test('maneja error al cargar configuración de pago', async () => {
       fetchWithRetryMock.mockRejectedValue(new Error('Error'));
-      const result = await checkout.loadMpAlias();
+      const result = await checkout.loadPaymentConfig();
       expect(result.alias).toBe(CONFIG.CONTACT.WHATSAPP_ALIAS);
       expect(result.active).toBe(false);
     });
 
     test('maneja respuesta nula', async () => {
       fetchWithRetryMock.mockResolvedValue(null);
-      const result = await checkout.loadMpAlias();
+      const result = await checkout.loadPaymentConfig();
       expect(result.active).toBe(false);
     });
   });
@@ -331,7 +327,7 @@ describe('checkout.js', () => {
   describe('copyMpAlias', () => {
     beforeEach(() => {
       document.body.innerHTML = `
-        <div id="mpAliasValue">test-alias</div>
+        <div id="paymentAliasValue">test-alias</div>
         <button id="copyAliasBtn">Copiar</button>
       `;
       checkout = require('../../frontend/js/checkout');
@@ -341,16 +337,16 @@ describe('checkout.js', () => {
       global.navigator.clipboard = {
         writeText: jest.fn().mockResolvedValue()
       };
-      checkout.copyMpAlias();
+      checkout.copyAlias();
       expect(global.navigator.clipboard.writeText).toHaveBeenCalledWith('test-alias');
     });
 
     test('maneja alias no disponible', () => {
-      document.getElementById('mpAliasValue').textContent = 'No configurado';
+      document.getElementById('paymentAliasValue').textContent = 'No configurado';
       global.navigator.clipboard = {
         writeText: jest.fn().mockResolvedValue()
       };
-      checkout.copyMpAlias();
+      checkout.copyAlias();
       expect(global.showToast).toHaveBeenCalledWith('', 'Alias no disponible', 'error');
     });
   });
@@ -358,8 +354,8 @@ describe('checkout.js', () => {
   describe('copyTransferField', () => {
     beforeEach(() => {
       document.body.innerHTML = `
-        <div id="transferAlias">test-alias</div>
-        <button id="copyTransferAliasBtn">Copiar</button>
+        <div id="paymentAliasValue">test-alias</div>
+        <button id="copyAliasBtn">Copiar</button>
       `;
       checkout = require('../../frontend/js/checkout');
     });
@@ -373,7 +369,7 @@ describe('checkout.js', () => {
     });
 
     test('maneja dato no disponible', async () => {
-      document.getElementById('transferAlias').textContent = 'No configurado';
+      document.getElementById('paymentAliasValue').textContent = 'No configurado';
       global.navigator.clipboard = {
         writeText: jest.fn().mockResolvedValue()
       };
@@ -408,14 +404,8 @@ describe('checkout.js', () => {
     beforeEach(() => {
       document.body.innerHTML = `
         <div id="paymentOrderId"></div>
-        <div id="paymentOrderTotal"></div>
-        <div id="transferOrderNumber"></div>
-        <div id="transferOrderItems"></div>
-        <div id="transferOrderTotalHighlight"></div>
-        <div id="whatsappComprobanteBtn"></div>
-        <div id="transferReceiptBtn"></div>
-        <div id="paymentInstructions" style="display:none"></div>
-        <div id="transferDataCard" style="display:none"></div>
+        <div id="paymentTotalAmount"></div>
+        <div id="paymentSection" style="display:none"></div>
         <div id="shippingForm" style="display:none"></div>
         <input id="shipProvince" value="" />
       `;

@@ -274,6 +274,7 @@ describe('heroCardsController', () => {
       const res = { json: jest.fn() };
 
       query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+      query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
       await deleteHeroCard(req, res);
 
@@ -287,6 +288,7 @@ describe('heroCardsController', () => {
         json: jest.fn()
       };
 
+      query.mockResolvedValueOnce({ rows: [] });
       query.mockResolvedValueOnce({ rows: [] });
 
       await deleteHeroCard(req, res);

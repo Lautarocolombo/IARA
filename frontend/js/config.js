@@ -157,6 +157,9 @@ function normalizeWhatsAppPhone(phone) {
   if (!cleaned.startsWith('54')) {
     cleaned = `54${cleaned}`;
   }
+  if (cleaned.startsWith('54') && !cleaned.startsWith('549')) {
+    cleaned = '549' + cleaned.slice(2);
+  }
   return cleaned;
 }
 

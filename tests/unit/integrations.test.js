@@ -63,11 +63,10 @@ describe('integrations 100%: analytics guards + reviews + whatsapp normalize', (
   test('whatsapp normalize: 549 / 54 / 0 / 15 convergen a 54...', () => {
     const config = require('../../frontend/js/config.js');
     const n = window.normalizeWhatsAppPhone || config.normalizeWhatsAppPhone;
-    expect(n('+5493444634444')).toBe('543444634444');
-    expect(n('+543444634444')).toBe('543444634444');
-    expect(n('03444634444')).toBe('543444634444');
+    expect(n('+5493444634444')).toBe('5493444634444');
+    expect(n('+543444634444')).toBe('5493444634444');
+    expect(n('03444634444')).toBe('5493444634444');
     const link = config.buildWhatsAppLink({ phone: '+5493444634444', message: 'hola' });
-    expect(link).toContain('https://wa.me/543444634444');
-    expect(link).not.toContain('/549');
+    expect(link).toContain('https://wa.me/5493444634444');
   });
 });

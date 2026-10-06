@@ -51,6 +51,7 @@ const {
   searchProducts,
   syncToNeon,
   bulkImportProducts,
+  getFeaturedProducts,
   attachImagesToProducts
 } = require('../src/controllers/productsController');
 
@@ -309,7 +310,8 @@ describe('productsController', () => {
         json: jest.fn()
       };
 
-      query.mockResolvedValueOnce({ rows: [{ stock: 10 }] });
+      // El body no manda stock, así que no debe disparar el SELECT de auditoría
+      // de inventario (eso era consecuencia del bug de defaults de zod 4).
       query.mockResolvedValueOnce({ rows: [{ id: 1, name: 'Producto Actualizado', price: 200 }] });
 
       await updateProduct(req, res);
@@ -350,6 +352,153 @@ describe('productsController', () => {
       await updateProduct(req, res);
 
       expect(res.status).toHaveBeenCalledWith(409);
+    });
+
+    test('persiste featured=true cuando llega "true" como string (FormData)', async () => {
+      const req = { params: { id: 7 }, body: { featured: 'true' } };
+      const res = { status: jest.fn(() => res), json: jest.fn() };
+
+      query.mockResolvedValueOnce({ rows: [{ id: 7, featured: true }] });
+
+      await updateProduct(req, res);
+
+      expect(query).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE products SET featured = $1'),
+        [true, 7, 'default']
+      );
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ featured: true }));
+    });
+
+    test('persiste featured=false cuando llega "false" como string (FormData)', async () => {
+      const req = { params: { id: 7 }, body: { featured: 'false' } };
+      const res = { status: jest.fn(() => res), json: jest.fn() };
+
+      query.mockResolvedValueOnce({ rows: [{ id: 7, featured: false }] });
+
+      await updateProduct(req, res);
+
+      expect(query).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE products SET featured = $1'),
+        [false, 7, 'default']
+      );
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ featured: false }));
+    });
+
+    test('un PUT de solo featured NO pisa stock, descripción ni categoría', async () => {
+      const req = { params: { id: 7 }, body: { featured: 'true' } };
+      const res = { status: jest.fn(() => res), json: jest.fn() };
+
+      query.mockResolvedValueOnce({ rows: [{ id: 7 }] });
+
+      await updateProduct(req, res);
+
+      const [sql, params] = query.mock.calls[0];
+      expect(sql).toContain('UPDATE products SET featured = $1');
+      expect(sql).not.toMatch(/active = /);
+      expect(sql).not.toMatch(/price = /);
+      expect(sql).not.toMatch(/stock = /);
+      expect(sql).not.toMatch(/description = /);
+      expect(sql).not.toMatch(/category = /);
+      expect(sql).not.toMatch(/sku = /);
+      expect(sql).not.toMatch(/badge = /);
+      expect(sql).not.toMatch(/emoji = /);
+      expect(params).toEqual([true, 7, 'default']);
+    });
+
+    test('sí actualiza los campos que el cliente envía explícitamente', async () => {
+      const req = {
+        params: { id: 7 },
+        body: { name: 'Con stock', price: 100, stock: 12, featured: 'true' }
+      };
+      const res = { status: jest.fn(() => res), json: jest.fn() };
+
+      query.mockResolvedValueOnce({ rows: [{ stock: 5 }] });
+      query.mockResolvedValueOnce({ rows: [{ id: 7 }] });
+
+      await updateProduct(req, res);
+
+      const updateCall = query.mock.calls.find((c) => String(c[0]).startsWith('UPDATE'));
+      const [sql, params] = updateCall;
+      expect(sql).toContain('name = $1');
+      expect(sql).toContain('stock = $3');
+      expect(sql).toContain('featured = $4');
+      expect(params).toEqual(['Con stock', 100, 12, true, 7, 'default']);
+    });
+  });
+
+  describe('getFeaturedProducts', () => {
+    const PRODUCT_COLUMNS = ['id', 'name', 'slug', 'category', 'price', 'description', 'emoji',
+      'image', 'badge', 'stock', 'featured', 'active', 'deleted', 'sku', 'tenant_id',
+      'created_at', 'updated_at'];
+
+    function makeRes() {
+      const res = {
+        status: jest.fn(() => res),
+        setHeader: jest.fn(),
+        json: jest.fn()
+      };
+      return res;
+    }
+
+    function schemaRows(sql) {
+      if (/information_schema\.columns|PRAGMA table_info/.test(String(sql))) {
+        return { rows: PRODUCT_COLUMNS.map(c => ({ column_name: c, name: c })) };
+      }
+      return null;
+    }
+
+    test('filtra por featured = TRUE, active y no eliminado', async () => {
+      const res = makeRes();
+
+      query.mockImplementation(async (sql) => {
+        const s = schemaRows(sql);
+        if (s) return s;
+        if (String(sql).includes('featured = TRUE')) {
+          return { rows: [{ id: 1, name: 'Destacado' }] };
+        }
+        return { rows: [] };
+      });
+
+      await getFeaturedProducts({ params: {} }, res);
+
+      const featuredCall = query.mock.calls.find((c) => String(c[0]).includes('featured = TRUE'));
+      expect(featuredCall).toBeTruthy();
+      expect(featuredCall[0]).toContain('active = TRUE');
+      expect(featuredCall[0]).toContain('deleted = FALSE');
+      expect(res.json).toHaveBeenCalledWith(expect.arrayContaining([expect.objectContaining({ id: 1 })]));
+    });
+
+    test('devuelve [] si el esquema de products no tiene la columna', async () => {
+      const res = makeRes();
+      const err = new Error('column products.featured does not exist');
+      err.code = '42703';
+
+      query.mockImplementation(async (sql) => {
+        const s = schemaRows(sql);
+        if (s) return s;
+        if (String(sql).includes('featured = TRUE')) throw err;
+        return { rows: [] };
+      });
+
+      await getFeaturedProducts({ params: {} }, res);
+
+      expect(res.status).toHaveBeenCalledWith(200);
+      expect(res.json).toHaveBeenCalledWith([]);
+    });
+
+    test('propaga 500 ante otros errores de base', async () => {
+      const res = makeRes();
+
+      query.mockImplementation(async (sql) => {
+        const s = schemaRows(sql);
+        if (s) return s;
+        if (String(sql).includes('featured = TRUE')) throw new Error('DB error');
+        return { rows: [] };
+      });
+
+      await getFeaturedProducts({ params: {} }, res);
+
+      expect(res.status).toHaveBeenCalledWith(500);
     });
   });
 
@@ -395,6 +544,7 @@ describe('productsController', () => {
       query.mockResolvedValueOnce({ rows: [] });
       query.mockResolvedValueOnce({ rows: [] });
       query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+      query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
       await deleteProduct(req, res);
 
@@ -412,6 +562,7 @@ describe('productsController', () => {
       query.mockResolvedValueOnce({ rows: [] });
       query.mockResolvedValueOnce({ rows: [] });
       query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+      query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
       await deleteProduct(req, res);
 
@@ -426,6 +577,7 @@ describe('productsController', () => {
       };
 
       query.mockResolvedValueOnce({ rows: [{ count: '0' }] });
+      query.mockResolvedValueOnce({ rows: [] });
       query.mockResolvedValueOnce({ rows: [] });
       query.mockResolvedValueOnce({ rows: [] });
       query.mockResolvedValueOnce({ rows: [] });

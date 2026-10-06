@@ -23,7 +23,7 @@ test('search: buscar por categoría combinada con texto', async ({ page }) => {
   await page.fill('#searchInput', 'Rosa');
   await page.click('#searchBtn');
   await page.waitForTimeout(500);
-  const cards = page.locator('.product-card');
+  const cards = page.locator('#productsGrid .product-card');
   const count = await cards.count();
   if (count > 0) {
     await expect(cards.first().locator('.product-name')).toContainText('Rosa');

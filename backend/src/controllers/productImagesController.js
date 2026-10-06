@@ -1,16 +1,18 @@
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
-const { getPublicUrl, deleteImageAsset, processFile } = require('../lib/upload');
+const { getPublicUrl, deleteImageAsset, processFile, handleImageUpload, getTenantId } = require('../lib/imageService');
 const { logAudit } = require('../lib/audit');
 const { applyETag } = require('../lib/etag');
+const { syncBus } = require('../routes/sync');
 
 async function getProductImages(req, res) {
   try {
     const productId = Number(req.params.id);
+    const tenantId = getTenantId(req);
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
     const result = await query(
-      'SELECT * FROM product_images WHERE product_id =$1 ORDER BY orden ASC, id ASC',
-      [productId]
+      'SELECT * FROM product_images WHERE product_id = $1 AND tenant_id = $2 ORDER BY orden ASC, id ASC',
+      [productId, tenantId]
     );
     const images = result.rows.map(img => ({
       ...img,
@@ -27,14 +29,15 @@ async function getProductImages(req, res) {
 async function uploadProductImages(req, res) {
   try {
     const productId = Number(req.params.id);
-    const productCheck = await query('SELECT id FROM products WHERE id = $1', [productId]);
+    const tenantId = getTenantId(req);
+    const productCheck = await query('SELECT id FROM products WHERE id = $1 AND tenant_id = $2', [productId, tenantId]);
     if (productCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Producto no encontrado' });
     }
 
     const existingImages = await query(
-      'SELECT MAX(orden) as max_orden FROM product_images WHERE product_id = $1',
-      [productId]
+      'SELECT MAX(orden) as max_orden FROM product_images WHERE product_id = $1 AND tenant_id = $2',
+      [productId, tenantId]
     );
     const startOrden = (existingImages.rows[0]?.max_orden ?? -1) + 1;
 
@@ -56,8 +59,8 @@ async function uploadProductImages(req, res) {
     for (let i = 0; i < imageUrls.length; i++) {
       const url = imageUrls[i];
       const result = await query(
-        'INSERT INTO product_images (product_id, url, filename, cloudinary_public_id, orden, es_principal, descripcion, categoria, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) RETURNING *',
-        [productId, url, '', '', startOrden + i, false, req.body.descripcion || '', req.body.categoria || '']
+        'INSERT INTO product_images (product_id, url, filename, cloudinary_public_id, orden, es_principal, descripcion, categoria, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+        [productId, url, '', '', startOrden + i, false, req.body.descripcion || '', req.body.categoria || '', tenantId]
       );
       uploaded.push({
         ...result.rows[0],
@@ -65,17 +68,16 @@ async function uploadProductImages(req, res) {
       });
     }
 
-     if (req.files && req.files.length > 0) {
+    if (req.files && req.files.length > 0) {
       for (let i = 0; i < req.files.length; i++) {
         const file = req.files[i];
-        const processed = await processFile(file, baseUrl);
-        const publicUrl = getPublicUrl(processed.url, baseUrl);
+        const publicUrl = await handleImageUpload(file, baseUrl);
         if (!publicUrl) {
-          logger.error({ filename: processed.filename, isBlob: processed.isBlob }, 'Imagen procesada pero URL pública vacía');
+          logger.error({ filename: file.originalname }, 'Imagen procesada pero URL pública vacía');
         }
         const result = await query(
-          'INSERT INTO product_images (product_id, url, filename, cloudinary_public_id, orden, es_principal, descripcion, categoria, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) RETURNING *',
-          [productId, processed.url, processed.filename, processed.cloudinary_public_id || '', startOrden + imageUrls.length + i, false, req.body.descripcion || '', req.body.categoria || '']
+          'INSERT INTO product_images (product_id, url, filename, cloudinary_public_id, orden, es_principal, descripcion, categoria, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+          [productId, publicUrl, file.originalname, '', startOrden + imageUrls.length + i, false, req.body.descripcion || '', req.body.categoria || '', tenantId]
         );
         uploaded.push({
           ...result.rows[0],
@@ -88,8 +90,9 @@ async function uploadProductImages(req, res) {
 
     if (uploaded.length > 0) {
       const mainUrl = uploaded[0].url;
-      await query('UPDATE products SET image = $1 WHERE id = $2', [mainUrl, productId]);
+      await query('UPDATE products SET image = $1 WHERE id = $2 AND tenant_id = $3', [mainUrl, productId, tenantId]);
     }
+    try { syncBus.emit('products_updated', { id: productId }); } catch (e) { /* noop */ }
     logAudit({
       user: req.user?.user || 'admin',
       action: 'upload',
@@ -97,7 +100,7 @@ async function uploadProductImages(req, res) {
       entityId: productId,
       details: `${uploaded.length} imágenes subidas para producto ${productId}`,
       ip: req.ip || '',
-      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+      tenantId
     }).catch(() => {});
   } catch (err) {
     logger.error({ err: err.message }, 'Error subiendo imágenes');
@@ -109,12 +112,13 @@ async function updateProductImage(req, res) {
   try {
     const productId = Number(req.params.id);
     const imageId = Number(req.params.imageId);
+    const tenantId = getTenantId(req);
     const { es_principal, orden, descripcion, categoria } = req.body;
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
 
     const imageCheck = await query(
-      'SELECT id FROM product_images WHERE id = $1 AND product_id = $2',
-      [imageId, productId]
+      'SELECT id FROM product_images WHERE id = $1 AND product_id = $2 AND tenant_id = $3',
+      [imageId, productId, tenantId]
     );
     if (imageCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Imagen no encontrada' });
@@ -127,7 +131,7 @@ async function updateProductImage(req, res) {
     if (typeof categoria === 'string') updates.categoria = categoria;
 
     if (es_principal === true) {
-      await query('UPDATE product_images SET es_principal = false WHERE product_id = $1', [productId]);
+      await query('UPDATE product_images SET es_principal = false WHERE product_id = $1 AND tenant_id = $2', [productId, tenantId]);
     }
 
     if (!Object.keys(updates).length) {
@@ -136,10 +140,10 @@ async function updateProductImage(req, res) {
 
     const setClause = Object.keys(updates).map((key, i) => `${key} = $${i + 1}`).join(', ');
     const values = Object.values(updates);
-    values.push(imageId);
+    values.push(imageId, tenantId);
 
     const result = await query(
-      `UPDATE product_images SET ${setClause} WHERE id = $${values.length} RETURNING *`,
+      `UPDATE product_images SET ${setClause} WHERE id = $${values.length - 1} AND tenant_id = $${values.length} RETURNING *`,
       values
     );
 
@@ -148,13 +152,14 @@ async function updateProductImage(req, res) {
 
     if (es_principal === true) {
       try {
-        await query('UPDATE products SET image = $1 WHERE id = $2', [updated.url, productId]);
+        await query('UPDATE products SET image = $1 WHERE id = $2 AND tenant_id = $3', [updated.url, productId, tenantId]);
       } catch (err) {
         logger.warn({ err: err.message }, 'Error sincronizando imagen principal al producto');
       }
     }
 
     res.json(updated);
+    try { syncBus.emit('products_updated', { id: productId }); } catch (e) { /* noop */ }
     logAudit({
       user: req.user?.user || 'admin',
       action: 'update',
@@ -162,7 +167,7 @@ async function updateProductImage(req, res) {
       entityId: Number(req.params.imageId),
       details: `Imagen de producto actualizada: producto ${productId}`,
       ip: req.ip || '',
-      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+      tenantId
     }).catch(() => {});
   } catch (err) {
     logger.error('Error actualizando imagen:', err);
@@ -174,11 +179,12 @@ async function deleteProductImage(req, res) {
   try {
     const productId = Number(req.params.id);
     const imageId = Number(req.params.imageId);
+    const tenantId = getTenantId(req);
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
 
     const result = await query(
-      'SELECT * FROM product_images WHERE id = $1 AND product_id = $2',
-      [imageId, productId]
+      'SELECT * FROM product_images WHERE id = $1 AND product_id = $2 AND tenant_id = $3',
+      [imageId, productId, tenantId]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Imagen no encontrada' });
@@ -187,24 +193,25 @@ async function deleteProductImage(req, res) {
     const image = result.rows[0];
     await deleteImageAsset(image);
 
-    await query('DELETE FROM product_images WHERE id = $1', [imageId]);
+    await query('DELETE FROM product_images WHERE id = $1 AND tenant_id = $2', [imageId, tenantId]);
 
     if (image.es_principal) {
       const remaining = await query(
-        'SELECT * FROM product_images WHERE product_id = $1 ORDER BY orden ASC, id ASC',
-        [productId]
+        'SELECT * FROM product_images WHERE product_id = $1 AND tenant_id = $2 ORDER BY orden ASC, id ASC',
+        [productId, tenantId]
       );
       const imgs = (remaining.rows || []).map(i => ({ ...i, url: getPublicUrl(i.url, baseUrl) }));
       const newPrincipal = imgs.find(i => i.es_principal) || imgs[0];
       const newImageUrl = newPrincipal ? newPrincipal.url : '';
       try {
-        await query('UPDATE products SET image = $1 WHERE id = $2', [newImageUrl, productId]);
+        await query('UPDATE products SET image = $1 WHERE id = $2 AND tenant_id = $3', [newImageUrl, productId, tenantId]);
       } catch (err) {
         logger.warn({ err: err.message }, 'Error re-sincronizando imagen principal tras borrado');
       }
     }
 
     res.json({ ok: true });
+    try { syncBus.emit('products_updated', { id: productId }); } catch (e) { /* noop */ }
     logAudit({
       user: req.user?.user || 'admin',
       action: 'delete',
@@ -212,7 +219,7 @@ async function deleteProductImage(req, res) {
       entityId: imageId,
       details: `Imagen eliminada de producto ${productId}`,
       ip: req.ip || '',
-      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+      tenantId
     }).catch(() => {});
   } catch (err) {
     logger.error('Error eliminando imagen:', err);
@@ -224,11 +231,12 @@ async function replaceProductImage(req, res) {
   try {
     const productId = Number(req.params.id);
     const imageId = Number(req.params.imageId);
+    const tenantId = getTenantId(req);
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
 
     const imageCheck = await query(
-      'SELECT * FROM product_images WHERE id = $1 AND product_id = $2',
-      [imageId, productId]
+      'SELECT * FROM product_images WHERE id = $1 AND product_id = $2 AND tenant_id = $3',
+      [imageId, productId, tenantId]
     );
     if (imageCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Imagen no encontrada' });
@@ -241,24 +249,27 @@ async function replaceProductImage(req, res) {
     const oldImage = imageCheck.rows[0];
     await deleteImageAsset(oldImage);
 
-    const processed = await processFile(req.file, process.env.BACKEND_URL || process.env.SITE_URL || '');
+    const processed = await processFile(req.file, baseUrl);
+    const publicUrl = getPublicUrl(processed.url, baseUrl);
+
     const result = await query(
-      'UPDATE product_images SET url = $1, filename = $2, cloudinary_public_id = $3 WHERE id = $4 RETURNING *',
-      [processed.url, processed.filename, processed.cloudinary_public_id || '', imageId]
+      'UPDATE product_images SET url = $1, filename = $2, cloudinary_public_id = $3 WHERE id = $4 AND tenant_id = $5 RETURNING *',
+      [processed.url, processed.filename, processed.cloudinary_public_id || '', imageId, tenantId]
     );
 
     const updated = result.rows[0];
-    updated.url = getPublicUrl(processed.url, baseUrl);
+    updated.url = publicUrl;
 
     if (oldImage.es_principal) {
       try {
-        await query('UPDATE products SET image = $1 WHERE id = $2', [updated.url, productId]);
+        await query('UPDATE products SET image = $1 WHERE id = $2 AND tenant_id = $3', [publicUrl, productId, tenantId]);
       } catch (err) {
         logger.warn({ err: err.message }, 'Error sincronizando imagen principal tras reemplazo');
       }
     }
 
     res.json(updated);
+    try { syncBus.emit('products_updated', { id: productId }); } catch (e) { /* noop */ }
   } catch (err) {
     logger.error('Error reemplazando imagen:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -268,6 +279,7 @@ async function replaceProductImage(req, res) {
 async function syncProductImages(req, res) {
   try {
     const productId = Number(req.params.id);
+    const tenantId = getTenantId(req);
     let { orden } = req.body;
 
     if (typeof orden === 'string') {
@@ -280,12 +292,13 @@ async function syncProductImages(req, res) {
 
     for (let i = 0; i < orden.length; i++) {
       await query(
-        'UPDATE product_images SET orden = $1 WHERE id = $2 AND product_id = $3',
-        [i, Number(orden[i]), productId]
+        'UPDATE product_images SET orden = $1 WHERE id = $2 AND product_id = $3 AND tenant_id = $4',
+        [i, Number(orden[i]), productId, tenantId]
       );
     }
 
     res.json({ ok: true });
+    try { syncBus.emit('products_updated', { id: productId }); } catch (e) { /* noop */ }
   } catch (err) {
     logger.error('Error sincronizando orden:', err);
     res.status(500).json({ error: 'Error interno del servidor' });

@@ -93,16 +93,8 @@ function getFeaturedProducts() {
   return products.filter(p => p.featured).slice(0, 4);
 }
 
-function renderProducts(productsToRender) {
-  const grid = document.getElementById('productsGrid');
-  if (!grid) return;
-
-  if (!productsToRender.length) {
-    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;text-align:center;padding:3rem;"><h3>No se encontraron productos</h3><p>Intentá con otro filtro o búsqueda.</p></div>';
-    return;
-  }
-
-  grid.innerHTML = productsToRender.map(product => {
+function buildProductCardsHtml(productsToRender) {
+  return productsToRender.map(product => {
     const imageLayers = window.buildProductImageLayers(product);
     const catClass = product.category ? `cat-${product.category}` : '';
     const badgeHtml = product.badge ? `<span class="product-badge" aria-hidden="true">${product.badge}</span>` : '';
@@ -136,14 +128,28 @@ return `
     </div>
   `;
   }).join('');
+}
 
-  if (window.revealObserver) {
-    grid.querySelectorAll('.reveal').forEach(el => {
-      if (!el.classList.contains('visible')) {
-        window.revealObserver.observe(el);
-      }
-    });
+function observeRevealedCards(grid) {
+  if (!window.revealObserver) return;
+  grid.querySelectorAll('.reveal').forEach(el => {
+    if (!el.classList.contains('visible')) {
+      window.revealObserver.observe(el);
+    }
+  });
+}
+
+function renderProducts(productsToRender) {
+  const grid = document.getElementById('productsGrid');
+  if (!grid) return;
+
+  if (!productsToRender.length) {
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;text-align:center;padding:3rem;"><h3>No se encontraron productos</h3><p>Intentá con otro filtro o búsqueda.</p></div>';
+    return;
   }
+
+  grid.innerHTML = buildProductCardsHtml(productsToRender);
+  observeRevealedCards(grid);
 }
 
 function renderFeaturedProducts() {
@@ -158,7 +164,9 @@ function renderFeaturedProducts() {
     grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;text-align:center;padding:2rem;"><p>Aún no hay productos destacados.</p></div>';
     return;
   }
-  renderProducts(featured);
+
+  grid.innerHTML = buildProductCardsHtml(featured);
+  observeRevealedCards(grid);
 }
 
   function refreshAllProducts() {
@@ -313,5 +321,5 @@ function renderFeaturedProducts() {
 
 // Exportar para Node.js (si aplica)
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { getProducts, getProductsByCategory, getFeaturedProducts, renderProducts, fetchProducts, setProducts, defaultProducts };
+  module.exports = { getProducts, getProductsByCategory, getFeaturedProducts, renderProducts, renderFeaturedProducts, fetchProducts, setProducts, defaultProducts };
 }

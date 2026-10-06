@@ -1,12 +1,11 @@
 import { createLogger, defineConfig } from 'vite';
 import { resolve } from 'path';
-import { readdirSync } from 'fs';
-import { copyFileSync, mkdirSync, existsSync, readdirSync as fsReaddirSync } from 'fs';
+import { readdirSync, copyFileSync, mkdirSync, existsSync, readdirSync as fsReaddirSync } from 'fs';
 
 const viteLogger = createLogger();
 const originalWarn = viteLogger.warn;
 viteLogger.warn = (msg, options) => {
-  if (msg.includes('can\'t be bundled without type="module" attribute')) return;
+  if (msg.includes("can't be bundled without type=\"module\" attribute")) return;
   originalWarn(msg, options);
 };
 
@@ -69,11 +68,11 @@ export default defineConfig({
     {
       name: 'copy-images',
       closeBundle() {
-        const srcDir = resolve(__dirname, 'frontend', 'imagenes');
-        const destDir = resolve(__dirname, 'dist', 'imagenes');
+        const srcDir = resolve(__dirname, 'frontend', 'imagem');
+        const destDir = resolve(__dirname, 'dist', 'imagem');
         if (existsSync(srcDir)) {
           copyRecursive(srcDir, destDir);
-          console.log('[vite] Imágenes copiadas a dist/imagenes/');
+          console.log('[vite] Imágenes copiadas a dist/imagem/');
         }
       }
     }

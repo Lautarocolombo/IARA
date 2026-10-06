@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="../css/animations.css" />
   <link rel="stylesheet" href="../css/admin.css" />
   <link rel="stylesheet" href="../css/admin-dashboard.css" />
+  <link rel="stylesheet" href="../css/admin-sidebar.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
@@ -24,6 +25,7 @@
   <script src="../js/theme.js"></script>
   <script src="../js/ui.js"></script>
     <script src="../js/admin.js"></script>
+<script src="../js/admin-sidebar.js"></script>
   </head>
  <body>
   <div class="login-overlay" id="loginOverlay">
@@ -57,59 +59,8 @@
     </button>
     <div class="admin-sidebar-overlay" id="sidebarOverlay"></div>
 
-    <!-- Sidebar -->
-    <aside class="admin-sidebar" id="adminSidebar">
-      <div class="sidebar-brand">
-        <span>🌸</span>
-        <span>Artesanías Admin</span>
-      </div>
-      <nav class="sidebar-nav" id="adminNav">
-        <a href="#" class="active" data-section="content">
-          <span>📝</span>
-          <span>Contenido del sitio</span>
-        </a>
-        <a href="#" data-section="carousel">
-          <span>🎠</span>
-          <span>Carrusel</span>
-        </a>
-        <a href="#" data-section="products">
-          <span>📦</span>
-          <span>Productos</span>
-        </a>
-        <a href="#" data-section="categories">
-          <span>🏷️</span>
-          <span>Categorías</span>
-        </a>
-        <a href="#" data-section="testimonials">
-          <span>💬</span>
-          <span>Testimonios</span>
-        </a>
-        <a href="#" data-section="sales">
-          <span>📊</span>
-          <span>Ganancias</span>
-        </a>
-        <a href="#" data-section="payments">
-          <span>💳</span>
-          <span>Medio de pago</span>
-        </a>
-        <a href="#" data-section="orders">
-          <span>📋</span>
-          <span>Pedidos Individuales</span>
-        </a>
-        <a href="#" data-section="inventory">
-          <span>📉</span>
-          <span>Inventario</span>
-        </a>
-
-      </nav>
-      <div class="sidebar-footer">
-        <span id="lowStockIndicator" class="low-stock-indicator hidden"></span>
-        <button class="btn btn-secondary btn-full" id="logoutBtn">
-          <span>🚪</span>
-          <span>Cerrar sesión</span>
-        </button>
-      </div>
-    </aside>
+    <!-- Sidebar: la navegación se construye desde admin-sidebar.js -->
+    <aside class="admin-sidebar" id="adminSidebar"></aside>
     <!-- Main -->
 
     <main class="admin-main" id="adminContent">
@@ -665,6 +616,7 @@
                         <th class="text-right">Precio</th>
                         <th class="text-center">Stock</th>
                         <th class="text-center">Estado</th>
+                        <th class="text-center">Destacado</th>
                         <th class="text-center">Acciones</th>
                       </tr>
                     </thead>

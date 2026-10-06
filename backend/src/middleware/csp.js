@@ -1,11 +1,11 @@
 function cspMiddleware(req, res, next) {
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.vercel-insights.com https://www.googletagmanager.com https://*.googletagmanager.com https://*.google-analytics.com https://maps.googleapis.com",
+    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.vercel-insights.com https://va.vercel-scripts.com https://www.googletagmanager.com https://*.googletagmanager.com https://*.google-analytics.com https://maps.googleapis.com",
     "style-src 'self' https://fonts.googleapis.com https://cdn.jsdelivr.net 'unsafe-inline'",
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: https: blob:",
-    "connect-src 'self' https://api.resend.com https://vitals.vercel-insights.com https://*.googleanalytics.com https://*.google-analytics.com https://stats.g.doubleclick.net https://maps.googleapis.com https://maps.gstatic.com",
+    "connect-src 'self' https://api.resend.com https://va.vercel-scripts.com https://vitals.vercel-insights.com https://vitals.vercel-analytics.com https://*.googleanalytics.com https://*.google-analytics.com https://stats.g.doubleclick.net https://maps.googleapis.com https://maps.gstatic.com",
     "frame-src 'self' https://maps.google.com https://www.google.com https://www.google.com/maps",
     "frame-ancestors 'none'",
     "worker-src 'self' blob:",

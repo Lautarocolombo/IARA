@@ -23,12 +23,18 @@ function isPixelConfigured() {
 
 function disableAnalytics() {
   window.__analyticsDisabled = true;
+  if (typeof window.disableVercelAnalytics === 'function') {
+    window.disableVercelAnalytics();
+  }
 }
 
 function enableAnalytics() {
   window.__analyticsDisabled = false;
   initAnalytics();
   initFacebookPixel();
+  if (typeof window.loadVercelAnalytics === 'function') {
+    window.loadVercelAnalytics();
+  }
 }
 
 function initAnalytics() {

@@ -47,7 +47,8 @@ describe('config.js', () => {
     test('usa el número de WhatsApp de CONFIG', () => {
       const link = config.getWhatsAppLink();
       const phone = config.CONFIG.CONTACT.WHATSAPP.replace(/[^\d]/g, '');
-      expect(link).toContain(phone);
+      const expectedPhone = phone.startsWith('54') && !phone.startsWith('549') ? '549' + phone.slice(2) : phone;
+      expect(link).toContain(expectedPhone);
     });
 
     test('usa mensaje default cuando no se pasa mensaje', () => {

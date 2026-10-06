@@ -4,6 +4,14 @@
   }
 
   function init() {
+    if (window.adminSidebar && typeof window.adminSidebar.init === 'function') {
+      window.adminSidebar.init({
+        onLogout: function () {
+          if (typeof doLogout === 'function') doLogout();
+        }
+      });
+    }
+
     if (typeof initAdminDashboard === 'function') initAdminDashboard();
     if (typeof initContentEditor === 'function') initContentEditor();
     if (typeof initProductManager === 'function') initProductManager();
@@ -12,49 +20,15 @@
     if (typeof initOrdersPanel === 'function') initOrdersPanel();
     if (typeof initPaymentsPanel === 'function') initPaymentsPanel();
 
-    var sidebar = document.getElementById('adminSidebar');
-    var overlay = document.getElementById('sidebarOverlay');
-    var toggle = document.getElementById('sidebarToggle');
-
-    function openSidebar() {
-      sidebar.classList.add('open');
-      overlay.classList.add('active');
-      toggle.setAttribute('aria-expanded', 'true');
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeSidebar() {
-      sidebar.classList.remove('open');
-      overlay.classList.remove('active');
-      toggle.setAttribute('aria-expanded', 'false');
-      document.body.style.overflow = '';
-    }
-
-    if (toggle && sidebar) {
-      toggle.addEventListener('click', function() {
-        if (sidebar.classList.contains('admin-sidebar-open')) {
-          closeSidebar();
-        } else {
-          openSidebar();
+    var nav = document.getElementById('adminNav');
+    if (nav) {
+      nav.addEventListener('click', function (e) {
+        if (!e.target.closest('a[data-section]')) return;
+        if (window.adminSidebar && typeof window.adminSidebar.isDrawerOpen === 'function' && window.adminSidebar.isDrawerOpen()) {
+          window.adminSidebar.closeDrawer(true);
         }
       });
     }
-
-    if (overlay) {
-      overlay.addEventListener('click', closeSidebar);
-    }
-
-    document.querySelectorAll('#adminNav a[data-section]').forEach(function(link) {
-      link.addEventListener('click', function() {
-        if (window.innerWidth <= 900) {
-          closeSidebar();
-        }
-      });
-    });
-
-    document.getElementById('logoutBtn')?.addEventListener('click', function() {
-      if (typeof doLogout === 'function') doLogout();
-    });
   }
 
   if (document.readyState === 'loading') {

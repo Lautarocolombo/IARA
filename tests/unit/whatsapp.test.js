@@ -128,9 +128,9 @@ describe('whatsapp.js helper', () => {
   describe('buildWhatsAppLinks', () => {
     test('genera 3 URLs: primary, fallback, deeplink', () => {
       const links = buildWhatsAppLinks('3444634444', 'Hola mundo');
-      expect(links.primary).toMatch(/^https:\/\/wa\.me\/543444634444\?text=/);
-      expect(links.fallback).toMatch(/^https:\/\/api\.whatsapp\.com\/send\?phone=543444634444&text=/);
-      expect(links.deeplink).toMatch(/^whatsapp:\/\/send\?phone=543444634444&text=/);
+      expect(links.primary).toMatch(/^https:\/\/wa\.me\/5493444634444\?text=/);
+      expect(links.fallback).toMatch(/^https:\/\/api\.whatsapp\.com\/send\?phone=5493444634444&text=/);
+      expect(links.deeplink).toMatch(/^whatsapp:\/\/send\?phone=5493444634444&text=/);
     });
 
     test('codifica correctamente caracteres especiales', () => {

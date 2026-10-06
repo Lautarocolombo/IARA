@@ -942,6 +942,10 @@
     await loadOrders();
     resetOrderDetail();
 
+    if (typeof window.updatePendingOrdersBadge === 'function') {
+      window.updatePendingOrdersBadge();
+    }
+
     var saveCloudBtn = document.getElementById('saveOrdersCloudBtn');
     if (saveCloudBtn) {
       saveCloudBtn.addEventListener('click', function () {

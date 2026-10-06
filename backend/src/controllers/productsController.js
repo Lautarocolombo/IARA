@@ -1,7 +1,7 @@
 const { query, isLocal } = require('../lib/db');
 const { productSchema } = require('../lib/validators');
 const logger = require('../lib/logger');
-const { deleteImageAsset, getPublicUrl } = require('../lib/upload');
+const { deleteImageAsset, getPublicUrl, handleImageUpload, updateImageField, getTenantId } = require('../lib/imageService');
 const { syncBus } = require('../routes/sync');
 const { logAudit } = require('../lib/audit');
 const { applyETag } = require('../lib/etag');
@@ -506,9 +506,15 @@ const createProduct = async (req, res) => {
       return res.status(409).json({ error: `Ya existe un producto con el slug "${slug}"` });
     }
 
+    let imageUrl = data.image || '';
+    if (req.files && req.files.length > 0) {
+      imageUrl = await handleImageUpload(req.files[0]);
+    }
+
+    const tenantId = getTenantId(req);
     const result = await query(
-      `INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, FALSE, COALESCE(current_setting('app.current_tenant', TRUE), 'default')) RETURNING *`,
-      [data.name, slug, data.category, Number(data.price), data.description || '', data.emoji || '📿', data.image || '', data.badge || '', Number(data.stock), data.featured || false, data.active !== false, data.sku || '']
+      `INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, FALSE, $13) RETURNING *`,
+      [data.name, slug, data.category, Number(data.price), data.description || '', data.emoji || '📿', imageUrl, data.badge || '', Number(data.stock), data.featured || false, data.active !== false, data.sku || '', tenantId]
     );
     logger.info({ productId: result.rows[0].id, name: data.name, slug }, 'createProduct: producto creado');
     res.status(201).json(result.rows[0]);
@@ -520,11 +526,11 @@ const createProduct = async (req, res) => {
       entityId: result.rows[0].id,
       details: `Producto creado: ${data.name}`,
       ip: req.ip || '',
-      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+      tenantId
     }).catch(() => {});
   } catch (err) {
     if (err.name === 'ZodError') {
-      return res.status(400).json({ error: err.issues[0]?.message || 'Datos inválidos' });
+      return res.status(400).json({ error: err.issues[0]?.message || 'Datos inv\u00e1lidos' });
     }
     logger.error('Error creando producto:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -533,30 +539,47 @@ const createProduct = async (req, res) => {
 
 const updateProduct = async (req, res) => {
   const id = Number(req.params.id);
+  const tenantId = getTenantId(req);
   try {
     const data = productSchema.partial().parse(req.body);
 
     if (data.slug) {
-      const existingSlug = await query('SELECT id FROM products WHERE slug = $1 AND id != $2 AND deleted = FALSE AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [data.slug, id]);
+      const existingSlug = await query('SELECT id FROM products WHERE slug = $1 AND id != $2 AND deleted = FALSE AND tenant_id = $3', [data.slug, id, tenantId]);
       if (existingSlug.rows.length > 0) {
         return res.status(409).json({ error: `Ya existe un producto con el slug "${data.slug}"` });
       }
     }
 
-    const rawFields = Object.keys(data);
+    // Handle image upload
+    if (req.files && req.files.length > 0) {
+      const existing = await query('SELECT image FROM products WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
+      if (existing.rows.length > 0 && existing.rows[0].image) {
+        await deleteImageAsset({ url: existing.rows[0].image });
+      }
+      const imageUrl = await handleImageUpload(req.files[0]);
+      await updateImageField('products', 'id', id, 'image', imageUrl, tenantId);
+      data.image = imageUrl;
+    }
+
+    // zod 4 sigue aplicando los .default() en .partial(), así que `data` trae
+    // TODOS los campos aunque no vinieran en el body. Sin este filtro, un PUT
+    // parcial (por ejemplo solo featured) pondría stock=0 y vaciaría
+    // descripción, categoría, sku y badge.
+    const sentFields = new Set(Object.keys(req.body || {}));
+    const rawFields = Object.keys(data).filter(f => sentFields.has(f));
     const fields = rawFields.filter(f => f !== 'image' || data[f]);
-    if (!fields.length) return res.status(400).json({ error: 'Sin datos para actualizar' });
+    if (!fields.length && !(req.files && req.files.length > 0)) return res.status(400).json({ error: 'Sin datos para actualizar' });
     const setClause = fields.map((_, i) => `${fields[i]} = $${i + 1}`).join(', ');
     const values = fields.map(f => (['price', 'stock'].includes(f) ? Number(data[f]) : data[f]));
-    values.push(id);
+    values.push(id, tenantId);
 
     let previousStock = 0;
     if (fields.includes('stock')) {
-      const stockRow = await query('SELECT stock FROM products WHERE id = $1', [id]);
+      const stockRow = await query('SELECT stock FROM products WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
       previousStock = stockRow.rows[0]?.stock || 0;
     }
 
-    const result = await query(`UPDATE products SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = $${values.length} AND deleted = FALSE AND (tenant_id = current_setting('app.current_tenant', TRUE) OR tenant_id = 'default') RETURNING *`, values);
+    const result = await query(`UPDATE products SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = $${values.length - 1} AND deleted = FALSE AND tenant_id = $${values.length} RETURNING *`, values);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
 
     if (fields.includes('stock')) {
@@ -575,11 +598,11 @@ const updateProduct = async (req, res) => {
       entityId: id,
       details: `Producto actualizado: ${fields.join(', ')}`,
       ip: req.ip || '',
-      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+      tenantId
     }).catch(() => {});
   } catch (err) {
     if (err.name === 'ZodError') {
-      return res.status(400).json({ error: err.issues[0]?.message || 'Datos inválidos' });
+      return res.status(400).json({ error: err.issues[0]?.message || 'Datos inv\u00e1lidos' });
     }
     logger.error('Error actualizando producto:', err);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -588,10 +611,11 @@ const updateProduct = async (req, res) => {
 
 const toggleProductStatus = async (req, res) => {
   const id = Number(req.params.id);
+  const tenantId = getTenantId(req);
   try {
     const result = await query(
-      'UPDATE products SET active = NOT active, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted = FALSE AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') RETURNING id, active',
-      [id]
+      'UPDATE products SET active = NOT active, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted = FALSE AND tenant_id = $2 RETURNING id, active',
+      [id, tenantId]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
     res.json({ ok: true, active: result.rows[0].active });
@@ -603,7 +627,7 @@ const toggleProductStatus = async (req, res) => {
       entityId: id,
       details: `Producto ${result.rows[0].active ? 'activado' : 'desactivado'}`,
       ip: req.ip || '',
-      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+      tenantId
     }).catch(() => {});
   } catch (err) {
     logger.error('Error cambiando estado del producto:', err);
@@ -613,11 +637,17 @@ const toggleProductStatus = async (req, res) => {
 
 const deleteProduct = async (req, res) => {
   const id = Number(req.params.id);
+  const tenantId = getTenantId(req);
   try {
-    const orderCheck = await query('SELECT COUNT(*) as count FROM orders WHERE CAST(items AS TEXT) LIKE $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [`%${id}%`]);
+    const orderCheck = await query('SELECT COUNT(*) as count FROM orders WHERE CAST(items AS TEXT) LIKE $1 AND tenant_id = $2', [`%${id}%`, tenantId]);
     const hasHistoricalOrders = Number(orderCheck.rows[0]?.count || 0) > 0;
 
-    const imagesResult = await query('SELECT url, cloudinary_public_id, filename FROM product_images WHERE product_id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [id]);
+    const existingProduct = await query('SELECT image FROM products WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
+    if (existingProduct.rows.length > 0 && existingProduct.rows[0].image) {
+      await deleteImageAsset({ url: existingProduct.rows[0].image });
+    }
+
+    const imagesResult = await query('SELECT url, cloudinary_public_id, filename FROM product_images WHERE product_id = $1 AND tenant_id = $2', [id, tenantId]);
     for (const img of imagesResult.rows) {
       try {
         await deleteImageAsset(img);
@@ -625,15 +655,15 @@ const deleteProduct = async (req, res) => {
         logger.warn({ err: imgErr.message }, 'Error eliminando imagen individual al borrar producto');
       }
     }
-    await query('DELETE FROM product_images WHERE product_id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [id]);
+    await query('DELETE FROM product_images WHERE product_id = $1 AND tenant_id = $2', [id, tenantId]);
 
     if (hasHistoricalOrders) {
       await query(
-        'UPDATE products SET deleted = TRUE, active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') RETURNING id',
-        [id]
+        'UPDATE products SET deleted = TRUE, active = FALSE, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND tenant_id = $2 RETURNING id',
+        [id, tenantId]
       );
     } else {
-      const result = await query('DELETE FROM products WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') RETURNING id', [id]);
+      const result = await query('DELETE FROM products WHERE id = $1 AND tenant_id = $2 RETURNING id', [id, tenantId]);
       if (result.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
     }
 
@@ -647,7 +677,7 @@ const deleteProduct = async (req, res) => {
       entityId: id,
       details: `Producto eliminado (lógico: ${hasHistoricalOrders})`,
       ip: req.ip || '',
-      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
+      tenantId
     }).catch(() => {});
   } catch (err) {
     logger.error({ err: err.message, stack: err.stack }, 'Error eliminando producto');
@@ -657,30 +687,31 @@ const deleteProduct = async (req, res) => {
 
 const duplicateProduct = async (req, res) => {
   const id = Number(req.params.id);
+  const tenantId = getTenantId(req);
   try {
-    const original = await query('SELECT * FROM products WHERE id = $1 AND deleted = FALSE AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [id]);
+    const original = await query('SELECT * FROM products WHERE id = $1 AND deleted = FALSE AND tenant_id = $2', [id, tenantId]);
     if (original.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
 
     const p = original.rows[0];
     const newName = p.name + ' (copia)';
     const newSlug = p.slug ? p.slug + '-copia' : slugify(newName);
 
-    const existingSlug = await query('SELECT id FROM products WHERE slug = $1', [newSlug]);
+    const existingSlug = await query('SELECT id FROM products WHERE slug = $1 AND tenant_id = $2', [newSlug, tenantId]);
     let finalSlug = newSlug;
     if (existingSlug.rows.length > 0) {
       finalSlug = newSlug + '-' + Date.now();
     }
 
     const result = await query(
-      'INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, FALSE, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) RETURNING *',
-      [newName, finalSlug, p.category, Number(p.price), p.description, p.emoji, p.image, p.badge, Number(p.stock), false, false, p.sku]
+      'INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, FALSE, $13) RETURNING *',
+      [newName, finalSlug, p.category, Number(p.price), p.description, p.emoji, p.image, p.badge, Number(p.stock), false, false, p.sku, tenantId]
     );
 
-    const images = await query('SELECT url, filename, cloudinary_public_id, orden, es_principal, descripcion, categoria FROM product_images WHERE product_id = $1 ORDER BY orden ASC', [id]);
+    const images = await query('SELECT url, filename, cloudinary_public_id, orden, es_principal, descripcion, categoria FROM product_images WHERE product_id = $1 AND tenant_id = $2 ORDER BY orden ASC', [id, tenantId]);
     for (const img of images.rows) {
       await query(
-        'INSERT INTO product_images (product_id, url, filename, cloudinary_public_id, orden, es_principal, descripcion, categoria, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\'))',
-        [result.rows[0].id, img.url, img.filename, img.cloudinary_public_id, img.orden, img.es_principal, img.descripcion, img.categoria]
+        'INSERT INTO product_images (product_id, url, filename, cloudinary_public_id, orden, es_principal, descripcion, categoria, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
+        [result.rows[0].id, img.url, img.filename, img.cloudinary_public_id, img.orden, img.es_principal, img.descripcion, img.categoria, tenantId]
       );
     }
 

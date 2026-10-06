@@ -13,7 +13,7 @@
   async function loadProducts() {
     var tbody = document.getElementById('productsTableBody');
     var empty = document.getElementById('productsEmptyState');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="loading-row">Cargando productos...</td></tr>';
+    if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="loading-row">Cargando productos...</td></tr>';
 
     try {
       var res = await window.adminFetch('/api/admin/products?limit=100', { method: 'GET' });
@@ -25,16 +25,15 @@
       renderProducts(productList);
     } catch (err) {
       console.error('[Products] Error:', err);
-      if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="error-row">Error: ' + escapeHtml(err.message || 'desconocido') + '</td></tr>';
+      if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="error-row">Error: ' + escapeHtml(err.message || 'desconocido') + '</td></tr>';
       window.showToast('❌', 'No se pudieron cargar los productos.', 'error');
     } finally {
       if (empty) empty.style.display = productList.length ? 'none' : 'block';
     }
   }
 
-  async function loadCategories() {
+async function loadCategories() {
     var select = document.getElementById('prod_category');
-    var featuredSelect = document.getElementById('featured_categories');
     var filterCategory = document.getElementById('filter_category');
 
     try {
@@ -46,13 +45,8 @@
           var name = c.name || c.slug;
           return '<option value="' + escapeAttr(c.slug) + '">' + escapeAttr(name) + '</option>';
         });
-        var featuredOpts = items.map(function (c) {
-          var name = c.name || c.slug;
-          return '<option value="' + escapeAttr(c.slug) + '">' + escapeAttr(name) + '</option>';
-        });
 
         if (select) select.innerHTML = '<option value="">Sin categoría</option>' + catOptions.join('');
-        if (featuredSelect) featuredSelect.innerHTML = featuredOpts.join('');
 
         var filterOpts = '<option value="">Todas las categorías</option>' + catOptions.join('');
         if (filterCategory) filterCategory.innerHTML = filterOpts;
@@ -62,11 +56,6 @@
     } catch (err) {
       if (select) select.innerHTML =
         '<option value="">Sin categoría</option>' +
-        '<option value="pulseras">Pulseras</option>' +
-        '<option value="accesorios">Accesorios</option>' +
-        '<option value="souvenirs">Souvenirs</option>' +
-        '<option value="collares">Collares</option>';
-      if (featuredSelect) featuredSelect.innerHTML =
         '<option value="pulseras">Pulseras</option>' +
         '<option value="accesorios">Accesorios</option>' +
         '<option value="souvenirs">Souvenirs</option>' +
@@ -139,7 +128,8 @@
         '<td>' + escapeHtml(p.category || 'Sin categoría') + '</td>' +
         '<td class="price-cell">$' + Number(p.price || 0).toLocaleString('es-AR') + '</td>' +
         '<td class="stock-cell">' + renderStockCell(stock) + '</td>' +
-        '<td class="status-cell">' + renderStatusCell(p.active) + '</td>' +
+'<td class="status-cell">' + renderStatusCell(p.active) + '</td>' +
+        '<td class="status-cell">' + renderFeaturedCell(p.featured, p.id) + '</td>' +
         '<td class="actions-cell">' +
           '<button class="btn btn-sm btn-secondary" onclick="window.editProduct(' + p.id + ')" title="Editar">✏️</button>' +
           '<button class="btn btn-sm btn-danger" onclick="window.deleteProductConfirm(' + p.id + ')" title="Eliminar">🗑️</button>' +
@@ -167,8 +157,9 @@
           '<div class="product-mobile-card-meta">' +
             '<span class="product-category">' + escapeHtml(p.category || 'Sin categoría') + '</span>' +
             '<span class="product-price">$' + Number(p.price || 0).toLocaleString('es-AR') + '</span>' +
-            renderStockBadge(stock) +
+renderStockBadge(stock) +
             renderStatusCell(p.active) +
+            renderFeaturedCell(p.featured, p.id) +
           '</div>' +
           '<div class="product-mobile-card-actions">' +
             '<button class="btn btn-sm btn-secondary" onclick="window.editProduct(' + p.id + ')" title="Editar">✏️ Editar</button>' +
@@ -193,10 +184,19 @@
     return '<span class="text-stock">' + stock + '</span>';
   }
 
-  function renderStatusCell(active) {
+function renderStatusCell(active) {
     return '<span class="badge ' + (active ? 'badge-stock--ok' : 'badge-stock--out') + '">' +
       (active ? 'Activo' : 'Inactivo') + '</span>';
   }
+
+  function renderFeaturedCell(featured, id) {
+    if (!featured) {
+      return '<button class="btn btn-sm btn-secondary" onclick="window.toggleProductFeatured(' + id + ')" title="Agregar a destacados">☆ Destacar</button>';
+    }
+    return '<span class="badge badge-featured" title="Se muestra en Productos Destacados">⭐ Destacado</span>' +
+      '<button class="btn btn-sm btn-secondary" onclick="window.toggleProductFeatured(' + id + ')" title="Quitar de destacados">Quitar</button>';
+  }
+
 
   function renderImagePreviews() {
     var container = document.getElementById('modalImageGallery');
@@ -818,8 +818,11 @@
     (document.getElementById('prod_badge') || {}).value = product.badge || '';
     (document.getElementById('prod_sku') || {}).value = product.sku || '';
 
-    var active = document.getElementById('prod_active');
-    if (active) active.checked = product.active !== false;
+var active = document.getElementById('prod_active');
+    if (active) active.checked = !!product.active;
+
+    var featured = document.getElementById('prod_featured');
+    if (featured) featured.checked = !!product.featured;
 
     var btn = document.getElementById('saveProductBtn');
     if (btn) btn.style.display = 'block';
@@ -833,6 +836,39 @@
 
     loadProductImages(id);
     openProductModal();
+  };
+
+  window.toggleProductFeatured = async function (id) {
+    var product = productList.find(function (p) { return p.id === id; });
+    if (!product) return;
+
+    var next = !product.featured;
+
+    try {
+      var formData = new FormData();
+      formData.append('featured', next ? 'true' : 'false');
+
+      var res = await window.adminFetch('/api/admin/products/' + id, {
+        method: 'PUT',
+        body: formData
+      });
+
+      if (!res || !res.ok) {
+        var errMsg = 'No se pudo actualizar el destacado.';
+        if (res) {
+          var errData = await res.json().catch(function () { return {}; });
+          errMsg = errData.error || errMsg;
+        }
+        throw new Error(errMsg);
+      }
+
+      product.featured = next;
+      applyProductFilters();
+      window.showToast('✅', next ? 'Producto agregado a destacados.' : 'Producto quitado de destacados.', 'success');
+    } catch (err) {
+      console.error('[Products] Error al togglear destacado:', err);
+      window.showToast('❌', err.message || 'No se pudo actualizar el destacado.', 'error');
+    }
   };
 
   window.deleteProductConfirm = async function (id) {
