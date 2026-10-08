@@ -2,6 +2,9 @@
   "name": "artesania-gualeguay",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "build:qrcode": "npx browserify -r qrcode -s QRCode -o frontend/js/vendor/qrcode.js",
     "build": "node build.js",
