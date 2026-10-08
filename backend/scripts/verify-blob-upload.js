@@ -5,7 +5,7 @@ const dotenv = require('dotenv');
 
 dotenv.config({ path: '.env' });
 
-const BASE = 'https://iara-os3h.onrender.com';
+const BASE = 'https://iara-backend.onrender.com';
 const ADMIN_USER = process.env.ADMIN_USER || 'Iara';
 // NOTE: put the real plain password here temporarily for this verification only
 const ADMIN_PASS = process.env.ADMIN_PASS || '';

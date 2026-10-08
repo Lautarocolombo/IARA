@@ -42,7 +42,7 @@ services:
       - key: SITE_URL
         value: https://artesania-gualeguay-v3.vercel.app
       - key: BACKEND_URL
-        value: https://iara-os3h.onrender.com
+        value: https://iara-backend.onrender.com
       - key: ALLOWED_ORIGINS
         value: https://artesania-gualeguay-v3.vercel.app,https://*.vercel.app,https://artesaniagualeguay.com,http://localhost:3000,http://localhost:5173
       - key: BUSINESS_NAME

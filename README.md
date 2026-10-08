@@ -127,7 +127,7 @@ npm start             # Iniciar servidor
 
 ### URLs
 - **Frontend (Vercel):** `https://artesania-gualeguay-v3.vercel.app`
-- **Backend (Render):** `https://iara-os3h.onrender.com`
+- **Backend (Render):** `https://iara-backend.onrender.com`
 
 ### Variables de entorno en Vercel
 
@@ -143,7 +143,7 @@ Configurar en **Vercel Dashboard > Settings > Environment Variables**:
 | `ALLOWED_ORIGINS` | `https://artesania-gualeguay-v3.vercel.app,https://*.vercel.app,https://artesaniagualeguay.com,http://localhost:3000,http://localhost:5173` | Sí |
 | `DATABASE_URL` | connection string de PostgreSQL | Sí |
 | `SITE_URL` | `https://artesania-gualeguay-v3.vercel.app` | Sí |
-| `BACKEND_URL` | `https://iara-os3h.onrender.com` | Sí |
+| `BACKEND_URL` | `https://iara-backend.onrender.com` | Sí |
 | `RESEND_API_KEY` | API key de Resend | No |
 | `EMAIL_FROM` | `noreply@artesaniagualeguay.com` | No |
 | `ADMIN_NOTIFICATION_EMAIL` | `admin@artesaniagualeguay.com` | No |
@@ -165,7 +165,7 @@ Configurar en **Render Dashboard > Environment**:
 | `ADMIN_PASS_HASH` | mismo que Vercel |
 | `ALLOWED_ORIGINS` | `https://artesania-gualeguay-v3.vercel.app,https://*.vercel.app,https://artesaniagualeguay.com,http://localhost:3000,http://localhost:5173` |
 | `SITE_URL` | `https://artesania-gualeguay-v3.vercel.app` |
-| `BACKEND_URL` | `https://iara-os3h.onrender.com` |
+| `BACKEND_URL` | `https://iara-backend.onrender.com` |
 | `BLOB_READ_WRITE_TOKEN` | Obligatorio en producción (Render). Crear un Vercel Blob Store y pegar el token read+write. |
 
 ## Analytics

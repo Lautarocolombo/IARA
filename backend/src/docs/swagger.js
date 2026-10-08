@@ -15,7 +15,7 @@ const swaggerSpec = {
       description: 'Local development server (v1)'
     },
     {
-      url: 'https://iara-os3h.onrender.com/api/v1',
+      url: 'https://iara-backend.onrender.com/api/v1',
       description: 'Production server (Render) - v1'
     }
   ],
