@@ -14,8 +14,11 @@ services:
         value: production
       - key: PORT
         value: "3000"
+      # JWT_SECRET: generar con: node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
+      # Cargar valor fijo en Render Dashboard → Environment (sync: false)
+      # NO usar generateValue: true (regenera en cada deploy e invalida sesiones)
       - key: JWT_SECRET
-        generateValue: true
+        sync: false
       - key: ADMIN_USER
         value: Iara
       # CRÍTICO: Pegar bcrypt hash en Render Dashboard → Environment
@@ -31,12 +34,11 @@ services:
       # Sin esto, las subidas de imágenes/comprobantes fallan o caen a base64.
       - key: BLOB_READ_WRITE_TOKEN
         sync: false
-      # CSRF_SECRET (opcional pero recomendado): generar con:
-      # node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
-      # Última rotación: 2026-09-22
+      # CSRF_SECRET: generar con: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+      # Cargar valor fijo en Render Dashboard → Environment (sync: false)
+      # NO usar generateValue: true (regenera en cada deploy e invalida sesiones)
       - key: CSRF_SECRET
         sync: false
-        generateValue: true
       - key: SITE_URL
         value: https://artesania-gualeguay-v3.vercel.app
       - key: BACKEND_URL
@@ -81,6 +83,10 @@ services:
         sync: false
       - key: MP_INTEGRATOR_ID
         value: ""
+        sync: false
+      # MP_WEBHOOK_SECRET: generar con: openssl rand -hex 32
+      # Requerido para validar firma x-signature en webhook MP
+      - key: MP_WEBHOOK_SECRET
         sync: false
       - key: SENTRY_DSN
         value: ""

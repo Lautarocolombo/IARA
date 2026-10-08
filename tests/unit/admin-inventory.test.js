@@ -59,7 +59,7 @@ describe('admin-inventory.js', () => {
       await window.inventory.loadMovements();
 
       expect(adminFetchMock).toHaveBeenCalledWith(
-        '/api/admin/inventory/movements?limit=100&offset=0',
+        '/api/v1/admin/inventory/movements?limit=100&offset=0',
         expect.objectContaining({
           method: 'GET',
           headers: expect.objectContaining({
@@ -129,7 +129,7 @@ describe('admin-inventory.js', () => {
       await window.inventory.loadAlerts();
 
       expect(adminFetchMock).toHaveBeenCalledWith(
-        '/api/admin/inventory/alerts?resolved=false',
+        '/api/v1/admin/inventory/alerts?resolved=false',
         expect.objectContaining({
           method: 'GET',
           headers: expect.objectContaining({
@@ -170,7 +170,7 @@ describe('admin-inventory.js', () => {
       await window.inventory.resolveAlert(5);
 
       expect(adminFetchMock).toHaveBeenCalledWith(
-        '/api/admin/inventory/alerts/5/resolve',
+        '/api/v1/admin/inventory/alerts/5/resolve',
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
@@ -204,3 +204,4 @@ describe('admin-inventory.js', () => {
     });
   });
 });
+

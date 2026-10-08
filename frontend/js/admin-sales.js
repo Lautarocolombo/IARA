@@ -1,5 +1,5 @@
-Ôªø/* ==================== ADMIN SALES.JS ==================== */
-/* KPIs, gr√°fico Chart.js, toggle weekly/monthly, venta manual */
+/* ==================== ADMIN SALES.JS ==================== */
+/* KPIs, gr·fico Chart.js, toggle weekly/monthly, venta manual */
 
 (function () {
   'use strict';
@@ -25,7 +25,7 @@
     if (syncLoading) syncLoading.classList.remove('hidden');
 
     try {
-      var res = await window.adminFetch('/api/admin/reports/summary?view=' + view, { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/reports/summary?view=' + view, { method: 'GET' });
       if (!res || !res.ok) {
         throw new Error('No se pudieron cargar los reportes');
       }
@@ -41,7 +41,7 @@
       renderRangeToggle(view);
     } catch (err) {
       console.error('[Sales] Error:', err);
-      window.showToast('‚ùå', 'No se pudieron cargar los reportes.', 'error');
+      window.showToast('?', 'No se pudieron cargar los reportes.', 'error');
     } finally {
       if (syncBtn) syncBtn.disabled = false;
       if (syncText) syncText.style.display = '';
@@ -51,7 +51,7 @@
 
   async function loadProductsForSale() {
     try {
-      var res = await window.adminFetch('/api/products?limit=100', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/products?limit=100', { method: 'GET' });
       if (res && res.ok) {
         var data = await res.json();
         productsForSale = Array.isArray(data) ? data : (data.products || []);
@@ -69,7 +69,7 @@
     if (!tbody) return;
 
     try {
-      var res = await window.adminFetch('/api/admin/earnings', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/earnings', { method: 'GET' });
       if (!res || !res.ok) {
         throw new Error('No se pudieron cargar las transacciones');
       }
@@ -108,7 +108,7 @@ transactions.forEach(function (t) {
           '<td style="text-align:center;"><span class="' + escapeAttr(statusClass) + '">' + escapeAttr(statusLabel) + '</span></td>' +
           '<td style="text-align:right;">$' + Number(t.total || 0).toLocaleString('es-AR') + '</td>' +
           '<td style="text-align:center;">' +
-            '<button type="button" class="btn-delete-tx" data-tx-id="' + escapeAttr(rawId) + '" data-tx-type="' + (isManual ? 'manual' : 'order') + '" title="Eliminar transacci√≥n" style="background:none;border:none;color:#94a3b8;cursor:pointer;padding:0.3rem;border-radius:6px;">' +
+            '<button type="button" class="btn-delete-tx" data-tx-id="' + escapeAttr(rawId) + '" data-tx-type="' + (isManual ? 'manual' : 'order') + '" title="Eliminar transacciÛn" style="background:none;border:none;color:#94a3b8;cursor:pointer;padding:0.3rem;border-radius:6px;">' +
               '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>' +
             '</button>' +
           '</td>';
@@ -134,14 +134,14 @@ transactions.forEach(function (t) {
       });
     } catch (err) {
       console.error('[Sales] Error cargando transacciones:', err);
-      window.showToast('‚ùå', 'No se pudieron cargar las transacciones.', 'error');
+      window.showToast('?', 'No se pudieron cargar las transacciones.', 'error');
     }
   }
 
   function deleteTransaction(txId, txType) {
     window.showConfirmModal(
-      'Eliminar transacci√≥n',
-      '¬øEliminar esta transacci√≥n (' + txId + ')? Esta acci√≥n no se puede deshacer.',
+      'Eliminar transacciÛn',
+      'øEliminar esta transacciÛn (' + txId + ')? Esta acciÛn no se puede deshacer.',
       function () { processDeleteTransaction(txId, txType); }
     );
   }
@@ -149,26 +149,26 @@ transactions.forEach(function (t) {
   async function processDeleteTransaction(txId, txType) {
     var numericId = txId.replace(/^V-/, '');
     var url = txType === 'manual'
-      ? '/api/admin/sales/' + numericId
-      : '/api/admin/orders/' + numericId;
+      ? '/api/v1/admin/sales/' + numericId
+      : '/api/v1/admin/orders/' + numericId;
 
-    console.warn('[Sales] Eliminando transacci√≥n:', { txId, txType, numericId, url });
+    console.warn('[Sales] Eliminando transacciÛn:', { txId, txType, numericId, url });
 
     try {
       var res = await window.adminFetch(url, { method: 'DELETE' });
       if (!res || !res.ok) {
         var errData = await res.json().catch(function () { return {}; });
-        throw new Error(errData.error || 'Error eliminando transacci√≥n');
+        throw new Error(errData.error || 'Error eliminando transacciÛn');
       }
-      window.showToast('‚úÖ', 'Transacci√≥n eliminada', 'success');
+      window.showToast('?', 'TransacciÛn eliminada', 'success');
       await loadTransactions();
       await loadSalesSummary(currentView);
       if (window.dispatchEvent) {
         window.dispatchEvent(new CustomEvent('sync', { detail: { event: 'transactions_updated' } }));
       }
     } catch (err) {
-      console.error('[Sales] Error eliminando transacci√≥n:', err);
-      window.showToast('‚ùå', err.message || 'Error eliminando transacci√≥n', 'error');
+      console.error('[Sales] Error eliminando transacciÛn:', err);
+      window.showToast('?', err.message || 'Error eliminando transacciÛn', 'error');
     }
   }
 
@@ -213,7 +213,7 @@ transactions.forEach(function (t) {
     var ctx = document.getElementById('salesChart');
     if (ctx) {
       if (typeof Chart === 'undefined') {
-        ctx.parentNode.innerHTML = '<p class="form-hint">Gr√°ficos no disponibles (CDN Chart.js bloqueado). Los n√∫meros de arriba siguen funcionando.</p>';
+        ctx.parentNode.innerHTML = '<p class="form-hint">Gr·ficos no disponibles (CDN Chart.js bloqueado). Los n˙meros de arriba siguen funcionando.</p>';
         return;
       }
       if (salesChart) salesChart.destroy();
@@ -234,7 +234,7 @@ transactions.forEach(function (t) {
               yAxisID: 'y'
             },
             {
-              label: '√É‚Äúrdenes',
+              label: '√ìrdenes',
               data: orders,
               type: 'line',
               backgroundColor: 'rgba(212, 112, 144, 0.2)',
@@ -262,7 +262,7 @@ transactions.forEach(function (t) {
                   var label = context.dataset.label || '';
                   if (label) label += ': ';
                   if (context.dataset.type === 'line') {
-                    label += context.parsed.y + ' √≥rdenes';
+                    label += context.parsed.y + ' Ûrdenes';
                   } else {
                     label += '$' + Number(context.parsed.y).toLocaleString('es-AR');
                   }
@@ -297,7 +297,7 @@ transactions.forEach(function (t) {
       });
     }
 
-    /* Donut chart (categor√≠as) */
+    /* Donut chart (categorÌas) */
     renderDonut(data);
   }
 
@@ -305,7 +305,7 @@ transactions.forEach(function (t) {
     var donutCtx = document.getElementById('salesDonut');
     if (!donutCtx) return;
     if (typeof Chart === 'undefined') {
-      donutCtx.parentNode.innerHTML = '<p class="form-hint">Gr√°fico no disponible (CDN bloqueado).</p>';
+      donutCtx.parentNode.innerHTML = '<p class="form-hint">Gr·fico no disponible (CDN bloqueado).</p>';
       return;
     }
 
@@ -349,7 +349,7 @@ transactions.forEach(function (t) {
   }
 
   function buildCategoryBreakdown(data) {
-    /* Si el backend provee category_breakdown, usarlo; si no, vac√≠o */
+    /* Si el backend provee category_breakdown, usarlo; si no, vacÌo */
     var breakdown = (data && data.category_breakdown) ? data.category_breakdown : null;
     if (breakdown && typeof breakdown === 'object') {
       var labels = Object.keys(breakdown);
@@ -369,7 +369,7 @@ transactions.forEach(function (t) {
       .filter(function (p) { return p.active && !p.deleted; })
       .map(function (p) {
         return '<option value="' + p.id + '" data-price="' + (p.price || 0) + '">' +
-          escapeAttr(p.name) + ' ‚Äî $' + Number(p.price || 0).toLocaleString('es-AR') +
+          escapeAttr(p.name) + ' ó $' + Number(p.price || 0).toLocaleString('es-AR') +
         '</option>';
       });
 
@@ -409,11 +409,11 @@ transactions.forEach(function (t) {
     var quantity = parseInt(document.getElementById('sale_quantity')?.value || '0', 10);
 
     if (!productId) {
-      window.showToast('‚ùå', 'Seleccion√° un producto.', 'error');
+      window.showToast('?', 'Seleccion· un producto.', 'error');
       return;
     }
     if (!quantity || quantity <= 0) {
-      window.showToast('‚ùå', 'La cantidad debe ser mayor a 0.', 'error');
+      window.showToast('?', 'La cantidad debe ser mayor a 0.', 'error');
       document.getElementById('sale_quantity')?.focus();
       return;
     }
@@ -427,7 +427,7 @@ transactions.forEach(function (t) {
     if (btnLoading) btnLoading.classList.remove('hidden');
 
     try {
-      var res = await window.adminFetch('/api/admin/sales', {
+      var res = await window.adminFetch('/api/v1/admin/sales', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -445,7 +445,7 @@ transactions.forEach(function (t) {
         throw new Error(errMsg);
       }
 
-      window.showToast('‚úÖ', 'Venta registrada correctamente.', 'success');
+      window.showToast('?', 'Venta registrada correctamente.', 'success');
 
       var form = document.getElementById('manualSaleForm');
       if (form) form.reset();
@@ -462,7 +462,7 @@ transactions.forEach(function (t) {
       await loadSalesSummary(currentView);
     } catch (err) {
       console.error('[Sales] Error registrando venta:', err);
-      window.showToast('‚ùå', err.message || 'Error al registrar la venta.', 'error');
+      window.showToast('?', err.message || 'Error al registrar la venta.', 'error');
     } finally {
       if (btn) btn.disabled = false;
       if (btnText) {
@@ -475,8 +475,8 @@ transactions.forEach(function (t) {
 
   function openResetModal() {
     window.showConfirmModal(
-      'Reiniciar m√©tricas',
-      '¬øEst√°s seguro? Esto no elimina pedidos ni ventas, solo reinicia el resumen visual a partir de este momento.',
+      'Reiniciar mÈtricas',
+      'øEst·s seguro? Esto no elimina pedidos ni ventas, solo reinicia el resumen visual a partir de este momento.',
       function () { confirmReset(); }
     );
   }
@@ -491,21 +491,21 @@ transactions.forEach(function (t) {
     if (btnLoading) btnLoading.classList.remove('hidden');
 
     try {
-      var res = await window.adminFetch('/api/admin/reports/reset', {
+      var res = await window.adminFetch('/api/v1/admin/reports/reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ confirm: true })
       });
       if (!res || !res.ok) {
         var errData = await res.json().catch(function () { return {}; });
-        throw new Error(errData.error || 'Error al reiniciar las m√©tricas.');
+        throw new Error(errData.error || 'Error al reiniciar las mÈtricas.');
       }
-      window.showToast('‚úÖ', 'M√©tricas reiniciadas correctamente.', 'success');
+      window.showToast('?', 'MÈtricas reiniciadas correctamente.', 'success');
       await loadSalesSummary(currentView);
       await loadTransactions();
     } catch (err) {
-      console.error('[Sales] Error reiniciando m√©tricas:', err);
-      window.showToast('‚ùå', err.message || 'Error al reiniciar las m√©tricas.', 'error');
+      console.error('[Sales] Error reiniciando mÈtricas:', err);
+      window.showToast('?', err.message || 'Error al reiniciar las mÈtricas.', 'error');
     } finally {
       if (btn) btn.disabled = false;
       if (btnText) btnText.style.display = '';
@@ -517,7 +517,7 @@ transactions.forEach(function (t) {
   function openClearHistoryModal() {
     window.showConfirmModal(
       'Eliminar historial',
-      '¬øEst√°s seguro? Se eliminar√° todo el historial de transacciones, pedidos, ventas y comprobantes. Esta acci√≥n no se puede deshacer.',
+      'øEst·s seguro? Se eliminar· todo el historial de transacciones, pedidos, ventas y comprobantes. Esta acciÛn no se puede deshacer.',
       function () { confirmClearHistory(); }
     );
   }
@@ -532,17 +532,17 @@ transactions.forEach(function (t) {
     if (btnLoading) btnLoading.classList.remove('hidden');
 
     try {
-      var res = await window.adminFetch('/api/admin/earnings/history', { method: 'DELETE' });
+      var res = await window.adminFetch('/api/v1/admin/earnings/history', { method: 'DELETE' });
       if (!res || !res.ok) {
         var errData = await res.json().catch(function () { return {}; });
         throw new Error(errData.error || 'Error al eliminar el historial.');
       }
-      window.showToast('‚úÖ', 'Historial eliminado correctamente.', 'success');
+      window.showToast('?', 'Historial eliminado correctamente.', 'success');
       await loadSalesSummary(currentView);
       await loadTransactions();
     } catch (err) {
       console.error('[Sales] Error eliminando historial:', err);
-      window.showToast('‚ùå', err.message || 'Error al eliminar el historial.', 'error');
+      window.showToast('?', err.message || 'Error al eliminar el historial.', 'error');
     } finally {
       if (btn) btn.disabled = false;
       if (btnText) btnText.classList.remove('hidden');
@@ -625,5 +625,6 @@ transactions.forEach(function (t) {
     return loadSalesSummary(currentView);
   };
 })();
+
 
 

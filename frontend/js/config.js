@@ -6,8 +6,8 @@ const DEFAULT_CONFIG = {
     GOOGLE_PLACE_ID: '',
     GOOGLE_WRITE_REVIEW_URL: ''
   },
-  CONTACT: {
-    WHATSAPP: '+543444634444',
+CONTACT: {
+    WHATSAPP: '+5493444634444',
     WHATSAPP_ALIAS: 'iara-salgueiro',
     PHONE: '+54 (3444) 634-4444',
     EMAIL: 'noreply@artesaniagualeguay.com',
@@ -212,6 +212,47 @@ function openWhatsAppSafe(primaryUrl, fallbackUrl, deeplinkUrl) {
   }
 }
 
+// Genera link tel: usando el número de CONFIG (formato E.164 con 9 para llamadas)
+function getTelLink() {
+  const phone = CONFIG.CONTACT.WHATSAPP || '+543444634444';
+  // Para tel: en Argentina se usa +54 9 + código de área + número (sin 15)
+  const waPhone = normalizeWhatsAppPhone(phone);
+  if (waPhone.startsWith('54') && !waPhone.startsWith('549')) {
+    return 'tel:+549' + waPhone.slice(2);
+  }
+  return 'tel:+54' + waPhone;
+}
+
+// Genera link wa.me usando el número de CONFIG (sin 9 para WhatsApp web)
+function getWaMeLink(message = '') {
+  const phone = CONFIG.CONTACT.WHATSAPP || '+543444634444';
+  const waPhone = normalizeWhatsAppPhone(phone);
+  const text = encodeURIComponent(message || 'Hola! Quisiera más información sobre tus productos.');
+  return `https://wa.me/${waPhone}?text=${text}`;
+}
+
+// Pobla todos los enlaces tel: y wa.me en la página desde CONFIG
+function populateContactLinks() {
+  // tel: links
+  document.querySelectorAll('[data-tel-link]').forEach(el => {
+    el.href = getTelLink();
+    if (!el.textContent.trim() || el.textContent === 'CONFIGURAR_TELEFONO') {
+      el.textContent = CONFIG.CONTACT.PHONE || '+54 (3444) 634-4444';
+    }
+  });
+
+  // wa.me links (botones principales con mensaje opcional)
+  document.querySelectorAll('[data-wame-link]').forEach(el => {
+    const message = el.dataset.wameMessage || '';
+    el.href = getWaMeLink(message);
+  });
+
+  // wa.me social icons (sin mensaje)
+  document.querySelectorAll('[data-wame-icon]').forEach(el => {
+    el.href = getWaMeLink('');
+  });
+}
+
 // Cargar config al iniciar (no bloqueante)
 if (typeof window !== 'undefined') {
   loadConfigFromAPI();
@@ -225,6 +266,9 @@ if (typeof window !== 'undefined') {
   window.isReviewConfigured = isReviewConfigured;
   window.applyReviewLinks = applyReviewLinks;
   window.openWhatsAppSafe = openWhatsAppSafe;
+  window.getTelLink = getTelLink;
+  window.getWaMeLink = getWaMeLink;
+  window.populateContactLinks = populateContactLinks;
   window.reloadConfig = reloadConfig;
 }
 

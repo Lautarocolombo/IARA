@@ -29,7 +29,7 @@ async function fetchProducts(filters = {}) {
     if (filters.minPrice !== undefined && filters.minPrice !== '') params.set('minPrice', filters.minPrice);
     if (filters.maxPrice !== undefined && filters.maxPrice !== '') params.set('maxPrice', filters.maxPrice);
     const queryString = params.toString();
-    const url = `${CONFIG.API.BASE}/api/products${queryString ? `?${queryString}` : ''}`;
+    const url = `/api/v1/products${queryString ? `?${queryString}` : ''}`;
     const res = await window.fetchWithRetry(url, {}, 2, 1000);
     if (res) {
       products = await res.json();
@@ -55,7 +55,7 @@ async function searchProducts(query, filters = {}) {
     if (filters.category && filters.category !== 'all') params.set('category', filters.category);
     if (filters.minPrice !== undefined && filters.minPrice !== '') params.set('minPrice', filters.minPrice);
     if (filters.maxPrice !== undefined && filters.maxPrice !== '') params.set('maxPrice', filters.maxPrice);
-    const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/search?${params.toString()}`, {}, 2, 1000);
+    const res = await window.fetchWithRetry(`/api/v1/products/search?${params.toString()}`, {}, 2, 1000);
     if (res) {
       products = await res.json();
       renderProducts(getProducts());

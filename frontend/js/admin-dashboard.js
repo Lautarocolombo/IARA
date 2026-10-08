@@ -47,7 +47,7 @@
       return false;
     }
     try {
-      var res = await window.adminFetch('/api/admin/site-texts', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/site-texts', { method: 'GET' });
       if (!res || !res.ok) {
         redirectToLogin();
         return false;
@@ -228,7 +228,7 @@
 
   async function updateLowStockIndicator() {
     try {
-      var res = await window.adminFetch('/api/admin/products', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/products', { method: 'GET' });
       if (!res || !res.ok) return;
       var data = await res.json();
       var products = (data.products || []).filter(function (p) { return !p.deleted; });
@@ -256,7 +256,7 @@
 
   async function updatePendingOrdersBadge() {
     try {
-      var res = await window.adminFetch('/api/admin/orders?limit=100', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/orders?limit=100', { method: 'GET' });
       if (!res || !res.ok) return;
       var data = await res.json();
       var pending = (data.orders || []).filter(function (o) { return o.status === 'pending'; }).length;
@@ -282,3 +282,4 @@
     if (typeof initRevealAnimation === 'function') initRevealAnimation();
   });
 })();
+

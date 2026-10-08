@@ -15,76 +15,45 @@
     "getWhatsAppLink": "readonly",
     "getMailtoLink": "readonly",
     "getGoogleWriteReviewLink": "readonly",
-    "addToCart": "readonly",
-    "getCart": "readonly",
-    "removeFromCart": "readonly",
-    "updateCartQty": "readonly",
-    "saveCart": "readonly",
-    "updateCartBadge": "readonly",
-    "updateCartDisplay": "readonly",
-    "clearCart": "readonly",
     "showToast": "readonly",
-    "renderProducts": "readonly",
-    "getProducts": "readonly",
-    "getProductsByCategory": "readonly",
-    "fetchProducts": "readonly",
-    "renderFeaturedProducts": "readonly",
-    "addToWishlist": "readonly",
-    "removeFromWishlist": "readonly",
-    "isInWishlist": "readonly",
-    "getWishlist": "readonly",
-    "updateWishlistBadge": "readonly",
-    "renderWishlist": "readonly",
     "fetchWithRetry": "readonly",
     "adminFetch": "readonly",
     "getFetchErrorMessage": "readonly",
     "renderProductImage": "readonly",
     "getProductImageUrl": "readonly",
-    "loadMpAlias": "readonly",
-    "loadOrders": "readonly",
-    "loadSalesReport": "readonly",
-    "loadSiteSettings": "readonly",
-    "loadTestimonials": "readonly",
-    "loadHeroCards": "readonly",
-    "loadProduct": "readonly",
-    "openModalScrollLock": "readonly",
-    "unlockModalScroll": "readonly",
+    "escapeHtml": "readonly",
+    "DOMPurify": "readonly",
+    "initSiteHeader": "readonly",
+    "initNavbarScroll": "readonly",
+    "initMobileNavbar": "readonly",
+    "initSSESync": "readonly",
+    "destroySSESync": "readonly",
     "emitSync": "readonly",
     "startDataSync": "readonly",
     "stopDataSync": "readonly",
     "onSyncMessage": "readonly",
-    "initNavbarScroll": "readonly",
-    "initMobileNavbar": "readonly",
-    "initSiteHeader": "readonly",
-    "initSSESync": "readonly",
-    "destroySSESync": "readonly",
-    "Quill": "readonly",
-    "Chart": "readonly",
-    "QRCode": "readonly",
-    "DOMPurify": "readonly",
-    "initRevealAnimation": "readonly",
-    "escapeHtml": "readonly",
-    "Sentry": "readonly",
-    "google": "readonly",
-    "initMap": "readonly",
-    "loadVercelAnalytics": "readonly",
-    "disableVercelAnalytics": "readonly",
-    "initVercelQueues": "readonly",
+    "addToCart": "readonly",
+    "getCart": "readonly",
+    "removeFromCart": "readonly",
+    "updateCartQty": "readonly",
+    "clearCart": "readonly",
+    "addToWishlist": "readonly",
+    "removeFromWishlist": "readonly",
+    "isInWishlist": "readonly",
+    "getWishlist": "readonly",
+    "updateWishlistBadge": "readonly",
+    "renderProducts": "readonly",
+    "getProducts": "readonly",
+    "fetchProducts": "readonly",
+    "getProductsByCategory": "readonly",
+    "renderFeaturedProducts": "readonly",
+    "loadHeroCards": "readonly",
+    "loadTestimonials": "readonly",
     "loadSiteTexts": "readonly",
-    "loadHeroImage": "readonly",
-    "loadPaymentConfig": "readonly",
-    "copyTransferField": "readonly",
-    "defaultProducts": "readonly",
-    "submitReview": "readonly",
-    "initAdminDashboard": "readonly",
-    "initContentEditor": "readonly",
-    "initProductManager": "readonly",
-    "initCategoryManager": "readonly",
-    "initSalesPanel": "readonly",
-    "initOrdersPanel": "readonly",
-    "initPaymentsPanel": "readonly",
-    "doLogout": "readonly",
-    "loadSalesSummary": "readonly"
+    "loadMpAlias": "readonly",
+    "loadProduct": "readonly",
+    "openModalScrollLock": "readonly",
+    "unlockModalScroll": "readonly"
   },
   "overrides": [
     {
@@ -110,7 +79,91 @@
         "no-console": "off",
         "no-unused-vars": "off"
       }
+    },
+{
+    "files": ["frontend/js/admin-*.js", "frontend/js/*-dashboard.js", "frontend/js/*-sales.js", "frontend/js/*-payments.js", "frontend/js/admin.js", "frontend/js/pages/dashboard.js"],
+    "globals": {
+      "initAdminDashboard": "readonly",
+      "initContentEditor": "readonly",
+      "initProductManager": "readonly",
+      "initCategoryManager": "readonly",
+      "initSalesPanel": "readonly",
+      "initOrdersPanel": "readonly",
+      "initPaymentsPanel": "readonly",
+      "doLogout": "readonly",
+      "loadOrders": "readonly",
+      "loadSalesReport": "readonly",
+      "loadSiteSettings": "readonly",
+      "loadSalesSummary": "readonly",
+      "Chart": "readonly",
+      "Quill": "readonly",
+      "initRevealAnimation": "readonly"
     }
+  },
+  {
+    "files": ["frontend/js/checkout.js", "frontend/js/pages/checkout.js", "frontend/js/cart.js"],
+    "globals": {
+      "loadPaymentConfig": "readonly",
+      "copyTransferField": "readonly",
+      "updateCartBadge": "readonly",
+      "updateCartDisplay": "readonly"
+    }
+  },
+  {
+    "files": ["frontend/js/home-init.js"],
+    "globals": {
+      "loadSiteSettings": "readonly"
+    }
+  },
+  {
+    "files": ["frontend/js/ui.js"],
+    "globals": {
+      "loadOrders": "readonly",
+      "loadSalesReport": "readonly",
+      "renderWishlist": "readonly"
+    }
+  },
+  {
+    "files": ["frontend/js/pages/product.js", "frontend/js/cart.js", "frontend/js/wishlist.js", "frontend/js/home-init.js"],
+    "globals": {
+      "renderWishlist": "readonly"
+    }
+  },
+  {
+    "files": ["frontend/js/analytics.js", "frontend/js/vercel-analytics.js"],
+    "globals": {
+      "loadVercelAnalytics": "readonly",
+      "disableVercelAnalytics": "readonly",
+      "initVercelQueues": "readonly"
+    }
+  },
+  {
+    "files": ["frontend/js/tracking.js", "frontend/js/hero.js", "frontend/js/admin.js"],
+    "globals": {
+      "Sentry": "readonly"
+    }
+  },
+  {
+    "files": ["frontend/pages/contact.html", "frontend/js/contact.js", "frontend/js/pages/cesion-ubicacion.js"],
+    "globals": {
+      "google": "readonly",
+      "initMap": "readonly"
+    }
+  },
+  {
+    "files": ["frontend/js/pages/cart.js"],
+    "globals": {
+      "initRevealAnimation": "readonly",
+      "loadPaymentConfig": "readonly"
+    }
+  },
+  {
+    "files": ["frontend/js/pages/product.js"],
+    "globals": {
+      "defaultProducts": "readonly",
+      "submitReview": "readonly"
+    }
+  }
   ],
   "rules": {
     "no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],

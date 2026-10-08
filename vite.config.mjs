@@ -26,7 +26,7 @@ function copyRecursive(src, dest) {
 export default defineConfig({
   customLogger: viteLogger,
   root: resolve(__dirname, 'frontend'),
-  publicDir: resolve(__dirname, 'frontend'),
+  publicDir: resolve(__dirname, 'public'),
   build: {
     outDir: resolve(__dirname, 'dist'),
     emptyOutDir: true,
@@ -64,15 +64,15 @@ export default defineConfig({
       }
     }
   },
-  plugins: [
+plugins: [
     {
       name: 'copy-images',
       closeBundle() {
-        const srcDir = resolve(__dirname, 'frontend', 'imagem');
-        const destDir = resolve(__dirname, 'dist', 'imagem');
+        const srcDir = resolve(__dirname, 'public', 'imagenes');
+        const destDir = resolve(__dirname, 'dist', 'imagenes');
         if (existsSync(srcDir)) {
           copyRecursive(srcDir, destDir);
-          console.log('[vite] Imágenes copiadas a dist/imagem/');
+          console.log('[vite] Imágenes copiadas a dist/imagenes/');
         }
       }
     }

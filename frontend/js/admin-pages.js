@@ -46,7 +46,7 @@
     timeout = window.setTimeout(function () { controller.abort(); }, 60000);
     return fetch(getApiUrl(path), request).then(function (res) {
       if (res.status === 401 && !options._retry) {
-        return fetch(getApiUrl('/api/auth/refresh'), { method: 'POST', credentials: 'include' }).then(function (refreshRes) {
+        return fetch(getApiUrl('/api/v1/auth/refresh'), { method: 'POST', credentials: 'include' }).then(function (refreshRes) {
           if (!refreshRes.ok) throw new Error('Sesión expirada');
           return refreshRes.json();
         }).then(function (data) {
@@ -101,7 +101,7 @@
     };
     if (logout) {
       logout.addEventListener('click', function () {
-        adminFetch('/api/auth/logout', { method: 'POST' }).catch(function () { /* noop */ }).finally(function () {
+        adminFetch('/api/v1/auth/logout', { method: 'POST' }).catch(function () { /* noop */ }).finally(function () {
           setToken('');
           window.location.href = 'admin.html';
         });
@@ -121,7 +121,7 @@
           submit.textContent = 'Ingresando...';
         }
         if (message) message.textContent = '';
-        fetch(getApiUrl('/api/auth/login'), {
+        fetch(getApiUrl('/api/v1/auth/login'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -150,3 +150,4 @@
   window.adminPageInit = initAdminPage;
   window.adminPageReady = function () { return READY; };
 }());
+

@@ -46,7 +46,7 @@
 
   async function loadPaymentConfig() {
     try {
-      var res = await window.adminFetch('/api/admin/payment-config', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/payment-config', { method: 'GET' });
       if (!res || !res.ok) throw new Error('Error cargando configuración');
       var data = await res.json();
 
@@ -96,7 +96,7 @@
       var freeShippingFrom = Number(document.getElementById('pmFreeShippingFrom')?.value || 0);
       var includedShippingCost = Number(document.getElementById('pmIncludedShippingCost')?.value || 0);
 
-      var res = await window.adminFetch('/api/admin/payment-config', {
+      var res = await window.adminFetch('/api/v1/admin/payment-config', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -154,7 +154,7 @@
       if (currentProofStatus) params.set('status', currentProofStatus);
       if (currentProofSearch) params.set('search', currentProofSearch);
 
-      var res = await window.adminFetch('/api/admin/payment-proofs?' + params.toString(), { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/payment-proofs?' + params.toString(), { method: 'GET' });
       if (!res || !res.ok) throw new Error('Error cargando comprobantes');
       var data = await res.json();
       proofData = data;
@@ -295,7 +295,7 @@
   async function doApproveProof(proofId, orderId) {
 
     try {
-      var res = await window.adminFetch('/api/admin/payment-proofs/' + proofId + '/approve', { method: 'POST' });
+      var res = await window.adminFetch('/api/v1/admin/payment-proofs/' + proofId + '/approve', { method: 'POST' });
       if (!res || !res.ok) {
         var data = await res.json().catch(function () { return {}; });
         throw new Error(data.error || 'Error al aprobar');
@@ -318,7 +318,7 @@
 
   async function doRejectProof(proofId, orderId, reason) {
     try {
-      var res = await window.adminFetch('/api/admin/payment-proofs/' + proofId + '/reject', {
+      var res = await window.adminFetch('/api/v1/admin/payment-proofs/' + proofId + '/reject', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason: reason || '' })
@@ -338,7 +338,7 @@
 
   async function loadPaymentStats() {
     try {
-      var res = await window.adminFetch('/api/admin/payment-stats', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/payment-stats', { method: 'GET' });
       if (!res || !res.ok) throw new Error('Error cargando estadísticas');
       var data = await res.json();
 
@@ -428,7 +428,7 @@
     if (emptyEl) emptyEl.style.display = 'none';
 
     try {
-      var res = await window.adminFetch('/api/admin/activity-log?limit=50', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/activity-log?limit=50', { method: 'GET' });
       if (!res || !res.ok) throw new Error('Error cargando actividad');
       var data = await res.json();
 
@@ -458,11 +458,11 @@
     if (!container) return;
     container.innerHTML = '<p style="color:#64748b;">Cargando provincias...</p>';
     try {
-      var res = await window.adminFetch('/api/admin/shipping-rates', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/shipping-rates', { method: 'GET' });
       if (!res || !res.ok) throw new Error('Error cargando tarifas');
       var data = await res.json();
       var includedCost = 0;
-      var configRes = await window.adminFetch('/api/admin/payment-config', { method: 'GET' });
+      var configRes = await window.adminFetch('/api/v1/admin/payment-config', { method: 'GET' });
       if (configRes && configRes.ok) {
         var config = await configRes.json();
         includedCost = Number(config.includedShippingCost || 0);
@@ -510,7 +510,7 @@
           shipping_cost: Number(input.value || 0)
         });
       });
-      var res = await window.adminFetch('/api/admin/shipping-rates', {
+      var res = await window.adminFetch('/api/v1/admin/shipping-rates', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rates: rates })
@@ -590,3 +590,4 @@
 
   window.initPaymentsPanel = initPaymentsPanel;
 })();
+

@@ -7,9 +7,29 @@ Sitio web de artesanías con panel de administración integrado.
 - **Frontend:** HTML5, CSS3, JavaScript vanilla (Vite 6)
 - **Backend:** Node.js, Express 4
 - **Base de datos:** PostgreSQL (Neon)
-- **Storage:** Base64 en DB + Vercel Blob (opcional)
-- **Colas:** BullMQ + Redis
+- **Storage:** Vercel Blob (producción) / base64 en DB (fallback desarrollo)
+- **Colas:** BullMQ + Redis (opcional)
 - **Deploy:** Vercel (frontend), Render (backend)
+
+## Estadísticas del proyecto (generadas automáticamente)
+
+| Métrica | Valor |
+|---------|-------|
+| Archivos JS frontend | 58 |
+| Líneas JS frontend | 13.458 |
+| Páginas HTML | 29 |
+| Archivos CSS | 25 |
+| Archivos JS backend | 95 |
+| Líneas JS backend | 13.028 |
+| Controladores | 26 |
+| Rutas | 31 |
+| Middlewares | 12 |
+| Librerías | 16 |
+| Tests unitarios frontend | 636 |
+| Tests unitarios backend | 615 |
+| **Total tests unitarios** | **1251** |
+
+*Generado con `npm run docs:stats` — no editar manualmente*
 
 ## Estructura del proyecto
 
@@ -76,9 +96,13 @@ http://localhost:3000
 ### Root
 ```bash
 npm test              # Tests unitarios frontend (Jest + jsdom)
+npm run test:coverage # Tests con cobertura
+npm run test:backend  # Tests unitarios backend
 npm run lint          # ESLint frontend
+npm run lint:backend  # ESLint backend
 npm run e2e           # Playwright E2E
 npm run build         # Vite build (output: dist/)
+npm run docs:stats    # Generar estadísticas para README
 ```
 
 ### Backend
@@ -95,9 +119,9 @@ npm start             # Iniciar servidor
 
 | Suite | Comando | Tests |
 |-------|---------|-------|
-| Frontend unit | `npm test` | 543 specs |
-| Backend unit | `cd backend && npm test` | 512 specs |
-| E2E | `npm run e2e` | 101 specs |
+| Frontend unit | `npm test` | 636 specs |
+| Backend unit | `cd backend && npm test` | 615 specs |
+| E2E | `npm run e2e` | specs |
 
 ## Despliegue
 
@@ -163,6 +187,8 @@ En desarrollo sin Blob, las imágenes se guardan temporalmente en el filesystem 
 
 Para migrar imágenes existentes que estén en rutas locales rotas, ejecutá `backend/src/scripts/migrateImages.js` después de configurar Blob (si los archivos originales still existen).
 
+**Nota sobre la contradicción Blob vs Base64**: El README anterior mencionaba "Base64 en DB + Vercel Blob". La implementación real es: **Vercel Blob en producción** (configurando `BLOB_READ_WRITE_TOKEN`), con **fallback a base64 en DB solo en desarrollo/sin token válido**. En producción sin Blob, la subida falla explícitamente (no guarda base64) para evitar almacenamiento efímero.
+
 ## Seguridad
 
 - Helmet (HSTS, CSP, COEP configurado)
@@ -183,7 +209,7 @@ Para migrar imágenes existentes que estén en rutas locales rotas, ejecutá `ba
 - Cache headers con ETag y Last-Modified en assets estáticos
 - Imágenes optimizadas con Sharp (webp)
 - Lazy loading en imágenes de producto
-- Vercel Blob para CDN de imágenes (opcional)
+- Vercel Blob para CDN de imágenes (producción)
 
 ## CI/CD
 
@@ -210,6 +236,10 @@ GitHub Actions workflows incluidos:
 - SSE sync entre pestañas
 - WhatsApp integration
 - Cookie consent + políticas legales
-- Tests unitarios frontend (543 tests, Jest + jsdom)
-- Tests unitarios backend (512 tests, Jest)
-- Tests E2E (101 tests, Playwright)
+- Tests unitarios frontend (636 tests, Jest + jsdom)
+- Tests unitarios backend (615 tests, Jest)
+- Tests E2E (Playwright)
+
+## Licencia
+
+Copyright (c) 2026 Nexora Studio / Metagro SRL. Todos los derechos reservados.

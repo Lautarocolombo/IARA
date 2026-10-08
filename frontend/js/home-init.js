@@ -14,7 +14,7 @@ if (typeof loadTestimonials === 'function') {
 
   function loadAboutImages() {
     if (typeof fetchWithRetry !== 'function') return;
-    fetchWithRetry(CONFIG.API.BASE + '/api/carousel/public', {}, 2, 1000).then(function(res) {
+    fetchWithRetry(CONFIG.API.BASE + '/api/v1/carousel/public', {}, 2, 1000).then(function(res) {
       if (!res || !res.ok) return;
       res.json().then(function(data) {
         window.__aboutImages = {};
@@ -82,3 +82,4 @@ onSyncMessage('settings_updated', () => {
 onSyncMessage('wishlist_updated', () => {
   if (typeof renderWishlist === 'function') renderWishlist();
 });
+

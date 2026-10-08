@@ -77,11 +77,22 @@ function csrfProtection(req, res, next) {
   if (method === 'POST' || method === 'PUT' || method === 'PATCH' || method === 'DELETE') {
     const sessionToken = req.session && req.session.csrfToken;
     const hasSession = !!sessionToken;
+    const isProduction = process.env.NODE_ENV === 'production';
+
+    // In production, CSRF_SECRET is REQUIRED (validated at startup).
+    // If somehow missing at runtime, fail closed.
+    if (isProduction && !process.env.CSRF_SECRET) {
+      return res.status(500).json({ error: 'CSRF_SECRET no configurado en producción', code: 'CSRF_SECRET_MISSING' });
+    }
 
     // No session cookie and no CSRF_SECRET configured => nothing to compare
     // against; the origin check above is the only defense. Public tokenless
     // writes (e.g. POST /api/orders) are allowed here.
+    // In development, warn explicitly if degraded.
     if (!hasSession && !process.env.CSRF_SECRET) {
+      if (!isProduction) {
+        console.warn('[CSRF] ⚠️ MODO DEGRADADO: CSRF_SECRET no configurado. Solo origin-check activo. Configurar CSRF_SECRET para protección completa.');
+      }
       return next();
     }
 

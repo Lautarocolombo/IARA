@@ -165,7 +165,7 @@ export function buildWhatsAppLinks(phone, message) {
 
 export async function fetchWhatsAppNumberFromAPI() {
   try {
-    const res = await fetch('/api/site-settings', { credentials: 'same-origin', cache: 'no-store' });
+    const res = await fetch('/api/v1/v1/site-settings', { credentials: 'same-origin', cache: 'no-store' });
     if (res && res.ok) {
       const data = await res.json();
       if (data.whatsapp) return sanitizePhone(data.whatsapp);
