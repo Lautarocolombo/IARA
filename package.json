@@ -17,7 +17,8 @@
     "lint:fix": "eslint frontend/js/ tests/ --ext .js --fix",
     "dev": "cd backend && npm start",
     "start": "cd backend && npm start",
-    "docs:stats": "node scripts/docs-stats.js"
+    "docs:stats": "node scripts/docs-stats.js",
+    "verify:scripts": "node scripts/verify-script-order.js"
   },
   "devDependencies": {
     "@babel/core": "^8.0.6",

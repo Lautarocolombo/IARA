@@ -422,7 +422,7 @@
     var holderNameDisplay = document.getElementById('holderNameDisplay');
     var orderTotalDisplay = document.getElementById('orderTotalDisplay');
     if (holderNameDisplay) holderNameDisplay.textContent = holder;
-    if (orderTotalDisplay) orderTotalDisplay.textContent = formatCurrency(order.total);
+if (orderTotalDisplay) orderTotalDisplay.textContent = formatCurrency(order.total);
 
     var qrContainer = document.getElementById('qrCodeDisplay');
     if (!qrContainer) return;
@@ -430,10 +430,15 @@
     function qrFallbackText() {
       qrContainer.textContent = alias && alias !== '—' ? alias : 'Sin alias configurado';
     }
-    try {
-      if (!alias || alias === '—') {
-        qrContainer.textContent = 'Sin alias configurado';
-      } else if (typeof QRCode !== 'undefined' && typeof QRCode.toDataURL === 'function') {
+    if (!alias || alias === '—') {
+      qrFallbackText();
+      return;
+    }
+
+    // Dynamic import of qrcode - only loaded when needed
+    import('qrcode').then(function(QRCodeModule) {
+      var QRCode = QRCodeModule.default || QRCodeModule;
+      if (typeof QRCode.toDataURL === 'function') {
         QRCode.toDataURL(alias, { width: 180, margin: 1 }, function (err, url) {
           if (err || !url) {
             qrFallbackText();
@@ -456,9 +461,9 @@
       } else {
         qrFallbackText();
       }
-    } catch (e) {
+    }).catch(function() {
       qrFallbackText();
-    }
+    });
 
     if (currentReceipt && currentReceipt.url) {
       document.getElementById('viewReceiptBtn').classList.remove('hidden');
