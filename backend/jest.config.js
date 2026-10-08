@@ -12,7 +12,6 @@ module.exports = {
     '!src/server.js',
     '!src/lib/db.js',
     '!src/lib/db_test.js',
-    '!src/middleware/**/*.js',
     '!src/lib/imageVariants.js',
     '!src/lib/redisStore.js',
     '!src/lib/migrator.js',
@@ -32,17 +31,13 @@ module.exports = {
     '!src/lib/imageOptimizer.js',
     '!src/lib/auth.js',
     '!src/routes/health.js',
-    '!src/controllers/ordersController.js',
-    '!src/controllers/productsController.js',
-    '!src/controllers/reportsController.js',
-    '!src/controllers/earningsController.js'
   ],
   coverageThreshold: {
     global: {
-      branches: 73,
-      functions: 71,
-      lines: 87,
-      statements: 85
+      branches: 61,
+      functions: 65,
+      lines: 75,
+      statements: 74
     }
   }
 };
