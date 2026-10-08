@@ -112,15 +112,26 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       - name: Smoke test
         run: |
-          $siteUrl = if ($env:FRONTEND_URL) { $env:FRONTEND_URL } else { 'https://artesaniagualeguay.com' }
-          $max = 30; $i = 0
-          while ($i -lt $max) {
-            try {
-              $r = Invoke-WebRequest -Uri "$siteUrl/api/health" -UseBasicParsing
-              if ($r.StatusCode -eq 200) { Write-Host "Health check OK"; break }
-            } catch {}
-            Start-Sleep -Seconds 2
-            $i++
-          }
+          set -euo pipefail
+          site_url="${FRONTEND_URL:-https://artesaniagualeguay.com}"
+          echo "Smoke testing: $site_url"
+          
+          # Wait for deploy to propagate, then test health endpoint and home
+          for i in {1..30}; do
+            if curl --fail --silent --show-error --retry 5 --retry-delay 10 \
+                 --max-time 15 "$site_url/api/health" > /dev/null; then
+              echo "Health check OK"
+              break
+            fi
+            echo "Attempt $i/30: waiting for deployment..."
+            sleep 2
+          done
+          
+          # Final verification: health + home page
+          curl --fail --silent --show-error --retry 3 --retry-delay 5 \
+               --max-time 15 "$site_url/api/health" | grep -q '"status":"ok"' && echo "✓ /api/health OK"
+          
+          curl --fail --silent --show-error --retry 3 --retry-delay 5 \
+               --max-time 15 "$site_url/" > /dev/null && echo "✓ Home page OK"
         env:
           FRONTEND_URL: ${{ vars.FRONTEND_URL || 'https://artesaniagualeguay.com' }}
