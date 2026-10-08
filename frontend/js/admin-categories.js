@@ -35,7 +35,7 @@
 
   async function loadCategories() {
     try {
-      var res = await window.adminFetch('/api/admin/categories', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/categories', { method: 'GET' });
       if (!res || !res.ok) throw new Error('Error cargando categorías');
       categoriesCache = await res.json();
       renderCategories();
@@ -140,7 +140,7 @@
 
     var payload = items.map(function (c) { return { id: c.id, orden: c.orden }; });
     try {
-      var res = await window.adminFetch('/api/admin/categories/order', {
+      var res = await window.adminFetch('/api/v1/admin/categories/order', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orden: payload })
@@ -155,7 +155,7 @@
 
   window.toggleCategory = async function (id, active) {
     try {
-      var res = await window.adminFetch('/api/admin/categories/' + id, {
+      var res = await window.adminFetch('/api/v1/admin/categories/' + id, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ active: active })
@@ -197,7 +197,7 @@
 
   async function deleteCategory(id) {
     try {
-      var res = await window.adminFetch('/api/admin/categories/' + id, { method: 'DELETE' });
+      var res = await window.adminFetch('/api/v1/admin/categories/' + id, { method: 'DELETE' });
       if (!res || !res.ok) {
         var data = await res.json().catch(function () { return {}; });
         throw new Error(data.error || 'Error eliminando categoría');
@@ -314,7 +314,7 @@
     }
 
     try {
-      var url = editId ? '/api/admin/categories/' + editId : '/api/admin/categories';
+      var url = editId ? '/api/v1/admin/categories/' + editId : '/api/v1/admin/categories';
       var method = editId ? 'PUT' : 'POST';
       var res;
       if (formData) {
@@ -415,3 +415,4 @@
   };
   window.discardAllCategoryChanges = loadCategories;
 })();
+

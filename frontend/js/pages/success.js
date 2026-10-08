@@ -77,12 +77,6 @@
         }
       }
 
-      const receiptBtn = document.getElementById('successReceiptBtn');
-      if (receiptBtn) {
-        receiptBtn.dataset.orderId = order.id || '';
-        receiptBtn.dataset.orderNumber = order.number || '';
-      }
-
       loadSuccessPaymentConfig(order);
 
       if (orderInfo) orderInfo.style.display = 'block';
@@ -125,74 +119,6 @@
     }
   }
 
-  function openReceiptModal() {
-    const modal = document.getElementById('receiptModal');
-    if (!modal) return;
-    const btn = document.getElementById('successReceiptBtn');
-    if (btn) {
-      document.getElementById('receiptModalOrderNumber').textContent = btn.dataset.orderNumber || '--';
-    }
-    modal.style.display = 'flex';
-    openModalScrollLock(modal, closeReceiptModal);
-  }
-
-  function closeReceiptModal() {
-    const modal = document.getElementById('receiptModal');
-    if (modal) modal.style.display = 'none';
-    unlockModalScroll();
-  }
-
-  const receiptBtn = document.getElementById('successReceiptBtn');
-  if (receiptBtn) {
-    receiptBtn.addEventListener('click', (e) => {
-      e.preventDefault();
-      openReceiptModal();
-    });
-  }
-
-  const receiptForm = document.getElementById('receiptForm');
-  if (receiptForm) {
-    receiptForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const btn = document.getElementById('successReceiptBtn');
-      const orderId = btn ? (btn.dataset.orderId || '') : '';
-      const fileInput = document.getElementById('receiptFile');
-      const holderInput = document.getElementById('receiptHolderName');
-      if (!orderId || !fileInput.files.length) {
-        showToast('', 'Completá todos los campos', 'error');
-        return;
-      }
-      const formData = new FormData();
-      formData.append('customerName', holderInput.value.trim());
-      formData.append('image', fileInput.files[0]);
-      const orderToken = (() => {
-        const raw = sessionStorage.getItem('ag_last_order');
-        if (!raw) return '';
-        try {
-          const order = JSON.parse(raw);
-          return order.orderToken || '';
-        } catch {
-          return '';
-        }
-      })();
-      try {
-        const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/payments/proofs/${orderId}`, {
-          method: 'POST',
-          headers: { 'X-Order-Token': orderToken || '' },
-          body: formData
-        });
-        if (!res) throw new Error('Error de conexión');
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Error al subir el comprobante');
-        showToast('', 'Comprobante enviado correctamente. Te avisaremos cuando sea verificado.', 'success');
-        closeReceiptModal();
-        receiptForm.reset();
-      } catch (err) {
-        showToast('', window.getFetchErrorMessage(err) || 'Error al enviar el comprobante', 'error');
-      }
-    });
-  }
-
   document.addEventListener('click', function(e) {
     if (e.target && e.target.id === 'copySuccessAliasBtn') {
       const alias = document.getElementById('successTransferAlias')?.textContent;
@@ -200,9 +126,6 @@
       e.target.textContent = '✅ Copiado';
       setTimeout(() => { e.target.textContent = '📋 Copiar'; }, 2000);
       navigator.clipboard.writeText(alias).catch(() => {});
-    }
-    if (e.target && e.target.matches('[data-action="close-receipt-modal"]')) {
-      closeReceiptModal();
     }
   });
 

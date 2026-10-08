@@ -74,7 +74,7 @@
     if (!grid) return;
 
     try {
-      var res = await window.adminFetch('/api/carousel', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/carousel', { method: 'GET' });
       if (!res || !res.ok) throw new Error('No se pudo cargar el carrusel');
       var data = await res.json();
       carouselSlots = data.slots || {};
@@ -197,7 +197,7 @@
 
         var xhr = new XMLHttpRequest();
         var uploadOrigin = (CONFIG.API && CONFIG.API.BACKEND_URL) ? CONFIG.API.BACKEND_URL : CONFIG.API.BASE;
-        var url = uploadOrigin + '/api/carousel/' + slot;
+        var url = uploadOrigin + '/api/v1/carousel/' + slot;
 
        await new Promise(function (resolve, reject) {
         xhr.addEventListener('load', function () {
@@ -245,7 +245,7 @@
       about_group: Number(slotData.about_group || 0)
     };
 
-    var res = await window.adminFetch('/api/carousel/' + slot + '/meta', {
+    var res = await window.adminFetch('/api/v1/carousel/' + slot + '/meta', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -323,7 +323,7 @@
 
   async function deleteCarouselSlot(slot) {
     try {
-      var res = await window.adminFetch('/api/carousel/' + slot, {
+      var res = await window.adminFetch('/api/v1/carousel/' + slot, {
         method: 'DELETE',
         credentials: 'include'
       });
@@ -425,3 +425,4 @@
     });
   }
 })();
+

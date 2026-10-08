@@ -210,7 +210,7 @@ describe('checkout.js', () => {
       fetchWithRetryMock.mockResolvedValue(mockRes);
       await checkout.fetchShippingDiff('Buenos Aires');
       expect(fetchWithRetryMock).toHaveBeenCalledWith(
-        '/api/shipping-diff?province=Buenos%20Aires',
+        '/api/v1/shipping-diff?province=Buenos%20Aires',
         {},
         1,
         500
@@ -256,7 +256,7 @@ describe('checkout.js', () => {
       };
       fetchWithRetryMock.mockResolvedValue(mockRes);
       await checkout.applyCoupon();
-      expect(fetchWithRetryMock).toHaveBeenCalledWith('/api/coupons/validate', {
+      expect(fetchWithRetryMock).toHaveBeenCalledWith('/api/v1/coupons/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: 'DESCUENTO10', amount: 0 })
@@ -439,3 +439,4 @@ describe('checkout.js', () => {
     });
   });
 });
+

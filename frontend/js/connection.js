@@ -42,7 +42,7 @@ Connection.checkBackend = async function () {
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const fetchPromise = fetch(`${CONFIG.API.BASE}/api/health`, {
+    const fetchPromise = fetch('/api/v1/health', {
       method: 'GET',
       headers: { 'Accept': 'application/json' },
       signal: controller.signal
@@ -135,7 +135,7 @@ Connection.keepAlive = async function () {
     const controller = new AbortController();
     const timeoutMs = 5000;
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-    const fetchPromise = fetch(`${CONFIG.API.BASE}/api/health`, {
+    const fetchPromise = fetch('/api/v1/health', {
       method: 'GET',
       headers: { 'Accept': 'application/json' },
       signal: controller.signal

@@ -11,12 +11,12 @@ const swaggerSpec = {
   },
   servers: [
     {
-      url: 'http://localhost:3000/api',
-      description: 'Local development server'
+      url: 'http://localhost:3000/api/v1',
+      description: 'Local development server (v1)'
     },
     {
-      url: 'https://iara-os3h.onrender.com/api',
-      description: 'Production server (Render)'
+      url: 'https://iara-os3h.onrender.com/api/v1',
+      description: 'Production server (Render) - v1'
     }
   ],
   tags: [

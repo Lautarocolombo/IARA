@@ -13,7 +13,7 @@
   var currentGroupId = null;
 
   function loadCarouselData() {
-    return fetchWithRetry(CONFIG.API.BASE + '/api/carousel/public', {}, 2, 1000)
+    return fetchWithRetry(CONFIG.API.BASE + '/api/v1/carousel/public', {}, 2, 1000)
       .then(function (res) {
         if (!res || !res.ok) throw new Error('No se pudo cargar carousel');
         return res.json();
@@ -233,3 +233,4 @@
     build();
   }
 })();
+

@@ -15,7 +15,7 @@
     qs.set('offset', '0');
 
     try {
-      const res = await window.adminFetch('/api/admin/inventory/movements?' + qs.toString(), {
+      const res = await window.adminFetch('/api/v1/admin/inventory/movements?' + qs.toString(), {
         method: 'GET',
         headers: { 'Accept': 'application/json' }
       });
@@ -58,7 +58,7 @@
     tbody.innerHTML = '<tr><td colspan="9" class="text-muted">Cargando...</td></tr>';
 
     try {
-      const res = await window.adminFetch('/api/admin/inventory/alerts?resolved=false', {
+      const res = await window.adminFetch('/api/v1/admin/inventory/alerts?resolved=false', {
         method: 'GET',
         headers: { 'Accept': 'application/json' }
       });
@@ -97,7 +97,7 @@
 
   async function resolveAlert(id) {
     try {
-      const res = await window.adminFetch('/api/admin/inventory/alerts/' + id + '/resolve', {
+      const res = await window.adminFetch('/api/v1/admin/inventory/alerts/' + id + '/resolve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -169,3 +169,4 @@
     init();
   }
 })();
+

@@ -108,7 +108,7 @@
     if (state.q) params.set('q', state.q);
     if (state.role) params.set('role', state.role);
     if (state.active !== '') params.set('active', state.active);
-    return window.adminPageFetch('/api/users?' + params.toString());
+    return window.adminPageFetch('/api/v1/users?' + params.toString());
   }
 
   function formatDate(value) {
@@ -292,8 +292,8 @@
     var payload = { username: username, email: email, role: role };
     if (password) payload.password = password;
     var request = currentEditingId
-      ? window.adminPageFetch('/api/users/' + currentEditingId, { method: 'PUT', body: JSON.stringify(payload) })
-      : window.adminPageFetch('/api/users', { method: 'POST', body: JSON.stringify(payload) });
+      ? window.adminPageFetch('/api/v1/users/' + currentEditingId, { method: 'PUT', body: JSON.stringify(payload) })
+      : window.adminPageFetch('/api/v1/users', { method: 'POST', body: JSON.stringify(payload) });
     request.then(function () {
       window.closeModal();
       window.showToast('✓', currentEditingId ? 'Usuario actualizado' : 'Usuario creado', 'success');
@@ -311,7 +311,7 @@
       cancelLabel: 'Cancelar'
     }).then(function (confirmed) {
       if (!confirmed) return;
-      window.adminPageFetch('/api/users/' + user.id, { method: 'DELETE' }).then(function () {
+      window.adminPageFetch('/api/v1/users/' + user.id, { method: 'DELETE' }).then(function () {
         window.showToast('✓', 'Usuario eliminado', 'success');
         loadUsers();
       }).catch(function (err) {
@@ -349,3 +349,4 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', window.initAdminUsers);
   else window.initAdminUsers();
 }());
+

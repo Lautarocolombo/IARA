@@ -74,13 +74,13 @@ describe('Admin content - image previews', () => {
     `;
 
     window.adminFetch = jest.fn(function (url) {
-      if (url === '/api/site-texts') {
+      if (url === '/api/v1/site-texts') {
         return Promise.resolve({ ok: true, json: function () { return Promise.resolve(siteTexts); } });
       }
-      if (url === '/api/admin/settings') {
+      if (url === '/api/v1/admin/settings') {
         return Promise.resolve({ ok: true, json: function () { return Promise.resolve({}); } });
       }
-      if (url === '/api/admin/categories') {
+      if (url === '/api/v1/admin/categories') {
         return Promise.resolve({ ok: true, json: function () { return Promise.resolve([]); } });
       }
       return Promise.resolve({ ok: true, json: function () { return Promise.resolve({}); } });
@@ -177,3 +177,4 @@ describe('Admin content - image previews', () => {
     console.error.mockRestore();
   });
 });
+

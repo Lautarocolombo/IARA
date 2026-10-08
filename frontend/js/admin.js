@@ -29,7 +29,7 @@ async function checkServerHealth() {
     const controller = new AbortController();
     timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-    const res = await fetch(getApiUrl('/api/health'), {
+    const res = await fetch(getApiUrl('/api/v1/health'), {
       method: 'GET',
       signal: controller.signal,
       headers: { 'Accept': 'application/json' }
@@ -99,7 +99,7 @@ async function doLogin() {
     const controller = new AbortController();
     const timeoutMs = 15000;
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-    const res = await fetch(getApiUrl('/api/auth/login'), {
+    const res = await fetch(getApiUrl('/api/v1/auth/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -150,7 +150,7 @@ function togglePasswordVisibility() {
 
 async function doLogout() {
   try {
-    await fetch(getApiUrl('/api/auth/logout'), { method: 'POST', credentials: 'include' });
+    await fetch(getApiUrl('/api/v1/auth/logout'), { method: 'POST', credentials: 'include' });
   } catch (e) {
     console.warn('[doLogout] Error cerrando sesión:', e);
   }
@@ -161,9 +161,9 @@ async function doLogout() {
 
 async function adminFetch(url, opts = {}, isRetry = false) {
   const apiBase = BACKEND_DIRECT_URL || CONFIG.API.BASE;
-  const isUpload = url === '/api/admin/upload';
+  const isUpload = url === '/api/v1/admin/upload';
   const directUploadOrigin = isUpload ? `${BACKEND_DIRECT_URL}${url}` : null;
-  const fullUrl = directUploadOrigin || (url.startsWith('/api/') ? `${apiBase}${url}` : url);
+  const fullUrl = directUploadOrigin || (url.startsWith('/api/v1/') ? `${apiBase}${url}` : url);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 60000);
   try {
@@ -181,7 +181,7 @@ async function adminFetch(url, opts = {}, isRetry = false) {
     clearTimeout(timeout);
     if (res.status === 401 && !isRetry) {
       try {
-        const refreshRes = await fetch(getApiUrl('/api/auth/refresh'), {
+        const refreshRes = await fetch(getApiUrl('/api/v1/auth/refresh'), {
           method: 'POST',
           credentials: 'include'
         });
@@ -404,3 +404,4 @@ document.addEventListener('DOMContentLoaded', () => {
     checkServerHealth();
   }
 });
+

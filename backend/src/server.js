@@ -407,6 +407,9 @@ app.use('/api/v1', require('./routes/config'));
 
 app.use('/api/v1-docs', require('./routes/docs'));
 
+// Public Swagger/OpenAPI documentation at /docs (canonical)
+app.use('/docs', require('./routes/docs'));
+
 app.use('/api/v1/admin', require('./routes/coupons'));
 app.use('/api/v1/admin/inventory', require('./routes/inventory'));
 
