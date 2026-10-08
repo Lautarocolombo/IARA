@@ -39,7 +39,7 @@ const getPublicConfig = async (req, res) => {
 
     const config = {
       CONTACT: {
-        WHATSAPP: settings.whatsapp || normalizeWhatsAppPhone(process.env.WHATSAPP || '+543444634444'),
+        WHATSAPP: settings.whatsapp || normalizeWhatsAppPhone(process.env.WHATSAPP || '+5493444634444'),
         WHATSAPP_ALIAS: settings.whatsapp_business || 'iara-salgueiro',
         PHONE: settings.phone || '+54 (3444) 634-4444',
         EMAIL: settings.email || 'noreply@artesaniagualeguay.com',
@@ -101,10 +101,9 @@ const getPublicConfig = async (req, res) => {
         transferAlias: paymentConfig.transfer_alias || '',
         holderName: paymentConfig.holder_name || '',
         cbuCvu: paymentConfig.cbu_cvu || '',
-        whatsapp: normalizeWhatsAppPhone(paymentConfig.whatsapp || process.env.WHATSAPP || '+543444634444'),
+        whatsapp: normalizeWhatsAppPhone(paymentConfig.whatsapp || process.env.WHATSAPP || '+5493444634444'),
         message: paymentConfig.message || 'Transferí el total exacto y enviá el comprobante por WhatsApp para confirmar tu pedido.',
         active: paymentConfig.active !== false,
-        mpEnabled: paymentConfig.mp_enabled !== false,
         cashEnabled: paymentConfig.cash_enabled !== false,
         shippingCost: Number(paymentConfig.shipping_cost || 0),
         freeShippingFrom: Number(paymentConfig.free_shipping_from || 0),

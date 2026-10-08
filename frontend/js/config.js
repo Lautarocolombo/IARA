@@ -6,8 +6,8 @@ const DEFAULT_CONFIG = {
     GOOGLE_PLACE_ID: '',
     GOOGLE_WRITE_REVIEW_URL: ''
   },
-  CONTACT: {
-    WHATSAPP: '+543444634444',
+CONTACT: {
+    WHATSAPP: '+5493444634444',
     WHATSAPP_ALIAS: 'iara-salgueiro',
     PHONE: '+54 (3444) 634-4444',
     EMAIL: 'noreply@artesaniagualeguay.com',

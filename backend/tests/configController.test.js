@@ -122,7 +122,6 @@ describe('configController', () => {
             whatsapp: '+5491199998888',
             message: 'Custom message',
             active: true,
-            mp_enabled: false,
             cash_enabled: true,
             included_shipping_cost: 100
           }]
@@ -142,7 +141,6 @@ describe('configController', () => {
           whatsapp: expect.stringMatching(/^54/),
           message: 'Custom message',
           active: true,
-          mpEnabled: false,
           cashEnabled: true,
           shippingCost: 300,
           freeShippingFrom: 3000,
@@ -230,17 +228,16 @@ describe('configController', () => {
       expect(config.PAYMENT.active).toBe(true);
     });
 
-    test('PAYMENT mpEnabled and cashEnabled default to true', async () => {
+    test('PAYMENT cashEnabled defaults to true', async () => {
       query
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({
-          rows: [{ mp_enabled: null, cash_enabled: null }]
+          rows: [{ cash_enabled: null }]
         });
 
       await getPublicConfig(mockReq, mockRes);
 
       const config = mockRes.json.mock.calls[0][0];
-      expect(config.PAYMENT.mpEnabled).toBe(true);
       expect(config.PAYMENT.cashEnabled).toBe(true);
     });
   });

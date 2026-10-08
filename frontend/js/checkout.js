@@ -165,7 +165,7 @@ async function loadPaymentConfig() {
     if (!res) {
       if (aliasEl) aliasEl.textContent = 'No configurado';
       if (holderEl) holderEl.textContent = 'No configurado';
-      return { alias: CONFIG.CONTACT.WHATSAPP_ALIAS || '', whatsapp: WA_PHONE_RAW, message: '', active: false, mpEnabled: false };
+      return { alias: CONFIG.CONTACT.WHATSAPP_ALIAS || '', whatsapp: WA_PHONE_RAW, message: '', active: false };
     }
     const data = await res.json();
     if (data.shippingCost !== undefined) CONFIG.CART.SHIPPING_COST = Number(data.shippingCost);
@@ -177,7 +177,6 @@ async function loadPaymentConfig() {
     const whatsapp = (data.whatsapp || CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, '');
     const message = data.message || 'Transferí el total exacto y enviá el comprobante por WhatsApp para confirmar tu pedido.';
     const active = data.active !== false;
-    const mpEnabled = data.mpEnabled === true;
     if (aliasEl) aliasEl.textContent = alias || 'No configurado';
     if (holderName) {
       if (holderEl) holderEl.textContent = holderName;
@@ -185,7 +184,7 @@ async function loadPaymentConfig() {
     } else {
       if (holderBox) holderBox.style.display = 'none';
     }
-    return { alias, whatsapp, message, active, mpEnabled, notifyAdminNewProof: data.notifyAdminNewProof !== false, notifyClientApproved: data.notifyClientApproved !== false, notifyClientRejected: data.notifyClientRejected !== false };
+    return { alias, whatsapp, message, active, notifyAdminNewProof: data.notifyAdminNewProof !== false, notifyClientApproved: data.notifyClientApproved !== false, notifyClientRejected: data.notifyClientRejected !== false };
   } catch (err) {
     if (aliasEl) aliasEl.textContent = 'Error al cargar';
     if (holderEl) holderEl.textContent = 'Error al cargar';
