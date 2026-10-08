@@ -91,45 +91,43 @@ describe('Vercel Blob helpers', () => {
     expect(fs.existsSync(tmpFile)).toBe(false);
   });
 
-  test('processFile guarda base64 en dev cuando no hay token de Blob', async () => {
+  test('processFile lanza error 503 cuando no hay token de Blob', async () => {
     const { filePath: tmpFile } = makeTmpFile('test2.png');
 
-    const result = await upload.processFile({
+    await expect(upload.processFile({
       path: tmpFile,
       originalname: 'test2.png',
       mimetype: 'image/png',
       size: Buffer.from(TINY_PNG_BASE64, 'base64').length
+    })).rejects.toMatchObject({
+      code: 'BLOB_NOT_CONFIGURED',
+      status: 503
     });
-
-    expect(result.isBlob).toBe(false);
-    expect(result.isBase64).toBe(true);
-    expect(result.url).toMatch(/^data:image\/webp;base64,/);
     expect(put).not.toHaveBeenCalled();
   });
 
-  test('processFile guarda base64 en producción', async () => {
+  test('processFile lanza error 503 en producción cuando no hay token', async () => {
     const originalNodeEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
     delete process.env.BLOB_READ_WRITE_TOKEN;
 
     const { filePath: tmpFile } = makeTmpFile('test3.png');
 
-    const result = await upload.processFile({
+    await expect(upload.processFile({
       path: tmpFile,
       originalname: 'test3.png',
       mimetype: 'image/png',
       size: Buffer.from(TINY_PNG_BASE64, 'base64').length
+    })).rejects.toMatchObject({
+      code: 'BLOB_NOT_CONFIGURED',
+      status: 503
     });
-
-    expect(result.isBlob).toBe(false);
-    expect(result.isBase64).toBe(true);
-    expect(result.url).toMatch(/^data:image\/webp;base64,/);
     expect(put).not.toHaveBeenCalled();
 
     process.env.NODE_ENV = originalNodeEnv;
   });
 
-  test('processFile cae a base64 cuando falla la subida a Blob', async () => {
+  test('processFile lanza error 503 cuando falla la subida a Blob', async () => {
     const originalNodeEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
     process.env.BLOB_READ_WRITE_TOKEN = 'vercel_blob_test_token';
@@ -138,91 +136,38 @@ describe('Vercel Blob helpers', () => {
 
     const { filePath: tmpFile } = makeTmpFile('test-fallback.png');
 
-    const result = await upload.processFile({
+    await expect(upload.processFile({
       path: tmpFile,
       originalname: 'test-fallback.png',
       mimetype: 'image/png',
       size: Buffer.from(TINY_PNG_BASE64, 'base64').length
+    })).rejects.toMatchObject({
+      code: 'BLOB_UPLOAD_FAILED',
+      status: 503
     });
-
-    expect(result.isBlob).toBe(false);
-    expect(result.isBase64).toBe(true);
-    expect(result.url).toMatch(/^data:image\/webp;base64,/);
     expect(put).toHaveBeenCalledTimes(1);
 
     process.env.NODE_ENV = originalNodeEnv;
     delete process.env.BLOB_READ_WRITE_TOKEN;
   });
 
-  test('processFile cae a base64 cuando el token no tiene formato vercel_blob_', async () => {
+  test('processFile lanza error 503 cuando el token no tiene formato vercel_blob_', async () => {
     process.env.BLOB_READ_WRITE_TOKEN = 'token-con-formato-invalido';
 
     const { filePath: tmpFile } = makeTmpFile('test-formato.png');
 
-    const result = await upload.processFile({
+    await expect(upload.processFile({
       path: tmpFile,
       originalname: 'test-formato.png',
       mimetype: 'image/png',
       size: Buffer.from(TINY_PNG_BASE64, 'base64').length
+    })).rejects.toMatchObject({
+      code: 'BLOB_NOT_CONFIGURED',
+      status: 503
     });
-
-    expect(result.isBlob).toBe(false);
-    expect(result.isBase64).toBe(true);
     expect(put).not.toHaveBeenCalled();
 
     delete process.env.BLOB_READ_WRITE_TOKEN;
-  });
-
-  test('processFile borra el archivo optimizado al guardar base64', async () => {
-    const originalNodeEnv = process.env.NODE_ENV;
-    process.env.NODE_ENV = 'production';
-    delete process.env.BLOB_READ_WRITE_TOKEN;
-
-    const { filePath: tmpFile } = makeTmpFile('test4.png');
-    const optimizedPath = path.join(path.dirname(tmpFile), 'test4.webp');
-
-    const result = await upload.processFile({
-      path: tmpFile,
-      originalname: 'test4.png',
-      mimetype: 'image/png',
-      size: Buffer.from(TINY_PNG_BASE64, 'base64').length
-    });
-
-    expect(result.isBlob).toBe(false);
-    expect(result.isBase64).toBe(true);
-    expect(result.url).toMatch(/^data:image\/webp;base64,/);
-    expect(put).not.toHaveBeenCalled();
-    if (fs.existsSync(tmpFile)) {
-      fs.unlinkSync(tmpFile);
-    }
-    if (fs.existsSync(optimizedPath)) {
-      fs.unlinkSync(optimizedPath);
-    }
-
-    process.env.NODE_ENV = originalNodeEnv;
-  });
-
-  test('processFile borra archivos temporales en dev al guardar base64', async () => {
-    const { filePath: tmpFile } = makeTmpFile('test5.png');
-    const optimizedPath = path.join(path.dirname(tmpFile), 'test5.webp');
-
-    const result = await upload.processFile({
-      path: tmpFile,
-      originalname: 'test5.png',
-      mimetype: 'image/png',
-      size: Buffer.from(TINY_PNG_BASE64, 'base64').length
-    });
-
-    expect(result.isBlob).toBe(false);
-    expect(result.isBase64).toBe(true);
-    expect(result.url).toMatch(/^data:image\/webp;base64,/);
-    expect(put).not.toHaveBeenCalled();
-    if (fs.existsSync(tmpFile)) {
-      fs.unlinkSync(tmpFile);
-    }
-    if (fs.existsSync(optimizedPath)) {
-      fs.unlinkSync(optimizedPath);
-    }
   });
 
   test('deleteFromBlob ignora URLs que no son de Blob', async () => {

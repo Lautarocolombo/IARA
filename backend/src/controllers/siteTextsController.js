@@ -1,6 +1,7 @@
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const { deleteFromBlob } = require('../lib/upload');
+const { getTenantId } = require('../lib/imageService');
 const path = require('path');
 const fs = require('fs');
 const { syncBus } = require('../routes/sync');
@@ -113,6 +114,15 @@ const syncTextsToNeon = async (req, res) => {
       logger.warn({ err: err.message }, 'Error obteniendo textos existentes para limpieza de imágenes');
     }
 
+    // Extract about images for carousel sync
+    const aboutImages = {};
+    for (let i = 1; i <= 5; i++) {
+      const key = 'about_image_' + i;
+      if (texts[key] !== undefined) {
+        aboutImages[i] = texts[key];
+      }
+    }
+
     for (const key of keys) {
       try {
         let newValue = String(texts[key] || '');
@@ -141,6 +151,38 @@ const syncTextsToNeon = async (req, res) => {
         logger.error('[SyncTexts] Error guardando key:', { key, err: err.message });
         logger.error({ key, err: err.message }, 'Error guardando texto individual');
         results.errors += 1;
+      }
+    }
+
+    // Sync about images to carousel_images table
+    if (Object.keys(aboutImages).length > 0) {
+      try {
+        const tenantId = getTenantId(req);
+        for (const slot of Object.keys(aboutImages)) {
+          const url = aboutImages[slot];
+          const slotNum = parseInt(slot, 10);
+          if (url && url.trim()) {
+            // Save to carousel_images table
+            await query(
+              `INSERT INTO carousel_images (slot, url, alt_text, link_url, caption, about_group, updated_at, tenant_id)
+               VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7)
+               ON CONFLICT (slot, tenant_id) DO UPDATE SET
+                 url = EXCLUDED.url,
+                 alt_text = EXCLUDED.alt_text,
+                 link_url = EXCLUDED.link_url,
+                 caption = EXCLUDED.caption,
+                 about_group = EXCLUDED.about_group,
+                 updated_at = EXCLUDED.updated_at`,
+              [slotNum, url.trim(), '', '', '', slotNum <= 2 ? 1 : (slotNum <= 4 ? 2 : 3), tenantId]
+            );
+          } else if (url === '') {
+            // Clear the slot
+            await query('DELETE FROM carousel_images WHERE slot = $1 AND tenant_id = $2', [slotNum, tenantId]);
+          }
+        }
+        try { syncBus.emit('carousel_updated', {}); } catch (e) { /* noop */ }
+      } catch (carouselErr) {
+        logger.error('[SyncTexts] Error sincronizando imágenes al carrusel:', carouselErr);
       }
     }
 

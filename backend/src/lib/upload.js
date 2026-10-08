@@ -4,6 +4,7 @@ const fs = require('fs');
 const os = require('os');
 const logger = require('./logger');
 const { optimizeImage } = require('./imageOptimizer');
+const { deleteImageFromDB } = require('./mediaService');
 
 const BLOB_URL_RE = /^https?:\/\/[^/]+\.blob\.vercel-storage\.com/;
 
@@ -120,14 +121,26 @@ async function deleteFromBlob(url) {
 
 async function deleteImageAsset(image) {
   if (!image) return false;
+  const mediaId = image.media_id || image.mediaId;
   const url = image.url || image.public_url || '';
-  if (!url) return false;
+  if (!url && !mediaId) return false;
 
   // Imágenes en base64 viven en la DB (se reemplazan con el UPDATE/INSERT): no hay nada externo que borrar
   if (url.startsWith('data:')) return true;
 
   // URLs de Vercel Blob
   if (isBlobUrl(url)) return deleteFromBlob(url);
+
+  // Imágenes en base de datos (media_assets)
+  if (mediaId) {
+    try {
+      await deleteImageFromDB(mediaId);
+      return true;
+    } catch (err) {
+      logger.warn('Error eliminando imagen de la base de datos:', err.message);
+      return false;
+    }
+  }
 
   // Archivos legacy en filesystem (/uploads/...)
   if (url.startsWith('/uploads/')) {
@@ -271,31 +284,22 @@ function removeIfExists(target) {
 }
 
 async function processFile(file, _baseUrl) {
-  if (isBlobConfigured()) {
-    const blob = await uploadToBlob(file);
-    if (blob) {
-      removeIfExists(file.path);
-      logger.info('[Upload] Imagen guardada en Vercel Blob:', { blobName: blob.blobName });
-      return { url: blob.url, filename: blob.filename, cloudinary_public_id: '', isCloudinary: false, isBlob: true, isBase64: false };
-    }
-    logger.warn('[Upload] Vercel Blob no disponible, se guarda base64 en la DB');
+  if (!isBlobConfigured()) {
+    const err = new Error('Almacenamiento no configurado: falta BLOB_READ_WRITE_TOKEN');
+    err.code = 'BLOB_NOT_CONFIGURED';
+    err.status = 503;
+    throw err;
   }
-
-  const optimizedPath = await optimizeImage(file.path, { format: 'webp' });
-  const buffer = fs.readFileSync(optimizedPath);
-  const base64 = buffer.toString('base64');
-  const dataUri = 'data:image/webp;base64,' + base64;
-
-  const ext = path.extname(file.path);
-  const baseName = path.basename(file.path, ext);
-  const expectedOptimized = path.join(path.dirname(file.path), `${baseName}.webp`);
-
-  removeIfExists(file.path);
-  removeIfExists(optimizedPath);
-  removeIfExists(expectedOptimized);
-
-  logger.info('[Upload] Imagen guardada como base64 en Neon:', { size: dataUri.length });
-  return { url: dataUri, filename: file.originalname, cloudinary_public_id: '', isCloudinary: false, isBlob: false, isBase64: true };
+  const blob = await uploadToBlob(file);
+  if (blob) {
+    removeIfExists(file.path);
+    logger.info('[Upload] Imagen guardada en Vercel Blob:', { blobName: blob.blobName });
+    return { url: blob.url, filename: blob.filename, cloudinary_public_id: '', isCloudinary: false, isBlob: true, isBase64: false };
+  }
+  const err = new Error('Error subiendo a Vercel Blob');
+  err.code = 'BLOB_UPLOAD_FAILED';
+  err.status = 503;
+  throw err;
 }
 
 async function saveFile(req, res) {
@@ -321,6 +325,13 @@ function getPublicUrl(relativePath, baseUrl) {
     return relativePath;
   }
   if (relativePath.startsWith('http')) return relativePath;
+
+  // Frontend static assets (/imagenes/*) are served by Vercel, not the backend
+  if (relativePath.startsWith('/imagenes/')) {
+    const frontendUrl = process.env.FRONTEND_URL || process.env.SITE_URL || '';
+    return frontendUrl ? `${frontendUrl}${relativePath}` : relativePath;
+  }
+
   const prefix = baseUrl || process.env.BACKEND_URL || process.env.SITE_URL || '';
   const withPrefix = prefix ? `${prefix}${relativePath}` : relativePath;
   if (relativePath.startsWith('/uploads/')) {

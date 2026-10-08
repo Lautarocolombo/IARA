@@ -1,6 +1,6 @@
 const { query } = require('../lib/db');
 const logger = require('../lib/logger');
-const { getPublicUrl, deleteImageAsset, handleImageUpload, getTenantId } = require('../lib/imageService');
+const { getPublicUrl, deleteImageAsset, getTenantId } = require('../lib/imageService');
 const { syncBus } = require('../routes/sync');
 
 async function getCarouselSlots(req, res) {
@@ -34,7 +34,7 @@ async function getCarouselSlotsPublic(req, res) {
     const tenantId = getTenantId(req);
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
     const result = await query(
-      'SELECT slot, url, alt_text, link_url, caption, about_group FROM carousel_images WHERE tenant_id = $1 AND url IS NOT NULL AND url != \'\' ORDER BY slot ASC',
+      'SELECT slot, url, alt_text, link_url, caption, about_group, media_id FROM carousel_images WHERE tenant_id = $1 AND url IS NOT NULL AND url != \'\' ORDER BY slot ASC',
       [tenantId]
     );
     const rows = result.rows || [];
@@ -48,7 +48,8 @@ async function getCarouselSlotsPublic(req, res) {
           alt_text: row.alt_text || '',
           link_url: row.link_url || '',
           caption: row.caption || '',
-          about_group: row.about_group
+          about_group: row.about_group,
+          media_id: row.media_id
         };
       } else {
         slots[i] = null;
@@ -86,7 +87,9 @@ async function updateCarouselSlot(req, res) {
     }
 
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
-    const publicUrl = await handleImageUpload(req.file, baseUrl);
+    const processed = await require('../lib/imageService').processFile(req.file, baseUrl);
+    const publicUrl = getPublicUrl(processed.url, baseUrl);
+    const mediaId = processed.mediaId;
 
     const altText = (req.body.alt_text || '').trim();
     const linkUrl = (req.body.link_url || '').trim();
@@ -94,17 +97,18 @@ async function updateCarouselSlot(req, res) {
     const aboutGroup = Number(req.body.about_group || 0);
 
     const result = await query(
-      `INSERT INTO carousel_images (slot, url, alt_text, link_url, caption, about_group, updated_at, tenant_id)
-       VALUES ($1, $2, $3, $4, $5, $6, NOW(), $7)
+      `INSERT INTO carousel_images (slot, url, alt_text, link_url, caption, about_group, media_id, updated_at, tenant_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), $8)
        ON CONFLICT (slot, tenant_id) DO UPDATE SET
          url = EXCLUDED.url,
          alt_text = EXCLUDED.alt_text,
          link_url = EXCLUDED.link_url,
          caption = EXCLUDED.caption,
          about_group = EXCLUDED.about_group,
+         media_id = EXCLUDED.media_id,
          updated_at = EXCLUDED.updated_at
        RETURNING *`,
-      [slot, publicUrl, altText, linkUrl, caption, aboutGroup, tenantId]
+      [slot, publicUrl, altText, linkUrl, caption, aboutGroup, mediaId, tenantId]
     );
 
     const updated = result.rows[0];
@@ -115,6 +119,12 @@ async function updateCarouselSlot(req, res) {
     res.json(updated);
   } catch (err) {
     logger.error('Error actualizando slot de carrusel:', err);
+    if (err.code === 'BLOB_NOT_CONFIGURED') {
+      return res.status(503).json({ error: 'No se pudo subir la imagen: almacenamiento no configurado' });
+    }
+    if (err.code === 'BLOB_UPLOAD_FAILED') {
+      return res.status(503).json({ error: 'No se pudo subir la imagen: error en el almacenamiento' });
+    }
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 }

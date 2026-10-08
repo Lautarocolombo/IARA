@@ -16,17 +16,7 @@ if (typeof loadTestimonials === 'function') {
     if (typeof fetchWithRetry !== 'function') return;
     fetchWithRetry(CONFIG.API.BASE + '/api/v1/carousel/public', {}, 2, 1000).then(function(res) {
       if (!res || !res.ok) return;
-      res.json().then(function(data) {
-        window.__aboutImages = {};
-        var slots = data.slots || {};
-        for (var i = 1; i <= 5; i++) {
-          var slot = slots[i];
-          if (slot && slot.url) {
-            window.__aboutImages['about_image_' + i] = slot.url;
-          } else {
-            window.__aboutImages['about_image_' + i] = '/imagenes/carrucel/' + i + '.jpg';
-          }
-        }
+      res.json().then(function(_data) {
         if (typeof window.initAboutCarousel === 'function') {
           window.initAboutCarousel();
         }
@@ -35,20 +25,11 @@ if (typeof loadTestimonials === 'function') {
       if (typeof console !== 'undefined' && console.error) {
         console.error('[home-init] Error cargando imágenes del carrusel:', err);
       }
-      window.__aboutImages = {};
-      for (var i = 1; i <= 5; i++) {
-        window.__aboutImages['about_image_' + i] = '/imagenes/carrucel/' + i + '.jpg';
-      }
       if (typeof window.initAboutCarousel === 'function') {
         window.initAboutCarousel();
       }
     });
     window.loadAboutImages = loadAboutImages;
-  }
-
-  window.__aboutImages = {};
-  for (var i = 1; i <= 5; i++) {
-    window.__aboutImages['about_image_' + i] = '/imagenes/carrucel/' + i + '.jpg';
   }
 
 if (typeof loadAboutImages === 'function') {
