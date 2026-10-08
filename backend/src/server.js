@@ -85,6 +85,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 if (isProduction) {
   if (!process.env.DATABASE_URL) missingEnvVars.push('DATABASE_URL');
   if (!process.env.ALLOWED_ORIGINS) missingEnvVars.push('ALLOWED_ORIGINS');
+  if (!process.env.CSRF_SECRET) missingEnvVars.push('CSRF_SECRET');
 }
 
 if (missingEnvVars.length > 0) {
@@ -98,6 +99,7 @@ if (missingEnvVars.length > 0) {
     else if (key === 'ADMIN_PASS_HASH') hint = ' (generar con: npx bcrypt-cli hash)';
     else if (key === 'DATABASE_URL') hint = ' (connection string de PostgreSQL)';
     else if (key === 'ALLOWED_ORIGINS') hint = ' (ej: https://tudominio.com,http://localhost:3000)';
+    else if (key === 'CSRF_SECRET') hint = ' (generar con: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"';
     logger.error(`  ${key} → requerido${hint}`);
   });
   logger.error('='.repeat(60));
@@ -242,8 +244,16 @@ if (process.env.REDIS_URL) {
   try {
     const RedisStore = require('./lib/redisStore');
     rateLimitStore = new RedisStore();
+    logger.info('[RateLimit] ✅ Redis store habilitado');
   } catch (err) {
-    logger.warn('Redis store no disponible, usando memoria:', err.message);
+    logger.warn('[RateLimit] Redis store no disponible, usando memoria:', err.message);
+  }
+} else {
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (isProduction) {
+    logger.warn('[RateLimit] ⚠️ REDIS_URL no configurado en PRODUCCIÓN. Rate-limit usa memoria (se pierde al reiniciar). Configurar REDIS_URL para persistencia.');
+  } else {
+    logger.info('[RateLimit] REDIS_URL no configurado. Usando memoria (OK para desarrollo).');
   }
 }
 const authLimiter = rateLimit({
@@ -649,9 +659,16 @@ if (process.env.REDIS_URL) {
     startWebhookWorker(async (job) => {
       await processWebhookSync(job.data);
     });
-    logger.info('Webhook worker iniciado');
+    logger.info('[BullMQ] ✅ Webhook worker iniciado');
   } catch (err) {
-    logger.warn({ err: err.message }, 'No se pudo iniciar webhook worker');
+    logger.warn({ err: err.message }, '[BullMQ] No se pudo iniciar webhook worker');
+  }
+} else {
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (isProduction) {
+    logger.warn('[BullMQ] ⚠️ REDIS_URL no configurado en PRODUCCIÓN. Webhook worker INACTIVO (procesamiento síncrono fallback). Configurar REDIS_URL para colas asíncronas.');
+  } else {
+    logger.info('[BullMQ] REDIS_URL no configurado. Webhook worker inactivo (OK para desarrollo).');
   }
 }
 
