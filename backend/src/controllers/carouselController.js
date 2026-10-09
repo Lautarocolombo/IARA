@@ -34,7 +34,7 @@ async function getCarouselSlotsPublic(req, res) {
     const tenantId = getTenantId(req);
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
     const result = await query(
-      'SELECT slot, url, alt_text, link_url, caption, about_group, media_id FROM carousel_images WHERE tenant_id = $1 AND url IS NOT NULL AND url != \'\' ORDER BY slot ASC',
+      'SELECT slot, url, alt_text, link_url, caption, about_group FROM carousel_images WHERE tenant_id = $1 AND url IS NOT NULL AND url != \'\' ORDER BY slot ASC',
       [tenantId]
     );
     const rows = result.rows || [];
@@ -48,8 +48,7 @@ async function getCarouselSlotsPublic(req, res) {
           alt_text: row.alt_text || '',
           link_url: row.link_url || '',
           caption: row.caption || '',
-          about_group: row.about_group,
-          media_id: row.media_id
+          about_group: row.about_group
         };
       } else {
         slots[i] = null;

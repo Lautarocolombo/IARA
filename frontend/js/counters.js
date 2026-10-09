@@ -79,7 +79,7 @@
           safeAnimate(el);
         }
       });
-    }, 3000);
+    }, 1500);
   } else {
     counters.forEach(el => safeAnimate(el));
   }

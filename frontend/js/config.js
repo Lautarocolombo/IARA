@@ -44,7 +44,7 @@ CONTACT: {
   },
   API: {
     BASE: '',
-    BACKEND_URL: ''
+    BACKEND_URL: 'https://iara-os3h.onrender.com'
   },
   PLACEHOLDER: {
     IMAGE: 'assets/placeholder-product.svg'
@@ -77,6 +77,27 @@ function deepMerge(target, source) {
 // CONFIG inicial con valores por defecto (síncrono)
 let CONFIG = { ...DEFAULT_CONFIG };
 
+// Detectar entorno y configurar API.BASE
+function detectEnvironment() {
+  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+  const isProduction = hostname.includes('vercel.app') || hostname === 'artesaniagualeguay.com' || hostname === 'www.artesaniagualeguay.com';
+  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+  
+  if (isProduction) {
+    // En Vercel, los rewrites manejan /api/* -> backend
+    CONFIG.API.BASE = '';
+  } else if (isLocalhost) {
+    // En desarrollo local, apuntar al backend local
+    CONFIG.API.BASE = 'http://localhost:3000';
+  } else {
+    // Fallback: usar BACKEND_URL configurado
+    CONFIG.API.BASE = CONFIG.API.BACKEND_URL || '';
+  }
+}
+
+// Ejecutar detección inmediatamente
+detectEnvironment();
+
 let configPromise = null;
 let configLoaded = false;
 
@@ -90,6 +111,8 @@ async function loadConfigFromAPI() {
       if (res.ok) {
         const apiConfig = await res.json();
         CONFIG = deepMerge(DEFAULT_CONFIG, apiConfig);
+        // Re-detect environment after loading config (in case BACKEND_URL changed)
+        detectEnvironment();
       }
     } catch (err) {
       console.warn('No se pudo cargar config desde API, usando valores por defecto:', err);

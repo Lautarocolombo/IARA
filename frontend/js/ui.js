@@ -121,10 +121,14 @@ function showToast(icon, message, type = 'default', options = {}) {
 
 // Reveal Animation on Scroll
 function initRevealAnimation() {
-  if (!('IntersectionObserver' in window)) {
+  // Respetar prefers-reduced-motion (verificar que matchMedia existe)
+  const prefersReducedMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  
+  if (!('IntersectionObserver' in window) || prefersReducedMotion) {
     document.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
     return;
   }
+  
   const revealElements = document.querySelectorAll('.reveal');
 
   window.revealObserver = new IntersectionObserver((entries) => {
@@ -141,18 +145,20 @@ function initRevealAnimation() {
 
   revealElements.forEach(el => {
     window.revealObserver.observe(el);
+    // Verificar si ya está en viewport al cargar
     if (el.getBoundingClientRect().top < window.innerHeight && el.getBoundingClientRect().bottom > 0) {
       el.classList.add('visible');
       window.revealObserver.unobserve(el);
     }
   });
 
+  // Fallback: forzar visibilidad después de 1.5s para evitar pantalla en blanco
   setTimeout(() => {
     document.querySelectorAll('.reveal:not(.visible)').forEach(el => {
       el.classList.add('visible');
       if (window.revealObserver) window.revealObserver.unobserve(el);
     });
-  }, 2000);
+  }, 1500);
 }
 
 // Navbar Scroll Effect
@@ -595,11 +601,15 @@ if (document.readyState === 'loading') {
 window.addEventListener('storage', (e) => {
   if (typeof CONFIG !== 'undefined' && CONFIG.CART && e.key === CONFIG.CART.STORAGE_KEY) {
     if (typeof window.updateCartBadge === 'function') window.updateCartBadge();
-    if (typeof window.updateCartDisplay === 'function') window.updateCartDisplay();
+    if (typeof window.updateCartDisplay === 'function') {
+      try { window.updateCartDisplay(); } catch (err) { console.debug('[ui] updateCartDisplay error:', err); }
+    }
   }
   if (e.key === 'ag_wishlist') {
     if (typeof updateWishlistBadge === 'function') updateWishlistBadge();
-    if (typeof renderWishlist === 'function') renderWishlist();
+    if (typeof renderWishlist === 'function') {
+      try { renderWishlist(); } catch (err) { console.debug('[ui] renderWishlist error:', err); }
+    }
   }
 });
 
@@ -625,8 +635,32 @@ window.addEventListener('error', (event) => {
   }
 });
 
-// Si hay error 404 en fetch, NO redirigir a página 404 del sitio
-// (un endpoint API que no existe no debe romper la navegación del frontend)
+// Warm-up ping to wake up Render free tier backend
+async function warmUpBackend() {
+  try {
+    const healthUrl = `${CONFIG.API.BASE}/api/v1/health`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    await fetch(healthUrl, { 
+      method: 'GET', 
+      cache: 'no-store',
+      signal: controller.signal,
+      // No credentials needed for health check
+      credentials: 'omit'
+    });
+    clearTimeout(timeout);
+    console.log('[WarmUp] Backend health check OK');
+  } catch (err) {
+    // Ignorar errores - solo es para despertar el backend
+    console.log('[WarmUp] Backend health check falló (esperado en cold start):', err.name || err.message);
+  }
+}
+
+// Ejecutar warm-up al cargar la página (no bloqueante)
+if (typeof window !== 'undefined') {
+  // Pequeño delay para no bloquear el render inicial
+  setTimeout(warmUpBackend, 100);
+}
 function getFetchErrorMessage(err) {
   if (navigator.onLine === false) {
     return 'Sin conexión a internet. Verificá tu red.';
@@ -686,7 +720,7 @@ async function safeFetch(url, opts = {}, timeoutMs = 0) {
   return fetchWithRetry(url, opts, 2, 1000, timeoutMs);
 }
 
-async function fetchWithRetry(url, opts = {}, retries = 2, backoffMs = 1000, timeoutMs = 0, showToastOnError = true) {
+async function fetchWithRetry(url, opts = {}, retries = 3, backoffMs = 1500, timeoutMs = 10000, showToastOnError = true) {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const fetchPromise = fetch(url, opts);
@@ -862,22 +896,24 @@ function applyAboutFallback() {
 
 function updateStatsFromTexts(data) {
   const statsMap = {
-    statClients: { target: 'stat_clients', suffix: '+' },
-    statProductsSold: { target: 'stat_products_sold', suffix: '+' },
-    statYears: { target: 'stat_years', suffix: '+' },
-    statArtesanal: { target: 'stat_artesanal', suffix: '%' }
+    statClients: { target: 'stat_clients', suffix: '+', defaultValue: 500 },
+    statProductsSold: { target: 'stat_products_sold', suffix: '+', defaultValue: 1000 },
+    statYears: { target: 'stat_years', suffix: '+', defaultValue: 6 },
+    statArtesanal: { target: 'stat_artesanal', suffix: '%', defaultValue: 100 }
   };
 
   Object.keys(statsMap).forEach(id => {
     const el = document.getElementById(id);
     const key = statsMap[id].target;
     const suffix = statsMap[id].suffix;
-    if (!el || !data[key]) return;
-    const target = parseInt(data[key], 10);
+    const defaultValue = statsMap[id].defaultValue;
+    if (!el) return;
+    const target = data[key] ? parseInt(data[key], 10) : defaultValue;
     if (isNaN(target)) return;
     el.setAttribute('data-target', target);
-    el.textContent = '0' + suffix;
-    if (typeof window.animateCount === 'function') {
+    // Mostrar valor por defecto inmediatamente, animar solo cuando haya dato real de la API
+    el.textContent = target + suffix;
+    if (data[key] && typeof window.animateCount === 'function') {
       window.animateCount(el);
     }
   });

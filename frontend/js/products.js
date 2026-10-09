@@ -29,10 +29,17 @@ async function fetchProducts(filters = {}) {
     if (filters.minPrice !== undefined && filters.minPrice !== '') params.set('minPrice', filters.minPrice);
     if (filters.maxPrice !== undefined && filters.maxPrice !== '') params.set('maxPrice', filters.maxPrice);
     const queryString = params.toString();
-    const url = `/api/v1/products${queryString ? `?${queryString}` : ''}`;
-    const res = await window.fetchWithRetry(url, {}, 2, 1000);
+    const url = `${CONFIG.API.BASE}/api/v1/products${queryString ? `?${queryString}` : ''}`;
+    const res = await window.fetchWithRetry(url, {}, 3, 1500, 10000);
     if (res) {
       products = await res.json();
+      renderProducts(getProducts());
+    } else {
+      // API falló completamente (incluso después de reintentos)
+      products = defaultProducts;
+      if (grid) {
+        grid.innerHTML = '<div class="error-state" style="grid-column:1/-1;text-align:center;padding:3rem;"><h3>No se pudieron cargar los productos</h3><p>El servidor puede estar iniciando. Esperá unos segundos e intentá de nuevo.</p><button class="btn btn-primary" onclick="fetchProducts()" style="margin-top:1rem;">Reintentar</button></div>';
+      }
     }
   } catch (err) {
     console.error('Error cargando productos:', err);
@@ -55,10 +62,15 @@ async function searchProducts(query, filters = {}) {
     if (filters.category && filters.category !== 'all') params.set('category', filters.category);
     if (filters.minPrice !== undefined && filters.minPrice !== '') params.set('minPrice', filters.minPrice);
     if (filters.maxPrice !== undefined && filters.maxPrice !== '') params.set('maxPrice', filters.maxPrice);
-    const res = await window.fetchWithRetry(`/api/v1/products/search?${params.toString()}`, {}, 2, 1000);
+    const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/v1/products/search?${params.toString()}`, {}, 3, 1500, 10000);
     if (res) {
       products = await res.json();
       renderProducts(getProducts());
+    } else {
+      showToast('', 'No se pudo buscar productos. El servidor puede estar iniciando.', 'error', {
+        onRetry: () => searchProducts(query, filters),
+        duration: 0
+      });
     }
   } catch (err) {
     console.error('Error buscando productos:', err);
@@ -77,7 +89,7 @@ async function applyFilters(filters = {}) {
       maxPrice: filters.maxPrice
     });
   }
-  renderProducts(getProducts());
+  // renderProducts se llama dentro de fetchProducts
 }
 
 function getProducts() {

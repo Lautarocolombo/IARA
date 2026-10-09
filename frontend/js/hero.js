@@ -18,20 +18,21 @@
 
   async function loadHeroCards() {
     try {
-      const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/v1/hero-cards`, {}, 2, 1000);
+      const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/v1/hero-cards`, {}, 3, 1500, 8000);
       if (!res) {
-        renderHeroCards([]);
+        // API falló: mantener el contenido hardcodeado del HTML, no sobrescribir con array vacío
+        console.warn('[loadHeroCards] API falló, manteniendo contenido por defecto del HTML');
         return;
       }
       const cards = await res.json();
       if (!Array.isArray(cards)) {
-        renderHeroCards([]);
+        console.warn('[loadHeroCards] Respuesta inválida, manteniendo contenido por defecto');
         return;
       }
       renderHeroCards(cards);
     } catch (err) {
       console.error('[loadHeroCards] Error:', err);
-      renderHeroCards([]);
+      // No llamar renderHeroCards([]) - mantener contenido hardcodeado del HTML
     }
   }
 
@@ -65,7 +66,7 @@
     try {
       let siteTexts = {};
       try {
-        const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/v1/site-texts`, {}, 2, 1000);
+        const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/v1/site-texts`, {}, 2, 1000, 5000);
         if (res && res.ok) siteTexts = await res.json();
       } catch (err) {
         console.error('[Hero] Error cargando site-texts:', err);
@@ -75,7 +76,7 @@
 
       let featuredProducts = [];
       try {
-        const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/v1/products/featured`, {}, 2, 1000, 0, false);
+        const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/v1/products/featured`, {}, 2, 1000, 5000, false);
         if (res && res.ok) featuredProducts = await res.json();
       } catch (err) {
         console.error('[Hero] Error cargando productos destacados:', err);
@@ -140,8 +141,9 @@
       if (heroContent) {
         const subtitleEl = heroContent.querySelector('.hero-subtitle');
         const primaryBtn = heroContent.querySelector('.btn-primary');
-        if (subtitleEl && data[0].subtitulo) subtitleEl.textContent = data[0].subtitulo;
-        if (primaryBtn && data[0].cta_texto) {
+        // Solo actualizar si tenemos datos de la API (no defaults vacíos)
+        if (subtitleEl && data[0].subtitulo && data[0].subtitulo !== defaults[0].subtitulo) subtitleEl.textContent = data[0].subtitulo;
+        if (primaryBtn && data[0].cta_texto && data[0].cta_texto !== defaults[0].cta_texto) {
           primaryBtn.textContent = data[0].cta_texto;
           primaryBtn.href = data[0].cta_url || '#catalog';
         }
