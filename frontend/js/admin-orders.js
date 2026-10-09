@@ -1,5 +1,6 @@
 /* ==================== ADMIN ORDERS.JS ==================== */
 /* Vista de detalle drill-down por pedido para Artesanía Admin */
+/* global QRCode */
 
 (function () {
   'use strict';

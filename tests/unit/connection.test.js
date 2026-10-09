@@ -111,7 +111,7 @@ describe('connection.js', () => {
 
       await connection.checkBackend();
       expect(fetchMock).toHaveBeenCalledWith(
-        '/api/health',
+        '/api/v1/health',
         expect.objectContaining({
           method: 'GET',
           headers: { Accept: 'application/json' }
@@ -241,7 +241,7 @@ describe('connection.js', () => {
 
       await connection.keepAlive();
       expect(fetchMock).toHaveBeenCalledWith(
-        '/api/health',
+        '/api/v1/health',
         expect.objectContaining({
           method: 'GET',
           headers: { Accept: 'application/json' }
@@ -294,3 +294,4 @@ describe('connection.js', () => {
     });
   });
 });
+

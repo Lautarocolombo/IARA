@@ -16,7 +16,7 @@
     if (tbody) tbody.innerHTML = '<tr><td colspan="8" class="loading-row">Cargando productos...</td></tr>';
 
     try {
-      var res = await window.adminFetch('/api/admin/products?limit=100', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/products?limit=100', { method: 'GET' });
       if (!res || !res.ok) {
         throw new Error('No se pudieron cargar los productos');
       }
@@ -37,7 +37,7 @@ async function loadCategories() {
     var filterCategory = document.getElementById('filter_category');
 
     try {
-      var res = await window.adminFetch('/api/categories', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/categories', { method: 'GET' });
       if (res && res.ok) {
         var data = await res.json();
         var items = Array.isArray(data) ? data : (data.categories || []);
@@ -269,12 +269,12 @@ function renderStatusCell(active) {
 
     var res;
     if (editingProductId) {
-      res = await window.adminFetch('/api/admin/products/' + editingProductId, {
+      res = await window.adminFetch('/api/v1/admin/products/' + editingProductId, {
         method: 'PUT',
         body: formData
       });
     } else {
-      res = await window.adminFetch('/api/admin/products', {
+      res = await window.adminFetch('/api/v1/admin/products', {
         method: 'POST',
         body: formData
       });
@@ -322,7 +322,7 @@ function renderStatusCell(active) {
       imageFormData.append('images', file);
     });
 
-    var res = await window.adminFetch('/api/products/' + productId + '/images', {
+    var res = await window.adminFetch('/api/v1/products/' + productId + '/images', {
       method: 'POST',
       body: imageFormData
     });
@@ -358,7 +358,7 @@ function renderStatusCell(active) {
     if (!gallery || !section) return;
 
     try {
-      var res = await window.adminFetch('/api/products/' + productId + '/images', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/products/' + productId + '/images', { method: 'GET' });
       if (!res || !res.ok) throw new Error('No se pudieron cargar las imágenes');
       var data = await res.json();
       productExistingImages = Array.isArray(data) ? data : [];
@@ -504,7 +504,7 @@ function renderStatusCell(active) {
 
   async function syncImageOrder(productId, orderedIds) {
     try {
-      var res = await window.adminFetch('/api/products/' + productId + '/images/sync-order', {
+      var res = await window.adminFetch('/api/v1/products/' + productId + '/images/sync-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ orden: orderedIds })
@@ -612,7 +612,7 @@ function renderStatusCell(active) {
       formData.append('image', blob, 'replace_' + imageId + '.webp');
 
       var xhr = new XMLHttpRequest();
-      var url = (CONFIG.API && CONFIG.API.BACKEND_URL ? CONFIG.API.BACKEND_URL : CONFIG.API.BASE) + '/api/products/' + productId + '/images/' + imageId + '/replace';
+      var url = (CONFIG.API && CONFIG.API.BACKEND_URL ? CONFIG.API.BACKEND_URL : CONFIG.API.BASE) + '/api/v1/products/' + productId + '/images/' + imageId + '/replace';
 
       await new Promise(function (resolve, reject) {
         xhr.upload.addEventListener('progress', function (e) {
@@ -654,7 +654,7 @@ function renderStatusCell(active) {
 
   async function deleteProductImage(productId, imageId) {
     try {
-      var res = await window.adminFetch('/api/products/' + productId + '/images/' + imageId, {
+      var res = await window.adminFetch('/api/v1/products/' + productId + '/images/' + imageId, {
         method: 'DELETE',
         credentials: 'include'
       });
@@ -671,7 +671,7 @@ function renderStatusCell(active) {
 
   async function setMainProductImage(productId, imageId) {
     try {
-      var res = await window.adminFetch('/api/products/' + productId + '/images/' + imageId, {
+      var res = await window.adminFetch('/api/v1/products/' + productId + '/images/' + imageId, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
@@ -699,7 +699,7 @@ function renderStatusCell(active) {
 
     try {
       var xhr = new XMLHttpRequest();
-      var url = (CONFIG.API && CONFIG.API.BACKEND_URL ? CONFIG.API.BACKEND_URL : CONFIG.API.BASE) + '/api/products/' + productId + '/images';
+      var url = (CONFIG.API && CONFIG.API.BACKEND_URL ? CONFIG.API.BACKEND_URL : CONFIG.API.BASE) + '/api/v1/products/' + productId + '/images';
 
       await new Promise(function (resolve, reject) {
         xhr.upload.addEventListener('progress', function (e) {
@@ -848,7 +848,7 @@ var active = document.getElementById('prod_active');
       var formData = new FormData();
       formData.append('featured', next ? 'true' : 'false');
 
-      var res = await window.adminFetch('/api/admin/products/' + id, {
+      var res = await window.adminFetch('/api/v1/admin/products/' + id, {
         method: 'PUT',
         body: formData
       });
@@ -883,7 +883,7 @@ var active = document.getElementById('prod_active');
 
   async function processDeleteProduct(id) {
     try {
-      var res = await window.adminFetch('/api/admin/products/' + id, { method: 'DELETE' });
+      var res = await window.adminFetch('/api/v1/admin/products/' + id, { method: 'DELETE' });
       if (!res || !res.ok) {
         var errMsg = 'Error al eliminar.';
         if (res) {
@@ -1093,5 +1093,6 @@ var active = document.getElementById('prod_active');
   };
   window.saveAllProductChanges = window.saveAllProductsChanges;
 })();
+
 
 

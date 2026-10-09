@@ -109,7 +109,7 @@
     var loading = document.getElementById('accountOrdersLoading');
     if (!container || !email) return;
     if (loading) window.showLoading(loading, { label: 'Cargando pedidos...' });
-    window.fetchWithRetry(CONFIG.API.BASE + '/api/orders?email=' + encodeURIComponent(email), {}, 2, 1000)
+    window.fetchWithRetry(CONFIG.API.BASE + '/api/v1/orders?email=' + encodeURIComponent(email), {}, 2, 1000)
       .then(function (res) {
         if (!res || !res.ok) throw new Error('No se pudieron cargar los pedidos');
         return res.json();
@@ -153,7 +153,7 @@
           if (loginMessage) loginMessage.textContent = 'Ingresá tus credenciales';
           return;
         }
-        fetch(CONFIG.API.BASE + '/api/auth/login', {
+        fetch(CONFIG.API.BASE + '/api/v1/auth/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -176,7 +176,7 @@
       });
     }
     if (logout) logout.addEventListener('click', function () {
-      fetch(CONFIG.API.BASE + '/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(function () { /* noop */ });
+      fetch(CONFIG.API.BASE + '/api/v1/auth/logout', { method: 'POST', credentials: 'include' }).catch(function () { /* noop */ });
       setToken('');
       showAuthenticated(false);
       window.showToast('✓', 'Sesión cerrada', 'info');
@@ -198,7 +198,7 @@
     });
     if (exportBtn) exportBtn.addEventListener('click', function () {
       if (!token()) return;
-      fetch(CONFIG.API.BASE + '/api/auth/user/data-export', { headers: { Authorization: 'Bearer ' + token() } })
+      fetch(CONFIG.API.BASE + '/api/v1/auth/user/data-export', { headers: { Authorization: 'Bearer ' + token() } })
         .then(function (res) { return res.json(); })
         .then(function (data) {
           var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -215,7 +215,7 @@
       if (!token()) return;
       window.ConfirmDialog.ask({ title: 'Eliminar cuenta', message: 'Esta acción eliminará los datos asociados a tu cuenta.', confirmLabel: 'Eliminar', cancelLabel: 'Cancelar' }).then(function (confirmed) {
         if (!confirmed) return;
-        fetch(CONFIG.API.BASE + '/api/auth/user/data-delete', { method: 'DELETE', headers: { Authorization: 'Bearer ' + token() } })
+        fetch(CONFIG.API.BASE + '/api/v1/auth/user/data-delete', { method: 'DELETE', headers: { Authorization: 'Bearer ' + token() } })
           .then(function (res) { return res.json().then(function (data) { if (!res.ok) throw new Error(data.error || 'No se pudo eliminar'); }); })
           .then(function () { setToken(''); showAuthenticated(false); window.showToast('✓', 'Cuenta eliminada', 'success'); })
           .catch(function (err) { window.showToast('!', err.message || 'No se pudo eliminar la cuenta', 'error'); });
@@ -235,3 +235,4 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 }());
+

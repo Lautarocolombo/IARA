@@ -28,7 +28,7 @@ async function fixAssets() {
 
   try {
     const blobImage = 'https://qv6wutytfjdt3n1u.public.blob.vercel-storage.com/products/1787187457506_3605394bbf038c78674e8c11bf4a3193.jpg';
-    const carouselBase = 'https://iara-os3h.onrender.com/imagenes/carrucel';
+    const carouselBase = 'https://iara-backend.onrender.com/imagenes/carrucel';
 
     // Producto 7: mantener blob existente
     await client.query('UPDATE products SET image = $1 WHERE id = 7', [blobImage]);

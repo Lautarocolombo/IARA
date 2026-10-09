@@ -4,7 +4,7 @@
 
 - **Frontend (estático)**: Vite → `dist/`, hosteado en Vercel (`artesania-gualeguay-v3.vercel.app`).
   - `vercel.json` reescribe `/api/(.*)` → backend de Render y `/uploads/(.*)` → Render.
-- **Backend (Node/Express)**: hosteado en Render (`iara-os3h.onrender.com`, ver `render.yaml`).
+- **Backend (Node/Express)**: hosteado en Render (`iara-backend.onrender.com`, ver `render.yaml`).
   - Deploy automático al pushear a la rama `main` del repo conectado.
 - **Base de datos**: PostgreSQL (Neon) en producción / SQLite en tests y desarrollo local.
 ## Almacenamiento de imágenes (importante)
@@ -54,7 +54,7 @@ CSRF_SECRET=<random 32+ chars>
 ADMIN_USER=<username>
 ADMIN_PASS_HASH=<bcrypt hash>
 SITE_URL=https://artesania-gualeguay-v3.vercel.app
-BACKEND_URL=https://iara-os3h.onrender.com
+BACKEND_URL=https://iara-backend.onrender.com
 ALLOWED_ORIGINS=https://artesania-gualeguay-v3.vercel.app,https://*.vercel.app,https://artesaniagualeguay.com,http://localhost:3000,http://localhost:5173
 ```
 

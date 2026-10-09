@@ -23,10 +23,12 @@ function copyRecursive(src, dest) {
   }
 }
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 export default defineConfig({
   customLogger: viteLogger,
   root: resolve(__dirname),
-  publicDir: resolve(__dirname, '..'),
+  publicDir: resolve(__dirname, '..', 'public'),
   build: {
     outDir: resolve(__dirname, '..', 'dist'),
     emptyOutDir: true,
@@ -48,12 +50,19 @@ export default defineConfig({
         return entries;
       })(),
       output: {
-        manualChunks: undefined,
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('chart.js')) return 'chart';
+            if (id.includes('quill')) return 'quill';
+            if (id.includes('qrcode')) return 'qrcode';
+            return 'vendor';
+          }
+        },
       }
     },
     minify: 'esbuild',
     cssCodeSplit: true,
-    sourcemap: true
+    sourcemap: !isProduction
   },
   server: {
     proxy: {
@@ -68,11 +77,11 @@ export default defineConfig({
     {
       name: 'copy-images',
       closeBundle() {
-        const srcDir = resolve(__dirname, '..', 'imagem');
-        const destDir = resolve(__dirname, '..', 'dist', 'imagem');
+        const srcDir = resolve(__dirname, '..', 'public', 'imagenes');
+        const destDir = resolve(__dirname, '..', 'dist', 'imagenes');
         if (existsSync(srcDir)) {
           copyRecursive(srcDir, destDir);
-          console.log('[vite] Imágenes copiadas a dist/imagem/');
+          console.log('[vite] Imágenes copiadas a dist/imagenes/');
         }
       }
     }

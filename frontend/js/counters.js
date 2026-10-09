@@ -66,11 +66,20 @@
 
     setTimeout(() => {
       counters.forEach(el => {
+        if (!animated.has(el) && el.getBoundingClientRect().top < window.innerHeight && el.getBoundingClientRect().bottom > 0) {
+          safeAnimate(el);
+          observer.unobserve(el);
+        }
+      });
+    }, 100);
+
+    setTimeout(() => {
+      counters.forEach(el => {
         if (!animated.has(el)) {
           safeAnimate(el);
         }
       });
-    }, 3000);
+    }, 1500);
   } else {
     counters.forEach(el => safeAnimate(el));
   }

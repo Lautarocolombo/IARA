@@ -237,7 +237,7 @@ describe('productImages.js', () => {
 
       document.body.innerHTML = '<div id="productImageGallery"></div>';
       await window.ProductImages.loadImages('123');
-      expect(fetchWithRetryMock).toHaveBeenCalledWith('/api/products/123/images', {}, 2, 1000);
+      expect(fetchWithRetryMock).toHaveBeenCalledWith('/api/v1/products/123/images', {}, 2, 1000);
     });
 
     test('maneja error al cargar imágenes', async () => {
@@ -370,7 +370,7 @@ describe('productImages.js', () => {
       require('../../frontend/js/productImages');
       await window.ProductImages.deleteImage('123', '1');
       expect(window.fetchWithRetry).toHaveBeenCalledWith(
-        expect.stringContaining('/api/products/123/images/1'),
+        expect.stringContaining('/api/v1/products/123/images/1'),
         expect.objectContaining({ method: 'DELETE' }),
         2,
         1000
@@ -391,7 +391,7 @@ describe('productImages.js', () => {
       const file = { type: 'image/jpeg', size: 1024 };
       await window.ProductImages.replaceImage('123', '1', file);
       expect(window.fetchWithRetry).toHaveBeenCalledWith(
-        expect.stringContaining('/api/products/123/images/1/replace'),
+        expect.stringContaining('/api/v1/products/123/images/1/replace'),
         expect.objectContaining({ method: 'PUT' }),
         2,
         1000
@@ -413,7 +413,7 @@ describe('productImages.js', () => {
       require('../../frontend/js/productImages');
       await window.ProductImages.markPrincipal('123', '1');
       expect(window.fetchWithRetry).toHaveBeenCalledWith(
-        expect.stringContaining('/api/products/123/images/1'),
+        expect.stringContaining('/api/v1/products/123/images/1'),
         expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ es_principal: true }) }),
         2,
         1000
@@ -427,7 +427,7 @@ describe('productImages.js', () => {
       require('../../frontend/js/productImages');
       await window.ProductImages.updateImageMeta('123', '1', { descripcion: 'Nueva desc', categoria: 'pulseras' });
       expect(window.fetchWithRetry).toHaveBeenCalledWith(
-        expect.stringContaining('/api/products/123/images/1'),
+        expect.stringContaining('/api/v1/products/123/images/1'),
         expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ descripcion: 'Nueva desc', categoria: 'pulseras' }) }),
         2,
         1000
@@ -441,7 +441,7 @@ describe('productImages.js', () => {
       require('../../frontend/js/productImages');
       await window.ProductImages.syncOrder('123', [1, 2, 3]);
       expect(window.fetchWithRetry).toHaveBeenCalledWith(
-        expect.stringContaining('/api/products/123/images/sync-order'),
+        expect.stringContaining('/api/v1/products/123/images/sync-order'),
         expect.objectContaining({ method: 'POST', body: JSON.stringify({ orden: [1, 2, 3] }) }),
         2,
         1000
@@ -777,7 +777,7 @@ describe('productImages.js', () => {
         items[1].dispatchEvent(dropEvent);
         await flushPromises();
         expect(fetchWithRetryMock).toHaveBeenCalledWith(
-          expect.stringContaining('/api/products/123/images/sync-order'),
+          expect.stringContaining('/api/v1/products/123/images/sync-order'),
           expect.objectContaining({ method: 'POST' }),
           2,
           1000
@@ -791,7 +791,7 @@ describe('productImages.js', () => {
         items[0].querySelector('[data-action="principal"]').click();
         await flushPromises();
         expect(fetchWithRetryMock).toHaveBeenCalledWith(
-          expect.stringContaining('/api/products/123/images/1'),
+          expect.stringContaining('/api/v1/products/123/images/1'),
           expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ es_principal: true }) }),
           2,
           1000
@@ -812,7 +812,7 @@ describe('productImages.js', () => {
         items[0].querySelector('[data-action="delete"]').click();
         await flushPromises();
         expect(fetchWithRetryMock).toHaveBeenCalledWith(
-          expect.stringContaining('/api/products/123/images/1'),
+          expect.stringContaining('/api/v1/products/123/images/1'),
           expect.objectContaining({ method: 'DELETE' }),
           2,
           1000
@@ -861,7 +861,7 @@ describe('productImages.js', () => {
         dropzone.dispatchEvent(dropEvent);
         await flushPromises();
         expect(dropzone.classList.contains('drag-over')).toBe(false);
-        expect(fetchWithRetryMock.mock.calls.some(function (c) { return String(c[0]).indexOf('/api/products/123/images') !== -1; })).toBe(true);
+        expect(fetchWithRetryMock.mock.calls.some(function (c) { return String(c[0]).indexOf('/api/v1/products/123/images') !== -1; })).toBe(true);
         jest.advanceTimersByTime(3000);
 
         installXhr({ status: 200, responseText: JSON.stringify({ images: [] }) });
@@ -907,7 +907,7 @@ describe('productImages.js', () => {
         input.dispatchEvent(new Event('change'));
         await flushPromises();
         expect(fetchWithRetryMock).toHaveBeenCalledWith(
-          expect.stringContaining('/api/products/123/images/1/replace'),
+          expect.stringContaining('/api/v1/products/123/images/1/replace'),
           expect.objectContaining({ method: 'PUT' }),
           2,
           1000
@@ -1536,7 +1536,7 @@ describe('productImages.js', () => {
         item.querySelector('[data-action="save-meta"]').click();
         await flushPromises();
         expect(fetchWithRetryMock).toHaveBeenCalledWith(
-          expect.stringContaining('/api/products/123/images/1'),
+          expect.stringContaining('/api/v1/products/123/images/1'),
           expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ descripcion: '', categoria: '' }) }),
           2,
           1000
@@ -1628,3 +1628,4 @@ describe('productImages.js', () => {
     });
   });
 });
+

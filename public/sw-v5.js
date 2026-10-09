@@ -1,27 +1,28 @@
 /* ==================== SERVICE WORKER ==================== */
-const CACHE_NAME = 'artesania-cache-v4';
+const CACHE_NAME = 'artesania-cache-v5';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
-  '/css/variables.css',
-  '/css/base.css',
-  '/css/components.css',
-  '/css/pages.css',
-  '/css/animations.css',
   '/js/config.js',
   '/js/safeImage.js',
   '/js/theme.js',
   '/js/ui.js',
   '/js/cart.js',
   '/js/products.js',
-  '/js/checkout.js',
-  '/js/connection.js',
-  '/js/analytics.js',
+  '/js/hero.js',
+  '/js/counters.js',
+  '/js/about-carousel.js',
+  '/js/home-init.js',
+  '/js/wishlist.js',
+  '/js/cookie-consent.js',
+  '/js/header.js',
+  '/js/safeImage.js',
   '/assets/placeholder-product.svg'
 ];
 
 const IMAGE_CACHE = 'artesania-images-v1';
 const API_CACHE = 'artesania-api-v1';
+const ASSET_CACHE = 'artesania-assets-v1';
 const API_CACHE_MAX_ENTRIES = 50;
 const API_CACHE_MAX_AGE = 5 * 60 * 1000;
 
@@ -40,7 +41,7 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
-        keys.filter((key) => ![CACHE_NAME, IMAGE_CACHE, API_CACHE].includes(key))
+        keys.filter((key) => ![CACHE_NAME, IMAGE_CACHE, API_CACHE, ASSET_CACHE].includes(key))
           .map((key) => caches.delete(key))
       );
     })
@@ -70,8 +71,21 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  if (url.pathname.match(/\.(css|js|woff2|woff|ttf)$/)) {
-    event.respondWith(staleWhileRevalidate(request, CACHE_NAME));
+  // Hashed assets from Vite (in /assets/) - use staleWhileRevalidate since filename changes on content change
+  if (url.pathname.startsWith('/assets/') && url.pathname.match(/\.(css|js|woff2|woff|ttf)$/)) {
+    event.respondWith(staleWhileRevalidate(request, ASSET_CACHE));
+    return;
+  }
+
+  // Vanilla JS files in /js/ - use networkFirst to always get latest version
+  if (url.pathname.startsWith('/js/') && url.pathname.endsWith('.js')) {
+    event.respondWith(networkFirst(request));
+    return;
+  }
+
+  // CSS files (non-hashed) - use networkFirst
+  if (url.pathname.match(/\.css$/)) {
+    event.respondWith(networkFirst(request));
     return;
   }
 

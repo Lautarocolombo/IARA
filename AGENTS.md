@@ -24,7 +24,7 @@
 
 - Frontend: Vercel (outputDirectory: `dist`, rewrites `/api/*` → Render)
 - Backend: Render (`render.yaml`, rootDirectory: `backend`)
-- Backend URL: `https://iara-os3h.onrender.com`
+- Backend URL: `https://iara-backend.onrender.com`
 - Frontend URL: `https://artesania-gualeguay-v3.vercel.app`
 
 ## Environment

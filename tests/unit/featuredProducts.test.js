@@ -114,7 +114,7 @@ describe('featured products — regresión', () => {
 
     function mockProducts(products) {
       adminFetchMock = jest.fn(async (url) => {
-        if (String(url).indexOf('/api/admin/products') !== -1) {
+        if (String(url).indexOf('/api/v1/admin/products') !== -1) {
           return { ok: true, json: async () => ({ products }) };
         }
         return { ok: true, json: async () => ({ categories: [] }) };
@@ -191,7 +191,7 @@ describe('featured products — regresión', () => {
 
       var call = window.adminFetch.mock.calls.find(function (c) { return c[1] && c[1].method === 'PUT'; });
       expect(call).toBeTruthy();
-      expect(call[0]).toBe('/api/admin/products/2');
+      expect(call[0]).toBe('/api/v1/admin/products/2');
       expect(call[1].body.get('featured')).toBe('true');
     });
 
@@ -207,3 +207,4 @@ describe('featured products — regresión', () => {
     });
   });
 });
+

@@ -85,7 +85,7 @@ export function buildOrderMessage(order) {
   if (paymentMethod === 'cash') {
     lines.push('Voy a pagar en efectivo al retirar/recibir.');
   } else {
-    lines.push('Les mando el comprobante de la transferencia.');
+    lines.push('Realicé la transferencia y enviaré el comprobante desde la app.');
   }
 
   let message = lines.join('\n');
@@ -165,7 +165,7 @@ export function buildWhatsAppLinks(phone, message) {
 
 export async function fetchWhatsAppNumberFromAPI() {
   try {
-    const res = await fetch('/api/site-settings', { credentials: 'same-origin', cache: 'no-store' });
+    const res = await fetch('/api/v1/v1/site-settings', { credentials: 'same-origin', cache: 'no-store' });
     if (res && res.ok) {
       const data = await res.json();
       if (data.whatsapp) return sanitizePhone(data.whatsapp);

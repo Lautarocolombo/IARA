@@ -1,6 +1,5 @@
 const express = require('express');
 const path = require('path');
-const cors = require('cors');
 const helmet = require('helmet');
 const dotenv = require('dotenv');
 const rateLimit = require('express-rate-limit');
@@ -85,6 +84,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 if (isProduction) {
   if (!process.env.DATABASE_URL) missingEnvVars.push('DATABASE_URL');
   if (!process.env.ALLOWED_ORIGINS) missingEnvVars.push('ALLOWED_ORIGINS');
+  if (!process.env.CSRF_SECRET) missingEnvVars.push('CSRF_SECRET');
 }
 
 if (missingEnvVars.length > 0) {
@@ -98,6 +98,7 @@ if (missingEnvVars.length > 0) {
     else if (key === 'ADMIN_PASS_HASH') hint = ' (generar con: npx bcrypt-cli hash)';
     else if (key === 'DATABASE_URL') hint = ' (connection string de PostgreSQL)';
     else if (key === 'ALLOWED_ORIGINS') hint = ' (ej: https://tudominio.com,http://localhost:3000)';
+    else if (key === 'CSRF_SECRET') hint = ' (generar con: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"';
     logger.error(`  ${key} → requerido${hint}`);
   });
   logger.error('='.repeat(60));
@@ -145,7 +146,7 @@ if (Sentry) {
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(sanitizeBody({ excludeKeys: ['about_text', 'hero_title'] }));
+app.use(sanitizeBody({ excludeKeys: [] }));
 // Skip compression for SSE streams (text/event-stream) and sync endpoints
 app.use(require('compression')({
   filter: (req, res) => {
@@ -182,6 +183,7 @@ function isOriginAllowed(origin) {
   });
 }
 
+// Single CORS middleware - handles preflight and sets headers for allowed origins
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   const isAllowed = isOriginAllowed(origin);
@@ -210,6 +212,7 @@ app.use((req, res, next) => {
   next();
 });
 
+<<<<<<< HEAD
 // Opciones CORS únicas: reutiliza isOriginAllowed. Se usa en /uploads y en
 // cualquier middleware del paquete `cors` (una sola fuente de verdad).
 // NOTA: allowedOrigins siempre tiene defaults, la rama `else` anterior era
@@ -223,6 +226,8 @@ const corsOptions = {
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With', 'X-Request-ID'],
 };
 
+=======
+>>>>>>> b091ff6922619009f758fa515ba900a6999ea8b7
 app.use(require('cookie-parser')());
 app.use(tenantContext);
 
@@ -231,8 +236,16 @@ if (process.env.REDIS_URL) {
   try {
     const RedisStore = require('./lib/redisStore');
     rateLimitStore = new RedisStore();
+    logger.info('[RateLimit] ✅ Redis store habilitado');
   } catch (err) {
-    logger.warn('Redis store no disponible, usando memoria:', err.message);
+    logger.warn('[RateLimit] Redis store no disponible, usando memoria:', err.message);
+  }
+} else {
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (isProduction) {
+    logger.warn('[RateLimit] ⚠️ REDIS_URL no configurado en PRODUCCIÓN. Rate-limit usa memoria (se pierde al reiniciar). Configurar REDIS_URL para persistencia.');
+  } else {
+    logger.info('[RateLimit] REDIS_URL no configurado. Usando memoria (OK para desarrollo).');
   }
 }
 const authLimiter = rateLimit({
@@ -311,15 +324,16 @@ app.use((req, res, next) => {
   next();
 });
 
-const TIMEOUT_MS = 30000;
-const UPLOAD_TIMEOUT_MS = 600000;
+const API_TIMEOUT_MS = 15000;
+const UPLOAD_TIMEOUT_MS = 60000;
+const SYNC_TIMEOUT_MS = 60000;
 app.use((req, res, next) => {
   const isUploadRoute = /^\/api\/products\/\d+\/images/.test(req.path) ||
     req.path === '/api/admin/upload' ||
     (/^\/api\/admin\/products/.test(req.path) && req.method === 'POST') ||
     (req.path === '/api/admin/products/bulk-import');
-  const isSyncRoute = req.path === '/api/sync';
-  const timeoutMs = isUploadRoute ? UPLOAD_TIMEOUT_MS : (isSyncRoute ? 60000 : TIMEOUT_MS);
+  const isSyncRoute = req.path === '/api/sync' || req.path === '/api/v1/sync';
+  const timeoutMs = isUploadRoute ? UPLOAD_TIMEOUT_MS : (isSyncRoute ? SYNC_TIMEOUT_MS : API_TIMEOUT_MS);
   const timeout = setTimeout(() => {
     if (!res.headersSent) {
       res.status(408).json({ error: 'Request timeout', message: 'El servidor tardó demasiado en responder. Intentá de nuevo.' });
@@ -371,6 +385,7 @@ app.use('/api/v1', require('./routes/reviews'));
 app.use('/api/v1', require('./routes/productImages'));
 app.use('/api/v1', require('./routes/health'));
 app.use('/api/v1', require('./routes/categories'));
+app.use('/api/v1', require('./routes/media'));
 app.use('/api/v1', require('./routes/reports'));
 app.use('/api/v1', require('./routes/receipts'));
 app.use('/api/v1', require('./routes/heroCards'));
@@ -385,6 +400,9 @@ app.use('/api/v1', require('./routes/docs'));
 app.use('/api/v1', require('./routes/config'));
 
 app.use('/api/v1-docs', require('./routes/docs'));
+
+// Public Swagger/OpenAPI documentation at /docs (canonical)
+app.use('/docs', require('./routes/docs'));
 
 app.use('/api/v1/admin', require('./routes/coupons'));
 app.use('/api/v1/admin/inventory', require('./routes/inventory'));
@@ -415,6 +433,7 @@ app.use('/api', require('./routes/reviews'));
 app.use('/api', require('./routes/productImages'));
 app.use('/api', require('./routes/health'));
 app.use('/api', require('./routes/categories'));
+app.use('/api', require('./routes/media'));
 app.use('/api', require('./routes/reports'));
 app.use('/api', require('./routes/receipts'));
 app.use('/api', require('./routes/heroCards'));
@@ -543,7 +562,7 @@ const uploadsStaticDir = path.join(__dirname, '..', '..', 'uploads');
 
 const UPLOAD_PLACEHOLDER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Imagen no disponible"><rect width="200" height="200" rx="14" fill="#fde8ef"/><text x="100" y="110" text-anchor="middle" font-family="system-ui,serif" font-size="40" fill="#d47090">📷</text><text x="100" y="150" text-anchor="middle" font-family="system-ui,serif" font-size="14" fill="#d47090">Imagen no disponible</text></svg>`;
 
-app.use('/uploads', cors(corsOptions), (req, res, next) => {
+app.use('/uploads', (req, res, next) => {
   const relativePath = req.path.replace(/^\//, '');
   const filePath = path.join(uploadsStaticDir, relativePath);
   res.sendFile(filePath, { maxAge: '7d', etag: true, lastModified: true }, (err) => {
@@ -616,6 +635,7 @@ if (Sentry) {
 
 app.use(errorHandler);
 
+<<<<<<< HEAD
 const dbReady = initDB().then(async () => {
     logger.info('Base de datos inicializada correctamente');
     // Seed local solo en desarrollo o con flag explícito: en producción con
@@ -634,6 +654,53 @@ const dbReady = initDB().then(async () => {
     logger.error({ err: err.message, stack: err.stack }, 'Error inicializando DB');
     throw err;
   });
+=======
+const dbReady = (async () => {
+    try {
+      await initDB();
+      logger.info('Base de datos inicializada correctamente');
+      try {
+        const { seedLocalData } = require('./lib/db');
+        if (process.env.SEED === 'true') {
+          await seedLocalData();
+        }
+      } catch (err) {
+        logger.warn({ err: err.message }, 'No se pudo sembrar datos locales');
+      }
+      try {
+        const { query } = require('./lib/db');
+        const result = await query('SELECT COUNT(*) FROM users');
+        if ((result.rows[0]?.count || 0) === 0 && process.env.ADMIN_USER && process.env.ADMIN_PASS_HASH) {
+          try {
+            await query(
+              'INSERT INTO users (username, password_hash, role, permissions, active) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (username) DO NOTHING',
+              [process.env.ADMIN_USER, process.env.ADMIN_PASS_HASH, 'admin', JSON.stringify({ all: true }), true]
+            );
+          } catch (err) {
+            if (!err.message.includes('UNIQUE constraint failed') && !err.message.includes('duplicate key')) {
+              throw err;
+            }
+          }
+          logger.info(`Usuario admin inicial creado: ${process.env.ADMIN_USER}`);
+        } else if (process.env.ADMIN_USER && process.env.ADMIN_PASS_HASH) {
+          const existing = await query('SELECT password_hash, permissions FROM users WHERE username = $1', [process.env.ADMIN_USER]);
+          if (existing.rows.length > 0) {
+            const needsUpdate = existing.rows[0].password_hash !== process.env.ADMIN_PASS_HASH || existing.rows[0].permissions !== JSON.stringify({ all: true });
+            if (needsUpdate) {
+              await query('UPDATE users SET password_hash = $1, permissions = $2, updated_at = CURRENT_TIMESTAMP WHERE username = $3', [process.env.ADMIN_PASS_HASH, JSON.stringify({ all: true }), process.env.ADMIN_USER]);
+              logger.info(`Hash/permisos de admin actualizados para: ${process.env.ADMIN_USER}`);
+            }
+          }
+        }
+      } catch (err) {
+        logger.warn({ err: err.message }, 'No se pudo verificar/crear usuario admin inicial');
+      }
+    } catch (err) {
+      logger.error({ err: err.message, stack: err.stack }, 'Error inicializando DB');
+      throw err;
+    }
+  })();
+>>>>>>> b091ff6922619009f758fa515ba900a6999ea8b7
 
 if (process.env.REDIS_URL) {
   try {
@@ -642,9 +709,16 @@ if (process.env.REDIS_URL) {
     startWebhookWorker(async (job) => {
       await processWebhookSync(job.data);
     });
-    logger.info('Webhook worker iniciado');
+    logger.info('[BullMQ] ✅ Webhook worker iniciado');
   } catch (err) {
-    logger.warn({ err: err.message }, 'No se pudo iniciar webhook worker');
+    logger.warn({ err: err.message }, '[BullMQ] No se pudo iniciar webhook worker');
+  }
+} else {
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (isProduction) {
+    logger.warn('[BullMQ] ⚠️ REDIS_URL no configurado en PRODUCCIÓN. Webhook worker INACTIVO (procesamiento síncrono fallback). Configurar REDIS_URL para colas asíncronas.');
+  } else {
+    logger.info('[BullMQ] REDIS_URL no configurado. Webhook worker inactivo (OK para desarrollo).');
   }
 }
 

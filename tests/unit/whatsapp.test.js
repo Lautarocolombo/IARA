@@ -85,7 +85,7 @@ describe('whatsapp.js helper', () => {
       expect(msg).toContain('Direccion: Calle 123, La Plata, Buenos Aires');
       expect(msg).toContain('Alias Mercado Pago: iara-salgueiro');
       expect(msg).toContain('Total:');
-      expect(msg).toContain('Les mando el comprobante de la transferencia.');
+      expect(msg).toContain('Realicé la transferencia y enviaré el comprobante desde la app.');
     });
 
     test('no incluye emojis', () => {
@@ -105,7 +105,7 @@ describe('whatsapp.js helper', () => {
       const order = { ...baseOrder, paymentMethod: 'cash' };
       const msg = buildOrderMessage(order);
       expect(msg).toContain('Voy a pagar en efectivo al retirar/recibir.');
-      expect(msg).not.toContain('comprobante de la transferencia');
+      expect(msg).not.toContain('Realicé la transferencia y enviaré el comprobante desde la app.');
     });
 
     test('sanitiza nombres de productos con emojis', () => {

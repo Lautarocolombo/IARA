@@ -26,8 +26,6 @@ function copyRecursive(src, dest) {
 export default defineConfig(({ mode }) => ({
   customLogger: viteLogger,
   root: resolve(__dirname, 'frontend'),
-  // ANTES: publicDir apuntaba a todo frontend/ -> duplicaba js/pages en dist.
-  // publicDir=false: solo se copia lo que el plugin declara (assets/imagenes).
   publicDir: false,
   build: {
     outDir: resolve(__dirname, 'dist'),
@@ -53,8 +51,6 @@ export default defineConfig(({ mode }) => ({
         return entries;
       })(),
       output: {
-        // Chart/Quill se cargan por CDN en dashboard.html, no van al bundle.
-        // Se separa cualquier vendor npm para no bloquear el inicio.
         manualChunks(id) {
           if (id.includes('node_modules')) return 'vendor';
           return undefined;
@@ -64,7 +60,6 @@ export default defineConfig(({ mode }) => ({
     minify: 'esbuild',
     cssCodeSplit: true,
     cssMinify: true,
-    // Sourcemaps solo en dev: en prod pesan y exponen código.
     sourcemap: mode !== 'production'
   },
   server: {
@@ -80,11 +75,6 @@ export default defineConfig(({ mode }) => ({
     {
       name: 'copy-static-assets',
       closeBundle() {
-        // Copia solo carpetas estáticas necesarias (antes: 'imagem' con typo, no existía).
-        // 'js' es CRÍTICO: index.html y pages/*.html cargan scripts clásicos
-        // <script src="js/..."> que Vite NO empaqueta; sin esta copia todos dan
-        // 404 en producción y el sitio queda en blanco (sin CONFIG, sin fetch,
-        // sin reveal → hero/stats/catálogo invisibles o vacíos).
         const pairs = [
           ['imagenes', 'imagenes'],
           ['assets', 'assets'],
@@ -98,8 +88,6 @@ export default defineConfig(({ mode }) => ({
             console.log(`[vite] ${srcName}/ copiado a dist/${destName}/`);
           }
         }
-        // Archivos estáticos de raíz (service worker, robots, sitemap,
-        // verificación de Google): se sirven desde / en producción.
         const rootFiles = ['sw-v4.js', 'robots.txt', 'sitemap.xml'];
         try {
           for (const f of readdirSync(resolve(__dirname, 'frontend'))) {

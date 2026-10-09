@@ -12,4 +12,15 @@ CREATE TABLE IF NOT EXISTS coupons (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Idempotente: agregar tenant_id si la tabla ya existía sin ella
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'coupons' AND column_name = 'tenant_id'
+  ) THEN
+    ALTER TABLE coupons ADD COLUMN tenant_id TEXT DEFAULT 'default';
+  END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_coupons_tenant_id ON coupons(tenant_id);

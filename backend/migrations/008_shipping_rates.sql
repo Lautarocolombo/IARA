@@ -2,8 +2,20 @@ CREATE TABLE IF NOT EXISTS shipping_rates_by_province (
   id SERIAL PRIMARY KEY,
   province TEXT UNIQUE NOT NULL,
   shipping_cost NUMERIC(10,2) DEFAULT 0,
+  tenant_id TEXT DEFAULT 'default',
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Idempotente: agregar tenant_id si la tabla ya existía sin ella
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'shipping_rates_by_province' AND column_name = 'tenant_id'
+  ) THEN
+    ALTER TABLE shipping_rates_by_province ADD COLUMN tenant_id TEXT DEFAULT 'default';
+  END IF;
+END $$;
 
 ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS included_shipping_cost NUMERIC(10,2) DEFAULT 0;
 

@@ -98,7 +98,7 @@
 
   async function loadAllContent() {
     try {
-      var res = await window.adminFetch('/api/site-texts', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/site-texts', { method: 'GET' });
       if (res && res.ok) {
         textsCache = await res.json();
       } else {
@@ -110,7 +110,7 @@
     }
 
     try {
-      var res2 = await window.adminFetch('/api/admin/settings', { method: 'GET' });
+      var res2 = await window.adminFetch('/api/v1/admin/settings', { method: 'GET' });
       if (res2 && res2.ok) {
         settingsCache = await res2.json();
       } else {
@@ -148,10 +148,33 @@
   }
 
   var quillEditor = null;
+  var quillLoaded = false;
 
-  function initQuillEditor() {
+  async function loadQuill() {
+    if (quillLoaded) return true;
+    try {
+      var QuillModule = await import('quill');
+      window.Quill = QuillModule.default || QuillModule;
+      // Load Quill CSS
+      if (!document.querySelector('link[href*="quill.snow.css"]')) {
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css';
+        document.head.appendChild(link);
+      }
+      quillLoaded = true;
+      return true;
+    } catch (err) {
+      console.error('[Content] Error cargando Quill:', err);
+      return false;
+    }
+  }
+
+  async function initQuillEditor() {
     var container = document.getElementById('about_text_editor');
-    if (!container || typeof Quill === 'undefined') return;
+    if (!container) return;
+    var loaded = await loadQuill();
+    if (!loaded) return;
     quillEditor = new Quill(container, {
       theme: 'snow',
       placeholder: 'En cada pieza dejamos un pedacito de Gualeguay...',
@@ -171,7 +194,7 @@
 
   async function loadFeaturedCategories() {
     try {
-      var res = await window.adminFetch('/api/admin/categories', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/categories', { method: 'GET' });
       if (!res || !res.ok) return;
       var data = await res.json();
       var select = document.getElementById('featured_categories');
@@ -214,7 +237,7 @@
     }
 
     try {
-      var res = await window.adminFetch('/api/admin/sync-texts', {
+      var res = await window.adminFetch('/api/v1/admin/sync-texts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ featured_categories: JSON.stringify(selected) })
@@ -476,7 +499,7 @@
       if (heroImageFile) {
         var formDataHero = new FormData();
         formDataHero.append('image', heroImageFile);
-        var heroPromise = window.adminFetch('/api/admin/upload', {
+        var heroPromise = window.adminFetch('/api/v1/admin/upload', {
           method: 'POST',
           body: formDataHero
         }).then(async function (res) {
@@ -503,7 +526,7 @@
       if (fpImageFile) {
         var formDataFp = new FormData();
         formDataFp.append('image', fpImageFile);
-        var fpPromise = window.adminFetch('/api/admin/upload', {
+        var fpPromise = window.adminFetch('/api/v1/admin/upload', {
           method: 'POST',
           body: formDataFp
         }).then(async function (res) {
@@ -564,7 +587,7 @@
         hero_card_2_text: heroCard2Text
       };
 
-      var res = await window.adminFetch('/api/admin/sync-texts', {
+      var res = await window.adminFetch('/api/v1/admin/sync-texts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -710,7 +733,7 @@
           if (input && input.files && input.files[0]) {
             var formData = new FormData();
             formData.append('image', input.files[0]);
-            var promise = window.adminFetch('/api/admin/upload', {
+            var promise = window.adminFetch('/api/v1/admin/upload', {
               method: 'POST',
               body: formData
             }).then(async function (res) {
@@ -772,7 +795,7 @@
     }
 
     try {
-      var res = await window.adminFetch('/api/admin/sync-texts', {
+      var res = await window.adminFetch('/api/v1/admin/sync-texts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -867,7 +890,7 @@
     var textPayload = { horario: horario };
 
     try {
-      var res = await window.adminFetch('/api/admin/settings', {
+      var res = await window.adminFetch('/api/v1/admin/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -885,7 +908,7 @@
       settingsCache = Object.assign({}, settingsCache, payload);
 
       if (horario) {
-        var res2 = await window.adminFetch('/api/admin/sync-texts', {
+        var res2 = await window.adminFetch('/api/v1/admin/sync-texts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(textPayload)

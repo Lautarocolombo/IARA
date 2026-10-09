@@ -7,4 +7,15 @@ CREATE TABLE IF NOT EXISTS section_content (
   tenant_id TEXT DEFAULT 'default'
 );
 
+-- Idempotente: agregar tenant_id si la tabla ya existía sin ella
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'section_content' AND column_name = 'tenant_id'
+  ) THEN
+    ALTER TABLE section_content ADD COLUMN tenant_id TEXT DEFAULT 'default';
+  END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_section_content_tenant ON section_content(tenant_id);

@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const path = require('path');
 const logger = require('./logger');
 
@@ -232,6 +232,16 @@ async function transaction(fn) {
 
 async function initDB() {
   if (isLocal) {
+    // Full initialization for SQLite (local development)
+    await initSQLite();
+    await runSQLiteMigrations();
+  } else {
+    // Postgres: only run versioned migrations, no ALTER TABLE loops
+    await runMigrationsOnly();
+  }
+}
+
+async function initSQLite() {
     await query(`CREATE TABLE IF NOT EXISTS products (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
@@ -911,23 +921,10 @@ async function initDB() {
         logger.debug({ err: err.message }, 'No se pudo actualizar included_shipping_cost (SQLite)');
       }
       return;
-   }
-
-  // Legacy init SQL deshabilitado: la creacion de tablas ahora depende de 001_init_schema.sql + migraciones
-  if (runMigrations) {
-    try {
-      await runMigrations(query);
-    } catch (err) {
-      logger.warn({ err: err.message }, 'No se pudieron aplicar migraciones versionadas');
-    }
   }
 
-  try {
-    await query('CREATE TABLE IF NOT EXISTS migrations (name TEXT PRIMARY KEY, applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)');
-  } catch (err) {
-    logger.debug({ err: err.message }, 'No se pudo crear tabla migrations');
-  }
 
+<<<<<<< HEAD
   try {
     const pgRenameMigrations = [
       { name: 'rename_sort_order_to_orden', oldCol: 'sort_order', sql: 'ALTER TABLE product_images RENAME COLUMN sort_order TO orden' },
@@ -1116,6 +1113,9 @@ async function initDB() {
     }
 
   async function setTenant(tenantId) {
+=======
+async function setTenant(tenantId) {
+>>>>>>> b091ff6922619009f758fa515ba900a6999ea8b7
     if (!tenantId || typeof tenantId !== 'string') return;
     if (isLocal) return;
     try {
@@ -1234,4 +1234,65 @@ async function initDB() {
     }
   }
 
-  module.exports = { query, initDB, pool, connectionString: !!connectionString, getClient, transaction, isLocal, setTenant, closeDB, seedLocalData };
+async function runMigrationsOnly() {
+  // Postgres: solo correr migraciones versionadas, sin ALTER TABLE loops
+  if (runMigrations) {
+    try {
+      await runMigrations(query);
+      logger.info('Migraciones versionadas aplicadas (PostgreSQL)');
+    } catch (err) {
+      logger.warn({ err: err.message }, 'No se pudieron aplicar migraciones versionadas');
+    }
+  }
+  // ensureAdminUser se llama desde server.js después de initDB
+}
+
+async function runSQLiteMigrations() {
+  // SQLite: crear tabla migrations y aplicar migraciones de rename
+  await query('CREATE TABLE IF NOT EXISTS migrations (name TEXT PRIMARY KEY, applied_at DATETIME DEFAULT CURRENT_TIMESTAMP)');
+
+  const sqliteRenameMigrations = [
+    { name: 'rename_sort_order_to_orden', oldCol: 'sort_order', sql: 'ALTER TABLE product_images RENAME COLUMN sort_order TO orden' },
+    { name: 'rename_is_primary_to_es_principal', oldCol: 'is_primary', sql: 'ALTER TABLE product_images RENAME COLUMN is_primary TO es_principal' }
+  ];
+
+  for (const mig of sqliteRenameMigrations) {
+    const applied = await query('SELECT COUNT(*) AS count FROM migrations WHERE name = ?', [mig.name]);
+    if (applied.rows[0].count > 0) continue;
+    const pragmaResult = await query('PRAGMA table_info(product_images)');
+    const colExists = pragmaResult.rows.some(row => row.name === mig.oldCol);
+    if (colExists) {
+      await query(mig.sql);
+    }
+    await query('INSERT OR IGNORE INTO migrations (name) VALUES (?)', [mig.name]);
+  }
+}
+
+async function ensureAdminUser() {
+  const ADMIN_USER = process.env.ADMIN_USER;
+  const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH;
+  if (!ADMIN_USER || !ADMIN_PASS_HASH) return;
+  const existing = await query('SELECT id, password_hash, permissions FROM users WHERE username = $1', [ADMIN_USER]);
+  if (existing.rows.length === 0) {
+    try {
+      if (isLocal) {
+        await query('INSERT OR IGNORE INTO users (username, password_hash, role, active, permissions) VALUES ($1, $2, $3, $4, $5)', [ADMIN_USER, ADMIN_PASS_HASH, 'admin', true, JSON.stringify({ all: true })]);
+      } else {
+        await query('INSERT INTO users (username, password_hash, role, active, permissions) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (username) DO NOTHING', [ADMIN_USER, ADMIN_PASS_HASH, 'admin', true, JSON.stringify({ all: true })]);
+      }
+    } catch (err) {
+      if (!err.message.includes('UNIQUE constraint failed') && !err.message.includes('duplicate key')) {
+        throw err;
+      }
+    }
+  }
+  // NO sobrescribir password/permisos existentes (idempotente sin cambios destructivos)
+}
+
+module.exports = { query, initDB, pool, connectionString: !!connectionString, getClient, transaction, isLocal, setTenant, closeDB, seedLocalData, ensureAdminUser, runMigrationsOnly };
+
+
+
+
+
+

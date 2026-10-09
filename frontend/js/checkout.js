@@ -10,9 +10,6 @@ let shippingDiffProvince = '';
 let includedShippingCost = 0;
 let currentOrderId = null;
 let currentOrderToken = '';
-let currentReceiptFile = null;
-let currentReceiptUrl = null;
-let uploadedProofId = null;
 
 const WA_PHONE_DISPLAY = '+54 9 3444 63-4444';
 const WA_PHONE_RAW = WA_PHONE;
@@ -25,7 +22,7 @@ async function fetchShippingDiff(province) {
     return;
   }
   try {
-    const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/shipping-diff?province=${encodeURIComponent(province)}`, {}, 1, 500);
+    const res = await window.fetchWithRetry(`/api/v1/shipping-diff?province=${encodeURIComponent(province)}`, {}, 1, 500);
     if (res && res.ok) {
       const data = await res.json();
       shippingDiff = Number(data.diff || 0);
@@ -61,7 +58,7 @@ async function applyCoupon() {
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
 
   try {
-    const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/coupons/validate`, {
+    const res = await window.fetchWithRetry('/api/v1/coupons/validate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code, amount: subtotal })
@@ -160,12 +157,12 @@ async function loadPaymentConfig() {
   if (aliasEl) aliasEl.textContent = 'Cargando...';
   if (holderEl) holderEl.textContent = 'Cargando...';
   try {
-    const url = `${CONFIG.API.BASE}/api/payment-config`;
+    const url = '/api/v1/payment-config';
     const res = await window.fetchWithRetry(url, {}, 2, 1000, 8000);
     if (!res) {
       if (aliasEl) aliasEl.textContent = 'No configurado';
       if (holderEl) holderEl.textContent = 'No configurado';
-      return { alias: CONFIG.CONTACT.WHATSAPP_ALIAS || '', whatsapp: WA_PHONE_RAW, message: '', active: false, mpEnabled: false };
+      return { alias: CONFIG.CONTACT.WHATSAPP_ALIAS || '', whatsapp: WA_PHONE_RAW, message: '', active: false };
     }
     const data = await res.json();
     if (data.shippingCost !== undefined) CONFIG.CART.SHIPPING_COST = Number(data.shippingCost);
@@ -177,7 +174,6 @@ async function loadPaymentConfig() {
     const whatsapp = (data.whatsapp || CONFIG.CONTACT.WHATSAPP || '').replace(/[^\d]/g, '');
     const message = data.message || 'Transferí el total exacto y enviá el comprobante por WhatsApp para confirmar tu pedido.';
     const active = data.active !== false;
-    const mpEnabled = data.mpEnabled === true;
     if (aliasEl) aliasEl.textContent = alias || 'No configurado';
     if (holderName) {
       if (holderEl) holderEl.textContent = holderName;
@@ -185,7 +181,7 @@ async function loadPaymentConfig() {
     } else {
       if (holderBox) holderBox.style.display = 'none';
     }
-    return { alias, whatsapp, message, active, mpEnabled, notifyAdminNewProof: data.notifyAdminNewProof !== false, notifyClientApproved: data.notifyClientApproved !== false, notifyClientRejected: data.notifyClientRejected !== false };
+    return { alias, whatsapp, message, active, notifyAdminNewProof: data.notifyAdminNewProof !== false, notifyClientApproved: data.notifyClientApproved !== false, notifyClientRejected: data.notifyClientRejected !== false };
   } catch (err) {
     if (aliasEl) aliasEl.textContent = 'Error al cargar';
     if (holderEl) holderEl.textContent = 'Error al cargar';
@@ -225,7 +221,7 @@ function copyHolder() {
   });
 }
 
-function buildWaMessage(orderNumber, items, subtotal, shippingCost, shippingProvince, shippingAddress, shippingCity, total, paymentMethod, alias, receiptUrl) {
+function buildWaMessage(orderNumber, items, subtotal, shippingCost, shippingProvince, shippingAddress, shippingCity, total, paymentMethod, alias) {
   const orderForMessage = {
     orderNumber,
     customerName: (document.getElementById('shipName')?.value.trim()) || 'Cliente',
@@ -239,13 +235,7 @@ function buildWaMessage(orderNumber, items, subtotal, shippingCost, shippingProv
     paymentMethod,
     alias
   };
-  let msg = buildOrderMessage(orderForMessage);
-  if (receiptUrl) {
-    msg += `\n\nComprobante: ${receiptUrl}`;
-  } else {
-    msg += '\n\nTe envío el comprobante a continuación.';
-  }
-  return msg;
+  return buildOrderMessage(orderForMessage);
 }
 
 async function openWhatsAppWithMessage(url) {
@@ -259,58 +249,8 @@ async function openWhatsAppWithMessage(url) {
 
 async function handleWhatsAppSend(orderNumber, items, subtotal, shippingCost, shippingProvince, shippingAddress, shippingCity, total, paymentMethod, alias, orderId, orderToken) {
   const btn = document.getElementById('sendWhatsappBtn');
-  const statusEl = document.getElementById('receiptStatus');
 
-  let receiptUrl = currentReceiptUrl;
-
-  if (currentReceiptFile && !currentReceiptUrl) {
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = 'Preparando...';
-    }
-    if (statusEl) {
-      statusEl.textContent = 'Subiendo comprobante...';
-      statusEl.style.color = '#7c2d4e';
-      statusEl.style.display = 'block';
-    }
-
-    try {
-      const formData = new FormData();
-      formData.append('image', currentReceiptFile);
-
-      const res = await fetch(`${CONFIG.API.BASE}/api/orders/${orderId}/receipt`, {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({ error: 'Error al subir' }));
-        throw new Error(data.error || 'Error al subir comprobante');
-      }
-
-      const data = await res.json();
-      receiptUrl = data.url || data.receipt_url || null;
-      uploadedProofId = data.id || null;
-      currentReceiptUrl = receiptUrl;
-
-      if (statusEl) {
-        statusEl.textContent = '✅ Comprobante subido correctamente.';
-        statusEl.style.color = '#16a34a';
-      }
-    } catch (e) {
-      if (statusEl) {
-        statusEl.textContent = '⚠️ No pudimos subir el comprobante, podés adjuntarlo manualmente en el chat.';
-        statusEl.style.color = '#dc2626';
-      }
-    } finally {
-      if (btn) {
-        btn.disabled = false;
-        btn.textContent = 'Enviar por WhatsApp';
-      }
-    }
-  }
-
-  const msg = buildWaMessage(orderNumber, items, subtotal, shippingCost, shippingProvince, shippingAddress, shippingCity, total, paymentMethod, alias, receiptUrl);
+  const msg = buildWaMessage(orderNumber, items, subtotal, shippingCost, shippingProvince, shippingAddress, shippingCity, total, paymentMethod, alias);
   const waLinks = buildWhatsAppLinks(WA_PHONE_RAW, msg);
 
   const url = waLinks.primary || waLinks.fallback;
@@ -324,7 +264,7 @@ function renderWhatsAppFallback(container, waNumber, waMsg, waLinks) {
   const formattedNumber = WA_PHONE_DISPLAY;
   container.innerHTML = `
     <div class="whatsapp-fallback">
-      <p>Se abrirá WhatsApp con tu pedido. Si querés, adjuntá la captura del comprobante directamente en el chat.</p>
+      <p>Se abrirá WhatsApp con tu pedido.</p>
       <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
         <a href="${waLinks.fallback}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="flex: 1; min-width: 140px; text-align: center;">
           Abrir en api.whatsapp.com
@@ -357,118 +297,6 @@ function renderWhatsAppFallback(container, waNumber, waMsg, waLinks) {
       const result = await copyToClipboard(waMsg, 'Mensaje del pedido');
       showToast('', result.message, result.success ? 'success' : 'error');
     });
-  }
-}
-
-function validateFile(file) {
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
-  const maxSize = 5 * 1024 * 1024;
-  if (!allowedTypes.includes(file.type)) {
-    return 'Tipo de archivo no permitido. Usá JPG, PNG, WEBP o PDF.';
-  }
-  if (file.size > maxSize) {
-    return 'El archivo es muy grande (máx. 5 MB).';
-  }
-  return null;
-}
-
-function showReceiptPreview(file) {
-  const preview = document.getElementById('receiptPreview');
-  const img = document.getElementById('receiptPreviewImg');
-  const pdfDiv = document.getElementById('receiptPreviewPdf');
-  const pdfName = document.getElementById('receiptPdfName');
-  if (!preview) return;
-
-  preview.style.display = 'block';
-  if (file.type.startsWith('image/')) {
-    img.style.display = 'block';
-    pdfDiv.style.display = 'none';
-    img.src = URL.createObjectURL(file);
-  } else {
-    img.style.display = 'none';
-    pdfDiv.style.display = 'flex';
-    if (pdfName) pdfName.textContent = file.name;
-  }
-}
-
-function clearReceiptPreview() {
-  const preview = document.getElementById('receiptPreview');
-  const img = document.getElementById('receiptPreviewImg');
-  const pdfDiv = document.getElementById('receiptPreviewPdf');
-  const fileInput = document.getElementById('receiptFileInput');
-  const statusEl = document.getElementById('receiptStatus');
-  if (preview) preview.style.display = 'none';
-  if (img) { img.src = ''; img.style.display = 'none'; }
-  if (pdfDiv) pdfDiv.style.display = 'none';
-  if (fileInput) fileInput.value = '';
-  if (statusEl) { statusEl.style.display = 'none'; statusEl.textContent = ''; }
-  currentReceiptFile = null;
-  currentReceiptUrl = null;
-}
-
-async function uploadReceipt(orderId, orderToken, file) {
-  const statusEl = document.getElementById('receiptStatus');
-  const btn = document.getElementById('sendWhatsappBtn');
-
-  if (!file) {
-    if (statusEl) {
-      statusEl.textContent = 'Seleccioná un archivo primero.';
-      statusEl.style.color = '#dc2626';
-      statusEl.style.display = 'block';
-    }
-    return null;
-  }
-
-  const err = validateFile(file);
-  if (err) {
-    if (statusEl) {
-      statusEl.textContent = err;
-      statusEl.style.color = '#dc2626';
-      statusEl.style.display = 'block';
-    }
-    return null;
-  }
-
-  if (btn) btn.disabled = true;
-  if (statusEl) {
-    statusEl.textContent = 'Subiendo...';
-    statusEl.style.color = '#7c2d4e';
-    statusEl.style.display = 'block';
-  }
-
-      const formData = new FormData();
-      formData.append('image', file);
-
-  try {
-    const res = await fetch(`${CONFIG.API.BASE}/api/orders/${orderId}/receipt`, {
-      method: 'POST',
-      body: formData
-    });
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({ error: 'Error al subir' }));
-      throw new Error(data.error || 'Error al subir comprobante');
-    }
-
-    const data = await res.json();
-    currentReceiptUrl = data.url || data.receipt_url || null;
-    uploadedProofId = data.id || null;
-
-    if (statusEl) {
-      statusEl.textContent = '✅ Comprobante subido correctamente.';
-      statusEl.style.color = '#16a34a';
-      statusEl.style.display = 'block';
-    }
-    if (btn) btn.disabled = false;
-    return currentReceiptUrl;
-  } catch (e) {
-    if (statusEl) {
-      statusEl.textContent = '❌ ' + (e.message || 'Error al subir comprobante');
-      statusEl.style.color = '#dc2626';
-      statusEl.style.display = 'block';
-    }
-    if (btn) btn.disabled = false;
-    return null;
   }
 }
 
@@ -557,7 +385,7 @@ if (shippingForm) {
       const paymentMethodEl = document.getElementById('paymentMethod');
       const paymentMethod = paymentMethodEl ? paymentMethodEl.value : 'transfer';
 
-      const orderRes = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/orders`, {
+      const orderRes = await window.fetchWithRetry('/api/v1/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -632,7 +460,7 @@ if (shippingForm) {
 
       const fallbackContent = document.getElementById('whatsappFallbackContent');
       const waNumberForFallback = WA_PHONE_RAW;
-      const waMsgForFallback = buildWaMessage(orderNumber, items, subtotal, shippingCost, shipping.province, shipping.address, shipping.city, total, paymentMethod, paymentConfig.alias, currentReceiptUrl);
+      const waMsgForFallback = buildWaMessage(orderNumber, items, subtotal, shippingCost, shipping.province, shipping.address, shipping.city, total, paymentMethod, paymentConfig.alias);
       const waLinksForFallback = buildWhatsAppLinks(waNumberForFallback, waMsgForFallback);
       renderWhatsAppFallback(fallbackContent, waNumberForFallback, waMsgForFallback, waLinksForFallback);
 
@@ -657,7 +485,7 @@ if (shippingForm) {
       }));
 
       try {
-        await window.fetchWithRetry(`${CONFIG.API.BASE}/api/payments/transfer`, {
+        await window.fetchWithRetry('/api/v1/payments/transfer', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -725,47 +553,6 @@ function copyTransferField(field) {
   });
 }
 
-function setupReceiptUpload() {
-  const fileInput = document.getElementById('receiptFileInput');
-  const removeBtn = document.getElementById('removeReceiptBtn');
-  const sendBtn = document.getElementById('sendWhatsappBtn');
-
-  if (fileInput) {
-    fileInput.addEventListener('change', () => {
-      const file = fileInput.files[0];
-      if (!file) return;
-      const err = validateFile(file);
-      if (err) {
-        const statusEl = document.getElementById('receiptStatus');
-        if (statusEl) {
-          statusEl.textContent = err;
-          statusEl.style.color = '#dc2626';
-          statusEl.style.display = 'block';
-        }
-        clearReceiptPreview();
-        return;
-      }
-      currentReceiptFile = file;
-      showReceiptPreview(file);
-      const statusEl = document.getElementById('receiptStatus');
-      if (statusEl) {
-        statusEl.textContent = 'Archivo seleccionado. Podés enviarlo por WhatsApp o subirlo.';
-        statusEl.style.color = '#7c2d4e';
-        statusEl.style.display = 'block';
-      }
-    });
-  }
-
-  if (removeBtn) {
-    removeBtn.addEventListener('click', () => {
-      clearReceiptPreview();
-      currentReceiptFile = null;
-      currentReceiptUrl = null;
-      if (sendBtn) sendBtn.disabled = false;
-    });
-  }
-}
-
 function restoreOrderFromSession() {
   const raw = sessionStorage.getItem('ag_last_order');
   if (!raw) return;
@@ -808,7 +595,7 @@ function restoreOrderFromSession() {
     }
 
     const waNumber = WA_PHONE_RAW;
-    const waMsg = buildWaMessage(order.number, order.items || [], order.subtotal || 0, order.shippingCost || 0, order.shippingProvince || '', order.shippingAddress || '', order.shippingCity || '', order.total || 0, order.paymentMethod || 'transfer', '', currentReceiptUrl);
+    const waMsg = buildWaMessage(order.number, order.items || [], order.subtotal || 0, order.shippingCost || 0, order.shippingProvince || '', order.shippingAddress || '', order.shippingCity || '', order.total || 0, order.paymentMethod || 'transfer', '');
     const waLinks = buildWhatsAppLinks(waNumber, waMsg);
     const fallbackContent = document.getElementById('whatsappFallbackContent');
     renderWhatsAppFallback(fallbackContent, waNumber, waMsg, waLinks);
@@ -946,8 +733,6 @@ if (copyHolderBtn) {
   copyHolderBtn.addEventListener('click', copyHolder);
 }
 
-setupReceiptUpload();
-
 window.checkout = {
   validateField,
   updateSummary,
@@ -961,8 +746,7 @@ window.checkout = {
   showFieldError,
   clearFieldError,
   restoreOrderFromSession,
-  buildWaMessage,
-  uploadReceipt
+  buildWaMessage
 };
 
 if (typeof module !== 'undefined' && module.exports) {

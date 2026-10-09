@@ -45,8 +45,8 @@
     var loading = document.getElementById('settingsLoading');
     showLoadingSafe(loading, 'Cargando configuración...');
     Promise.all([
-      window.adminPageFetch('/api/admin/settings'),
-      window.adminPageFetch('/api/admin/payment-config')
+      window.adminPageFetch('/api/v1/admin/settings'),
+      window.adminPageFetch('/api/v1/admin/payment-config')
     ]).then(function (responses) {
       settings = responses[0] || {};
       payment = responses[1] || {};
@@ -133,8 +133,8 @@
     };
     status('', 'Guardando cambios...');
     Promise.all([
-      window.adminPageFetch('/api/admin/settings', { method: 'PUT', body: JSON.stringify(sitePayload) }),
-      window.adminPageFetch('/api/admin/payment-config', { method: 'PUT', body: JSON.stringify(paymentPayload) })
+      window.adminPageFetch('/api/v1/admin/settings', { method: 'PUT', body: JSON.stringify(sitePayload) }),
+      window.adminPageFetch('/api/v1/admin/payment-config', { method: 'PUT', body: JSON.stringify(paymentPayload) })
     ]).then(function () {
       settings = Object.assign({}, settings, sitePayload);
       payment = Object.assign({}, payment, paymentPayload);
@@ -160,3 +160,4 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', window.initAdminSettings);
   else window.initAdminSettings();
 }());
+

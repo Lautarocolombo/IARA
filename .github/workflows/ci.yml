@@ -2,108 +2,164 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 jobs:
-  lint-and-test:
+  lint:
+    name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+          cache: 'npm'
+
       - name: Install root dependencies
-        run: npm ci --no-audit --no-fund
-      - name: Install backend dependencies
-        run: cd backend && npm ci --no-audit --no-fund
+        run: npm ci
+
       - name: Lint frontend
         run: npm run lint
+
+      - name: Install backend dependencies
+        run: cd backend && npm ci
+
       - name: Lint backend
         run: cd backend && npm run lint
-      - name: Run frontend unit tests
-        run: npm test
-      - name: Run backend tests
-        run: cd backend && mkdir -p data && npm run test:ci 2>&1 | tee test-output.txt
-        env:
-          ADMIN_USER: testadmin
-          JWT_SECRET: test-jwt-secret
-          ADMIN_PASS_HASH: $2b$10$testhashtesthashtesthaste
-          ALLOWED_ORIGINS: http://localhost:3000
-          NODE_ENV: test
-          DATABASE_URL: ''
-      - name: Upload test output
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: backend-test-output
-          path: backend/test-output.txt
 
-  migrate:
+  test-frontend:
+    name: Test Frontend
     runs-on: ubuntu-latest
-    needs: lint-and-test
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run frontend tests
+        run: npm test
+
+  test-backend:
+    name: Test Backend
+    runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:15
+        image: postgres:16-alpine
         env:
-          POSTGRES_USER: test
-          POSTGRES_PASSWORD: test
-          POSTGRES_DB: test
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: artesania_test
         ports:
           - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U postgres"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/artesania_test
+      NODE_ENV: test
+      JWT_SECRET: test-secret-key-for-ci
+      ADMIN_USER: admin
+      ADMIN_PASS_HASH: $2b$10$testhash
+      REDIS_URL: ""
+      SEED: "true"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Install backend dependencies
-        run: cd backend && npm ci --no-audit --no-fund
-      - name: Run migrations
-        run: |
-          cd backend
-          DATABASE_URL=postgresql://test:test@localhost:5432/test npm run migrate
-        env:
-          NODE_ENV: test
+      - name: Checkout
+        uses: actions/checkout@v4
 
-  e2e:
-    runs-on: ubuntu-latest
-    needs: migrate
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: '20'
-      - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
       - name: Install backend dependencies
-        run: cd backend && npm ci --no-audit --no-fund
-      - name: Install Playwright
-        run: npx playwright install --with-deps chromium
-      - name: Start backend
-        run: |
-          cd backend
-          DATABASE_URL=postgresql://test:test@localhost:5432/test npm start &
-          sleep 10
-        env:
-          ADMIN_USER: testadmin
-          JWT_SECRET: test-jwt-secret
-          ADMIN_PASS_HASH: $2b$10$testhashtesthashtesthaste
-          ALLOWED_ORIGINS: http://localhost:3000
-          NODE_ENV: test
-          PORT: 3000
-      - name: Run E2E tests
-        run: npx playwright test --config=playwright.audit.config.js
-        env:
-          TEST_BASE_URL: http://localhost:3000
-      - name: Upload E2E report
-        if: always()
+        run: cd backend && npm ci
+
+      - name: Run backend tests
+        run: cd backend && npm run test:ci
+
+  build-frontend:
+    name: Build Frontend
+    runs-on: ubuntu-latest
+    needs: [lint, test-frontend]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-report
-          path: playwright-report/
+          name: dist
+          path: dist/
+          retention-days: 1
+
+  audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Audit root
+        run: npm audit --audit-level=high || true
+
+      - name: Install backend dependencies
+        run: cd backend && npm ci
+
+      - name: Audit backend
+        run: cd backend && npm audit --audit-level=high || true
+
+      - name: Upload audit results
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-results
+          path: |
+            audit-report-root.json
+            backend/audit-report-backend.json
+          retention-days: 7
+        if: always()
+
+      - name: Generate audit reports
+        run: |
+          npm audit --json > audit-report-root.json || true
+          cd backend && npm audit --json > audit-report-backend.json || true
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true

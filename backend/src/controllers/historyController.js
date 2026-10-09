@@ -1,14 +1,33 @@
 const { transaction } = require('../lib/db');
 const logger = require('../lib/logger');
 const { logAudit } = require('../lib/audit');
+const { backupPostgres, backupSqlite } = require('../scripts/backup');
+
+async function createBackupBeforeDangerousOp(req, action) {
+  try {
+    const isLocal = !process.env.DATABASE_URL;
+    const dest = isLocal ? await backupSqlite() : await backupPostgres();
+    logger.info({ dest, action, user: req.user?.user || 'admin' }, 'Backup creado antes de operación destructiva');
+    return dest;
+  } catch (err) {
+    logger.warn({ err: err.message, action }, 'No se pudo crear backup previo, continuando sin backup');
+    return null;
+  }
+}
 
 const clearHistory = async (req, res) => {
   try {
+<<<<<<< HEAD
     // Doble confirmación también en el servidor: sin { confirm: 'ELIMINAR' }
     // no se borra nada (el panel pide escribir ELIMINAR en 2 pasos).
     if (!req.body || req.body.confirm !== 'ELIMINAR') {
       return res.status(400).json({ error: 'Falta confirmación. Enviá { confirm: "ELIMINAR" } para borrar el historial.' });
     }
+=======
+    // Crear backup automático antes de eliminar
+    await createBackupBeforeDangerousOp(req, 'clear_history');
+
+>>>>>>> b091ff6922619009f758fa515ba900a6999ea8b7
     const result = await transaction(async (client) => {
       let deletedProofs = 0;
       let deletedSales = 0;
