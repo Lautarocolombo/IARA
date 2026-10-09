@@ -961,19 +961,20 @@ async function initDB() {
       'testimonials', 'product_images', 'subscribers', 'webhook_events',
       'hero_cards', 'payment_config', 'payment_proofs', 'site_settings', 'site_texts', 'section_content'
     ];
-    for (const table of tenantTables) {
+    // Paralelo en vez de secuencial: 15 checks en ~1 round-trip en vez de 15.
+    await Promise.all(tenantTables.map(async (table) => {
       try {
         const colExists = await query(
           "SELECT COUNT(*) AS count FROM information_schema.columns WHERE table_name = $1 AND column_name = 'tenant_id'",
           [table]
         );
-        if (colExists.rows[0].count === 0) {
+        if (String(colExists.rows[0].count) === '0') {
           await query(`ALTER TABLE ${table} ADD COLUMN tenant_id TEXT DEFAULT 'default'`);
         }
       } catch (err) {
         logger.debug({ err: err.message }, `Error asegurando columna tenant_id en ${table}`);
       }
-    }
+    }));
   } catch (err) {
     logger.debug({ err: err.message }, 'Error asegurando columnas tenant_id (PostgreSQL)');
   }
@@ -1008,38 +1009,41 @@ async function initDB() {
          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
        )`);
      const colExists = await query("SELECT COUNT(*) AS count FROM information_schema.columns WHERE table_name = 'payment_config' AND column_name = 'included_shipping_cost'");
-     if (colExists.rows[0].count === 0) {
+     if (String(colExists.rows[0].count) === '0') {
        await query('ALTER TABLE payment_config ADD COLUMN included_shipping_cost NUMERIC(10,2) DEFAULT 0');
      }
-     const defaultProvinces = [
-       ['Buenos Aires', 1500], ['Catamarca', 1800], ['Chaco', 1800], ['Chubut', 2200],
-       ['Ciudad Autónoma de Buenos Aires', 1500], ['Córdoba', 1700], ['Corrientes', 1800],
-       ['Entre Ríos', 1500], ['Formosa', 2000], ['Jujuy', 2200], ['La Pampa', 1800],
-       ['La Rioja', 1800], ['Mendoza', 1900], ['Misiones', 1800], ['Neuquén', 2200],
-       ['Río Negro', 2200], ['Salta', 2200], ['San Juan', 1900], ['San Luis', 1700],
-       ['Santa Cruz', 2500], ['Santa Fe', 1600], ['Santiago del Estero', 1800],
-       ['Tierra del Fuego', 2800], ['Tucumán', 1700]
-     ];
-     for (const [prov, cost] of defaultProvinces) {
-       await query('INSERT INTO shipping_rates_by_province (province, shipping_cost) VALUES ($1, $2) ON CONFLICT (province) DO NOTHING', [prov, cost]);
+     // Seed de provincias solo si la tabla está vacía (antes: 24 UPSERTs en cada arranque).
+     const provCount = await query('SELECT COUNT(*) AS count FROM shipping_rates_by_province');
+     if (String(provCount.rows[0].count) === '0') {
+       const defaultProvinces = [
+         ['Buenos Aires', 1500], ['Catamarca', 1800], ['Chaco', 1800], ['Chubut', 2200],
+         ['Ciudad Autónoma de Buenos Aires', 1500], ['Córdoba', 1700], ['Corrientes', 1800],
+         ['Entre Ríos', 1500], ['Formosa', 2000], ['Jujuy', 2200], ['La Pampa', 1800],
+         ['La Rioja', 1800], ['Mendoza', 1900], ['Misiones', 1800], ['Neuquén', 2200],
+         ['Río Negro', 2200], ['Salta', 2200], ['San Juan', 1900], ['San Luis', 1700],
+         ['Santa Cruz', 2500], ['Santa Fe', 1600], ['Santiago del Estero', 1800],
+         ['Tierra del Fuego', 2800], ['Tucumán', 1700]
+       ];
+       await Promise.all(defaultProvinces.map(([prov, cost]) =>
+         query('INSERT INTO shipping_rates_by_province (province, shipping_cost) VALUES ($1, $2) ON CONFLICT (province) DO NOTHING', [prov, cost])
+       ));
+       await query("UPDATE payment_config SET included_shipping_cost = 1500 WHERE included_shipping_cost IS NULL OR included_shipping_cost = 0");
      }
-     await query("UPDATE payment_config SET included_shipping_cost = 1500 WHERE included_shipping_cost IS NULL OR included_shipping_cost = 0");
    } catch (err) {
      logger.debug({ err: err.message }, 'Error asegurando shipping_rates_by_province (PostgreSQL)');
    }
 
-   try {
-     const seqTables = ['products', 'categories', 'orders', 'contacts', 'reviews', 'testimonials', 'product_images', 'subscribers', 'webhook_events', 'hero_cards'];
-    for (const table of seqTables) {
-      try {
-        await query(`SELECT setval('${table}_id_seq', COALESCE((SELECT MAX(id) FROM ${table}), 1), true)`).catch(() => {});
-      } catch (err) {
-        logger.debug({ err: err.message }, `Error reseteando sequence para ${table}`);
-      }
-    }
-  } catch (err) {
-    logger.debug({ err: err.message }, 'Error reseteando sequences');
-  }
+   // Reset de sequences solo en desarrollo: en prod es costoso y rara vez necesario.
+   if (process.env.FIX_SEQUENCES === 'true') {
+     try {
+       const seqTables = ['products', 'categories', 'orders', 'contacts', 'reviews', 'testimonials', 'product_images', 'subscribers', 'webhook_events', 'hero_cards'];
+       await Promise.all(seqTables.map((table) =>
+         query(`SELECT setval('${table}_id_seq', COALESCE((SELECT MAX(id) FROM ${table}), 1), true)`).catch(() => {})
+       ));
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Error reseteando sequences');
+     }
+   }
 
    try {
      await ensureAdminUser();
@@ -1055,39 +1059,26 @@ async function initDB() {
        'CREATE INDEX IF NOT EXISTS idx_activity_log_created_at ON activity_log(created_at DESC)',
        'CREATE INDEX IF NOT EXISTS idx_activity_log_related_order ON activity_log(related_order_id)'
      ];
-     for (const idxSql of missingIndexes) {
-       try {
-         await query(idxSql);
-       } catch (err) {
-         logger.debug({ err: err.message }, 'No se pudo crear índice adicional');
-       }
-     }
+     await Promise.all(missingIndexes.map((idxSql) =>
+       query(idxSql).catch((err) => logger.debug({ err: err.message }, 'No se pudo crear índice adicional'))
+     ));
    } catch (err) {
      logger.debug({ err: err.message }, 'Error creando índices adicionales (PostgreSQL)');
    }
 
-  try {
-    await query("UPDATE site_texts SET value = REPLACE(value, 'Cada pieza es única', 'Cada pieza es única') WHERE key = 'hero_subtitle' AND value LIKE '%única%'");
-  } catch (err) {
-    logger.debug({ err: err.message }, 'No se pudo corregir hero_subtitle');
-  }
+  // Seeds de contenido default solo con flag explícito (antes corrían en cada boot).
+  if (process.env.SEED_DEFAULT_CONTENT === 'true') {
+    try {
+      await query("INSERT INTO site_texts (key, value, tenant_id) VALUES ('hero_subtitle', 'Artesanía Gualeguay nació en el corazón de Entre Ríos con la misión de crear pulseras, souvenirs y accesorios únicos que capturen la esencia de nuestra tierra.', 'default') ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP");
+    } catch (err) {
+      logger.debug({ err: err.message }, 'No se pudo actualizar hero_subtitle');
+    }
 
-  try {
-    await query("INSERT INTO site_texts (key, value, tenant_id) VALUES ('hero_subtitle', 'Artesanía Gualeguay nació en el corazón de Entre Ríos con la misión de crear pulseras, souvenirs y accesorios únicos que capturen la esencia de nuestra tierra.', 'default') ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP");
-  } catch (err) {
-    logger.debug({ err: err.message }, 'No se pudo actualizar hero_subtitle');
-  }
-
-  try {
-    await query("UPDATE site_texts SET value = REPLACE(value, 'Explorar Catálogo', 'Explorar Catálogo') WHERE key = 'hero_cta_text' AND value LIKE '%Catálogo%'");
-  } catch (err) {
-    logger.debug({ err: err.message }, 'No se pudo corregir hero_cta_text');
-  }
-
-  try {
-    await query("INSERT INTO section_content (section_key, title, subtitle, tenant_id) VALUES ('testimonials', 'Lo que dicen nuestros clientes', 'Historias reales de personas que confiaron en nosotros', 'default') ON CONFLICT (section_key) DO NOTHING");
-  } catch (err) {
-    logger.debug({ err: err.message }, 'No se pudo seedear section_content');
+    try {
+      await query("INSERT INTO section_content (section_key, title, subtitle, tenant_id) VALUES ('testimonials', 'Lo que dicen nuestros clientes', 'Historias reales de personas que confiaron en nosotros', 'default') ON CONFLICT (section_key) DO NOTHING");
+    } catch (err) {
+      logger.debug({ err: err.message }, 'No se pudo seedear section_content');
+    }
   }
   }
 

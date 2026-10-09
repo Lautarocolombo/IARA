@@ -40,6 +40,160 @@
     orders: ['saveOrdersCloudBtn']
   };
 
+  var SECTION_ROOTS = {
+    content: 'contentEditorRoot',
+    products: 'productsRoot',
+    categories: 'categoriesRoot',
+    testimonials: 'testimonialsRoot',
+    sales: 'salesRoot',
+    orders: 'ordersRoot'
+  };
+
+  /* ===== Borrador automático (anti-pérdida) =====
+     Cada vez que una sección queda "dirty", a los 1.5s se guarda una foto de
+     sus campos (por id) en localStorage. Si el navegador se cierra o la
+     página se recarga sin guardar, al volver se ofrece recuperar el borrador.
+     El borrador se borra al guardar (clearDirty) o al descartar. */
+
+  var DRAFT_PREFIX = 'ag_draft_';
+  var DRAFT_DEBOUNCE_MS = 1500;
+  var draftTimers = {};
+
+  window.__adminSavedAt = window.__adminSavedAt || {};
+
+  function draftStorage() {
+    try {
+      if (typeof localStorage === 'undefined') return null;
+      // Ping para detectar almacenamiento bloqueado (privado, cookies off).
+      localStorage.setItem('__ag_ping', '1');
+      localStorage.removeItem('__ag_ping');
+      return localStorage;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function snapshotSection(section) {
+    var rootId = SECTION_ROOTS[section];
+    var root = rootId ? document.getElementById(rootId) : document;
+    if (!root) return null;
+    var fields = root.querySelectorAll('input, textarea, select');
+    var values = {};
+    var count = 0;
+    fields.forEach(function (f) {
+      if (!f.id) return;
+      var type = (f.type || '').toLowerCase();
+      // Archivos, claves y ocultos no se respaldan.
+      if (type === 'file' || type === 'password' || type === 'hidden') return;
+      if (f.tagName === 'INPUT' && (type === 'checkbox' || type === 'radio')) {
+        values[f.id] = { c: !!f.checked };
+      } else {
+        values[f.id] = { v: f.value };
+      }
+      count++;
+    });
+    if (!count) return null;
+    return { ts: Date.now(), section: section, values: values };
+  }
+
+  function saveDraft(section) {
+    var store = draftStorage();
+    if (!store) return;
+    try {
+      var snap = snapshotSection(section);
+      if (!snap) return;
+      store.setItem(DRAFT_PREFIX + section, JSON.stringify(snap));
+    } catch (e) { /* cuota llena o bloqueado: el borrador es best-effort */ }
+  }
+
+  function scheduleDraft(section) {
+    if (draftTimers[section]) clearTimeout(draftTimers[section]);
+    draftTimers[section] = setTimeout(function () { saveDraft(section); }, DRAFT_DEBOUNCE_MS);
+  }
+
+  function clearDraft(section) {
+    var store = draftStorage();
+    if (!store) return;
+    try { store.removeItem(DRAFT_PREFIX + section); } catch (e) { /* noop */ }
+  }
+
+  function readDraft(section) {
+    var store = draftStorage();
+    if (!store) return null;
+    try {
+      var raw = store.getItem(DRAFT_PREFIX + section);
+      if (!raw) return null;
+      var snap = JSON.parse(raw);
+      if (!snap || !snap.values) return null;
+      return snap;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function applyDraft(snap) {
+    var applied = 0;
+    Object.keys(snap.values).forEach(function (id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      var saved = snap.values[id];
+      try {
+        if (el.tagName === 'INPUT' && ((el.type || '').toLowerCase() === 'checkbox' || (el.type || '').toLowerCase() === 'radio')) {
+          el.checked = !!saved.c;
+        } else if ('value' in el) {
+          el.value = saved.v == null ? '' : saved.v;
+        } else {
+          return;
+        }
+        applied++;
+      } catch (e) { /* noop */ }
+    });
+    return applied;
+  }
+
+  function offerDraftRecovery() {
+    var store = draftStorage();
+    if (!store) return;
+    var candidates = [];
+    Object.keys(window.__adminDirtyState).forEach(function (section) {
+      var snap = readDraft(section);
+      if (!snap) return;
+      var savedAt = window.__adminSavedAt[section] || 0;
+      // Solo ofrecer si el borrador es más nuevo que el último guardado.
+      if (snap.ts > savedAt) candidates.push(snap);
+    });
+    if (!candidates.length) return;
+    candidates.sort(function (a, b) { return b.ts - a.ts; });
+    var newest = candidates[0];
+    var when = new Date(newest.ts).toLocaleString('es-AR');
+    var doRecover = function () {
+      var n = applyDraft(newest);
+      if (n > 0) {
+        window.markDirty(newest.section);
+        window.showToast('✅', 'Borrador recuperado (' + n + ' campos)', 'success');
+      } else {
+        clearDraft(newest.section);
+      }
+    };
+    if (typeof window.showConfirmModal === 'function') {
+      window.showConfirmModal(
+        'Borrador sin guardar',
+        'Hay cambios sin guardar de "' + newest.section + '" (' + when + '). ¿Recuperarlos?',
+        doRecover
+      );
+      // Si cancela, el borrador se descarta para no preguntar siempre.
+      var cancelBtn = document.getElementById('cancelConfirmBtn');
+      if (cancelBtn) {
+        var prev = cancelBtn.onclick;
+        cancelBtn.onclick = function () {
+          clearDraft(newest.section);
+          if (typeof window.hideConfirmModal === 'function') window.hideConfirmModal();
+          else if (typeof prev === 'function') prev();
+        };
+      }
+    }
+  }
+
   var SECTIONS = {
     'section-content': 'content',
     'section-products': 'products',
@@ -105,6 +259,7 @@
     }
     updateUnsavedUI();
     updateSectionSaveButtons(section);
+    scheduleDraft(section);
   };
 
   window.clearDirty = function (section, subSection) {
@@ -114,8 +269,14 @@
       var anyDirty = Object.keys(window.__contentTabDirtyState).some(function(k){ return window.__contentTabDirtyState[k]; });
       window.__adminDirtyState[section] = anyDirty;
       updateContentTabsDirtyState();
+      if (!anyDirty) {
+        window.__adminSavedAt[section] = Date.now();
+        clearDraft(section);
+      }
     } else {
       window.__adminDirtyState[section] = false;
+      window.__adminSavedAt[section] = Date.now();
+      clearDraft(section);
     }
     updateUnsavedUI();
     updateSectionSaveButtons(section);
@@ -278,6 +439,8 @@
       }
 
       window.__adminDirtyState[section || current] = false;
+      window.__adminSavedAt[section || current] = Date.now();
+      clearDraft(section || current);
       updateUnsavedUI();
       window.showToast('✅', 'Cambios descartados', 'success');
     } catch (err) {
@@ -331,6 +494,9 @@
   window.addEventListener('DOMContentLoaded', function () {
     initSyncControls();
     updateUnsavedUI();
+    // Ofrecer recuperar borrador (pestaña cerrada sin guardar) cuando el
+    // contenido ya está cargado. Delay para no pisar la carga inicial.
+    setTimeout(offerDraftRecovery, 2500);
     setTimeout(function () {
       if (typeof window.refreshAllSaveButtons === 'function') {
         window.refreshAllSaveButtons();

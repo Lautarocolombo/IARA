@@ -113,6 +113,11 @@
 /* Reduced motion — overrides the stagger animation above */
 @media (prefers-reduced-motion: reduce) {
   .product-card { animation: none; }
+  .reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
 }
 
 /* Highlight cards */

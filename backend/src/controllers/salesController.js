@@ -13,8 +13,8 @@ const getSales = async (req, res) => {
     if (end_date) { params.push(end_date); where += ` AND date(sale_date) <= $${params.length}`; }
     if (product_id) { params.push(Number(product_id)); where += ` AND product_id = $${params.length}`; }
 
-    const limitNum = Number(limit) || 50;
-    const offsetNum = Number(offset) || 0;
+    const limitNum = Math.min(Math.max(Number(limit) || 50, 1), 100);
+    const offsetNum = Math.max(Number(offset) || 0, 0);
 
     params.push(limitNum, offsetNum);
 

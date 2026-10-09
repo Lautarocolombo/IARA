@@ -515,10 +515,23 @@ transactions.forEach(function (t) {
 
 
   function openClearHistoryModal() {
+    // Paso 1: aviso de lo que se va a borrar.
     window.showConfirmModal(
       'Eliminar historial',
       '¿Estás seguro? Se eliminará todo el historial de transacciones, pedidos, ventas y comprobantes. Esta acción no se puede deshacer.',
-      function () { confirmClearHistory(); }
+      function () {
+        // Paso 2: hay que escribir ELIMINAR (anti-clic-accidental).
+        if (typeof window.showDestructiveConfirmModal === 'function') {
+          window.showDestructiveConfirmModal(
+            'Confirmar eliminación total',
+            'Último paso: esto borra TODOS los pedidos, ventas, comprobantes y recibos. Escribí ELIMINAR para continuar.',
+            'ELIMINAR',
+            function () { confirmClearHistory(); }
+          );
+        } else {
+          confirmClearHistory();
+        }
+      }
     );
   }
 
@@ -532,7 +545,11 @@ transactions.forEach(function (t) {
     if (btnLoading) btnLoading.classList.remove('hidden');
 
     try {
-      var res = await window.adminFetch('/api/admin/earnings/history', { method: 'DELETE' });
+      var res = await window.adminFetch('/api/admin/earnings/history', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: 'ELIMINAR' })
+      });
       if (!res || !res.ok) {
         var errData = await res.json().catch(function () { return {}; });
         throw new Error(errData.error || 'Error al eliminar el historial.');

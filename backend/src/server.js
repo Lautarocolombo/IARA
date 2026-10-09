@@ -194,7 +194,7 @@ app.use((req, res, next) => {
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Accept-Language, Origin, X-Requested-With, X-Request-ID');
       res.setHeader('Access-Control-Allow-Credentials', 'true');
       res.setHeader('Access-Control-Max-Age', '86400');
-      logger.info('[CORS] Preflight respondido para:', { path: req.path, origin });
+      res.setHeader('Vary', 'Origin');
       return res.status(204).send();
     }
     logger.warn('[CORS] Preflight rechazado para:', { path: req.path, origin });
@@ -204,38 +204,27 @@ app.use((req, res, next) => {
   if (isAllowed && origin) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Vary', 'Origin');
   }
 
   next();
 });
 
-const corsOptions = allowedOrigins.length
-  ? {
-      origin: function(origin, callback) {
-        const allowed = isOriginAllowed(origin);
-        logger.debug('[CORS] Preflight/request origin:', origin, 'allowed:', allowed, 'allowedOrigins:', allowedOrigins.join(','));
-        callback(null, allowed);
-      },
-      credentials: true,
-       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-       allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With', 'X-Request-ID'],
-   }
-  : {
-        origin: function(origin, callback) {
-          if (!origin || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
-            callback(null, true);
-          } else {
-            callback(null, false);
-          }
-        },
-        credentials: true,
-        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With', 'X-Request-ID'],
-    };
+// Opciones CORS únicas: reutiliza isOriginAllowed. Se usa en /uploads y en
+// cualquier middleware del paquete `cors` (una sola fuente de verdad).
+// NOTA: allowedOrigins siempre tiene defaults, la rama `else` anterior era
+// código muerto y se eliminó.
+const corsOptions = {
+  origin: function(origin, callback) {
+    callback(null, isOriginAllowed(origin));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With', 'X-Request-ID'],
+};
 
 app.use(require('cookie-parser')());
 app.use(tenantContext);
-// app.options('*', cors(corsOptions)); // Reemplazado por middleware manual arriba para garantizar 204 en todas las rutas
 
 let rateLimitStore = undefined;
 if (process.env.REDIS_URL) {
@@ -544,10 +533,12 @@ app.post('/api/admin/upload', require('./middleware/auth').adminAuth, uploadSing
     logger.error('[Upload] Error procesando imagen:', { message: err.message, stack: err.stack });
     logger.error('[Upload] Error completo:', { name: err.name, message: err.message, stack: err.stack, code: err.code });
     const message = err.message || 'Error al procesar la imagen';
-    res.status(500).json({ error: message });
+    const status = err.code === 'IMAGE_TOO_HEAVY_FOR_DB' ? 413 : 500;
+    res.status(status).json({ error: message });
   }
 });
 
+const fs = require('fs');
 const uploadsStaticDir = path.join(__dirname, '..', '..', 'uploads');
 
 const UPLOAD_PLACEHOLDER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Imagen no disponible"><rect width="200" height="200" rx="14" fill="#fde8ef"/><text x="100" y="110" text-anchor="middle" font-family="system-ui,serif" font-size="40" fill="#d47090">📷</text><text x="100" y="150" text-anchor="middle" font-family="system-ui,serif" font-size="14" fill="#d47090">Imagen no disponible</text></svg>`;
@@ -566,13 +557,34 @@ app.use('/uploads', cors(corsOptions), (req, res, next) => {
     }
   });
 });
-const staticDir = path.join(__dirname, '..', '..', 'frontend');
+// Static frontend: en producción (Render) el frontend vive en Vercel (dist/).
+// El backend solo sirve estáticos si existe dist/ o en desarrollo local.
+// Esto evita servir 60+ archivos sin minificar y acelera el cold start.
+const distDir = path.join(__dirname, '..', '..', 'dist');
+const frontendDir = path.join(__dirname, '..', '..', 'frontend');
+const hasDist = fs.existsSync(path.join(distDir, 'index.html'));
+const serveFrontend = process.env.SERVE_FRONTEND === 'true' || process.env.NODE_ENV !== 'production' || !process.env.DATABASE_URL;
+const staticDir = (process.env.NODE_ENV === 'production' && hasDist) ? distDir : frontendDir;
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(staticDir, 'index.html'));
-});
+if (serveFrontend) {
+  app.get('/', (req, res) => {
+    res.sendFile(path.join(staticDir, 'index.html'));
+  });
 
-app.use(express.static(staticDir, { maxAge: '1h', etag: true, lastModified: true }));
+  // Assets con hash de Vite: cache inmutable largo. HTML: sin cache.
+  app.use('/assets', express.static(path.join(staticDir, 'assets'), {
+    maxAge: '1y',
+    immutable: true,
+    etag: true,
+    lastModified: true
+  }));
+  app.use(express.static(staticDir, { maxAge: '1h', etag: true, lastModified: true }));
+} else {
+  // Producción API-only: '/' informa estado en vez de servir HTML pesado.
+  app.get('/', (req, res) => {
+    res.json({ status: 'ok', service: 'iara-backend', frontend: 'https://artesania-gualeguay-v3.vercel.app' });
+  });
+}
 
 app.use((req, res, next) => {
   if (res.getHeader('Content-Type')?.includes('text/html') && !res.getHeader('Content-Type')?.includes('charset')) {
@@ -590,6 +602,9 @@ app.get('/*', (req, res) => {
   if (req.path.startsWith('/uploads/')) {
     return res.status(404).json({ error: 'Image not found' });
   }
+  if (!serveFrontend) {
+    return res.status(404).json({ error: 'Not Found' });
+  }
   res.sendFile(path.join(staticDir, 'index.html'));
 });
 
@@ -603,40 +618,18 @@ app.use(errorHandler);
 
 const dbReady = initDB().then(async () => {
     logger.info('Base de datos inicializada correctamente');
-    try {
-      const { seedLocalData } = require('./lib/db');
-      await seedLocalData();
-    } catch (err) {
-      logger.warn({ err: err.message }, 'No se pudo sembrar datos locales');
-    }
-    try {
-      const { query } = require('./lib/db');
-      const result = await query('SELECT COUNT(*) FROM users');
-      if ((result.rows[0]?.count || 0) === 0 && process.env.ADMIN_USER && process.env.ADMIN_PASS_HASH) {
-        try {
-          await query(
-            'INSERT INTO users (username, password_hash, role, permissions, active) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (username) DO NOTHING',
-            [process.env.ADMIN_USER, process.env.ADMIN_PASS_HASH, 'admin', JSON.stringify({ all: true }), true]
-          );
-        } catch (err) {
-          if (!err.message.includes('UNIQUE constraint failed') && !err.message.includes('duplicate key')) {
-            throw err;
-          }
-        }
-        logger.info(`Usuario admin inicial creado: ${process.env.ADMIN_USER}`);
-      } else if (process.env.ADMIN_USER && process.env.ADMIN_PASS_HASH) {
-        const existing = await query('SELECT password_hash, permissions FROM users WHERE username = $1', [process.env.ADMIN_USER]);
-        if (existing.rows.length > 0) {
-          const needsUpdate = existing.rows[0].password_hash !== process.env.ADMIN_PASS_HASH || existing.rows[0].permissions !== JSON.stringify({ all: true });
-          if (needsUpdate) {
-            await query('UPDATE users SET password_hash = $1, permissions = $2, updated_at = CURRENT_TIMESTAMP WHERE username = $3', [process.env.ADMIN_PASS_HASH, JSON.stringify({ all: true }), process.env.ADMIN_USER]);
-            logger.info(`Hash/permisos de admin actualizados para: ${process.env.ADMIN_USER}`);
-          }
-        }
+    // Seed local solo en desarrollo o con flag explícito: en producción con
+    // Postgres NO se siembra (evita INSERTs + COUNT en cada cold start).
+    if (!process.env.DATABASE_URL || process.env.SEED_LOCAL_DATA === 'true') {
+      try {
+        const { seedLocalData } = require('./lib/db');
+        await seedLocalData();
+      } catch (err) {
+        logger.warn({ err: err.message }, 'No se pudo sembrar datos locales');
       }
-    } catch (err) {
-      logger.warn({ err: err.message }, 'No se pudo verificar/crear usuario admin inicial');
     }
+    // El usuario admin ya lo asegura initDB()->ensureAdminUser(). No duplicar
+    // queries aquí: solo log informativo.
   }).catch(err => {
     logger.error({ err: err.message, stack: err.stack }, 'Error inicializando DB');
     throw err;

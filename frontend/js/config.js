@@ -44,7 +44,10 @@ const DEFAULT_CONFIG = {
   },
   API: {
     BASE: '',
-    BACKEND_URL: ''
+    BACKEND_URL: '',
+    // Prefijo único de la API. El backend responde en /api y /api/v1
+    // (compatibilidad); el frontend usa siempre PREFIX.
+    PREFIX: '/api'
   },
   PLACEHOLDER: {
     IMAGE: 'assets/placeholder-product.svg'
@@ -86,10 +89,25 @@ async function loadConfigFromAPI() {
 
   configPromise = (async () => {
     try {
-      const res = await fetch('/api/v1/config', { cache: 'no-store' });
-      if (res.ok) {
+      // Prefijo único: /api/config, con fallback a /api/v1/config por compatibilidad.
+      const base = (CONFIG.API && CONFIG.API.BASE) || '';
+      const prefix = (CONFIG.API && CONFIG.API.PREFIX) || '/api';
+      let res = null;
+      try {
+        res = await fetch(`${base}${prefix}/config`, { cache: 'no-store' });
+      } catch (e) { res = null; }
+      if (!res || !res.ok) {
+        try {
+          res = await fetch(`${base}/api/v1/config`, { cache: 'no-store' });
+        } catch (e) { res = null; }
+      }
+      if (res && res.ok) {
         const apiConfig = await res.json();
         CONFIG = deepMerge(DEFAULT_CONFIG, apiConfig);
+        // No permitir que la API pise el prefijo con un valor inválido.
+        if (!CONFIG.API || typeof CONFIG.API.PREFIX !== 'string' || !CONFIG.API.PREFIX.startsWith('/')) {
+          CONFIG.API = { ...(CONFIG.API || {}), PREFIX: '/api' };
+        }
       }
     } catch (err) {
       console.warn('No se pudo cargar config desde API, usando valores por defecto:', err);
@@ -99,6 +117,7 @@ async function loadConfigFromAPI() {
       if (typeof window !== 'undefined') {
         window.CONFIG = CONFIG;
         try { applyReviewLinks(); } catch (e) { /* noop */ }
+        try { applyWhatsAppLinks(); } catch (e) { /* noop */ }
       }
     }
     return CONFIG;
@@ -141,6 +160,23 @@ function applyReviewLinks() {
   });
 }
 
+// Unifica todos los links wa.me al número configurado (admin > Contacto o
+// env WHATSAPP). Los HTML traen un href de fallback; con JS se reescribe
+// SOLO el número (wa.me/<numero>) y se conserva el ?text= de cada link
+// (ej: consulta de producto específico).
+function applyWhatsAppLinks() {
+  if (typeof document === 'undefined') return;
+  try {
+    const phone = normalizeWhatsAppPhone(CONFIG.CONTACT.WHATSAPP);
+    if (!phone) return;
+    document.querySelectorAll('a[href*="wa.me/"]').forEach(function (el) {
+      const href = el.getAttribute('href') || '';
+      const next = href.replace(/wa\.me\/\d+/, 'wa.me/' + phone);
+      if (next !== href) el.setAttribute('href', next);
+    });
+  } catch (e) { /* noop: los fallbacks hardcodeados siguen funcionando */ }
+}
+
 function normalizeWhatsAppPhone(phone) {
   let cleaned = String(phone || '').replace(/[^\d]/g, '');
   if (cleaned.startsWith('549')) {
@@ -173,6 +209,15 @@ function buildWhatsAppLink({ phone = CONFIG.CONTACT.WHATSAPP, message = '' } = {
 
 function getWhatsAppLink(message = '') {
   return buildWhatsAppLink({ message });
+}
+
+// Helper único para construir URLs de la API: apiUrl('/products').
+// Usa CONFIG.API.BASE + CONFIG.API.PREFIX en un solo lugar.
+function apiUrl(path) {
+  const base = (typeof CONFIG !== 'undefined' && CONFIG.API && CONFIG.API.BASE) ? CONFIG.API.BASE : '';
+  const prefix = (typeof CONFIG !== 'undefined' && CONFIG.API && CONFIG.API.PREFIX) ? CONFIG.API.PREFIX : '/api';
+  const clean = String(path || '');
+  return `${base}${prefix}${clean.startsWith('/') ? clean : '/' + clean}`;
 }
 
 // Función auxiliar para enviar email
@@ -215,7 +260,16 @@ function openWhatsAppSafe(primaryUrl, fallbackUrl, deeplinkUrl) {
 // Cargar config al iniciar (no bloqueante)
 if (typeof window !== 'undefined') {
   loadConfigFromAPI();
+  if (typeof document !== 'undefined') {
+    // Unificar wa.me con los valores por defecto ya; se repite al llegar la API.
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () { try { applyWhatsAppLinks(); } catch (e) { /* noop */ } });
+    } else {
+      try { applyWhatsAppLinks(); } catch (e) { /* noop */ }
+    }
+  }
   window.CONFIG = CONFIG;
+  window.apiUrl = apiUrl;
   window.formatARS = formatARS;
   window.buildWhatsAppLink = buildWhatsAppLink;
   window.normalizeWhatsAppPhone = normalizeWhatsAppPhone;
@@ -224,13 +278,14 @@ if (typeof window !== 'undefined') {
   window.getGoogleWriteReviewLink = getGoogleWriteReviewLink;
   window.isReviewConfigured = isReviewConfigured;
   window.applyReviewLinks = applyReviewLinks;
+  window.applyWhatsAppLinks = applyWhatsAppLinks;
   window.openWhatsAppSafe = openWhatsAppSafe;
   window.reloadConfig = reloadConfig;
 }
 
 // Exportar para uso en Node.js (si aplica)
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { CONFIG, buildWhatsAppLink, getWhatsAppLink, getMailtoLink, getGoogleWriteReviewLink, isReviewConfigured, applyReviewLinks, formatARS, loadConfigFromAPI, reloadConfig };
+  module.exports = { CONFIG, apiUrl, buildWhatsAppLink, getWhatsAppLink, getMailtoLink, getGoogleWriteReviewLink, isReviewConfigured, applyReviewLinks, applyWhatsAppLinks, formatARS, loadConfigFromAPI, reloadConfig };
 }
 
 if (typeof jest !== 'undefined') {

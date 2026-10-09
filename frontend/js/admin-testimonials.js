@@ -119,7 +119,7 @@
       }
       var commentText = escapeHtml(t.comment || '');
       var photoCell = t.image
-        ? '<img src="' + escapeAttr(t.image) + '" alt="' + escapeAttr(t.name) + '" class="testimonial-thumb" onerror="this.style.display=\'none\'" />'
+        ? '<img src="' + escapeAttr(t.image) + '" alt="' + escapeAttr(t.name) + '" class="testimonial-thumb" loading="lazy" decoding="async" onerror="this.style.display=\'none\'" />'
         : '<span style="color:var(--text-muted);">—</span>';
       return '<tr data-id="' + t.id + '" draggable="true" class="testimonial-row">' +
         '<td class="text-center" style="cursor:grab;user-select:none;">↕</td>' +

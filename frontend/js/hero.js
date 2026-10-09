@@ -18,7 +18,7 @@
 
   async function loadHeroCards() {
     try {
-      const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/hero-cards`, {}, 2, 1000);
+      const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/hero-cards`, {}, 3, 1000, 15000, false);
       if (!res) {
         renderHeroCards([]);
         return;
@@ -65,7 +65,7 @@
     try {
       let siteTexts = {};
       try {
-        const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-texts`, {}, 2, 1000);
+        const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-texts`, {}, 3, 1000, 15000, false);
         if (res && res.ok) siteTexts = await res.json();
       } catch (err) {
         console.error('[Hero] Error cargando site-texts:', err);
@@ -75,7 +75,7 @@
 
       let featuredProducts = [];
       try {
-        const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/products/featured`, {}, 2, 1000, 0, false);
+        const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/products/featured`, {}, 3, 1000, 15000, false);
         if (res && res.ok) featuredProducts = await res.json();
       } catch (err) {
         console.error('[Hero] Error cargando productos destacados:', err);

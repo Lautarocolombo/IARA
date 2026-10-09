@@ -12,19 +12,23 @@ if (typeof loadTestimonials === 'function') {
   loadTestimonials();
 }
 
+  // Imágenes locales como fuente principal (siempre disponibles en Vercel)
+  window.__aboutImages = {};
+  for (var i = 1; i <= 5; i++) {
+    window.__aboutImages['about_image_' + i] = '/imagenes/carrucel/' + i + '.jpg';
+  }
+
   function loadAboutImages() {
     if (typeof fetchWithRetry !== 'function') return;
-    fetchWithRetry(CONFIG.API.BASE + '/api/carousel/public', {}, 2, 1000).then(function(res) {
+    fetchWithRetry(CONFIG.API.BASE + '/api/carousel/public', {}, 3, 1000, 15000, false).then(function(res) {
       if (!res || !res.ok) return;
       res.json().then(function(data) {
-        window.__aboutImages = {};
         var slots = data.slots || {};
         for (var i = 1; i <= 5; i++) {
           var slot = slots[i];
-          if (slot && slot.url) {
-            window.__aboutImages['about_image_' + i] = slot.url;
-          } else {
-            window.__aboutImages['about_image_' + i] = '/imagenes/carrucel/' + i + '.jpg';
+          if (slot && slot.caption) {
+            window.__aboutImages['about_caption_' + i] = slot.caption;
+            window.__aboutImages['about_group_' + i] = slot.about_group;
           }
         }
         if (typeof window.initAboutCarousel === 'function') {
@@ -33,22 +37,10 @@ if (typeof loadTestimonials === 'function') {
       });
     }).catch(function(err) {
       if (typeof console !== 'undefined' && console.error) {
-        console.error('[home-init] Error cargando imágenes del carrusel:', err);
-      }
-      window.__aboutImages = {};
-      for (var i = 1; i <= 5; i++) {
-        window.__aboutImages['about_image_' + i] = '/imagenes/carrucel/' + i + '.jpg';
-      }
-      if (typeof window.initAboutCarousel === 'function') {
-        window.initAboutCarousel();
+        console.error('[home-init] Error cargando metadatos del carrusel:', err);
       }
     });
     window.loadAboutImages = loadAboutImages;
-  }
-
-  window.__aboutImages = {};
-  for (var i = 1; i <= 5; i++) {
-    window.__aboutImages['about_image_' + i] = '/imagenes/carrucel/' + i + '.jpg';
   }
 
 if (typeof loadAboutImages === 'function') {

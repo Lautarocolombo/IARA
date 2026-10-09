@@ -910,6 +910,9 @@
     var msg = document.getElementById('confirmModalMessage');
     var actionBtn = document.getElementById('confirmModalAction');
     if (modal) {
+      // El modal se reutiliza: resetear primero para no arrastrar el input
+      // de la confirmación destructiva ni botones de otros usos.
+      if (typeof window.resetConfirmModal === 'function') window.resetConfirmModal();
       if (msg) msg.innerHTML = '<strong>Cómo generar el comprobante desde tu banco:</strong><br>1) Ingresá a la app de tu banco.<br>2) Buscá la transferencia realizada a <strong>' + escapeHtml(getPaymentAlias(paymentConfig) || 'el alias configurado') + '</strong>.<br>3) Descargá o capturá el comprobante de la operación.<br>4) Subilo acá con el botón "Subir Comprobante".';
       if (actionBtn) {
         actionBtn.textContent = 'Entendido';

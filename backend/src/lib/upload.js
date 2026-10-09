@@ -45,10 +45,23 @@ async function uploadProofToBlob(file) {
     throw err;
   }
   try {
-    const buffer = fs.readFileSync(file.path);
-    const ext = path.extname(file.originalname).toLowerCase() || '.bin';
-    const safe = file.originalname.replace(ext, '').replace(/[^a-zA-Z0-9._-]/g, '_');
-    const contentType = file.mimetype || 'application/octet-stream';
+    // Comprobantes: optimizar imágenes (los PDF se suben tal cual).
+    // Antes se subía el original sin tocar (hasta 20MB) -> Blob caro + admin lento.
+    let buffer;
+    let contentType;
+    let ext = path.extname(file.originalname).toLowerCase() || '.bin';
+    const isImage = (file.mimetype || '').startsWith('image/');
+    if (isImage) {
+      const optimizedPath = await optimizeImage(file.path, { format: 'webp', maxDimension: 1600, webpQuality: 82 });
+      buffer = fs.readFileSync(optimizedPath);
+      contentType = 'image/webp';
+      ext = '.webp';
+      if (optimizedPath !== file.path) removeIfExists(optimizedPath);
+    } else {
+      buffer = fs.readFileSync(file.path);
+      contentType = file.mimetype || 'application/octet-stream';
+    }
+    const safe = file.originalname.replace(path.extname(file.originalname).toLowerCase(), '').replace(/[^a-zA-Z0-9._-]/g, '_');
     const blobName = `comprobantes/${Date.now()}_${safe}${ext}`;
 
     const blob = await mod.put(blobName, buffer, {
@@ -77,9 +90,12 @@ async function uploadToBlob(file) {
     const tmpPath = path.join(tmpDir, `${Date.now()}_${safe}${ext}`);
     fs.copyFileSync(file.path, tmpPath);
 
-    const optimizedPath = await optimizeImage(tmpPath, { format: 'webp' });
-    let buffer = fs.readFileSync(optimizedPath);
-    let contentType = path.extname(optimizedPath).toLowerCase() === '.webp' ? 'image/webp' : file.mimetype || 'application/octet-stream';
+    const optimizedPath = await optimizeImage(tmpPath, { format: 'webp', maxDimension: 1600, webpQuality: 82 });
+    const buffer = fs.readFileSync(optimizedPath);
+    // Los bytes SIEMPRE son WebP tras optimizeImage: el ContentType debe
+    // decirlo (antes se mandaba el mimetype original y el CDN servía webp
+    // rotulado como image/png o image/jpeg).
+    const contentType = 'image/webp';
 
     const blobName = `products/${Date.now()}_${safe}${ext}`;
 
@@ -281,10 +297,22 @@ async function processFile(file, _baseUrl) {
     logger.warn('[Upload] Vercel Blob no disponible, se guarda base64 en la DB');
   }
 
-  const optimizedPath = await optimizeImage(file.path, { format: 'webp' });
+  const optimizedPath = await optimizeImage(file.path, { format: 'webp', maxDimension: 800, webpQuality: 70 });
   const buffer = fs.readFileSync(optimizedPath);
   const base64 = buffer.toString('base64');
   const dataUri = 'data:image/webp;base64,' + base64;
+
+  // Tope anti-bloat: el fallback base64 vive en la DB. Si aún optimizado
+  // (800px/q70) supera el tope, fallar con mensaje claro en vez de inflar
+  // la DB silenciosamente (un data-URI de 1MB rinde ~1.3MB en Postgres).
+  const BASE64_MAX_CHARS = 700 * 1024;
+  if (dataUri.length > BASE64_MAX_CHARS) {
+    removeIfExists(file.path);
+    removeIfExists(optimizedPath);
+    const err = new Error('La imagen optimizada sigue siendo muy pesada para guardar en base de datos. Configurá BLOB_READ_WRITE_TOKEN para usar almacenamiento en nube.');
+    err.code = 'IMAGE_TOO_HEAVY_FOR_DB';
+    throw err;
+  }
 
   const ext = path.extname(file.path);
   const baseName = path.basename(file.path, ext);
@@ -302,7 +330,8 @@ async function saveFile(req, res) {
   if (!req.file) {
     return res.status(400).json({ error: 'No se recibió imagen' });
   }
-  const processed = await processFile(req.file, '');
+  try {
+    const processed = await processFile(req.file, '');
   res.json({
     url: processed.url,
     filename: processed.filename,
@@ -310,6 +339,10 @@ async function saveFile(req, res) {
     isCloudinary: processed.isCloudinary,
     isBlob: processed.isBlob
   });
+  } catch (err) {
+    const status = err.code === 'IMAGE_TOO_HEAVY_FOR_DB' ? 413 : 500;
+    res.status(status).json({ error: err.message || 'Error al procesar la imagen' });
+  }
 }
 
 const fileExistsCache = new Set();

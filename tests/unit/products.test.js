@@ -43,7 +43,7 @@ describe('products.js', () => {
     window.fetchWithRetry = jest.fn().mockResolvedValue(mockRes);
 
     await productsModule.fetchProducts();
-    expect(window.fetchWithRetry).toHaveBeenCalledWith('/api/products', {}, 2, 1000);
+    expect(window.fetchWithRetry).toHaveBeenCalledWith('/api/products', {}, 3, 1000, 15000, false);
   });
 
   test('fetchProducts maneja error de red', async () => {

@@ -120,8 +120,23 @@ function showToast(icon, message, type = 'default', options = {}) {
 })();
 
 // Reveal Animation on Scroll
+// El contenido NUNCA depende de la animación para ser visible: si
+// IntersectionObserver no existe, si el usuario prefiere movimiento reducido,
+// o si algo falla, todo pasa a visible (fallback a 1,5 s).
 function initRevealAnimation() {
-  if (!('IntersectionObserver' in window)) return;
+  const forceVisible = () => {
+    document.querySelectorAll('.reveal:not(.visible)').forEach(el => el.classList.add('visible'));
+  };
+  try {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      forceVisible();
+      return;
+    }
+  } catch (e) { /* noop */ }
+  if (!('IntersectionObserver' in window)) {
+    forceVisible();
+    return;
+  }
   const revealElements = document.querySelectorAll('.reveal');
 
   window.revealObserver = new IntersectionObserver((entries) => {
@@ -136,6 +151,10 @@ function initRevealAnimation() {
   });
 
   revealElements.forEach(el => window.revealObserver.observe(el));
+
+  // Fallback: tras 1,5 s todo lo .reveal pasa a visible aunque el observer
+  // no haya disparado (fetch lento, elemento fuera de viewport, etc.).
+  setTimeout(forceVisible, 1500);
 }
 
 // Navbar Scroll Effect
@@ -557,6 +576,7 @@ function initSakuraInteraction() {
 
 // Initialize Everything on DOM Ready
 function initUI() {
+  warmBackend();
   initRevealAnimation();
   initNavbarScroll();
   initMobileNavbar();
@@ -665,11 +685,11 @@ function getFetchErrorMessage(err) {
   return 'Error de conexión. Intentá nuevamente.';
 }
 
-async function safeFetch(url, opts = {}, timeoutMs = 0) {
-  return fetchWithRetry(url, opts, 2, 1000, timeoutMs);
+async function safeFetch(url, opts = {}, timeoutMs = 15000) {
+  return fetchWithRetry(url, opts, 3, 1000, timeoutMs);
 }
 
-async function fetchWithRetry(url, opts = {}, retries = 2, backoffMs = 1000, timeoutMs = 0, showToastOnError = true) {
+async function fetchWithRetry(url, opts = {}, retries = 3, backoffMs = 1000, timeoutMs = 15000, showToastOnError = true) {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const fetchPromise = fetch(url, opts);
@@ -739,6 +759,16 @@ async function fetchWithRetry(url, opts = {}, retries = 2, backoffMs = 1000, tim
 
 window.safeFetch = safeFetch;
 window.fetchWithRetry = fetchWithRetry;
+
+// Warm-up: despierta al backend (Render free se duerme ~30-60 s) con un ping
+// fire-and-forget a /health al cargar la página. Nunca bloquea ni muestra toast.
+function warmBackend() {
+  try {
+    const base = (typeof CONFIG !== 'undefined' && CONFIG.API && CONFIG.API.BASE) ? CONFIG.API.BASE : '';
+    fetch(`${base}/api/health`, { cache: 'no-store', keepalive: true }).catch(() => {});
+  } catch (e) { /* noop */ }
+}
+window.warmBackend = warmBackend;
 window.showToast = showToast;
 window.getFetchErrorMessage = getFetchErrorMessage;
 window.escapeHtml = escapeHtml;
@@ -785,7 +815,7 @@ window.sanitizeAboutText = sanitizeAboutText;
 
 async function loadSiteTexts() {
   try {
-    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-texts`, {}, 2, 1000);
+    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-texts`, {}, 3, 1000, 15000, false);
     if (!res) {
       return;
     }
@@ -868,7 +898,7 @@ function updateStatsFromTexts(data) {
 
 async function loadSiteSettings() {
   try {
-    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-settings`, {}, 2, 1000);
+    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-settings`, {}, 3, 1000, 15000, false);
     if (!res) return;
     const settings = await res.json();
 
@@ -943,7 +973,7 @@ async function loadTestimonials() {
   if (section) section.style.display = '';
 
   try {
-    const contentRes = await fetchWithRetry(`${CONFIG.API.BASE}/api/section-content/testimonials`, {}, 2, 1000);
+    const contentRes = await fetchWithRetry(`${CONFIG.API.BASE}/api/section-content/testimonials`, {}, 3, 1000, 15000, false);
     if (contentRes && contentRes.ok) {
       const content = await contentRes.json();
       if (titleEl && content.title) titleEl.textContent = content.title;
@@ -954,7 +984,7 @@ async function loadTestimonials() {
   }
 
   try {
-    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/testimonials`, {}, 2, 1000);
+    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/testimonials`, {}, 3, 1000, 15000, false);
     if (!res) {
       if (skeleton) skeleton.style.display = 'none';
       return;
@@ -984,7 +1014,7 @@ function renderTestimonials(testimonials) {
     const productImageHtml = t.image
       ? `<div class="testimonial-product-image-wrap" role="button" tabindex="0" aria-label="Ampliar foto de ${escapeHtml(t.name)}">
           <img src="${escapeHtml(t.image)}" alt="${escapeHtml(t.alt || (t.name + ' con su producto'))}" class="testimonial-product-image" loading="lazy" onerror="this.parentElement.style.display='none'" />
-          <button type="button" class="testimonial-product-image-zoom" aria-label="Ampliar foto" aria-hidden="true">🔍</button>
+          <button type="button" class="testimonial-product-image-zoom" aria-label="Ampliar foto" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line></svg></button>
         </div>`
       : '';
     return `
@@ -1008,6 +1038,8 @@ function renderTestimonials(testimonials) {
         window.revealObserver.observe(el);
       }
     });
+  } else {
+    grid.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
   }
 
   grid.querySelectorAll('.testimonial-product-image-wrap').forEach(function (wrap) {
@@ -1031,7 +1063,7 @@ window.loadTestimonials = loadTestimonials;
 
 async function loadPaymentConfig() {
   try {
-    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/payment-config`, {}, 2, 1000);
+    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/payment-config`, {}, 3, 1000, 15000, false);
     if (!res || !res.ok) return;
     const data = await res.json();
     if (data.shippingCost !== undefined) CONFIG.CART.SHIPPING_COST = Number(data.shippingCost);

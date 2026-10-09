@@ -355,7 +355,7 @@ const getPublicProducts = async (req, res) => {
       where += ` AND price <= $${idx}`;
       params.push(Number(maxPrice));
     }
-    const result = await query(`SELECT * FROM products ${where} ORDER BY id ASC`, params);
+    const result = await query(`SELECT * FROM products ${where} ORDER BY id ASC LIMIT 500`, params);
     const enriched = await attachImagesToProducts(result.rows, baseUrl);
     if (applyETag(req, res, enriched)) return;
     res.json(enriched);
@@ -402,7 +402,7 @@ const searchProducts = async (req, res) => {
       params.push(Number(maxPrice));
     }
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
-    const result = await query(`SELECT * FROM products ${where} ORDER BY id ASC`, params);
+    const result = await query(`SELECT * FROM products ${where} ORDER BY id ASC LIMIT 50`, params);
     const enriched = await attachImagesToProducts(result.rows, baseUrl);
     res.json(enriched);
   } catch (err) {
@@ -450,8 +450,10 @@ const getAdminProducts = async (req, res) => {
     return res.json({ products: enriched, total: enriched.length, page: 1, pages: 1, hasMore: false });
     }
 
-    const pageNum = Number(page) || 1;
-    const limitNum = Number(limit) || 30;
+    const pageNum = Math.max(Number(page) || 1, 1);
+    // Tope anti-abuso: el admin pide limit=100; más de 100 filas por página
+    // no se justifica y encarece cada respuesta (cada producto trae imágenes).
+    const limitNum = Math.min(Math.max(Number(limit) || 30, 1), 100);
     const offset = (pageNum - 1) * limitNum;
     const sortField = ['name', 'price', 'created_at', 'updated_at', 'stock', 'id'].includes(sort_by) ? sort_by : 'id';
     const sortDir = sort_order?.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';

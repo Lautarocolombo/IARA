@@ -23,13 +23,18 @@ function copyRecursive(src, dest) {
   }
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   customLogger: viteLogger,
   root: resolve(__dirname, 'frontend'),
-  publicDir: resolve(__dirname, 'frontend'),
+  // ANTES: publicDir apuntaba a todo frontend/ -> duplicaba js/pages en dist.
+  // publicDir=false: solo se copia lo que el plugin declara (assets/imagenes).
+  publicDir: false,
   build: {
     outDir: resolve(__dirname, 'dist'),
     emptyOutDir: true,
+    target: 'es2020',
+    chunkSizeWarningLimit: 600,
+    assetsInlineLimit: 4096,
     rollupOptions: {
       input: (() => {
         const pagesDir = resolve(__dirname, 'frontend', 'pages');
@@ -48,12 +53,19 @@ export default defineConfig({
         return entries;
       })(),
       output: {
-        manualChunks: undefined,
+        // Chart/Quill se cargan por CDN en dashboard.html, no van al bundle.
+        // Se separa cualquier vendor npm para no bloquear el inicio.
+        manualChunks(id) {
+          if (id.includes('node_modules')) return 'vendor';
+          return undefined;
+        },
       }
     },
     minify: 'esbuild',
     cssCodeSplit: true,
-    sourcemap: true
+    cssMinify: true,
+    // Sourcemaps solo en dev: en prod pesan y exponen código.
+    sourcemap: mode !== 'production'
   },
   server: {
     proxy: {
@@ -66,15 +78,42 @@ export default defineConfig({
   },
   plugins: [
     {
-      name: 'copy-images',
+      name: 'copy-static-assets',
       closeBundle() {
-        const srcDir = resolve(__dirname, 'frontend', 'imagem');
-        const destDir = resolve(__dirname, 'dist', 'imagem');
-        if (existsSync(srcDir)) {
-          copyRecursive(srcDir, destDir);
-          console.log('[vite] Imágenes copiadas a dist/imagem/');
+        // Copia solo carpetas estáticas necesarias (antes: 'imagem' con typo, no existía).
+        // 'js' es CRÍTICO: index.html y pages/*.html cargan scripts clásicos
+        // <script src="js/..."> que Vite NO empaqueta; sin esta copia todos dan
+        // 404 en producción y el sitio queda en blanco (sin CONFIG, sin fetch,
+        // sin reveal → hero/stats/catálogo invisibles o vacíos).
+        const pairs = [
+          ['imagenes', 'imagenes'],
+          ['assets', 'assets'],
+          ['js', 'js'],
+        ];
+        for (const [srcName, destName] of pairs) {
+          const srcDir = resolve(__dirname, 'frontend', srcName);
+          const destDir = resolve(__dirname, 'dist', destName);
+          if (existsSync(srcDir)) {
+            copyRecursive(srcDir, destDir);
+            console.log(`[vite] ${srcName}/ copiado a dist/${destName}/`);
+          }
+        }
+        // Archivos estáticos de raíz (service worker, robots, sitemap,
+        // verificación de Google): se sirven desde / en producción.
+        const rootFiles = ['sw-v4.js', 'robots.txt', 'sitemap.xml'];
+        try {
+          for (const f of readdirSync(resolve(__dirname, 'frontend'))) {
+            if (f.startsWith('google') && f.endsWith('.html')) rootFiles.push(f);
+          }
+        } catch (e) { /* noop */ }
+        for (const file of rootFiles) {
+          const src = resolve(__dirname, 'frontend', file);
+          if (existsSync(src)) {
+            copyFileSync(src, resolve(__dirname, 'dist', file));
+            console.log(`[vite] ${file} copiado a dist/`);
+          }
         }
       }
     }
   ]
-});
+}));

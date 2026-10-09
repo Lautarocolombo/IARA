@@ -4,6 +4,11 @@ const { logAudit } = require('../lib/audit');
 
 const clearHistory = async (req, res) => {
   try {
+    // Doble confirmación también en el servidor: sin { confirm: 'ELIMINAR' }
+    // no se borra nada (el panel pide escribir ELIMINAR en 2 pasos).
+    if (!req.body || req.body.confirm !== 'ELIMINAR') {
+      return res.status(400).json({ error: 'Falta confirmación. Enviá { confirm: "ELIMINAR" } para borrar el historial.' });
+    }
     const result = await transaction(async (client) => {
       let deletedProofs = 0;
       let deletedSales = 0;

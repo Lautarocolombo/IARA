@@ -57,16 +57,16 @@ const getPublicCategories = async (req, res) => {
 };
 
 const createCategory = async (req, res) => {
-  let { name, slug, description = '', active = true, orden = 0, emoji = '', image = '', parent_id = null, image_url = '' } = req.body || {};
-  if (req.file) {
-    image_url = await handleImageUpload(req.file);
-  }
+  try {
+    let { name, slug, description = '', active = true, orden = 0, emoji = '', image = '', parent_id = null, image_url = '' } = req.body || {};
+    if (req.file) {
+      image_url = await handleImageUpload(req.file);
+    }
   if (typeof active === 'string') active = active !== 'false';
   if (parent_id !== null && parent_id !== undefined) parent_id = Number(parent_id) || null;
   if (!name || !slug) return res.status(400).json({ error: 'Nombre y slug son requeridos' });
   const tenantId = getTenantId(req);
-  try {
-    const result = await query(
+  const result = await query(
       'INSERT INTO categories (name, slug, description, active, orden, emoji, image, parent_id, image_url, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
       [name, slug, description, active !== false, Number(orden) || 0, emoji || '', image, parent_id, image_url, tenantId]
     );
@@ -94,13 +94,14 @@ const updateCategory = async (req, res) => {
   const id = Number(req.params.id);
   const tenantId = getTenantId(req);
   const updates = req.body || {};
-  if (req.file) {
-    const existing = await query('SELECT image_url FROM categories WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
-    if (existing.rows.length > 0 && existing.rows[0].image_url) {
-      await deleteImageAsset({ url: existing.rows[0].image_url });
+  try {
+    if (req.file) {
+      const existing = await query('SELECT image_url FROM categories WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
+      if (existing.rows.length > 0 && existing.rows[0].image_url) {
+        await deleteImageAsset({ url: existing.rows[0].image_url });
+      }
+      updates.image_url = await handleImageUpload(req.file);
     }
-    updates.image_url = await handleImageUpload(req.file);
-  }
   if (typeof updates.active === 'string') updates.active = updates.active !== 'false';
   if (updates.parent_id !== undefined && updates.parent_id !== null && updates.parent_id !== '') {
     updates.parent_id = Number(updates.parent_id);
@@ -116,8 +117,7 @@ const updateCategory = async (req, res) => {
     values.push(updates[f]);
   });
   values.push(id, tenantId);
-  try {
-    const result = await query(`UPDATE categories SET ${setParts.join(', ')}, updated_at = CURRENT_TIMESTAMP, tenant_id = $${values.length} WHERE id = $${values.length - 1} RETURNING *`, values);
+  const result = await query(`UPDATE categories SET ${setParts.join(', ')}, updated_at = CURRENT_TIMESTAMP, tenant_id = $${values.length} WHERE id = $${values.length - 1} RETURNING *`, values);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Categoría no encontrada' });
     logger.info({ categoryId: id, fields }, 'updateCategory: categoría actualizada');
     res.json(result.rows[0]);
