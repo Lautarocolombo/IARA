@@ -10,9 +10,6 @@ let shippingDiffProvince = '';
 let includedShippingCost = 0;
 let currentOrderId = null;
 let currentOrderToken = '';
-let currentReceiptFile = null;
-let currentReceiptUrl = null;
-let uploadedProofId = null;
 
 const WA_PHONE_DISPLAY = '+54 9 3444 63-4444';
 const WA_PHONE_RAW = WA_PHONE;
@@ -224,7 +221,7 @@ function copyHolder() {
   });
 }
 
-function buildWaMessage(orderNumber, items, subtotal, shippingCost, shippingProvince, shippingAddress, shippingCity, total, paymentMethod, alias, receiptUrl) {
+function buildWaMessage(orderNumber, items, subtotal, shippingCost, shippingProvince, shippingAddress, shippingCity, total, paymentMethod, alias) {
   const orderForMessage = {
     orderNumber,
     customerName: (document.getElementById('shipName')?.value.trim()) || 'Cliente',
@@ -238,13 +235,7 @@ function buildWaMessage(orderNumber, items, subtotal, shippingCost, shippingProv
     paymentMethod,
     alias
   };
-  let msg = buildOrderMessage(orderForMessage);
-  if (receiptUrl) {
-    msg += `\n\nComprobante: ${receiptUrl}`;
-  } else {
-    msg += '\n\nTe envío el comprobante a continuación.';
-  }
-  return msg;
+  return buildOrderMessage(orderForMessage);
 }
 
 async function openWhatsAppWithMessage(url) {
@@ -258,58 +249,8 @@ async function openWhatsAppWithMessage(url) {
 
 async function handleWhatsAppSend(orderNumber, items, subtotal, shippingCost, shippingProvince, shippingAddress, shippingCity, total, paymentMethod, alias, orderId, orderToken) {
   const btn = document.getElementById('sendWhatsappBtn');
-  const statusEl = document.getElementById('receiptStatus');
 
-  let receiptUrl = currentReceiptUrl;
-
-  if (currentReceiptFile && !currentReceiptUrl) {
-    if (btn) {
-      btn.disabled = true;
-      btn.textContent = 'Preparando...';
-    }
-    if (statusEl) {
-      statusEl.textContent = 'Subiendo comprobante...';
-      statusEl.style.color = '#7c2d4e';
-      statusEl.style.display = 'block';
-    }
-
-    try {
-      const formData = new FormData();
-      formData.append('image', currentReceiptFile);
-
-      const res = await fetch(`/api/v1/orders/${orderId}/receipt`, {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({ error: 'Error al subir' }));
-        throw new Error(data.error || 'Error al subir comprobante');
-      }
-
-      const data = await res.json();
-      receiptUrl = data.url || data.receipt_url || null;
-      uploadedProofId = data.id || null;
-      currentReceiptUrl = receiptUrl;
-
-      if (statusEl) {
-        statusEl.textContent = '✅ Comprobante subido correctamente.';
-        statusEl.style.color = '#16a34a';
-      }
-    } catch (e) {
-      if (statusEl) {
-        statusEl.textContent = '⚠️ No pudimos subir el comprobante, podés adjuntarlo manualmente en el chat.';
-        statusEl.style.color = '#dc2626';
-      }
-    } finally {
-      if (btn) {
-        btn.disabled = false;
-        btn.textContent = 'Enviar por WhatsApp';
-      }
-    }
-  }
-
-  const msg = buildWaMessage(orderNumber, items, subtotal, shippingCost, shippingProvince, shippingAddress, shippingCity, total, paymentMethod, alias, receiptUrl);
+  const msg = buildWaMessage(orderNumber, items, subtotal, shippingCost, shippingProvince, shippingAddress, shippingCity, total, paymentMethod, alias);
   const waLinks = buildWhatsAppLinks(WA_PHONE_RAW, msg);
 
   const url = waLinks.primary || waLinks.fallback;
@@ -323,7 +264,7 @@ function renderWhatsAppFallback(container, waNumber, waMsg, waLinks) {
   const formattedNumber = WA_PHONE_DISPLAY;
   container.innerHTML = `
     <div class="whatsapp-fallback">
-      <p>Se abrirá WhatsApp con tu pedido. Si querés, adjuntá la captura del comprobante directamente en el chat.</p>
+      <p>Se abrirá WhatsApp con tu pedido.</p>
       <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem;">
         <a href="${waLinks.fallback}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm" style="flex: 1; min-width: 140px; text-align: center;">
           Abrir en api.whatsapp.com

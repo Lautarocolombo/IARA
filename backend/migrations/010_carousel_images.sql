@@ -12,4 +12,15 @@ CREATE TABLE IF NOT EXISTS carousel_images (
   UNIQUE(slot, tenant_id)
 );
 
+-- Idempotente: agregar tenant_id si la tabla ya existía sin ella
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'carousel_images' AND column_name = 'tenant_id'
+  ) THEN
+    ALTER TABLE carousel_images ADD COLUMN tenant_id TEXT DEFAULT 'default';
+  END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_carousel_images_slot ON carousel_images(slot);

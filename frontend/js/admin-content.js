@@ -148,10 +148,33 @@
   }
 
   var quillEditor = null;
+  var quillLoaded = false;
 
-  function initQuillEditor() {
+  async function loadQuill() {
+    if (quillLoaded) return true;
+    try {
+      var QuillModule = await import('quill');
+      window.Quill = QuillModule.default || QuillModule;
+      // Load Quill CSS
+      if (!document.querySelector('link[href*="quill.snow.css"]')) {
+        var link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = 'https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css';
+        document.head.appendChild(link);
+      }
+      quillLoaded = true;
+      return true;
+    } catch (err) {
+      console.error('[Content] Error cargando Quill:', err);
+      return false;
+    }
+  }
+
+  async function initQuillEditor() {
     var container = document.getElementById('about_text_editor');
-    if (!container || typeof Quill === 'undefined') return;
+    if (!container) return;
+    var loaded = await loadQuill();
+    if (!loaded) return;
     quillEditor = new Quill(container, {
       theme: 'snow',
       placeholder: 'En cada pieza dejamos un pedacito de Gualeguay...',

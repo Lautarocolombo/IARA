@@ -3,7 +3,7 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const logger = require('./logger');
-const { optimizeImage } = require('./imageOptimizer');
+const { optimizeImage, generateThumbnail } = require('./imageOptimizer');
 const { deleteImageFromDB } = require('./mediaService');
 
 const BLOB_URL_RE = /^https?:\/\/[^/]+\.blob\.vercel-storage\.com/;
@@ -82,7 +82,22 @@ async function uploadToBlob(file) {
     let buffer = fs.readFileSync(optimizedPath);
     let contentType = path.extname(optimizedPath).toLowerCase() === '.webp' ? 'image/webp' : file.mimetype || 'application/octet-stream';
 
-    const blobName = `products/${Date.now()}_${safe}${ext}`;
+    // Generate thumbnail
+    const thumbPath = await generateThumbnail(optimizedPath);
+    let thumbUrl = null;
+    if (thumbPath) {
+      const thumbBuffer = fs.readFileSync(thumbPath);
+      const thumbBlobName = `products/thumbs/${Date.now()}_${safe}_thumb.webp`;
+      const thumbBlob = await mod.put(thumbBlobName, thumbBuffer, {
+        access: 'public',
+        token: process.env.BLOB_READ_WRITE_TOKEN.trim(),
+        contentType: 'image/webp'
+      });
+      thumbUrl = thumbBlob.url;
+      try { fs.rmSync(thumbPath, { force: true }); } catch (e) { /* noop */ }
+    }
+
+    const blobName = `products/${Date.now()}_${safe}.webp`;
 
     const blob = await mod.put(blobName, buffer, {
       access: 'public',
@@ -90,7 +105,14 @@ async function uploadToBlob(file) {
       contentType
     });
 
-    return { url: blob.url, filename: blobName, blobName, isCloudinary: false, isBlob: true };
+    return { 
+      url: blob.url, 
+      filename: blobName, 
+      blobName, 
+      isCloudinary: false, 
+      isBlob: true,
+      thumbnailUrl: thumbUrl
+    };
   } catch (err) {
     const hint = err.code === 401 || err.code === 403
       ? 'Token inválido o revocado. Generá un nuevo token en Vercel Blob y actualizá BLOB_READ_WRITE_TOKEN en Render.'
@@ -284,22 +306,71 @@ function removeIfExists(target) {
 }
 
 async function processFile(file, _baseUrl) {
+  const isProd = process.env.NODE_ENV === 'production';
+  
   if (!isBlobConfigured()) {
-    const err = new Error('Almacenamiento no configurado: falta BLOB_READ_WRITE_TOKEN');
-    err.code = 'BLOB_NOT_CONFIGURED';
-    err.status = 503;
-    throw err;
+    if (isProd) {
+      const err = new Error('Almacenamiento no configurado: falta BLOB_READ_WRITE_TOKEN en producción');
+      err.code = 'BLOB_NOT_CONFIGURED';
+      err.status = 503;
+      throw err;
+    }
+    // Development: fallback to local filesystem
+    const relativePath = `/uploads/imagenes/${path.basename(file.path)}`;
+    const thumbPath = await generateThumbnail(file.path);
+    let thumbnailUrl = null;
+    if (thumbPath) {
+      thumbnailUrl = `/uploads/imagenes/thumbs/${path.basename(thumbPath)}`;
+    }
+    return { 
+      url: relativePath, 
+      filename: path.basename(file.path), 
+      cloudinary_public_id: '', 
+      isCloudinary: false, 
+      isBlob: false, 
+      isBase64: false,
+      thumbnailUrl 
+    };
   }
+  
   const blob = await uploadToBlob(file);
   if (blob) {
     removeIfExists(file.path);
     logger.info('[Upload] Imagen guardada en Vercel Blob:', { blobName: blob.blobName });
-    return { url: blob.url, filename: blob.filename, cloudinary_public_id: '', isCloudinary: false, isBlob: true, isBase64: false };
+    return { 
+      url: blob.url, 
+      filename: blob.filename, 
+      cloudinary_public_id: '', 
+      isCloudinary: false, 
+      isBlob: true, 
+      isBase64: false,
+      thumbnailUrl: blob.thumbnailUrl 
+    };
   }
-  const err = new Error('Error subiendo a Vercel Blob');
-  err.code = 'BLOB_UPLOAD_FAILED';
-  err.status = 503;
-  throw err;
+  
+  if (isProd) {
+    const err = new Error('Error subiendo a Vercel Blob');
+    err.code = 'BLOB_UPLOAD_FAILED';
+    err.status = 503;
+    throw err;
+  }
+  
+  // Development fallback
+  const relativePath = `/uploads/imagenes/${path.basename(file.path)}`;
+  const thumbPath = await generateThumbnail(file.path);
+  let thumbnailUrl = null;
+  if (thumbPath) {
+    thumbnailUrl = `/uploads/imagenes/thumbs/${path.basename(thumbPath)}`;
+  }
+  return { 
+    url: relativePath, 
+    filename: path.basename(file.path), 
+    cloudinary_public_id: '', 
+    isCloudinary: false, 
+    isBlob: false, 
+    isBase64: false,
+    thumbnailUrl 
+  };
 }
 
 async function saveFile(req, res) {

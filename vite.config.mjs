@@ -23,6 +23,8 @@ function copyRecursive(src, dest) {
   }
 }
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 export default defineConfig({
   customLogger: viteLogger,
   root: resolve(__dirname, 'frontend'),
@@ -48,12 +50,19 @@ export default defineConfig({
         return entries;
       })(),
       output: {
-        manualChunks: undefined,
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('chart.js')) return 'chart';
+            if (id.includes('quill')) return 'quill';
+            if (id.includes('qrcode')) return 'qrcode';
+            return 'vendor';
+          }
+        },
       }
     },
     minify: 'esbuild',
     cssCodeSplit: true,
-    sourcemap: true
+    sourcemap: !isProduction
   },
   server: {
     proxy: {
@@ -64,7 +73,7 @@ export default defineConfig({
       }
     }
   },
-plugins: [
+  plugins: [
     {
       name: 'copy-images',
       closeBundle() {

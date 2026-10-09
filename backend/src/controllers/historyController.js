@@ -1,9 +1,25 @@
 const { transaction } = require('../lib/db');
 const logger = require('../lib/logger');
 const { logAudit } = require('../lib/audit');
+const { backupPostgres, backupSqlite } = require('../scripts/backup');
+
+async function createBackupBeforeDangerousOp(req, action) {
+  try {
+    const isLocal = !process.env.DATABASE_URL;
+    const dest = isLocal ? await backupSqlite() : await backupPostgres();
+    logger.info({ dest, action, user: req.user?.user || 'admin' }, 'Backup creado antes de operación destructiva');
+    return dest;
+  } catch (err) {
+    logger.warn({ err: err.message, action }, 'No se pudo crear backup previo, continuando sin backup');
+    return null;
+  }
+}
 
 const clearHistory = async (req, res) => {
   try {
+    // Crear backup automático antes de eliminar
+    await createBackupBeforeDangerousOp(req, 'clear_history');
+
     const result = await transaction(async (client) => {
       let deletedProofs = 0;
       let deletedSales = 0;

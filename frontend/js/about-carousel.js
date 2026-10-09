@@ -25,7 +25,9 @@
       .catch(function () {
         carouselData = {};
         if (aboutTextEl && !aboutTextEl.innerHTML.trim()) {
-          aboutTextEl.innerHTML = '<p>En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.</p>';
+          var fallback = '<p>En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.</p>';
+          var sanitized = typeof window.sanitizeAboutText === 'function' ? window.sanitizeAboutText(fallback) : fallback;
+          aboutTextEl.innerHTML = sanitized;
         }
       });
   }
@@ -50,7 +52,8 @@
     if (caption) {
       aboutTextEl.style.opacity = '0';
       setTimeout(function () {
-        aboutTextEl.innerHTML = '<p>' + caption + '</p>';
+        var sanitized = typeof window.sanitizeAboutText === 'function' ? window.sanitizeAboutText(caption) : caption;
+        aboutTextEl.innerHTML = '<p>' + sanitized + '</p>';
         aboutTextEl.style.opacity = '1';
       }, 200);
     } else {

@@ -16,16 +16,14 @@
   <link rel="stylesheet" href="../css/admin.css" />
   <link rel="stylesheet" href="../css/admin-dashboard.css" />
   <link rel="stylesheet" href="../css/admin-sidebar.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
-  <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
   <script src="../js/config.js"></script>
   <script src="../js/safeImage.js"></script>
   <script src="../js/theme.js"></script>
   <script src="../js/ui.js"></script>
-    <script src="../js/admin.js"></script>
-<script src="../js/admin-sidebar.js"></script>
-  </head>
+  <script src="../js/admin.js"></script>
+  <script src="../js/admin-sidebar.js"></script>
+  <script src="../js/admin-autosave.js"></script>
+</head>
  <body>
   <div class="login-overlay" id="loginOverlay">
     <div class="login-card">
@@ -69,6 +67,10 @@
           <span class="header-breadcrumb" id="headerBreadcrumb">Editar textos visibles del frontend</span>
         </div>
         <div class="admin-header-right">
+          <div class="autosave-status" id="autosaveStatus" style="display: none; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 500;">
+            <span class="autosave-icon" aria-hidden="true"></span>
+            <span class="autosave-text"></span>
+          </div>
           <div class="header-unsaved-indicator hidden" id="unsavedIndicator">
             <span class="header-unsaved-dot"></span>
             <span>Cambios sin guardar</span>
@@ -801,86 +803,78 @@
                       <span>a</span>
                        <input type="date" id="sales_end_date" class="card-filter" data-event="change" data-action="loadSalesSummary" />
                     </div>
-                     <select id="sales_category_filter" class="card-filter" data-event="change" data-action="loadSalesSummary">
-                      <option value="">Todas las categorías</option>
-                    </select>
-                    <button class="btn btn-secondary btn-sm" id="syncSalesBtn">
-                      <span id="syncSalesBtnText">🔄 Actualizar datos</span>
-                      <span id="syncSalesBtnLoading" class="hidden">Actualizando...</span>
-                    </button>
-                    <button class="btn btn-danger btn-sm" id="resetMetricsBtn">
-                      <span id="resetMetricsBtnText">🗑️ Reiniciar métricas</span>
-                      <span id="resetMetricsBtnLoading" class="hidden">Reiniciando...</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div class="card-body">
-                <div class="sales-top-grid">
-                  <div id="salesMetrics">
-                    <div class="metrics-grid">
-                      <div class="metric-card">
-                        <div class="metric-value" id="metricRevenue">ARS 0</div>
-                        <div class="metric-label">Total Ventas Brutas</div>
-                      </div>
-                      <div class="metric-card">
-                        <div class="metric-value" id="metricNetRevenue">ARS 0</div>
-                        <div class="metric-label">Ventas Netas</div>
-                      </div>
-                      <div class="metric-card">
-                        <div class="metric-value" id="metricOrders">0</div>
-                        <div class="metric-label">Número Total de Pedidos</div>
-                      </div>
-                      <div class="metric-card">
-                        <div class="metric-value" id="metricAvg">ARS 0</div>
-                        <div class="metric-label">Ganancia Promedio por Pedido</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div>
-                    <div class="charts-row">
-                      <div class="chart-container chart-container--primary">
-                        <canvas id="salesChart"></canvas>
-                      </div>
-                      <div class="chart-container chart-container--secondary">
-                        <canvas id="salesDonut"></canvas>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div class="save-status" id="salesSummaryStatus"></div>
+<select id="sales_category_filter" class="card-filter" data-event="change" data-action="loadSalesSummary">
+                       <option value="">Todas las categorías</option>
+                     </select>
+                     <button class="btn btn-secondary btn-sm" id="syncSalesBtn">
+                       <span id="syncSalesBtnText">🔄 Actualizar datos</span>
+                       <span id="syncSalesBtnLoading" class="hidden">Actualizando...</span>
+                     </button>
+                   </div>
+                 </div>
+               </div>
+               <div class="card-body">
+                 <div class="sales-top-grid">
+                   <div id="salesMetrics">
+                     <div class="metrics-grid">
+                       <div class="metric-card">
+                         <div class="metric-value" id="metricRevenue">ARS 0</div>
+                         <div class="metric-label">Total Ventas Brutas</div>
+                       </div>
+                       <div class="metric-card">
+                         <div class="metric-value" id="metricNetRevenue">ARS 0</div>
+                         <div class="metric-label">Ventas Netas</div>
+                       </div>
+                       <div class="metric-card">
+                         <div class="metric-value" id="metricOrders">0</div>
+                         <div class="metric-label">Número Total de Pedidos</div>
+                       </div>
+                       <div class="metric-card">
+                         <div class="metric-value" id="metricAvg">ARS 0</div>
+                         <div class="metric-label">Ganancia Promedio por Pedido</div>
+                       </div>
+                     </div>
+                   </div>
+                   <div>
+                     <div class="charts-row">
+                       <div class="chart-container chart-container--primary">
+                         <canvas id="salesChart"></canvas>
+                       </div>
+                       <div class="chart-container chart-container--secondary">
+                         <canvas id="salesDonut"></canvas>
+                       </div>
+                     </div>
+                   </div>
+                 </div>
+                 <div class="save-status" id="salesSummaryStatus"></div>
 
-                <div class="sales-bottom-grid mt-2">
-                  <div>
-                      <div class="admin-section-title admin-section-title--space-between">
-                        <span>Historial de Transacciones</span>
-                        <button class="btn btn-danger btn-sm" id="resetSalesBtn" title="Eliminar todo el historial y empezar de 0">
-                          <span id="resetSalesBtnText">🗑️ Eliminar historial</span>
-                          <span id="resetSalesBtnLoading" class="hidden">Eliminando...</span>
-                        </button>
-                      </div>
-                    <div class="report-section table-wrap">
-                      <table class="table-admin" id="transactionsTable">
-                        <thead>
-                          <tr>
-                            <th>ID</th>
-                            <th>Fecha</th>
-                            <th>Cliente / Producto</th>
-                            <th class="text-center">Estado</th>
-                            <th class="text-right">Monto</th>
-                            <th class="text-center">Acciones</th>
-                          </tr>
-                        </thead>
-                        <tbody id="transactionsTableBody"></tbody>
-                      </table>
-                      <div id="transactionsEmptyState" class="empty-state hidden">
-                        <h3>No hay transacciones</h3>
-                      </div>
-                      <div class="pagination" id="transactionsPagination"></div>
-                    </div>
-                  </div>
-                  <div>
-                    <div class="admin-section-title">Registrar venta manual</div>
+                 <div class="sales-bottom-grid mt-2">
+                   <div>
+                       <div class="admin-section-title admin-section-title--space-between">
+                         <span>Historial de Transacciones</span>
+                       </div>
+                     <div class="report-section table-wrap">
+                       <table class="table-admin" id="transactionsTable">
+                         <thead>
+                           <tr>
+                             <th>ID</th>
+                             <th>Fecha</th>
+                             <th>Cliente / Producto</th>
+                             <th class="text-center">Estado</th>
+                             <th class="text-right">Monto</th>
+                             <th class="text-center">Acciones</th>
+                           </tr>
+                         </thead>
+                         <tbody id="transactionsTableBody"></tbody>
+                       </table>
+                       <div id="transactionsEmptyState" class="empty-state hidden">
+                         <h3>No hay transacciones</h3>
+                       </div>
+                       <div class="pagination" id="transactionsPagination"></div>
+                     </div>
+                   </div>
+                   <div>
+                     <div class="admin-section-title">Registrar venta manual</div>
                     <form id="manualSaleForm">
                       <div class="form-grid-2">
                         <div class="form-group">
@@ -906,14 +900,67 @@
                         <span id="saveSaleBtnText">Guardar venta</span>
                         <span id="saveSaleBtnLoading" class="hidden">Guardando...</span>
                       </button>
-                      <div class="save-status" id="saleSaveStatus"></div>
-                    </form>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+<div class="save-status" id="saleSaveStatus"></div>
+                     </form>
+                   </div>
+                 </div>
+               </div>
+             </div>
+           </div>
+
+           <!-- ===== ZONA AVANZADA - ACCIONES PELIGROSAS ===== -->
+           <div class="card admin-advanced-section" id="salesAdvancedSection" style="margin-top: 24px;">
+             <div class="card-header">
+               <h3 class="card-header-title">⚠️ Zona Avanzada - Acciones Irreversibles</h3>
+               <p class="card-header-subtitle" style="margin-top: 4px; color: var(--color-text-muted); font-size: 0.85rem; font-weight: normal;">
+                 Estas acciones eliminan datos permanentemente. Requieren confirmación escrita y generan respaldo automático.
+               </p>
+             </div>
+             <div class="card-body">
+               <div class="advanced-actions-grid">
+                 <div class="advanced-action-card">
+                   <div class="advanced-action-header">
+                     <span class="advanced-action-icon">🗑️</span>
+                     <div>
+                       <h4 class="advanced-action-title">Eliminar historial total</h4>
+                       <p class="advanced-action-desc">Borra todos los pedidos, ventas, comprobantes y items del historial. No se puede deshacer.</p>
+                     </div>
+                   </div>
+                   <div class="advanced-action-confirm">
+                     <label class="advanced-confirm-label">Escribí <strong>ELIMINAR</strong> para confirmar:</label>
+                     <input type="text" id="confirmDeleteHistoryInput" class="advanced-confirm-input" placeholder="ELIMINAR" autocomplete="off" />
+                     <div class="advanced-confirm-feedback" id="confirmDeleteHistoryFeedback"></div>
+                   </div>
+                   <button class="btn btn-danger btn-sm advanced-action-btn" id="resetSalesBtn" disabled title="Eliminar todo el historial y empezar de 0">
+                     <span id="resetSalesBtnText">🗑️ Eliminar historial total</span>
+                     <span id="resetSalesBtnLoading" class="hidden">Eliminando y respaldando...</span>
+                   </button>
+                   <div class="save-status" id="resetSalesStatus"></div>
+                 </div>
+
+                 <div class="advanced-action-card">
+                   <div class="advanced-action-header">
+                     <span class="advanced-action-icon">📊</span>
+                     <div>
+                       <h4 class="advanced-action-title">Reiniciar métricas</h4>
+                       <p class="advanced-action-desc">Resetea contadores de ventas, gráficos y KPIs a cero. Mantiene los pedidos históricos.</p>
+                     </div>
+                   </div>
+                   <div class="advanced-action-confirm">
+                     <label class="advanced-confirm-label">Escribí <strong>ELIMINAR</strong> para confirmar:</label>
+                     <input type="text" id="confirmResetMetricsInput" class="advanced-confirm-input" placeholder="ELIMINAR" autocomplete="off" />
+                     <div class="advanced-confirm-feedback" id="confirmResetMetricsFeedback"></div>
+                   </div>
+                   <button class="btn btn-danger btn-sm advanced-action-btn" id="resetMetricsBtn" disabled>
+                     <span id="resetMetricsBtnText">📊 Reiniciar métricas</span>
+                     <span id="resetMetricsBtnLoading" class="hidden">Reiniciando y respaldando...</span>
+                   </button>
+                   <div class="save-status" id="resetMetricsStatus"></div>
+                 </div>
+               </div>
+             </div>
+           </div>
+         </section>
 
         <!-- ===== SECCIÓN: PEDIDOS INDIVIDUALES ===== -->
         <section id="section-orders" class="admin-section-inactive">

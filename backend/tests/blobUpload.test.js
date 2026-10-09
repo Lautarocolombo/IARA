@@ -68,10 +68,15 @@ describe('Vercel Blob helpers', () => {
 
   test('processFile sube a Vercel Blob cuando hay token válido', async () => {
     process.env.BLOB_READ_WRITE_TOKEN = 'vercel_blob_test_token';
-    put.mockResolvedValue({
-      url: 'https://proyecto.blob.vercel-storage.com/products/123_test.png',
-      pathname: '/products/123_test.png'
-    });
+    put
+      .mockResolvedValueOnce({
+        url: 'https://proyecto.blob.vercel-storage.com/products/thumbs/123_test_thumb.webp',
+        pathname: '/products/thumbs/123_test_thumb.webp'
+      })
+      .mockResolvedValueOnce({
+        url: 'https://proyecto.blob.vercel-storage.com/products/123_test.png',
+        pathname: '/products/123_test.png'
+      });
 
     const { filePath: tmpFile } = makeTmpFile('test.png');
 
@@ -85,24 +90,30 @@ describe('Vercel Blob helpers', () => {
     expect(result.isBlob).toBe(true);
     expect(result.isBase64).toBe(false);
     expect(result.url).toBe('https://proyecto.blob.vercel-storage.com/products/123_test.png');
-    expect(put).toHaveBeenCalledTimes(1);
-    expect(put.mock.calls[0][0]).toMatch(/^products\/\d+_test\.png$/);
+    expect(result.thumbnailUrl).toBe('https://proyecto.blob.vercel-storage.com/products/thumbs/123_test_thumb.webp');
+    expect(put).toHaveBeenCalledTimes(2);
+    expect(put.mock.calls[0][0]).toMatch(/^products\/thumbs\/\d+_test_thumb\.webp$/);
+    expect(put.mock.calls[1][0]).toMatch(/^products\/\d+_test\.webp$/);
     // el archivo subido a /tmp no debe quedar en disco
     expect(fs.existsSync(tmpFile)).toBe(false);
   });
 
-  test('processFile lanza error 503 cuando no hay token de Blob', async () => {
+  test('processFile en desarrollo (sin token) usa fallback local', async () => {
+    delete process.env.BLOB_READ_WRITE_TOKEN;
+    process.env.NODE_ENV = 'development';
+
     const { filePath: tmpFile } = makeTmpFile('test2.png');
 
-    await expect(upload.processFile({
+    const result = await upload.processFile({
       path: tmpFile,
       originalname: 'test2.png',
       mimetype: 'image/png',
       size: Buffer.from(TINY_PNG_BASE64, 'base64').length
-    })).rejects.toMatchObject({
-      code: 'BLOB_NOT_CONFIGURED',
-      status: 503
     });
+
+    expect(result.isBlob).toBe(false);
+    expect(result.isBase64).toBe(false);
+    expect(result.url).toMatch(/^\/uploads\/imagenes\//);
     expect(put).not.toHaveBeenCalled();
   });
 
@@ -151,14 +162,37 @@ describe('Vercel Blob helpers', () => {
     delete process.env.BLOB_READ_WRITE_TOKEN;
   });
 
-  test('processFile lanza error 503 cuando el token no tiene formato vercel_blob_', async () => {
+  test('processFile en desarrollo (token inválido) usa fallback local', async () => {
     process.env.BLOB_READ_WRITE_TOKEN = 'token-con-formato-invalido';
+    process.env.NODE_ENV = 'development';
 
     const { filePath: tmpFile } = makeTmpFile('test-formato.png');
 
-    await expect(upload.processFile({
+    const result = await upload.processFile({
       path: tmpFile,
       originalname: 'test-formato.png',
+      mimetype: 'image/png',
+      size: Buffer.from(TINY_PNG_BASE64, 'base64').length
+    });
+
+    expect(result.isBlob).toBe(false);
+    expect(result.isBase64).toBe(false);
+    expect(result.url).toMatch(/^\/uploads\/imagenes\//);
+    expect(put).not.toHaveBeenCalled();
+
+    delete process.env.BLOB_READ_WRITE_TOKEN;
+  });
+
+  test('processFile en producción (token inválido) lanza error 503', async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    process.env.BLOB_READ_WRITE_TOKEN = 'token-con-formato-invalido';
+
+    const { filePath: tmpFile } = makeTmpFile('test-formato-prod.png');
+
+    await expect(upload.processFile({
+      path: tmpFile,
+      originalname: 'test-formato-prod.png',
       mimetype: 'image/png',
       size: Buffer.from(TINY_PNG_BASE64, 'base64').length
     })).rejects.toMatchObject({
@@ -167,6 +201,7 @@ describe('Vercel Blob helpers', () => {
     });
     expect(put).not.toHaveBeenCalled();
 
+    process.env.NODE_ENV = originalNodeEnv;
     delete process.env.BLOB_READ_WRITE_TOKEN;
   });
 

@@ -9,7 +9,7 @@ const { applyETag } = require('../lib/etag');
 
 function sanitizeText(text) {
   if (typeof text !== 'string') return text;
-  if (!text.includes('�')) return text;
+  if (!text.includes('&')) return text;
   const fixes = [
     [/Cada pieza es única\./g, 'Cada pieza es única.'],
     [/Explorar Catálogo/g, 'Explorar Catálogo'],
@@ -35,8 +35,8 @@ function sanitizeText(text) {
   fixes.forEach(([pattern, replacement]) => {
     result = result.replace(pattern, replacement);
   });
-  if (result.includes('�')) {
-    result = result.replace(/�/g, '');
+  if (result.includes('&')) {
+    result = result.replace(/&/g, '&');
   }
   return result;
 }
@@ -126,7 +126,7 @@ const syncTextsToNeon = async (req, res) => {
     for (const key of keys) {
       try {
         let newValue = String(texts[key] || '');
-        if (key === 'about_text') {
+        if (key === 'about_text' || key === 'hero_title') {
           newValue = sanitizeHtml(newValue);
         }
         const oldValue = existingMap[key] || '';

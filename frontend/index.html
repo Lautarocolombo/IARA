@@ -9,12 +9,12 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌸</text></svg>" />
   <meta property="og:title" content="Artesanías Gualeguay | Pulseras & Souvenirs Artesanales" />
   <meta property="og:description" content="Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es unica." />
-  <meta property="og:image" content="https://artesania-gualeguay-v3.vercel.app/imagenes/og-image.jpg" />
+  <meta property="og:image" id="ogImageMeta" content="https://artesania-gualeguay-v3.vercel.app/imagenes/og-image.jpg" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@400;500;600&display=swap" as="style">
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="canonical" href="https://artesania-gualeguay-v3.vercel.app/" />
+  <link rel="canonical" id="canonicalLink" href="https://artesania-gualeguay-v3.vercel.app/" />
   <link rel="stylesheet" href="css/variables.css" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/components.css" />
@@ -26,7 +26,7 @@
   <!-- Analytics -->
   <script defer src="js/analytics.js"></script>
   <script defer src="js/vercel-analytics.js"></script>
-  <script type="application/ld+json">
+  <script type="application/ld+json" id="ldWebsite">
   {
     "@context": "https://schema.org",
     "@type": "WebSite",
@@ -40,7 +40,7 @@
     }
   }
   </script>
-  <script type="application/ld+json">
+  <script type="application/ld+json" id="ldOrg">
   {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -54,7 +54,7 @@
   }
   </script>
 </head>
-<meta name="google-site-verification" content="yvZpAuNkB_dICE9gkXzvgbShhQMuPXQuKVpNwdYt9ig" />
+<meta name="google-site-verification" id="googleSiteVerification" content="yvZpAuNkB_dICE9gkXzvgbShhQMuPXQuKVpNwdYt9ig" />
 <body>
   <a href="#home" class="skip-link">Saltar al contenido principal</a>
   <a href="#catalog" class="skip-link">Saltar al catálogo</a>
@@ -66,6 +66,48 @@
   <script src="js/safeImage.js"></script>
   <script src="js/header.js"></script>
   <script src="js/theme.js"></script>
+  <script>
+    // Update dynamic meta tags from CONFIG
+    function updateDynamicMeta() {
+      if (typeof CONFIG === 'undefined') return;
+      var siteUrl = CONFIG.SITE_URL || 'https://artesania-gualeguay-v3.vercel.app';
+      var googleVerification = CONFIG.GOOGLE_SITE_VERIFICATION || 'yvZpAuNkB_dICE9gkXzvgbShhQMuPXQuKVpNwdYt9ig';
+
+      // Update canonical
+      var canonical = document.getElementById('canonicalLink');
+      if (canonical) canonical.href = siteUrl.replace(/\/$/, '') + '/';
+
+      // Update OG image and URL
+      var ogImage = document.getElementById('ogImageMeta');
+      if (ogImage) ogImage.content = siteUrl.replace(/\/$/, '') + '/imagenes/og-image.jpg';
+
+      // Update JSON-LD
+      var ldWebsite = document.getElementById('ldWebsite');
+      if (ldWebsite) {
+        var data = JSON.parse(ldWebsite.textContent);
+        data.url = siteUrl;
+        data.potentialAction.target = siteUrl + '/?q={search_term_string}';
+        ldWebsite.textContent = JSON.stringify(data);
+      }
+      var ldOrg = document.getElementById('ldOrg');
+      if (ldOrg) {
+        var orgData = JSON.parse(ldOrg.textContent);
+        orgData.url = siteUrl;
+        orgData.logo = siteUrl + '/favicon.ico';
+        ldOrg.textContent = JSON.stringify(orgData);
+      }
+
+      // Update google-site-verification
+      var gsv = document.getElementById('googleSiteVerification');
+      if (gsv) gsv.content = googleVerification;
+    }
+    // Run after config loads
+    if (typeof loadConfigFromAPI === 'function') {
+      loadConfigFromAPI().then(updateDynamicMeta);
+    } else {
+      updateDynamicMeta();
+    }
+  </script>
   <script>
     if (window.location.protocol === 'file:') {
       document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:#fde8ef;font-family:system-ui,sans-serif;padding:2rem;text-align:center;"><div style="max-width:500px;background:#fff;padding:2rem;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,0.15);"><h1 style="color:#d47090;margin-bottom:1rem;">🌸 Artesanías Gualeguay</h1><p style="color:#666;margin-bottom:1.5rem;">Para usar el panel de administración, abrí el sitio desde el servidor local.</p><button onclick="window.location.href=\'http://localhost:3000/pages/dashboard.html\'" style="background:#d47090;color:#fff;border:none;padding:12px 24px;border-radius:8px;font-size:1rem;cursor:pointer;">Abrir Panel de Administración</button><p style="color:#999;font-size:0.85rem;margin-top:1rem;">O ejecutá <code>npm run dev</code> en la terminal y accedé a <a href="http://localhost:3000" style="color:#d47090;">http://localhost:3000</a></p></div></div>';
@@ -246,8 +288,8 @@
             <div class="about-carousel-track" id="aboutCarouselTrack"></div>
             <button class="about-carousel-btn about-carousel-btn--prev" id="aboutCarouselPrev" aria-label="Anterior">&#10094;</button>
             <button class="about-carousel-btn about-carousel-btn--next" id="aboutCarouselNext" aria-label="Siguiente">&#10095;</button>
-            <div class="about-carousel-dots" id="aboutCarouselDots"></div>
           </div>
+          <div class="about-carousel-dots" id="aboutCarouselDots"></div>
         </div>
 
         <div class="about-text reveal" id="aboutText">
@@ -567,7 +609,7 @@
   </script>
   <script>
     if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
-      navigator.serviceWorker.register('/sw-v4.js').catch(function(err) {
+      navigator.serviceWorker.register('/sw-v5.js').catch(function(err) {
         console.warn('Service Worker registration failed:', err);
       });
     }

@@ -3,14 +3,13 @@ const fs = require('fs');
 const sharp = require('sharp');
 const logger = require('./logger');
 
-const DEFAULT_MAX_DIMENSION = 1200;
+const DEFAULT_MAX_DIMENSION = 1600;
 const DEFAULT_WEBP_QUALITY = 80;
-const DEFAULT_AVIF_QUALITY = 60;
+const THUMBNAIL_MAX_DIMENSION = 400;
 
 async function optimizeImage(filePath, options = {}) {
   const maxDimension = options.maxDimension || DEFAULT_MAX_DIMENSION;
   const webpQuality = options.webpQuality || DEFAULT_WEBP_QUALITY;
-  const avifQuality = options.avifQuality || DEFAULT_AVIF_QUALITY;
   const outputFormat = options.format || 'webp';
 
   const ext = path.extname(filePath).toLowerCase();
@@ -39,7 +38,7 @@ async function optimizeImage(filePath, options = {}) {
     pipeline = pipeline.withMetadata(false);
 
     if (outputFormat === 'avif') {
-      pipeline = pipeline.avif({ quality: avifQuality });
+      pipeline = pipeline.avif({ quality: webpQuality });
     } else {
       pipeline = pipeline.webp({ quality: webpQuality });
     }
@@ -62,11 +61,45 @@ async function optimizeImage(filePath, options = {}) {
   }
 }
 
+async function generateThumbnail(filePath, options = {}) {
+  const maxDimension = options.maxDimension || THUMBNAIL_MAX_DIMENSION;
+  const webpQuality = options.webpQuality || DEFAULT_WEBP_QUALITY;
+
+  const ext = path.extname(filePath).toLowerCase();
+  const baseName = path.basename(filePath, ext);
+  const optimizedPath = path.join(path.dirname(filePath), `${baseName}_thumb.webp`);
+
+  try {
+    const metadata = await sharp(filePath).metadata();
+    const longestSide = Math.max(metadata.width || 0, metadata.height || 0);
+
+    let pipeline = sharp(filePath).rotate().withMetadata(false);
+
+    if (longestSide > maxDimension) {
+      pipeline = pipeline.resize(maxDimension, maxDimension, {
+        fit: 'inside',
+        withoutEnlargement: true
+      });
+    }
+
+    pipeline = pipeline.webp({ quality: webpQuality });
+    await pipeline.toFile(optimizedPath);
+
+    return optimizedPath;
+  } catch (err) {
+    logger.warn({ err: err.message, file: filePath }, 'Sharp: error generando thumbnail');
+    try {
+      fs.rmSync(optimizedPath, { force: true, maxRetries: 3, retryDelay: 50 });
+    } catch (e) { /* noop */ }
+    return null;
+  }
+}
+
 async function generateVariant(filePath, variantKey, variantsDir) {
   const VARIANTS = {
-    thumbnail: { width: 150, height: 150, fit: 'cover' },
-    catalog: { width: 400, height: 400, fit: 'cover' },
-    zoom: { width: 1200, height: 1200, fit: 'inside', withoutEnlargement: true }
+    thumbnail: { width: 400, height: 400, fit: 'inside', withoutEnlargement: true },
+    catalog: { width: 400, height: 400, fit: 'inside', withoutEnlargement: true },
+    zoom: { width: 1600, height: 1600, fit: 'inside', withoutEnlargement: true }
   };
 
   const config = VARIANTS[variantKey];
@@ -83,6 +116,7 @@ async function generateVariant(filePath, variantKey, variantsDir) {
 
   try {
     await sharp(filePath)
+      .rotate()
       .resize(config.width, config.height, {
         fit: config.fit,
         withoutEnlargement: config.withoutEnlargement || false
@@ -111,6 +145,7 @@ async function generateAllVariants(filePath, variantsDir) {
 
 module.exports = {
   optimizeImage,
+  generateThumbnail,
   generateVariant,
   generateAllVariants
 };

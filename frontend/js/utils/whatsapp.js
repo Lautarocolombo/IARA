@@ -85,7 +85,7 @@ export function buildOrderMessage(order) {
   if (paymentMethod === 'cash') {
     lines.push('Voy a pagar en efectivo al retirar/recibir.');
   } else {
-    lines.push('Les mando el comprobante de la transferencia.');
+    lines.push('Realicé la transferencia y enviaré el comprobante desde la app.');
   }
 
   let message = lines.join('\n');

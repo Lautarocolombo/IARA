@@ -1,6 +1,5 @@
 const express = require('express');
 const path = require('path');
-const cors = require('cors');
 const helmet = require('helmet');
 const dotenv = require('dotenv');
 const rateLimit = require('express-rate-limit');
@@ -147,7 +146,7 @@ if (Sentry) {
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-app.use(sanitizeBody({ excludeKeys: ['about_text', 'hero_title'] }));
+app.use(sanitizeBody({ excludeKeys: [] }));
 // Skip compression for SSE streams (text/event-stream) and sync endpoints
 app.use(require('compression')({
   filter: (req, res) => {
@@ -184,6 +183,7 @@ function isOriginAllowed(origin) {
   });
 }
 
+// Single CORS middleware - handles preflight and sets headers for allowed origins
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   const isAllowed = isOriginAllowed(origin);
@@ -211,33 +211,8 @@ app.use((req, res, next) => {
   next();
 });
 
-const corsOptions = allowedOrigins.length
-  ? {
-      origin: function(origin, callback) {
-        const allowed = isOriginAllowed(origin);
-        logger.debug('[CORS] Preflight/request origin:', origin, 'allowed:', allowed, 'allowedOrigins:', allowedOrigins.join(','));
-        callback(null, allowed);
-      },
-      credentials: true,
-       methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-       allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With', 'X-Request-ID'],
-   }
-  : {
-        origin: function(origin, callback) {
-          if (!origin || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
-            callback(null, true);
-          } else {
-            callback(null, false);
-          }
-        },
-        credentials: true,
-        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With', 'X-Request-ID'],
-    };
-
 app.use(require('cookie-parser')());
 app.use(tenantContext);
-// app.options('*', cors(corsOptions)); // Reemplazado por middleware manual arriba para garantizar 204 en todas las rutas
 
 let rateLimitStore = undefined;
 if (process.env.REDIS_URL) {
@@ -332,15 +307,16 @@ app.use((req, res, next) => {
   next();
 });
 
-const TIMEOUT_MS = 30000;
-const UPLOAD_TIMEOUT_MS = 600000;
+const API_TIMEOUT_MS = 15000;
+const UPLOAD_TIMEOUT_MS = 60000;
+const SYNC_TIMEOUT_MS = 60000;
 app.use((req, res, next) => {
   const isUploadRoute = /^\/api\/products\/\d+\/images/.test(req.path) ||
     req.path === '/api/admin/upload' ||
     (/^\/api\/admin\/products/.test(req.path) && req.method === 'POST') ||
     (req.path === '/api/admin/products/bulk-import');
-  const isSyncRoute = req.path === '/api/sync';
-  const timeoutMs = isUploadRoute ? UPLOAD_TIMEOUT_MS : (isSyncRoute ? 60000 : TIMEOUT_MS);
+  const isSyncRoute = req.path === '/api/sync' || req.path === '/api/v1/sync';
+  const timeoutMs = isUploadRoute ? UPLOAD_TIMEOUT_MS : (isSyncRoute ? SYNC_TIMEOUT_MS : API_TIMEOUT_MS);
   const timeout = setTimeout(() => {
     if (!res.headersSent) {
       res.status(408).json({ error: 'Request timeout', message: 'El servidor tardó demasiado en responder. Intentá de nuevo.' });
@@ -567,7 +543,7 @@ const uploadsStaticDir = path.join(__dirname, '..', '..', 'uploads');
 
 const UPLOAD_PLACEHOLDER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Imagen no disponible"><rect width="200" height="200" rx="14" fill="#fde8ef"/><text x="100" y="110" text-anchor="middle" font-family="system-ui,serif" font-size="40" fill="#d47090">📷</text><text x="100" y="150" text-anchor="middle" font-family="system-ui,serif" font-size="14" fill="#d47090">Imagen no disponible</text></svg>`;
 
-app.use('/uploads', cors(corsOptions), (req, res, next) => {
+app.use('/uploads', (req, res, next) => {
   const relativePath = req.path.replace(/^\//, '');
   const filePath = path.join(uploadsStaticDir, relativePath);
   res.sendFile(filePath, { maxAge: '7d', etag: true, lastModified: true }, (err) => {
@@ -616,46 +592,51 @@ if (Sentry) {
 
 app.use(errorHandler);
 
-const dbReady = initDB().then(async () => {
-    logger.info('Base de datos inicializada correctamente');
+const dbReady = (async () => {
     try {
-      const { seedLocalData } = require('./lib/db');
-      await seedLocalData();
-    } catch (err) {
-      logger.warn({ err: err.message }, 'No se pudo sembrar datos locales');
-    }
-    try {
-      const { query } = require('./lib/db');
-      const result = await query('SELECT COUNT(*) FROM users');
-      if ((result.rows[0]?.count || 0) === 0 && process.env.ADMIN_USER && process.env.ADMIN_PASS_HASH) {
-        try {
-          await query(
-            'INSERT INTO users (username, password_hash, role, permissions, active) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (username) DO NOTHING',
-            [process.env.ADMIN_USER, process.env.ADMIN_PASS_HASH, 'admin', JSON.stringify({ all: true }), true]
-          );
-        } catch (err) {
-          if (!err.message.includes('UNIQUE constraint failed') && !err.message.includes('duplicate key')) {
-            throw err;
+      await initDB();
+      logger.info('Base de datos inicializada correctamente');
+      try {
+        const { seedLocalData } = require('./lib/db');
+        if (process.env.SEED === 'true') {
+          await seedLocalData();
+        }
+      } catch (err) {
+        logger.warn({ err: err.message }, 'No se pudo sembrar datos locales');
+      }
+      try {
+        const { query } = require('./lib/db');
+        const result = await query('SELECT COUNT(*) FROM users');
+        if ((result.rows[0]?.count || 0) === 0 && process.env.ADMIN_USER && process.env.ADMIN_PASS_HASH) {
+          try {
+            await query(
+              'INSERT INTO users (username, password_hash, role, permissions, active) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (username) DO NOTHING',
+              [process.env.ADMIN_USER, process.env.ADMIN_PASS_HASH, 'admin', JSON.stringify({ all: true }), true]
+            );
+          } catch (err) {
+            if (!err.message.includes('UNIQUE constraint failed') && !err.message.includes('duplicate key')) {
+              throw err;
+            }
+          }
+          logger.info(`Usuario admin inicial creado: ${process.env.ADMIN_USER}`);
+        } else if (process.env.ADMIN_USER && process.env.ADMIN_PASS_HASH) {
+          const existing = await query('SELECT password_hash, permissions FROM users WHERE username = $1', [process.env.ADMIN_USER]);
+          if (existing.rows.length > 0) {
+            const needsUpdate = existing.rows[0].password_hash !== process.env.ADMIN_PASS_HASH || existing.rows[0].permissions !== JSON.stringify({ all: true });
+            if (needsUpdate) {
+              await query('UPDATE users SET password_hash = $1, permissions = $2, updated_at = CURRENT_TIMESTAMP WHERE username = $3', [process.env.ADMIN_PASS_HASH, JSON.stringify({ all: true }), process.env.ADMIN_USER]);
+              logger.info(`Hash/permisos de admin actualizados para: ${process.env.ADMIN_USER}`);
+            }
           }
         }
-        logger.info(`Usuario admin inicial creado: ${process.env.ADMIN_USER}`);
-      } else if (process.env.ADMIN_USER && process.env.ADMIN_PASS_HASH) {
-        const existing = await query('SELECT password_hash, permissions FROM users WHERE username = $1', [process.env.ADMIN_USER]);
-        if (existing.rows.length > 0) {
-          const needsUpdate = existing.rows[0].password_hash !== process.env.ADMIN_PASS_HASH || existing.rows[0].permissions !== JSON.stringify({ all: true });
-          if (needsUpdate) {
-            await query('UPDATE users SET password_hash = $1, permissions = $2, updated_at = CURRENT_TIMESTAMP WHERE username = $3', [process.env.ADMIN_PASS_HASH, JSON.stringify({ all: true }), process.env.ADMIN_USER]);
-            logger.info(`Hash/permisos de admin actualizados para: ${process.env.ADMIN_USER}`);
-          }
-        }
+      } catch (err) {
+        logger.warn({ err: err.message }, 'No se pudo verificar/crear usuario admin inicial');
       }
     } catch (err) {
-      logger.warn({ err: err.message }, 'No se pudo verificar/crear usuario admin inicial');
+      logger.error({ err: err.message, stack: err.stack }, 'Error inicializando DB');
+      throw err;
     }
-  }).catch(err => {
-    logger.error({ err: err.message, stack: err.stack }, 'Error inicializando DB');
-    throw err;
-  });
+  })();
 
 if (process.env.REDIS_URL) {
   try {

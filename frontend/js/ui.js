@@ -121,13 +121,17 @@ function showToast(icon, message, type = 'default', options = {}) {
 
 // Reveal Animation on Scroll
 function initRevealAnimation() {
-  if (!('IntersectionObserver' in window)) return;
+  if (!('IntersectionObserver' in window)) {
+    document.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
+    return;
+  }
   const revealElements = document.querySelectorAll('.reveal');
 
   window.revealObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         entry.target.classList.add('visible');
+        window.revealObserver.unobserve(entry.target);
       }
     });
   }, {
@@ -135,7 +139,20 @@ function initRevealAnimation() {
     rootMargin: '0px 0px -100px 0px'
   });
 
-  revealElements.forEach(el => window.revealObserver.observe(el));
+  revealElements.forEach(el => {
+    window.revealObserver.observe(el);
+    if (el.getBoundingClientRect().top < window.innerHeight && el.getBoundingClientRect().bottom > 0) {
+      el.classList.add('visible');
+      window.revealObserver.unobserve(el);
+    }
+  });
+
+  setTimeout(() => {
+    document.querySelectorAll('.reveal:not(.visible)').forEach(el => {
+      el.classList.add('visible');
+      if (window.revealObserver) window.revealObserver.unobserve(el);
+    });
+  }, 2000);
 }
 
 // Navbar Scroll Effect
@@ -228,7 +245,7 @@ form.addEventListener('submit', async (e) => {
       const whatsappMessage = `Nuevo mensaje de contacto\n\nNombre: ${name}\nEmail: ${email}\n\nMensaje:\n${message}`;
 
       try {
-        const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/contact`, {
+        const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/v1/contact`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, email, message })
@@ -270,7 +287,7 @@ function initNewsletterForm() {
       }
 
       try {
-        const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/subscribe`, {
+        const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/v1/subscribe`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email })
@@ -785,7 +802,7 @@ window.sanitizeAboutText = sanitizeAboutText;
 
 async function loadSiteTexts() {
   try {
-    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-texts`, {}, 2, 1000);
+    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/v1/site-texts`, {}, 2, 1000);
     if (!res) {
       return;
     }
@@ -868,7 +885,7 @@ function updateStatsFromTexts(data) {
 
 async function loadSiteSettings() {
   try {
-    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-settings`, {}, 2, 1000);
+    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/v1/site-settings`, {}, 2, 1000);
     if (!res) return;
     const settings = await res.json();
 
@@ -943,7 +960,7 @@ async function loadTestimonials() {
   if (section) section.style.display = '';
 
   try {
-    const contentRes = await fetchWithRetry(`${CONFIG.API.BASE}/api/section-content/testimonials`, {}, 2, 1000);
+    const contentRes = await fetchWithRetry(`${CONFIG.API.BASE}/api/v1/section-content/testimonials`, {}, 2, 1000);
     if (contentRes && contentRes.ok) {
       const content = await contentRes.json();
       if (titleEl && content.title) titleEl.textContent = content.title;
@@ -954,7 +971,7 @@ async function loadTestimonials() {
   }
 
   try {
-    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/testimonials`, {}, 2, 1000);
+    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/v1/testimonials`, {}, 2, 1000);
     if (!res) {
       if (skeleton) skeleton.style.display = 'none';
       return;
@@ -1031,7 +1048,7 @@ window.loadTestimonials = loadTestimonials;
 
 async function loadPaymentConfig() {
   try {
-    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/payment-config`, {}, 2, 1000);
+    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/v1/payment-config`, {}, 2, 1000);
     if (!res || !res.ok) return;
     const data = await res.json();
     if (data.shippingCost !== undefined) CONFIG.CART.SHIPPING_COST = Number(data.shippingCost);

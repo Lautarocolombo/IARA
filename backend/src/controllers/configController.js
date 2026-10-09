@@ -20,6 +20,14 @@ function normalizeWhatsAppPhone(phone) {
   return cleaned;
 }
 
+function normalizeWhatsAppForWaMe(phone) {
+  let cleaned = normalizeWhatsAppPhone(phone);
+  if (cleaned.startsWith('549')) {
+    cleaned = '54' + cleaned.slice(3);
+  }
+  return cleaned;
+}
+
 const getPublicConfig = async (req, res) => {
   try {
     const result = await query('SELECT key, value FROM site_settings WHERE tenant_id = COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')');
@@ -37,9 +45,12 @@ const getPublicConfig = async (req, res) => {
     const googlePlaceId = settings.google_place_id || process.env.GOOGLE_PLACE_ID || '';
     const googleWriteReviewUrl = settings.google_write_review_url || process.env.GOOGLE_WRITE_REVIEW_URL || '';
 
+    const rawWhatsApp = settings.whatsapp || process.env.WHATSAPP || '+5493444634444';
+    const whatsappForWaMe = normalizeWhatsAppForWaMe(rawWhatsApp);
+
     const config = {
       CONTACT: {
-        WHATSAPP: settings.whatsapp || normalizeWhatsAppPhone(process.env.WHATSAPP || '+5493444634444'),
+        WHATSAPP: whatsappForWaMe,
         WHATSAPP_ALIAS: settings.whatsapp_business || 'iara-salgueiro',
         PHONE: settings.phone || '+54 (3444) 634-4444',
         EMAIL: settings.email || 'noreply@artesaniagualeguay.com',
@@ -101,14 +112,16 @@ const getPublicConfig = async (req, res) => {
         transferAlias: paymentConfig.transfer_alias || '',
         holderName: paymentConfig.holder_name || '',
         cbuCvu: paymentConfig.cbu_cvu || '',
-        whatsapp: normalizeWhatsAppPhone(paymentConfig.whatsapp || process.env.WHATSAPP || '+5493444634444'),
+        whatsapp: whatsappForWaMe,
         message: paymentConfig.message || 'Transferí el total exacto y enviá el comprobante por WhatsApp para confirmar tu pedido.',
         active: paymentConfig.active !== false,
         cashEnabled: paymentConfig.cash_enabled !== false,
         shippingCost: Number(paymentConfig.shipping_cost || 0),
         freeShippingFrom: Number(paymentConfig.free_shipping_from || 0),
         includedShippingCost: Number(paymentConfig.included_shipping_cost || 0)
-      }
+      },
+      SITE_URL: settings.site_url || process.env.SITE_URL || 'https://artesania-gualeguay-v3.vercel.app',
+      GOOGLE_SITE_VERIFICATION: settings.google_site_verification || process.env.GOOGLE_SITE_VERIFICATION || 'yvZpAuNkB_dICE9gkXzvgbShhQMuPXQuKVpNwdYt9ig'
     };
 
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
