@@ -472,8 +472,9 @@
     }
 
     window.addEventListener('beforeunload', function (e) {
-      var current = getCurrentSection();
-      if (current && window.__adminDirtyState[current]) {
+      var dirtyState = window.__adminDirtyState || {};
+      var anyDirty = Object.keys(dirtyState).some(function (k) { return dirtyState[k]; });
+      if (anyDirty) {
         e.preventDefault();
         e.returnValue = 'Tenés cambios sin guardar. ¿Salir igual?';
         return e.returnValue;

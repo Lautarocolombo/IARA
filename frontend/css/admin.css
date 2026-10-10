@@ -2474,9 +2474,11 @@ textarea.hero-slot-input {
 }
 
 /* ==================== ADMIN PANEL LAYOUT (NO MODALS) ==================== */
-
+/* Layout único del admin (Fase 3): misma grilla que el bloque principal —
+   sidebar fijo de 260px y contenido a ancho completo con minmax(0, 1fr). */
 .admin-panel {
-  display: flex;
+  display: grid;
+  grid-template-columns: var(--admin-sidebar-width) minmax(0, 1fr);
   min-height: 100vh;
 }
 

@@ -7,6 +7,7 @@
 
   var selectedOrderId = null;
   var ordersList = [];
+  var ordersError = null;
   var paymentConfig = {};
   var currentReceipt = null;
   var whatsappChecked = false;
@@ -162,9 +163,11 @@
       var res = await window.adminFetch('/api/admin/orders?' + params.toString(), { method: 'GET' });
       if (!res || !res.ok) throw new Error('Error cargando pedidos');
       var data = await res.json();
+      ordersError = null;
       return data.orders || [];
     } catch (err) {
-      showToast('❌', err.message || 'Error al cargar pedidos', 'error');
+      ordersError = err.message || 'Error al cargar pedidos';
+      showToast('❌', ordersError, 'error');
       return [];
     }
   }
@@ -928,6 +931,10 @@
   }
 
   async function loadOrders() {
+    var tbody = document.getElementById('ordersTableBody');
+    var empty = document.getElementById('ordersEmptyState');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="loading-row">Cargando pedidos...</td></tr>';
+    if (empty) empty.style.display = 'none';
     var search = document.getElementById('orderSearch');
     var status = document.getElementById('orderStatusFilter');
     var q = search ? search.value : '';
@@ -935,6 +942,14 @@
     ordersList = await fetchOrders(q);
     if (s) {
       ordersList = ordersList.filter(function (o) { return o.status === s; });
+    }
+    if (ordersError && !ordersList.length) {
+      if (tbody) {
+        var retry = '<button type="button" class="btn btn-sm btn-secondary" onclick="window.loadOrders()">Reintentar</button>';
+        tbody.innerHTML = '<tr><td colspan="6" class="error-row">Error: ' + escapeHtml(ordersError) + ' ' + retry + '</td></tr>';
+      }
+      resetOrderDetail();
+      return;
     }
     ordersList.sort(function (a, b) { return new Date(b.created_at) - new Date(a.created_at); });
     renderOrdersList(ordersList);
