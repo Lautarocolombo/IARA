@@ -278,7 +278,7 @@
         '<td><span class="status-badge status-' + order.status + '">' + status + '</span></td>' +
         '<td>' + getOrderItemsSummary(order) + '</td>' +
         '<td style="text-align:right;white-space:nowrap;">' +
-          '<button class="btn-delete-order" data-order-id="' + order.id + '" title="Eliminar pedido" style="background:none;border:none;color:#94a3b8;cursor:pointer;padding:0.3rem;border-radius:6px;transition:all 0.2s;display:inline-flex;align-items:center;justify-content:center;">' +
+          '<button class="btn-delete-order" data-order-id="' + order.id + '" title="Archivar pedido" style="background:none;border:none;color:#94a3b8;cursor:pointer;padding:0.3rem;border-radius:6px;transition:all 0.2s;display:inline-flex;align-items:center;justify-content:center;">' +
             '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>' +
           '</button>' +
         '</td>' +
@@ -723,8 +723,8 @@
 
   async function deleteOrder(id) {
     window.showConfirmModal(
-      'Eliminar pedido',
-      '¿Eliminar este pedido #' + id + '? Esta acción no se puede deshacer.',
+      'Archivar pedido',
+      '¿Archivar este pedido #' + id + '? Dejará de aparecer en las listas (no se borra definitivamente).',
       function () { processDeleteOrder(id); }
     );
   }
@@ -734,9 +734,9 @@
       var res = await window.adminFetch('/api/admin/orders/' + id, { method: 'DELETE' });
       if (!res || !res.ok) {
         var data = await res.json().catch(function () { return {}; });
-        throw new Error(data.error || 'Error eliminando pedido');
+        throw new Error(data.error || 'Error archivando pedido');
       }
-      showToast('✅', 'Pedido eliminado correctamente', 'success');
+      showToast('✅', 'Pedido archivado correctamente', 'success');
       if (selectedOrderId === id) {
         selectedOrderId = null;
         document.getElementById('orderWizardEmpty').style.display = '';
@@ -748,15 +748,15 @@
       renderOrdersList(ordersList);
       if (window.reloadSales) window.reloadSales();
     } catch (err) {
-      showToast('❌', err.message || 'Error eliminando pedido', 'error');
+      showToast('❌', err.message || 'Error archivando pedido', 'error');
     }
   }
 
   async function batchDeleteOrders(status) {
     var label = status === 'cancelled' ? 'cancelados' : 'pendientes';
     window.showConfirmModal(
-      'Eliminar pedidos',
-      '¿Eliminar todos los pedidos ' + label + '? Esta acción no se puede deshacer.',
+      'Archivar pedidos',
+      '¿Archivar todos los pedidos ' + label + '? Dejarán de aparecer en las listas (no se borran definitivamente).',
       function () { processBatchDelete(status); }
     );
   }
@@ -770,14 +770,14 @@
       });
       if (!res || !res.ok) {
         var data = await res.json().catch(function () { return {}; });
-        throw new Error(data.error || 'Error eliminando pedidos en lote');
+        throw new Error(data.error || 'Error archivando pedidos en lote');
       }
       var result = await res.json();
-      showToast('✅', result.deleted + ' pedidos eliminados', 'success');
+      showToast('✅', result.deleted + ' pedidos archivados', 'success');
       await loadOrders();
       if (window.reloadSales) window.reloadSales();
     } catch (err) {
-      showToast('❌', err.message || 'Error eliminando pedidos en lote', 'error');
+      showToast('❌', err.message || 'Error archivando pedidos en lote', 'error');
     }
   }
 

@@ -20,7 +20,7 @@ const getSalesReport = async (req, res) => {
   const startDate = String(req.query.start_date || '');
   const endDate = String(req.query.end_date || '');
   const period = req.query.period || '';
-  let where = 'WHERE status != \'cancelled\'';
+  let where = 'WHERE status != \'cancelled\' AND deleted_at IS NULL';
   const params = [];
 
   const computedStart = computeStartDate(period, startDate);
@@ -121,10 +121,10 @@ const getSalesTrend = async (req, res) => {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
     const result = await query(
-      `SELECT date(created_at) as date, COALESCE(SUM(total),0) as total, COUNT(*) as count
-       FROM orders
-       WHERE status != 'cancelled' AND created_at >= $1
-       GROUP BY date(created_at) ORDER BY date ASC`,
+       `SELECT date(created_at) as date, COALESCE(SUM(total),0) as total, COUNT(*) as count
+        FROM orders
+        WHERE status != 'cancelled' AND deleted_at IS NULL AND created_at >= $1
+        GROUP BY date(created_at) ORDER BY date ASC`,
       [cutoff.toISOString().split('T')[0]]
     );
     res.json(result.rows);
@@ -170,14 +170,14 @@ const getWeeklySummary = async (req, res) => {
     const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
 
     const weekResult = await query(
-      'SELECT COALESCE(SUM(total),0) as total, COUNT(*) as count FROM orders WHERE status != \'cancelled\' AND date(created_at) >= $1',
+      'SELECT COALESCE(SUM(total),0) as total, COUNT(*) as count FROM orders WHERE status != \'cancelled\' AND deleted_at IS NULL AND date(created_at) >= $1',
       [sevenDaysAgoStr]
     );
     const pedidosSemana = Number(weekResult.rows[0].count || 0);
     const totalSemana = Number(weekResult.rows[0].total || 0);
 
     const previousWeeksResult = await query(
-      'SELECT date(created_at) as date, COALESCE(SUM(total),0) as total, COUNT(*) as count FROM orders WHERE status != \'cancelled\' AND date(created_at) < $1 GROUP BY date(created_at) ORDER BY date ASC',
+      'SELECT date(created_at) as date, COALESCE(SUM(total),0) as total, COUNT(*) as count FROM orders WHERE status != \'cancelled\' AND deleted_at IS NULL AND date(created_at) < $1 GROUP BY date(created_at) ORDER BY date ASC',
       [sevenDaysAgoStr]
     );
 
@@ -244,10 +244,10 @@ const getSalesSummary = async (req, res) => {
     let ordersQuery;
     let ordersParams;
     if (resetAtIso) {
-      ordersQuery = "SELECT created_at as date, total FROM orders WHERE status != 'cancelled' AND created_at > $1";
+      ordersQuery = "SELECT created_at as date, total FROM orders WHERE status != 'cancelled' AND deleted_at IS NULL AND created_at > $1";
       ordersParams = [resetAtIso];
     } else {
-      ordersQuery = "SELECT created_at as date, total FROM orders WHERE status != 'cancelled' AND date(created_at) >= $1";
+      ordersQuery = "SELECT created_at as date, total FROM orders WHERE status != 'cancelled' AND deleted_at IS NULL AND date(created_at) >= $1";
       ordersParams = [startDateStr];
     }
     const ordersResult = await query(ordersQuery + ' ORDER BY date ASC', ordersParams);
@@ -255,10 +255,10 @@ const getSalesSummary = async (req, res) => {
     let salesQuery;
     let salesParams;
     if (resetAtIso) {
-      salesQuery = "SELECT sale_date as date, total FROM sales WHERE sale_date > $1";
+      salesQuery = "SELECT sale_date as date, total FROM sales WHERE deleted_at IS NULL AND sale_date > $1";
       salesParams = [resetAtIso.split('T')[0]];
     } else {
-      salesQuery = 'SELECT sale_date as date, total FROM sales WHERE date(sale_date) >= $1';
+      salesQuery = 'SELECT sale_date as date, total FROM sales WHERE deleted_at IS NULL AND date(sale_date) >= $1';
       salesParams = [startDateStr];
     }
     const salesResult = await query(salesQuery + ' ORDER BY date ASC', salesParams);

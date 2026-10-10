@@ -309,6 +309,7 @@ async function initSQLite() {
       coupon_code TEXT DEFAULT '',
       coupon_discount REAL DEFAULT 0,
       tenant_id TEXT DEFAULT 'default',
+      deleted_at DATETIME NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
     await query(`CREATE TABLE IF NOT EXISTS order_items (
@@ -338,6 +339,7 @@ async function initSQLite() {
       unit_price REAL NOT NULL,
       total REAL NOT NULL,
       sale_date DATE DEFAULT CURRENT_DATE,
+      deleted_at DATETIME NULL,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
     await query('CREATE INDEX IF NOT EXISTS idx_sales_sale_date ON sales(sale_date)');
@@ -692,6 +694,16 @@ async function initSQLite() {
       await query('ALTER TABLE orders ADD COLUMN notes TEXT DEFAULT \'\'');
     } catch (err) {
       logger.debug({ err: err.message }, 'Columna notes ya existe o no se pudo agregar (SQLite)');
+    }
+    try {
+      await query('ALTER TABLE orders ADD COLUMN deleted_at DATETIME NULL');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna deleted_at ya existe o no se pudo agregar en orders (SQLite)');
+    }
+    try {
+      await query('ALTER TABLE sales ADD COLUMN deleted_at DATETIME NULL');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna deleted_at ya existe o no se pudo agregar en sales (SQLite)');
     }
     try {
       await query('ALTER TABLE activity_log ADD COLUMN related_order_id INTEGER DEFAULT 0');

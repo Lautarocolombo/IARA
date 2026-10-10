@@ -108,7 +108,7 @@ transactions.forEach(function (t) {
           '<td style="text-align:center;"><span class="' + escapeAttr(statusClass) + '">' + escapeAttr(statusLabel) + '</span></td>' +
           '<td style="text-align:right;">$' + Number(t.total || 0).toLocaleString('es-AR') + '</td>' +
           '<td style="text-align:center;">' +
-            '<button type="button" class="btn-delete-tx" data-tx-id="' + escapeAttr(rawId) + '" data-tx-type="' + (isManual ? 'manual' : 'order') + '" title="Eliminar transacción" style="background:none;border:none;color:#94a3b8;cursor:pointer;padding:0.3rem;border-radius:6px;">' +
+            '<button type="button" class="btn-delete-tx" data-tx-id="' + escapeAttr(rawId) + '" data-tx-type="' + (isManual ? 'manual' : 'order') + '" title="Archivar transacción" style="background:none;border:none;color:#94a3b8;cursor:pointer;padding:0.3rem;border-radius:6px;">' +
               '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>' +
             '</button>' +
           '</td>';
@@ -140,8 +140,8 @@ transactions.forEach(function (t) {
 
   function deleteTransaction(txId, txType) {
     window.showConfirmModal(
-      'Eliminar transacción',
-      '¿Eliminar esta transacción (' + txId + ')? Esta acción no se puede deshacer.',
+      'Archivar transacción',
+      '¿Archivar esta transacción (' + txId + ')? Dejará de aparecer en las listas (no se borra definitivamente).',
       function () { processDeleteTransaction(txId, txType); }
     );
   }
@@ -158,17 +158,17 @@ transactions.forEach(function (t) {
       var res = await window.adminFetch(url, { method: 'DELETE' });
       if (!res || !res.ok) {
         var errData = await res.json().catch(function () { return {}; });
-        throw new Error(errData.error || 'Error eliminando transacción');
+        throw new Error(errData.error || 'Error archivando transacción');
       }
-      window.showToast('✅', 'Transacción eliminada', 'success');
+      window.showToast('✅', 'Transacción archivada', 'success');
       await loadTransactions();
       await loadSalesSummary(currentView);
       if (window.dispatchEvent) {
         window.dispatchEvent(new CustomEvent('sync', { detail: { event: 'transactions_updated' } }));
       }
     } catch (err) {
-      console.error('[Sales] Error eliminando transacción:', err);
-      window.showToast('❌', err.message || 'Error eliminando transacción', 'error');
+      console.error('[Sales] Error archivando transacción:', err);
+      window.showToast('❌', err.message || 'Error archivando transacción', 'error');
     }
   }
 
