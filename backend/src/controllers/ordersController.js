@@ -384,6 +384,10 @@ const deleteOrder = async (req, res) => {
       const user = req.user?.user || 'admin';
       await logActivity(user, 'delete', 'order', id, `Pedido #${id} archivado (soft delete)`, req.ip || '', id, req.headers['x-tenant-id'] || req.user?.tenant_id || 'default', client);
       await query('UPDATE orders SET deleted_at = NOW() WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [id], client);
+      
+      // Limpiar comprobantes huérfanos (payment_proofs y receipts) al archivar pedido
+      await query('UPDATE payment_proofs SET deleted_at = NOW() WHERE order_id = $1 AND deleted_at IS NULL', [id], client);
+      await query('UPDATE receipts SET deleted_at = NOW() WHERE order_id = $1 AND deleted_at IS NULL', [id], client);
     });
     res.json({ ok: true, soft: true });
   } catch (err) {

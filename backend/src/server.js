@@ -277,6 +277,7 @@ const publicLimiter = rateLimit({
 
 app.use('/api', publicLimiter);
 app.use('/api/auth/login', authLimiter);
+app.use('/api/v1/auth/login', authLimiter);
 app.use('/api/contact', contactLimiter);
 app.use('/api/orders', ordersLimiter);
 app.use('/api/admin', adminLimiter);

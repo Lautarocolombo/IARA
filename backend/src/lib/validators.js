@@ -15,7 +15,7 @@ const productSchema = z.object({
   name: z.string().min(1, 'Nombre es requerido').max(200),
   slug: z.string().max(200).optional().default(''),
   category: z.string().default('pulseras'),
-  price: z.coerce.number({ invalid_type_error: 'Precio debe ser un número' }).positive('Precio debe ser mayor a 0'),
+  price: z.coerce.number({ invalid_type_error: 'Precio debe ser un número' }).int().nonnegative('Precio debe ser mayor o igual a 0'),
   description: z.string().max(2000).optional().default(''),
   emoji: z.string().max(10).optional().default('📿'),
   image: z.string().url('URL de imagen inválida').optional().or(z.literal('')).default(''),
