@@ -133,4 +133,90 @@ const getPublicConfig = async (req, res) => {
   }
 };
 
-module.exports = { getPublicConfig };
+const getAdminPaymentConfig = async (req, res) => {
+  try {
+    const paymentRow = await query('SELECT * FROM payment_config LIMIT 1');
+    const paymentConfig = paymentRow.rows[0] || {};
+    
+    res.json({
+      mpAlias: paymentConfig.transfer_alias || '',
+      transferAlias: paymentConfig.transfer_alias || '',
+      holderName: paymentConfig.holder_name || '',
+      active: paymentConfig.active !== false,
+      shippingCost: Number(paymentConfig.shipping_cost || 0),
+      freeShippingFrom: Number(paymentConfig.free_shipping_from || 0),
+      includedShippingCost: Number(paymentConfig.included_shipping_cost || 0),
+      notifyAdminNewProof: paymentConfig.notify_admin_new_proof !== false,
+      notifyClientApproved: paymentConfig.notify_client_approved !== false,
+      notifyClientRejected: paymentConfig.notify_client_rejected !== false,
+      cbuCvu: paymentConfig.cbu_cvu || '',
+      message: paymentConfig.message || ''
+    });
+  } catch (err) {
+    logger.error('Error obteniendo configuración de pago admin:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+const updateAdminPaymentConfig = async (req, res) => {
+  try {
+    const {
+      mpAlias,
+      transferAlias,
+      holderName,
+      active,
+      shippingCost,
+      freeShippingFrom,
+      includedShippingCost,
+      notifyAdminNewProof,
+      notifyClientApproved,
+      notifyClientRejected
+    } = req.body || {};
+
+    const alias = (mpAlias || transferAlias || '').trim();
+    const holder = (holderName || '').trim();
+    const isActive = active !== false;
+    const shipping = Number(shippingCost || 0);
+    const freeShipping = Number(freeShippingFrom || 0);
+    const includedShipping = Number(includedShippingCost || 0);
+    const notifyAdmin = notifyAdminNewProof !== false;
+    const notifyClientAppr = notifyClientApproved !== false;
+    const notifyClientRej = notifyClientRejected !== false;
+
+    const existingRow = await query('SELECT * FROM payment_config LIMIT 1');
+    
+    if (existingRow.rows.length > 0) {
+      await query(
+        `UPDATE payment_config SET 
+          transfer_alias = $1,
+          holder_name = $2,
+          active = $3,
+          shipping_cost = $4,
+          free_shipping_from = $5,
+          included_shipping_cost = $6,
+          notify_admin_new_proof = $7,
+          notify_client_approved = $8,
+          notify_client_rejected = $9,
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = $10`,
+        [alias, holder, isActive, shipping, freeShipping, includedShipping, notifyAdmin, notifyClientAppr, notifyClientRej, existingRow.rows[0].id]
+      );
+    } else {
+      await query(
+        `INSERT INTO payment_config (
+          transfer_alias, holder_name, active, shipping_cost, free_shipping_from, 
+          included_shipping_cost, notify_admin_new_proof, notify_client_approved, notify_client_rejected
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [alias, holder, isActive, shipping, freeShipping, includedShipping, notifyAdmin, notifyClientAppr, notifyClientRej]
+      );
+    }
+
+    res.json({ ok: true });
+    logger.info('Configuración de pago actualizada por admin');
+  } catch (err) {
+    logger.error('Error actualizando configuración de pago admin:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+module.exports = { getPublicConfig, getAdminPaymentConfig, updateAdminPaymentConfig };

@@ -196,7 +196,7 @@ app.use((req, res, next) => {
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Accept-Language, Origin, X-Requested-With, X-Request-ID');
       res.setHeader('Access-Control-Allow-Credentials', 'true');
       res.setHeader('Access-Control-Max-Age', '86400');
-      res.setHeader('Vary', 'Origin');
+      logger.info('[CORS] Preflight respondido para:', { path: req.path, origin });
       return res.status(204).send();
     }
     logger.warn('[CORS] Preflight rechazado para:', { path: req.path, origin });
@@ -206,28 +206,11 @@ app.use((req, res, next) => {
   if (isAllowed && origin) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Vary', 'Origin');
   }
 
   next();
 });
 
-<<<<<<< HEAD
-// Opciones CORS únicas: reutiliza isOriginAllowed. Se usa en /uploads y en
-// cualquier middleware del paquete `cors` (una sola fuente de verdad).
-// NOTA: allowedOrigins siempre tiene defaults, la rama `else` anterior era
-// código muerto y se eliminó.
-const corsOptions = {
-  origin: function(origin, callback) {
-    callback(null, isOriginAllowed(origin));
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With', 'X-Request-ID'],
-};
-
-=======
->>>>>>> b091ff6922619009f758fa515ba900a6999ea8b7
 app.use(require('cookie-parser')());
 app.use(tenantContext);
 
@@ -267,7 +250,7 @@ const contactLimiter = rateLimit({
 
 const ordersLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 60,
+  max: process.env.NODE_ENV === 'test' ? 10000 : 60,
   standardHeaders: true,
   legacyHeaders: false,
   store: rateLimitStore,
@@ -388,10 +371,11 @@ app.use('/api/v1', require('./routes/health'));
 app.use('/api/v1', require('./routes/categories'));
 app.use('/api/v1', require('./routes/media'));
 app.use('/api/v1', require('./routes/reports'));
-app.use('/api/v1', require('./routes/receipts'));
-app.use('/api/v1', require('./routes/heroCards'));
-app.use('/api/v1', require('./routes/sales'));
-app.use('/api/v1', require('./routes/earnings'));
+  app.use('/api/v1', require('./routes/receipts'));
+  app.use('/api/v1', require('./routes/heroCards'));
+  app.use('/api/v1', require('./routes/sales'));
+  app.use('/api/v1', require('./routes/earnings'));
+  app.use('/api/v1', require('./routes/adminConfig'));
   app.use('/api/v1', require('./routes/carousel'));
   app.use('/api/v1', require('./routes/dashboard'));
   // CRITICAL: mount /api/v1/sync BEFORE /api/v1/users so the literal path wins over
@@ -437,11 +421,12 @@ app.use('/api', require('./routes/health'));
 app.use('/api', require('./routes/categories'));
 app.use('/api', require('./routes/media'));
 app.use('/api', require('./routes/reports'));
-app.use('/api', require('./routes/receipts'));
-app.use('/api', require('./routes/heroCards'));
-app.use('/api', require('./routes/sales'));
-app.use('/api', require('./routes/earnings'));
-app.use('/api', require('./routes/carousel'));
+  app.use('/api', require('./routes/receipts'));
+  app.use('/api', require('./routes/heroCards'));
+  app.use('/api', require('./routes/sales'));
+  app.use('/api', require('./routes/earnings'));
+  app.use('/api', require('./routes/adminConfig'));
+  app.use('/api', require('./routes/carousel'));
 // CRITICAL: mount /api/sync BEFORE /api/users so the literal path wins over
 // users' catch-all GET /:id (which would otherwise 401 every public SSE client).
 app.use('/api/sync', require('./routes/sync'));
@@ -554,12 +539,10 @@ app.post('/api/admin/upload', require('./middleware/auth').adminAuth, uploadSing
     logger.error('[Upload] Error procesando imagen:', { message: err.message, stack: err.stack });
     logger.error('[Upload] Error completo:', { name: err.name, message: err.message, stack: err.stack, code: err.code });
     const message = err.message || 'Error al procesar la imagen';
-    const status = err.code === 'IMAGE_TOO_HEAVY_FOR_DB' ? 413 : 500;
-    res.status(status).json({ error: message });
+    res.status(500).json({ error: message });
   }
 });
 
-const fs = require('fs');
 const uploadsStaticDir = path.join(__dirname, '..', '..', 'uploads');
 
 const UPLOAD_PLACEHOLDER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Imagen no disponible"><rect width="200" height="200" rx="14" fill="#fde8ef"/><text x="100" y="110" text-anchor="middle" font-family="system-ui,serif" font-size="40" fill="#d47090">📷</text><text x="100" y="150" text-anchor="middle" font-family="system-ui,serif" font-size="14" fill="#d47090">Imagen no disponible</text></svg>`;
@@ -578,34 +561,13 @@ app.use('/uploads', (req, res, next) => {
     }
   });
 });
-// Static frontend: en producción (Render) el frontend vive en Vercel (dist/).
-// El backend solo sirve estáticos si existe dist/ o en desarrollo local.
-// Esto evita servir 60+ archivos sin minificar y acelera el cold start.
-const distDir = path.join(__dirname, '..', '..', 'dist');
-const frontendDir = path.join(__dirname, '..', '..', 'frontend');
-const hasDist = fs.existsSync(path.join(distDir, 'index.html'));
-const serveFrontend = process.env.SERVE_FRONTEND === 'true' || process.env.NODE_ENV !== 'production' || !process.env.DATABASE_URL;
-const staticDir = (process.env.NODE_ENV === 'production' && hasDist) ? distDir : frontendDir;
+const staticDir = path.join(__dirname, '..', '..', 'frontend');
 
-if (serveFrontend) {
-  app.get('/', (req, res) => {
-    res.sendFile(path.join(staticDir, 'index.html'));
-  });
+app.get('/', (req, res) => {
+  res.sendFile(path.join(staticDir, 'index.html'));
+});
 
-  // Assets con hash de Vite: cache inmutable largo. HTML: sin cache.
-  app.use('/assets', express.static(path.join(staticDir, 'assets'), {
-    maxAge: '1y',
-    immutable: true,
-    etag: true,
-    lastModified: true
-  }));
-  app.use(express.static(staticDir, { maxAge: '1h', etag: true, lastModified: true }));
-} else {
-  // Producción API-only: '/' informa estado en vez de servir HTML pesado.
-  app.get('/', (req, res) => {
-    res.json({ status: 'ok', service: 'iara-backend', frontend: 'https://artesania-gualeguay-v3.vercel.app' });
-  });
-}
+app.use(express.static(staticDir, { maxAge: '1h', etag: true, lastModified: true }));
 
 app.use((req, res, next) => {
   if (res.getHeader('Content-Type')?.includes('text/html') && !res.getHeader('Content-Type')?.includes('charset')) {
@@ -623,9 +585,6 @@ app.get('/*', (req, res) => {
   if (req.path.startsWith('/uploads/')) {
     return res.status(404).json({ error: 'Image not found' });
   }
-  if (!serveFrontend) {
-    return res.status(404).json({ error: 'Not Found' });
-  }
   res.sendFile(path.join(staticDir, 'index.html'));
 });
 
@@ -637,26 +596,6 @@ if (Sentry) {
 
 app.use(errorHandler);
 
-<<<<<<< HEAD
-const dbReady = initDB().then(async () => {
-    logger.info('Base de datos inicializada correctamente');
-    // Seed local solo en desarrollo o con flag explícito: en producción con
-    // Postgres NO se siembra (evita INSERTs + COUNT en cada cold start).
-    if (!process.env.DATABASE_URL || process.env.SEED_LOCAL_DATA === 'true') {
-      try {
-        const { seedLocalData } = require('./lib/db');
-        await seedLocalData();
-      } catch (err) {
-        logger.warn({ err: err.message }, 'No se pudo sembrar datos locales');
-      }
-    }
-    // El usuario admin ya lo asegura initDB()->ensureAdminUser(). No duplicar
-    // queries aquí: solo log informativo.
-  }).catch(err => {
-    logger.error({ err: err.message, stack: err.stack }, 'Error inicializando DB');
-    throw err;
-  });
-=======
 const dbReady = (async () => {
     try {
       await initDB();
@@ -702,7 +641,6 @@ const dbReady = (async () => {
       throw err;
     }
   })();
->>>>>>> b091ff6922619009f758fa515ba900a6999ea8b7
 
 if (process.env.REDIS_URL) {
   try {
