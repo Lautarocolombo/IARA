@@ -19,9 +19,7 @@
 
   function safeToast(icon, message, type) {
     if (typeof window.showToast === 'function') { window.showToast(icon, message, type); return; }
-    // eslint-disable-next-line no-console
     if (type === 'error') console.error('[admin-settings]', message);
-    // eslint-disable-next-line no-console
     else console.log('[admin-settings]', message);
   }
 
@@ -34,130 +32,212 @@
     else if (el) el.innerHTML = '';
   }
 
-  function status(type, message) {
-    var element = document.getElementById('settingsSaveStatus');
+  function status(elementId, type, message) {
+    var element = document.getElementById(elementId);
     if (!element) return;
-    element.className = 'admin-save-status ' + type;
+    element.className = 'save-status ' + type;
     element.textContent = message;
   }
 
   function loadSettings() {
-    var loading = document.getElementById('settingsLoading');
+    var loading = document.getElementById('businessSaveStatus');
     showLoadingSafe(loading, 'Cargando configuración...');
     Promise.all([
-      window.adminPageFetch('/api/v1/admin/settings'),
-      window.adminPageFetch('/api/v1/admin/payment-config')
+      window.adminFetch('/api/v1/admin/settings'),
+      window.adminFetch('/api/v1/admin/payment-config')
     ]).then(function (responses) {
       settings = responses[0] || {};
       payment = responses[1] || {};
-      setField('businessName', settings.business_name);
-      setField('businessLogo', settings.logo);
-      setField('businessEmail', settings.email);
-      setField('businessPhone', settings.phone);
-      setField('businessWhatsapp', settings.whatsapp);
-      setField('businessAddress', settings.address);
-      setField('socialInstagram', settings.instagram);
-      setField('socialFacebook', settings.facebook);
-      setField('socialTwitter', settings.twitter);
-      setField('shippingZones', JSON.stringify(settings.shipping_zones || [], null, 2));
+
+      setField('businessName', settings.businessName);
+      setField('businessLogo', settings.businessLogo);
+      setField('businessEmail', settings.businessEmail);
+      setField('businessPhone', settings.businessPhone);
+      setField('businessWhatsapp', settings.businessWhatsapp);
+      setField('businessAddress', settings.businessAddress);
+      setField('socialInstagram', settings.socialInstagram);
+      setField('socialFacebook', settings.socialFacebook);
+      setField('socialTwitter', settings.socialTwitter);
+      setField('shippingZones', settings.shippingZones);
+
       setField('mpAlias', payment.mpAlias);
       setField('transferAlias', payment.transferAlias);
       setField('holderName', payment.holderName);
       setField('cbuCvu', payment.cbuCvu);
-      setField('paymentMessage', payment.message);
+      setField('paymentMessage', payment.paymentMessage);
       setField('shippingCost', payment.shippingCost);
       setField('freeShippingFrom', payment.freeShippingFrom);
       setField('includedShippingCost', payment.includedShippingCost);
-      setField('paymentActive', payment.active);
+      setField('paymentActive', payment.paymentActive);
       setField('mpEnabled', payment.mpEnabled);
       setField('cashEnabled', payment.cashEnabled);
       setField('notifyAdminNewProof', payment.notifyAdminNewProof);
       setField('notifyClientApproved', payment.notifyClientApproved);
       setField('notifyClientRejected', payment.notifyClientRejected);
-      setField('googleAnalyticsId', settings.google_analytics_id);
-      setField('facebookPixelId', settings.facebook_pixel_id);
-      setField('sentryDsn', settings.sentry_dsn);
-      setField('googlePlaceId', settings.google_place_id);
-      setField('googleReviewUrl', settings.google_write_review_url);
-      setField('googleMapsKey', settings.google_maps_api_key);
-      status('', 'Configuración cargada.');
-    }).catch(function (err) {
-      status('error', err.message || 'No se pudo cargar la configuración.');
-      safeToast('!', err.message || 'Error al cargar configuración', 'error');
-    }).finally(function () {
+
+      setField('googleAnalyticsId', settings.googleAnalyticsId);
+      setField('facebookPixelId', settings.facebookPixelId);
+      setField('sentryDsn', settings.sentryDsn);
+      setField('googlePlaceId', settings.googlePlaceId);
+      setField('googleReviewUrl', settings.googleReviewUrl);
+      setField('googleMapsKey', settings.googleMapsKey);
+
       hideLoadingSafe(loading);
+      status('businessSaveStatus', 'success', 'Configuración cargada.');
+      setTimeout(function() { status('businessSaveStatus', '', ''); }, 2000);
+    }).catch(function (err) {
+      hideLoadingSafe(loading);
+      status('businessSaveStatus', 'error', err.message || 'No se pudo cargar la configuración.');
+      safeToast('!', err.message || 'Error al cargar configuración', 'error');
     });
   }
 
-  function saveSettings() {
-    var zonesValue = field('shippingZones');
-    var zones;
-    try { zones = JSON.parse(zonesValue || '[]'); } catch (e) {
-      status('error', 'El JSON de zonas de envío no es válido.');
-      safeToast('!', 'Revisá el JSON de zonas de envío', 'error');
-      return;
-    }
+  function saveBusiness() {
     var sitePayload = {
-      business_name: field('businessName'),
-      logo: field('businessLogo'),
-      email: field('businessEmail'),
-      phone: field('businessPhone'),
-      whatsapp: field('businessWhatsapp'),
-      address: field('businessAddress'),
-      instagram: field('socialInstagram'),
-      facebook: field('socialFacebook'),
-      twitter: field('socialTwitter'),
-      shipping_zones: zones,
-      google_analytics_id: field('googleAnalyticsId'),
-      facebook_pixel_id: field('facebookPixelId'),
-      sentry_dsn: field('sentryDsn'),
-      google_place_id: field('googlePlaceId'),
-      google_write_review_url: field('googleReviewUrl'),
-      google_maps_api_key: field('googleMapsKey')
+      businessName: field('businessName'),
+      businessLogo: field('businessLogo'),
+      businessEmail: field('businessEmail'),
+      businessPhone: field('businessPhone'),
+      businessWhatsapp: field('businessWhatsapp'),
+      businessAddress: field('businessAddress'),
+      socialInstagram: field('socialInstagram'),
+      socialFacebook: field('socialFacebook'),
+      socialTwitter: field('socialTwitter'),
+      shippingZones: field('shippingZones')
     };
+    var btn = document.getElementById('saveBusinessBtn');
+    var btnText = document.getElementById('saveBusinessBtnText');
+    var btnLoading = document.getElementById('saveBusinessBtnLoading');
+    if (btn) { btn.disabled = true; }
+    if (btnText) { btnText.style.display = 'none'; }
+    if (btnLoading) { btnLoading.style.display = 'inline'; }
+    status('businessSaveStatus', '', 'Guardando...');
+
+    window.adminFetch('/api/v1/admin/settings', { method: 'PUT', body: JSON.stringify(sitePayload) })
+      .then(function () {
+        settings = Object.assign({}, settings, sitePayload);
+        status('businessSaveStatus', 'success', 'Datos del negocio guardados.');
+        safeToast('✓', 'Datos del negocio guardados', 'success');
+      })
+      .catch(function (err) {
+        status('businessSaveStatus', 'error', err.message || 'No se pudo guardar.');
+        safeToast('!', err.message || 'Error al guardar', 'error');
+      })
+      .finally(function () {
+        if (btn) { btn.disabled = false; }
+        if (btnText) { btnText.style.display = 'inline'; }
+        if (btnLoading) { btnLoading.style.display = 'none'; }
+      });
+  }
+
+  function savePayment() {
     var paymentPayload = {
       mpAlias: field('mpAlias'),
       transferAlias: field('transferAlias'),
       holderName: field('holderName'),
       cbuCvu: field('cbuCvu'),
-      message: field('paymentMessage'),
-      active: field('paymentActive'),
+      paymentMessage: field('paymentMessage'),
+      shippingCost: Number(field('shippingCost') || 0),
+      freeShippingFrom: Number(field('freeShippingFrom') || 0),
+      includedShippingCost: Number(field('includedShippingCost') || 0),
+      paymentActive: field('paymentActive'),
       mpEnabled: field('mpEnabled'),
       cashEnabled: field('cashEnabled'),
-      shippingCost: Number(field('shippingCost')) || 0,
-      freeShippingFrom: Number(field('freeShippingFrom')) || 0,
-      includedShippingCost: Number(field('includedShippingCost')) || 0,
       notifyAdminNewProof: field('notifyAdminNewProof'),
       notifyClientApproved: field('notifyClientApproved'),
       notifyClientRejected: field('notifyClientRejected')
     };
-    status('', 'Guardando cambios...');
+    var btn = document.getElementById('savePaymentBtn');
+    var btnText = document.getElementById('savePaymentBtnText');
+    var btnLoading = document.getElementById('savePaymentBtnLoading');
+    if (btn) { btn.disabled = true; }
+    if (btnText) { btnText.style.display = 'none'; }
+    if (btnLoading) { btnLoading.style.display = 'inline'; }
+    status('paymentSaveStatus', '', 'Guardando...');
+
     Promise.all([
-      window.adminPageFetch('/api/v1/admin/settings', { method: 'PUT', body: JSON.stringify(sitePayload) }),
-      window.adminPageFetch('/api/v1/admin/payment-config', { method: 'PUT', body: JSON.stringify(paymentPayload) })
+      window.adminFetch('/api/v1/admin/settings', { method: 'PUT', body: JSON.stringify({ /* solo payment se guarda aquí */ }) }),
+      window.adminFetch('/api/v1/admin/payment-config', { method: 'PUT', body: JSON.stringify(paymentPayload) })
     ]).then(function () {
-      settings = Object.assign({}, settings, sitePayload);
       payment = Object.assign({}, payment, paymentPayload);
-      status('success', 'Cambios guardados correctamente.');
-      safeToast('✓', 'Configuración guardada', 'success');
+      status('paymentSaveStatus', 'success', 'Métodos de pago guardados.');
+      safeToast('✓', 'Métodos de pago guardados', 'success');
     }).catch(function (err) {
-      status('error', err.message || 'No se pudo guardar la configuración.');
-      safeToast('!', err.message || 'Error al guardar configuración', 'error');
+      status('paymentSaveStatus', 'error', err.message || 'No se pudo guardar.');
+      safeToast('!', err.message || 'Error al guardar', 'error');
+    }).finally(function () {
+      if (btn) { btn.disabled = false; }
+      if (btnText) { btnText.style.display = 'inline'; }
+      if (btnLoading) { btnLoading.style.display = 'none'; }
     });
   }
 
+  function saveIntegrations() {
+    var sitePayload = {
+      googleAnalyticsId: field('googleAnalyticsId'),
+      facebookPixelId: field('facebookPixelId'),
+      sentryDsn: field('sentryDsn'),
+      googlePlaceId: field('googlePlaceId'),
+      googleReviewUrl: field('googleReviewUrl'),
+      googleMapsKey: field('googleMapsKey')
+    };
+    var btn = document.getElementById('saveIntegrationsBtn');
+    var btnText = document.getElementById('saveIntegrationsBtnText');
+    var btnLoading = document.getElementById('saveIntegrationsBtnLoading');
+    if (btn) { btn.disabled = true; }
+    if (btnText) { btnText.style.display = 'none'; }
+    if (btnLoading) { btnLoading.style.display = 'inline'; }
+    status('integrationsSaveStatus', '', 'Guardando...');
+
+    window.adminFetch('/api/v1/admin/settings', { method: 'PUT', body: JSON.stringify(sitePayload) })
+      .then(function () {
+        settings = Object.assign({}, settings, sitePayload);
+        status('integrationsSaveStatus', 'success', 'Integraciones guardadas.');
+        safeToast('✓', 'Integraciones guardadas', 'success');
+      })
+      .catch(function (err) {
+        status('integrationsSaveStatus', 'error', err.message || 'No se pudo guardar.');
+        safeToast('!', err.message || 'Error al guardar', 'error');
+      })
+      .finally(function () {
+        if (btn) { btn.disabled = false; }
+        if (btnText) { btnText.style.display = 'inline'; }
+        if (btnLoading) { btnLoading.style.display = 'none'; }
+      });
+  }
+
   function init() {
-    var save = document.getElementById('saveSettingsBtn');
-    var reload = document.getElementById('reloadSettingsBtn');
-    if (save) save.addEventListener('click', saveSettings);
-    if (reload) reload.addEventListener('click', loadSettings);
+    if (window.adminSidebar && typeof window.adminSidebar.init === 'function') {
+      window.adminSidebar.init({
+        onLogout: function () {
+          if (typeof doLogout === 'function') doLogout();
+        }
+      });
+    }
+
+    var nav = document.getElementById('adminNav');
+    if (nav) {
+      nav.addEventListener('click', function (e) {
+        if (!e.target.closest('a[data-section]')) return;
+        if (window.adminSidebar && typeof window.adminSidebar.isDrawerOpen === 'function' && window.adminSidebar.isDrawerOpen()) {
+          window.adminSidebar.closeDrawer(true);
+        }
+      });
+    }
+
+    var saveBusinessBtn = document.getElementById('saveBusinessBtn');
+    var savePaymentBtn = document.getElementById('savePaymentBtn');
+    var saveIntegrationsBtn = document.getElementById('saveIntegrationsBtn');
+    if (saveBusinessBtn) saveBusinessBtn.addEventListener('click', saveBusiness);
+    if (savePaymentBtn) savePaymentBtn.addEventListener('click', savePayment);
+    if (saveIntegrationsBtn) saveIntegrationsBtn.addEventListener('click', saveIntegrations);
+
     loadSettings();
   }
 
-  window.initAdminSettings = function () {
-    window.adminPageInit({ onReady: init });
-  };
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', window.initAdminSettings);
-  else window.initAdminSettings();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 }());
-

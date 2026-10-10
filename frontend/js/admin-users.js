@@ -6,9 +6,7 @@
 
   function safeToast(icon, message, type) {
     if (typeof window.showToast === 'function') { window.showToast(icon, message, type); return; }
-    // eslint-disable-next-line no-console
     if (type === 'error') console.error('[admin-users]', message);
-    // eslint-disable-next-line no-console
     else console.log('[admin-users]', message);
   }
 
@@ -48,305 +46,274 @@
           (function (p) {
             var b = document.createElement('button');
             b.className = 'btn btn-sm' + (p === page ? ' btn-primary' : ' btn-secondary');
-            b.textContent = String(p);
-            b.addEventListener('click', function () { opts.onChange(p); });
+            b.textContent = p;
+            b.addEventListener('click', function () { state.page = p; loadUsers(); });
             c.appendChild(b);
           })(i);
         }
       };
     }
-    if (typeof window.initSearchBar !== 'function') {
-      window.initSearchBar = function (opts) {
-        var container = opts && opts.container;
-        if (!container) return null;
-        var input = container.querySelector('input[type="search"], input');
-        if (!input) return null;
-        var timer = null;
-        input.addEventListener('input', function () {
-          clearTimeout(timer);
-          timer = setTimeout(function () { opts.onSearch(input.value); }, opts.debounce || 300);
-        });
-        return { search: function () { opts.onSearch(''); input.value = ''; } };
-      };
-    }
-    if (typeof window.openModal !== 'function' || typeof window.closeModal !== 'function') {
-      window.openModal = window.openModal || function (opts) {
-        var overlay = document.createElement('div');
-        overlay.className = 'modal-overlay active';
-        overlay.innerHTML = '<div class="modal modal--md"><div class="modal-header"><h3>' + (opts.title || '') + '</h3></div><div class="modal-body"></div><div class="modal-footer"></div></div>';
-        var body = overlay.querySelector('.modal-body');
-        if (opts.content instanceof Node) body.appendChild(opts.content);
-        else body.innerHTML = opts.content || '';
-        var footer = overlay.querySelector('.modal-footer');
-        (opts.actions || []).forEach(function (a) {
-          var b = document.createElement('button');
-          b.className = a.className || 'btn btn-secondary';
-          b.textContent = a.label || 'Aceptar';
-          b.addEventListener('click', function () {
-            if (a.onClick) a.onClick();
-            if (a.close !== false && document.body.contains(overlay)) document.body.removeChild(overlay);
-          });
-          footer.appendChild(b);
-        });
-        document.body.appendChild(overlay);
-        window._fallbackModal = overlay;
-        return overlay;
-      };
-      window.closeModal = window.closeModal || function () {
-        if (window._fallbackModal && document.body.contains(window._fallbackModal)) document.body.removeChild(window._fallbackModal);
-      };
-    }
-    if (!window.ConfirmDialog) {
-      window.ConfirmDialog = { ask: function (opts) { return Promise.resolve(window.confirm((opts && opts.title ? opts.title + '\n' : '') + (opts && opts.message ? opts.message : '¿Confirmar?'))); } };
-    }
-    if (typeof window.showToast !== 'function') window.showToast = safeToast;
-  }
-  ensureHelpers();
-
-  function apiUsers(_query) {
-    var params = new URLSearchParams({ page: String(state.page), limit: String(state.limit) });
-    if (state.q) params.set('q', state.q);
-    if (state.role) params.set('role', state.role);
-    if (state.active !== '') params.set('active', state.active);
-    return window.adminPageFetch('/api/v1/users?' + params.toString());
-  }
-
-  function formatDate(value) {
-    var date = new Date(value);
-    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString('es-AR');
-  }
-
-  function appendCell(row, value, className) {
-    var cell = document.createElement('td');
-    if (className) cell.className = className;
-    cell.textContent = value === null || value === undefined || value === '' ? '—' : String(value);
-    row.appendChild(cell);
-  }
-
-  function renderUsers(data) {
-    var body = document.getElementById('usersTableBody');
-    var root = document.getElementById('usersRoot');
-    var empty = document.getElementById('usersEmpty');
-    var table = document.getElementById('usersTable');
-    var pagination = document.getElementById('usersPagination');
-    if (!body) return;
-    body.innerHTML = '';
-    var users = data && Array.isArray(data.users) ? data.users : [];
-    if (!users.length) {
-      if (table) table.style.display = 'none';
-      if (empty) empty.style.display = '';
-      if (root) {
-        window.renderEmptyState({
-          container: root,
-          icon: '⌕',
-          title: 'No se encontraron usuarios',
-          message: 'Probá cambiar los filtros o creá un nuevo usuario.',
-          action: { label: 'Crear usuario', className: 'btn btn-primary btn-sm', onClick: openUserModal }
-        });
-      }
-    } else {
-      if (table) table.style.display = '';
-      if (empty) empty.style.display = 'none';
-      users.forEach(function (user) {
-        var row = document.createElement('tr');
-        appendCell(row, user.id);
-        appendCell(row, user.username);
-        appendCell(row, user.email);
-        var role = document.createElement('td');
-        var roleBadge = document.createElement('span');
-        roleBadge.className = 'admin-page-badge';
-        roleBadge.textContent = user.role || 'viewer';
-        role.appendChild(roleBadge);
-        row.appendChild(role);
-        var active = document.createElement('td');
-        var activeBadge = document.createElement('span');
-        activeBadge.className = 'admin-page-badge ' + (user.active ? 'is-active' : 'is-inactive');
-        activeBadge.textContent = user.active ? 'Activo' : 'Inactivo';
-        active.appendChild(activeBadge);
-        row.appendChild(active);
-        appendCell(row, formatDate(user.created_at));
-        var actions = document.createElement('td');
-        actions.className = 'admin-page-table-actions';
-        var edit = document.createElement('button');
-        edit.type = 'button';
-        edit.className = 'btn btn-secondary btn-sm';
-        edit.textContent = 'Editar';
-        edit.addEventListener('click', function () { openUserModal(user); });
-        var remove = document.createElement('button');
-        remove.type = 'button';
-        remove.className = 'btn btn-danger btn-sm';
-        remove.textContent = 'Eliminar';
-        remove.addEventListener('click', function () { removeUser(user); });
-        actions.appendChild(edit);
-        actions.appendChild(remove);
-        row.appendChild(actions);
-        body.appendChild(row);
-      });
-    }
-    if (pagination) {
-      window.renderPagination({
-        container: pagination,
-        page: Number(data.page || state.page),
-        totalPages: Number(data.pages || 1),
-        onChange: function (page) { state.page = page; loadUsers(); }
-      });
-    }
-  }
-
-  function setLoading(loading) {
-    if (loading) window.showLoading(document.getElementById('usersLoading'), { label: 'Cargando usuarios...' });
-    else window.hideLoading(document.getElementById('usersLoading'));
   }
 
   function loadUsers() {
-    var root = document.getElementById('usersRoot');
-    if (!root) return;
-    setLoading(true);
-    apiUsers().then(function (data) {
-      renderUsers(data);
-    }).catch(function (err) {
-      window.renderEmptyState({
-        container: root,
-        icon: '!',
-        title: 'No se pudieron cargar los usuarios',
-        message: err.message || 'Intentá nuevamente más tarde.',
-        action: { label: 'Reintentar', className: 'btn btn-primary btn-sm', onClick: loadUsers }
+    ensureHelpers();
+    var loading = document.getElementById('usersLoading');
+    var error = document.getElementById('usersError');
+    var empty = document.getElementById('usersEmpty');
+    var table = document.getElementById('usersTable');
+    var body = document.getElementById('usersTableBody');
+
+    if (loading) loading.classList.remove('hidden');
+    if (error) { error.classList.add('hidden'); error.textContent = ''; }
+    if (empty) empty.classList.add('hidden');
+    if (table) table.style.display = 'none';
+    if (body) body.innerHTML = '';
+
+    var params = new URLSearchParams();
+    params.set('page', state.page);
+    params.set('limit', state.limit);
+    if (state.q) params.set('q', state.q);
+    if (state.role) params.set('role', state.role);
+    if (state.active) params.set('active', state.active);
+
+    window.adminFetch('/api/v1/admin/users?' + params.toString())
+      .then(function (res) {
+        if (loading) loading.classList.add('hidden');
+        if (res.users && res.users.length > 0) {
+          if (table) table.style.display = 'table';
+          res.users.forEach(function (u) {
+            var row = document.createElement('tr');
+            var roleLabel = u.role === 'admin' ? 'Admin' : (u.role === 'editor' ? 'Editor' : 'Viewer');
+            var activeLabel = u.active ? 'Activo' : 'Inactivo';
+            var activeClass = u.active ? 'is-active' : 'is-inactive';
+            row.innerHTML =
+              '<td>' + (u.id || '') + '</td>' +
+              '<td>' + escapeHtml(u.username || '') + '</td>' +
+              '<td>' + escapeHtml(u.email || '') + '</td>' +
+              '<td><span class="admin-page-badge ' + activeClass + '">' + roleLabel + '</span></td>' +
+              '<td><span class="admin-page-badge ' + activeClass + '">' + activeLabel + '</span></td>' +
+              '<td>' + (u.created_at ? formatDate(u.created_at) : '') + '</td>' +
+              '<td class="admin-page-table-actions">' +
+                '<button class="btn btn-sm btn-secondary edit-user" data-id="' + u.id + '" aria-label="Editar usuario ' + escapeHtml(u.username) + '">Editar</button>' +
+                '<button class="btn btn-sm btn-danger delete-user" data-id="' + u.id + '" aria-label="Eliminar usuario ' + escapeHtml(u.username) + '">Eliminar</button>' +
+              '</td>';
+            if (body) body.appendChild(row);
+          });
+          if (res.pagination) {
+            window.renderPagination({ container: document.getElementById('usersPagination'), page: state.page, totalPages: res.pagination.totalPages });
+          }
+        } else {
+          if (empty) {
+            empty.classList.remove('hidden');
+            empty.innerHTML = '<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin: 0 auto 1rem; color: var(--text-muted);"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><h3>No hay usuarios</h3><p>Creá el primer usuario con el botón de arriba.</p>';
+          }
+        }
+      })
+      .catch(function (err) {
+        if (loading) loading.classList.add('hidden');
+        if (error) { error.classList.remove('hidden'); error.textContent = err.message || 'Error cargando usuarios.'; }
+        safeToast('!', err.message || 'Error cargando usuarios', 'error');
       });
-      window.showToast('!', err.message || 'Error al cargar usuarios', 'error');
-    }).finally(function () { setLoading(false); });
   }
 
-  function openUserModal(user) {
-    currentEditingId = user && user.id ? Number(user.id) : null;
-    var form = document.createElement('form');
-    form.className = 'admin-form-grid';
-    [
-      ['userUsername', 'Usuario', 'text', 'Nombre de usuario', !currentEditingId],
-      ['userPassword', 'Contraseña', 'password', currentEditingId ? 'Dejar en blanco para no cambiarla' : 'Mínimo 6 caracteres', true],
-      ['userEmail', 'Email', 'email', 'Opcional', true],
-      ['userRole', 'Rol', 'select', 'Permisos de acceso', true]
-    ].forEach(function (field) {
-      var id = field[0];
-      var label = field[1];
-      var type = field[2];
-      var help = field[3];
-      var required = field[4];
-      var group = document.createElement('div');
-      group.className = 'admin-form-group';
-      var labelEl = document.createElement('label');
-      labelEl.htmlFor = id;
-      labelEl.textContent = label + (required && id !== 'userPassword' ? ' *' : '');
-      var input;
-      if (type === 'select') {
-        input = document.createElement('select');
-        ['admin', 'editor', 'viewer'].forEach(function (role) {
-          var option = document.createElement('option');
-          option.value = role;
-          option.textContent = role;
-          input.appendChild(option);
-        });
-      } else {
-        input = document.createElement('input');
-        input.type = type;
-      }
-      input.id = id;
-      input.name = id;
-      if (required && id !== 'userPassword') input.required = true;
-      if (id === 'userPassword' && !currentEditingId) input.required = true;
-      if (id === 'userPassword') input.minLength = 6;
-      var helpEl = document.createElement('span');
-      helpEl.className = 'admin-form-help';
-      helpEl.textContent = help;
-      group.appendChild(labelEl);
-      group.appendChild(input);
-      group.appendChild(helpEl);
-      form.appendChild(group);
-    });
-    var roleSelect = form.querySelector('#userRole');
-    var emailInput = form.querySelector('#userEmail');
-    if (user) {
-      form.querySelector('#userUsername').value = user.username || '';
-      emailInput.value = user.email || '';
-      roleSelect.value = user.role || 'viewer';
+  function escapeHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&')
+      .replace(/</g, '<')
+      .replace(/>/g, '>')
+      .replace(/"/g, '"');
+  }
+
+  function formatDate(dateStr) {
+    try {
+      return new Date(dateStr).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch (e) {
+      return dateStr;
     }
-    window.openModal({
-      title: currentEditingId ? 'Editar usuario' : 'Crear usuario',
-      content: form,
-      size: 'md',
+  }
+
+  function openCreateModal() {
+    if (typeof window.Modal !== 'function') return;
+    var modal = new window.Modal({
+      title: 'Crear usuario',
+      content: '<form id="userForm">' +
+        '<div class="form-group"><label for="newUsername">Usuario</label><input id="newUsername" type="text" required /></div>' +
+        '<div class="form-group"><label for="newEmail">Email</label><input id="newEmail" type="email" required /></div>' +
+        '<div class="form-group"><label for="newPassword">Contraseña</label><input id="newPassword" type="password" required /></div>' +
+        '<div class="form-group"><label for="newRole">Rol</label><select id="newRole"><option value="editor">Editor</option><option value="admin">Admin</option><option value="viewer">Viewer</option></select></div>' +
+        '<div class="form-group"><label for="newActive">Activo</label><select id="newActive"><option value="true">Sí</option><option value="false">No</option></select></div>' +
+        '</form>',
       actions: [
-        { label: 'Cancelar', className: 'btn btn-secondary', close: true },
-        { label: currentEditingId ? 'Guardar cambios' : 'Crear usuario', className: 'btn btn-primary', onClick: function () { saveUser(form); } }
+        { label: 'Cancelar', className: 'btn btn-secondary', onClick: function () { modal.close(); } },
+        { label: 'Crear', className: 'btn btn-primary', onClick: function () { createUser(modal); } }
       ]
     });
+    modal.open();
   }
 
-  function saveUser(form) {
-    var username = form.querySelector('#userUsername').value.trim();
-    var password = form.querySelector('#userPassword').value;
-    var email = form.querySelector('#userEmail').value.trim();
-    var role = form.querySelector('#userRole').value;
-    if (!username || (!currentEditingId && !password) || !role) {
-      window.showToast('!', 'Completá los campos obligatorios', 'error');
+  function createUser(modal) {
+    var username = document.getElementById('newUsername').value.trim();
+    var email = document.getElementById('newEmail').value.trim();
+    var password = document.getElementById('newPassword').value;
+    var role = document.getElementById('newRole').value;
+    var active = document.getElementById('newActive').value === 'true';
+    if (!username || !email || !password) {
+      safeToast('!', 'Completá todos los campos', 'error');
       return;
     }
-    var payload = { username: username, email: email, role: role };
-    if (password) payload.password = password;
-    var request = currentEditingId
-      ? window.adminPageFetch('/api/v1/users/' + currentEditingId, { method: 'PUT', body: JSON.stringify(payload) })
-      : window.adminPageFetch('/api/v1/users', { method: 'POST', body: JSON.stringify(payload) });
-    request.then(function () {
-      window.closeModal();
-      window.showToast('✓', currentEditingId ? 'Usuario actualizado' : 'Usuario creado', 'success');
-      loadUsers();
-    }).catch(function (err) {
-      window.showToast('!', err.message || 'No se pudo guardar el usuario', 'error');
-    });
+    window.adminFetch('/api/v1/admin/users', { method: 'POST', body: JSON.stringify({ username: username, email: email, password: password, role: role, active: active }) })
+      .then(function () {
+        modal.close();
+        safeToast('✓', 'Usuario creado', 'success');
+        loadUsers();
+      })
+      .catch(function (err) {
+        safeToast('!', err.message || 'Error creando usuario', 'error');
+      });
   }
 
-  function removeUser(user) {
-    window.ConfirmDialog.ask({
-      title: 'Eliminar usuario',
-      message: '¿Eliminar a ' + (user.username || 'este usuario') + '? Esta acción no se puede deshacer.',
-      confirmLabel: 'Eliminar',
-      cancelLabel: 'Cancelar'
-    }).then(function (confirmed) {
-      if (!confirmed) return;
-      window.adminPageFetch('/api/v1/users/' + user.id, { method: 'DELETE' }).then(function () {
-        window.showToast('✓', 'Usuario eliminado', 'success');
-        loadUsers();
-      }).catch(function (err) {
-        window.showToast('!', err.message || 'No se pudo eliminar el usuario', 'error');
-      });
+  function openEditModal(user) {
+    if (typeof window.Modal !== 'function') return;
+    currentEditingId = user.id;
+    var modal = new window.Modal({
+      title: 'Editar usuario',
+      content: '<form id="userForm">' +
+        '<div class="form-group"><label for="editUsername">Usuario</label><input id="editUsername" type="text" value="' + escapeHtml(user.username) + '" required /></div>' +
+        '<div class="form-group"><label for="editEmail">Email</label><input id="editEmail" type="email" value="' + escapeHtml(user.email) + '" required /></div>' +
+        '<div class="form-group"><label for="editRole">Rol</label><select id="editRole"><option value="editor"' + (user.role === 'editor' ? ' selected' : '') + '>Editor</option><option value="admin"' + (user.role === 'admin' ? ' selected' : '') + '>Admin</option><option value="viewer"' + (user.role === 'viewer' ? ' selected' : '') + '>Viewer</option></select></div>' +
+        '<div class="form-group"><label for="editActive">Activo</label><select id="editActive"><option value="true"' + (user.active ? ' selected' : '') + '>Sí</option><option value="false"' + (!user.active ? ' selected' : '') + '>No</option></select></div>' +
+        '<div class="form-group"><label for="editPassword">Nueva contraseña (opcional)</label><input id="editPassword" type="password" placeholder="Dejá vacío para no cambiar" /></div>' +
+        '</form>',
+      actions: [
+        { label: 'Cancelar', className: 'btn btn-secondary', onClick: function () { modal.close(); } },
+        { label: 'Guardar', className: 'btn btn-primary', onClick: function () { saveUser(modal); } }
+      ]
     });
+    modal.open();
+  }
+
+  function saveUser(modal) {
+    var username = document.getElementById('editUsername').value.trim();
+    var email = document.getElementById('editEmail').value.trim();
+    var role = document.getElementById('editRole').value;
+    var active = document.getElementById('editActive').value === 'true';
+    var password = document.getElementById('editPassword').value;
+    if (!username || !email) {
+      safeToast('!', 'Completá usuario y email', 'error');
+      return;
+    }
+    var payload = { username: username, email: email, role: role, active: active };
+    if (password) payload.password = password;
+    window.adminFetch('/api/v1/admin/users/' + currentEditingId, { method: 'PUT', body: JSON.stringify(payload) })
+      .then(function () {
+        modal.close();
+        safeToast('✓', 'Usuario actualizado', 'success');
+        loadUsers();
+      })
+      .catch(function (err) {
+        safeToast('!', err.message || 'Error actualizando usuario', 'error');
+      });
+  }
+
+  function deleteUser(id) {
+    if (typeof window.ConfirmDialog !== 'function') {
+      if (!confirm('¿Eliminar este usuario?')) return;
+      doDelete(id);
+      return;
+    }
+    var dialog = new window.ConfirmDialog({
+      title: 'Eliminar usuario',
+      message: 'Esta acción no se puede deshacer. ¿Querés continuar?',
+      confirmLabel: 'Eliminar',
+      confirmClass: 'btn btn-danger',
+      onConfirm: function () { doDelete(id); }
+    });
+    dialog.open();
+  }
+
+  function doDelete(id) {
+    window.adminFetch('/api/v1/admin/users/' + id, { method: 'DELETE' })
+      .then(function () {
+        safeToast('✓', 'Usuario eliminado', 'success');
+        loadUsers();
+      })
+      .catch(function (err) {
+        safeToast('!', err.message || 'Error eliminando usuario', 'error');
+      });
   }
 
   function init() {
-    var search = window.initSearchBar({
-      container: document.getElementById('usersSearch'),
-      debounce: 300,
-      onSearch: function (value) { state.q = value; state.page = 1; loadUsers(); }
+    if (window.adminSidebar && typeof window.adminSidebar.init === 'function') {
+      window.adminSidebar.init({
+        onLogout: function () {
+          if (typeof doLogout === 'function') doLogout();
+        }
+      });
+    }
+
+    var nav = document.getElementById('adminNav');
+    if (nav) {
+      nav.addEventListener('click', function (e) {
+        if (!e.target.closest('a[data-section]')) return;
+        if (window.adminSidebar && typeof window.adminSidebar.isDrawerOpen === 'function' && window.adminSidebar.isDrawerOpen()) {
+          window.adminSidebar.closeDrawer(true);
+        }
+      });
+    }
+
+    var createBtn = document.getElementById('createUserBtn');
+    if (createBtn) createBtn.addEventListener('click', openCreateModal);
+
+    var searchInput = document.getElementById('usersQuery');
+    var searchBtn = document.querySelector('#usersSearch .search-bar__submit');
+    var searchClear = document.querySelector('#usersSearch .search-bar__clear');
+    if (searchInput) {
+      searchInput.addEventListener('keypress', function (e) { if (e.key === 'Enter') { state.q = searchInput.value.trim(); state.page = 1; loadUsers(); } });
+    }
+    if (searchBtn) {
+      searchBtn.addEventListener('click', function () { state.q = searchInput.value.trim(); state.page = 1; loadUsers(); });
+    }
+    if (searchClear) {
+      searchClear.addEventListener('click', function () { searchInput.value = ''; state.q = ''; state.page = 1; loadUsers(); searchClear.hidden = true; });
+    }
+    if (searchInput) {
+      searchInput.addEventListener('input', function () { searchClear.hidden = !searchInput.value; });
+    }
+
+    var roleFilter = document.getElementById('usersRoleFilter');
+    var activeFilter = document.getElementById('usersActiveFilter');
+    var resetBtn = document.getElementById('usersResetFilters');
+    if (roleFilter) {
+      roleFilter.addEventListener('change', function () { state.role = roleFilter.value; state.page = 1; loadUsers(); });
+    }
+    if (activeFilter) {
+      activeFilter.addEventListener('change', function () { state.active = activeFilter.value; state.page = 1; loadUsers(); });
+    }
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function () {
+        state.q = ''; state.role = ''; state.active = '';
+        if (searchInput) searchInput.value = '';
+        if (roleFilter) roleFilter.value = '';
+        if (activeFilter) activeFilter.value = '';
+        if (searchClear) searchClear.hidden = true;
+        state.page = 1;
+        loadUsers();
+      });
+    }
+
+    document.getElementById('usersTableBody').addEventListener('click', function (e) {
+      var editBtn = e.target.closest('.edit-user');
+      var deleteBtn = e.target.closest('.delete-user');
+      if (editBtn) { openEditModal({ id: editBtn.dataset.id, username: editBtn.closest('tr').children[1].textContent, email: editBtn.closest('tr').children[2].textContent, role: editBtn.closest('tr').children[3].textContent.replace('Admin','admin').replace('Editor','editor').replace('Viewer','viewer').toLowerCase(), active: editBtn.closest('tr').children[4].textContent.includes('Activo') }); }
+      if (deleteBtn) { deleteUser(deleteBtn.dataset.id); }
     });
-    var role = document.getElementById('usersRoleFilter');
-    var active = document.getElementById('usersActiveFilter');
-    var reset = document.getElementById('usersResetFilters');
-    if (role) role.addEventListener('change', function () { state.role = role.value; state.page = 1; loadUsers(); });
-    if (active) active.addEventListener('change', function () { state.active = active.value; state.page = 1; loadUsers(); });
-    if (reset) reset.addEventListener('click', function () {
-      state.q = ''; state.role = ''; state.active = ''; state.page = 1;
-      if (search) search.search();
-      if (role) role.value = '';
-      if (active) active.value = '';
-      loadUsers();
-    });
-    var create = document.getElementById('createUserBtn');
-    if (create) create.addEventListener('click', function () { openUserModal(); });
+
     loadUsers();
   }
 
-  window.initAdminUsers = function () {
-    window.adminPageInit({ onReady: init });
-  };
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', window.initAdminUsers);
-  else window.initAdminUsers();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 }());
-

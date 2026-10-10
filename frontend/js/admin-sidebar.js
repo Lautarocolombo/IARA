@@ -65,6 +65,14 @@
         { section: 'sales', label: 'Ganancias', icon: 'trendingUp' },
         { section: 'payments', label: 'Medio de pago', icon: 'creditCard' }
       ]
+    },
+    {
+      id: 'admin',
+      title: 'Administración',
+      items: [
+        { section: 'users', label: 'Usuarios', icon: 'clipboardList' },
+        { section: 'settings', label: 'Configuración', icon: 'creditCard' }
+      ]
     }
   ];
 

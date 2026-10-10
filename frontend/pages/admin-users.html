@@ -8,10 +8,18 @@
   <link rel="stylesheet" href="../css/variables.css" />
   <link rel="stylesheet" href="../css/base.css" />
   <link rel="stylesheet" href="../css/components.css" />
-  <link rel="stylesheet" href="../css/admin-pages.css" />
+  <link rel="stylesheet" href="../css/animations.css" />
+  <link rel="stylesheet" href="../css/admin.css" />
+  <link rel="stylesheet" href="../css/admin-dashboard.css" />
+  <link rel="stylesheet" href="../css/admin-sidebar.css" />
   <script src="../js/config.js"></script>
+  <script src="../js/safeImage.js"></script>
   <script src="../js/theme.js"></script>
   <script src="../js/ui.js"></script>
+  <script src="../js/connection.js?v=2026080614"></script>
+  <script src="../js/admin.js"></script>
+  <script src="../js/admin-sidebar.js"></script>
+  <script src="../js/admin-autosave.js"></script>
   <script src="../js/components/LoadingSpinner.js"></script>
   <script src="../js/components/EmptyState.js"></script>
   <script src="../js/components/Pagination.js"></script>
@@ -21,102 +29,132 @@
   <script src="../js/admin-pages.js"></script>
   <script src="../js/admin-users.js"></script>
 </head>
-<body class="admin-page-shell">
-  <a href="#usersContent" class="skip-link">Saltar al contenido principal</a>
-  <div id="adminPageLogin" class="admin-page-login" hidden>
-    <div class="admin-login-card">
-      <h1>Acceso administrativo</h1>
-      <p>Iniciá sesión para gestionar los usuarios del sitio.</p>
-      <form id="adminPageLoginForm">
-        <label for="adminPageUsername">Usuario
-          <input id="adminPageUsername" name="username" type="text" autocomplete="username" required />
-        </label>
-        <label for="adminPagePassword">Contraseña
-          <input id="adminPagePassword" name="password" type="password" autocomplete="current-password" required />
-        </label>
-        <button id="adminPageLoginSubmit" class="btn btn-primary btn-full" type="submit">Ingresar</button>
+<body>
+  <div class="login-overlay" id="loginOverlay">
+    <div class="login-card">
+      <h2>🌸 Artesanías Admin</h2>
+      <p id="loginMessage">Iniciá sesión para continuar</p>
+      <form id="loginForm" autocomplete="on">
+        <div class="form-group">
+          <label for="loginUser">Usuario</label>
+          <input type="text" id="loginUser" placeholder="Usuario" autocomplete="username" />
+        </div>
+        <div class="form-group password-group">
+          <label for="loginPass">Contraseña</label>
+          <div class="password-input-wrapper">
+            <input type="password" id="loginPass" placeholder="Contraseña" autocomplete="current-password" />
+            <button type="button" class="password-toggle" id="passwordToggle" aria-label="Mostrar contraseña">
+              <svg class="eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+              <svg class="eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+            </button>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-full" id="loginBtn">Ingresar</button>
       </form>
-      <p id="adminPageLoginMessage" class="admin-login-message" aria-live="polite"></p>
+      <p class="login-hint" id="loginHint">Verificando...</p>
+      <p id="loginError" class="login-error login-error-muted"></p>
+      <a href="../index.html" class="btn btn-secondary btn-full login-back-link">← Volver al sitio</a>
     </div>
   </div>
-  <div class="admin-layout">
-    <aside class="admin-page-sidebar">
-      <div class="admin-page-brand">Artesanías Admin</div>
-      <nav class="admin-page-nav" aria-label="Administración">
-        <a href="dashboard.html">Dashboard</a>
-        <a href="admin-users.html" class="is-active" aria-current="page">Usuarios</a>
-        <a href="admin-settings.html">Configuración</a>
-        <a href="dashboard.html#section-products">Productos</a>
-        <a href="dashboard.html#section-orders">Pedidos</a>
-        <a href="../index.html">Ver sitio</a>
-      </nav>
-      <div class="admin-page-sidebar-footer">
-        <button id="adminPageLogout" class="btn btn-secondary btn-full" type="button">Cerrar sesión</button>
-      </div>
-    </aside>
-    <main class="admin-page-main">
-      <header class="admin-page-header">
-        <div>
-          <h1>Usuarios</h1>
-          <p>Administrá accesos, roles y estados de la cuenta.</p>
+
+  <a href="#adminContent" class="skip-link">Saltar al contenido principal</a>
+  <div class="admin-panel">
+    <button class="admin-sidebar-toggle" id="sidebarToggle" aria-label="Abrir menú" aria-expanded="false">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+    </button>
+    <div class="admin-sidebar-overlay" id="sidebarOverlay"></div>
+    <aside class="admin-sidebar" id="adminSidebar"></aside>
+    <main class="admin-main" id="adminContent">
+      <header class="admin-header">
+        <div class="admin-header-left">
+          <h1 id="headerTitle">Usuarios</h1>
+          <span class="header-breadcrumb" id="headerBreadcrumb">Administrá accesos, roles y estados de la cuenta</span>
         </div>
-        <div class="admin-page-header-actions">
-          <button id="createUserBtn" class="btn btn-primary" type="button">Crear usuario</button>
+        <div class="admin-header-right">
+          <div class="autosave-status" id="autosaveStatus" style="display: none; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 500;">
+            <span class="autosave-icon" aria-hidden="true"></span>
+            <span class="autosave-text"></span>
+          </div>
+          <div class="header-unsaved-indicator hidden" id="unsavedIndicator">
+            <span class="header-unsaved-dot"></span>
+            <span>Cambios sin guardar</span>
+          </div>
+          <div class="header-actions">
+            <button class="btn btn-outline btn-sm hidden" id="discardChangesBtn">Descartar</button>
+            <button class="btn btn-primary btn-sm hidden" id="saveAllBtn">
+              <span id="saveAllBtnText">Guardar en Nube</span>
+              <span id="saveAllBtnLoading" class="hidden">Guardando...</span>
+            </button>
+          </div>
+          <span class="user-info" id="adminUserName">Admin</span>
         </div>
       </header>
-      <div id="usersContent" class="admin-page-content">
-        <section class="admin-page-card">
-          <div class="admin-page-card-header">
-            <div>
-              <h2>Listado de usuarios</h2>
-              <p>Buscá y filtrá las cuentas registradas.</p>
+
+      <div class="admin-content">
+        <section id="section-users" class="admin-section-active">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h2 class="card-header-title">Listado de usuarios</h2>
+                <p class="card-header-subtitle">Buscá y filtrá las cuentas registradas.</p>
+              </div>
+              <div class="card-header-actions">
+                <button class="btn btn-primary btn-sm" id="createUserBtn" type="button">Crear usuario</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="admin-page-toolbar">
+                <div id="usersSearch" class="search-bar search-bar--inline" style="flex: 1; min-width: 220px;">
+                  <input id="usersQuery" class="search-bar__input" type="search" placeholder="Buscar por usuario o email" aria-label="Buscar usuarios" />
+                  <button class="search-bar__clear" type="button" aria-label="Limpiar búsqueda" hidden>&times;</button>
+                  <button class="btn btn-secondary search-bar__submit" type="button">Buscar</button>
+                </div>
+                <div class="form-group" style="min-width: 150px;">
+                  <label for="usersRoleFilter">Rol</label>
+                  <select id="usersRoleFilter">
+                    <option value="">Todos</option>
+                    <option value="admin">Admin</option>
+                    <option value="editor">Editor</option>
+                    <option value="viewer">Viewer</option>
+                  </select>
+                </div>
+                <div class="form-group" style="min-width: 150px;">
+                  <label for="usersActiveFilter">Estado</label>
+                  <select id="usersActiveFilter">
+                    <option value="">Todos</option>
+                    <option value="true">Activos</option>
+                    <option value="false">Inactivos</option>
+                  </select>
+                </div>
+                <button id="usersResetFilters" class="btn btn-outline" type="button">Limpiar filtros</button>
+              </div>
+              <div id="usersLoading" class="loading-state hidden">
+                <div class="spinner"></div>
+                <span>Cargando usuarios...</span>
+              </div>
+              <div id="usersError" class="error-state hidden" style="color: #dc2626; padding: 1rem; background: #fef2f2; border-radius: 8px; border: 1px solid #fecaca;"></div>
+              <div id="usersEmpty" class="empty-state hidden" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin: 0 auto 1rem; color: var(--text-muted);"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <h3>No hay usuarios</h3>
+                <p>Creá el primer usuario con el botón de arriba.</p>
+              </div>
+              <div class="admin-page-table-wrap" id="usersTable">
+                <table class="admin-page-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th><th>Usuario</th><th>Email</th><th>Rol</th><th>Estado</th><th>Alta</th><th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="usersTableBody"></tbody>
+                </table>
+              </div>
+              <div id="usersPagination" aria-label="Paginación de usuarios"></div>
             </div>
           </div>
-          <div class="admin-page-toolbar">
-            <div id="usersSearch" class="search-bar search-bar--inline">
-              <input id="usersQuery" class="search-bar__input" type="search" placeholder="Buscar por usuario o email" aria-label="Buscar usuarios" />
-              <button class="search-bar__clear" type="button" aria-label="Limpiar búsqueda" hidden>&times;</button>
-              <button class="btn btn-secondary search-bar__submit" type="button">Buscar</button>
-            </div>
-            <div class="form-group">
-              <label for="usersRoleFilter">Rol</label>
-              <select id="usersRoleFilter">
-                <option value="">Todos</option>
-                <option value="admin">Admin</option>
-                <option value="editor">Editor</option>
-                <option value="viewer">Viewer</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="usersActiveFilter">Estado</label>
-              <select id="usersActiveFilter">
-                <option value="">Todos</option>
-                <option value="true">Activos</option>
-                <option value="false">Inactivos</option>
-              </select>
-            </div>
-            <button id="usersResetFilters" class="btn btn-outline" type="button">Limpiar filtros</button>
-          </div>
-          <div id="usersLoading"></div>
-          <div id="usersRoot">
-            <div id="usersEmpty" class="admin-page-empty" style="display:none;"></div>
-            <div class="admin-page-table-wrap" id="usersTable">
-              <table class="admin-page-table">
-                <thead>
-                  <tr>
-                    <th>ID</th><th>Usuario</th><th>Email</th><th>Rol</th><th>Estado</th><th>Alta</th><th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody id="usersTableBody"></tbody>
-              </table>
-            </div>
-          </div>
-          <div id="usersPagination" aria-label="Paginación de usuarios"></div>
         </section>
       </div>
     </main>
   </div>
-  <script>if (typeof populateContactLinks === "function") populateContactLinks();</script>`n</body>
+  <script>if (typeof populateContactLinks === "function") populateContactLinks();</script>
+</body>
 </html>
-
-
