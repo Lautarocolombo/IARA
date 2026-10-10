@@ -554,6 +554,7 @@ if (orderTotalDisplay) orderTotalDisplay.textContent = formatCurrency(order.tota
   async function updateOrderActions(order) {
     var approveBtn = document.getElementById('approvePaymentBtn');
     var rejectBtn = document.getElementById('rejectPaymentBtn');
+    var whatsappBtn = document.getElementById('sendWhatsAppBtn');
     if (!approveBtn || !rejectBtn) return;
 
     var blocked = whatsappChecked && !isShippingComplete(order);
@@ -565,6 +566,13 @@ if (orderTotalDisplay) orderTotalDisplay.textContent = formatCurrency(order.tota
       approveBtn.title = isPaymentValidated(order) ? 'Pago ya validado' : '';
     }
     rejectBtn.disabled = order.status === 'cancelled';
+    
+    // Mostrar botón WhatsApp cuando el pago está aprobado y hay datos de envío
+    if (whatsappBtn) {
+      var showWhatsApp = order.status === 'confirmed' && isShippingComplete(order);
+      whatsappBtn.style.display = showWhatsApp ? 'inline-flex' : 'none';
+      whatsappBtn.onclick = function() { sendOrderWhatsApp(order); };
+    }
   }
 
   async function saveShippingInfo() {
@@ -910,5 +918,34 @@ if (orderTotalDisplay) orderTotalDisplay.textContent = formatCurrency(order.tota
       }
     });
   };
+
+  async function sendOrderWhatsApp(order) {
+    var btn = document.getElementById('sendWhatsAppBtn');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Enviando...';
+    }
+    try {
+      var res = await window.adminFetch('/api/v1/admin/orders/' + order.id + '/whatsapp', { method: 'POST' });
+      if (!res || !res.ok) {
+        var data = await res.json().catch(function () { return {}; });
+        throw new Error(data.error || 'Error generando link WhatsApp');
+      }
+      if (res.whatsappUrl) {
+        window.open(res.whatsappUrl, '_blank');
+        showToast('✅', 'WhatsApp abierto con mensaje prearmado', 'success');
+      } else if (res.message) {
+        showToast('✅', 'Mensaje generado: ' + res.message, 'success');
+      }
+    } catch (err) {
+      showToast('❌', err.message || 'Error enviando por WhatsApp', 'error');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '📱 Notificar por WhatsApp';
+      }
+    }
+  }
+
 })();
 

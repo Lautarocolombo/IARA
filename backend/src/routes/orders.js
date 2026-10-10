@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { adminAuth } = require('../middleware/auth');
-const { getOrders, createOrder, updateOrderStatus, getUserOrders, deleteOrder, updateOrderNotes, updateOrder, getOrderDetail, exportOrders, addOrderActivity, getOrderReceipt, getOrderActivities, getPublicOrderTrack, batchDeleteOrders, uploadPublicReceipt } = require('../controllers/ordersController');
+const { getOrders, createOrder, updateOrderStatus, getUserOrders, deleteOrder, updateOrderNotes, updateOrder, getOrderDetail, exportOrders, addOrderActivity, getOrderReceipt, getOrderActivities, getPublicOrderTrack, batchDeleteOrders, uploadPublicReceipt, sendOrderWhatsApp } = require('../controllers/ordersController');
 const { uploadPaymentProof } = require('../controllers/paymentProofsController');
 const { uploadSingleProof, handleUploadError } = require('../lib/upload');
 
@@ -19,6 +19,7 @@ router.put('/admin/orders/:id/notes', adminAuth, updateOrderNotes);
 router.post('/admin/orders/:id/activity', adminAuth, addOrderActivity);
 router.get('/admin/orders/:id/activity', adminAuth, getOrderActivities);
 router.get('/admin/orders/:id', adminAuth, getOrderDetail);
+router.post('/admin/orders/:id/whatsapp', adminAuth, sendOrderWhatsApp);
 router.delete('/admin/orders/batch', adminAuth, batchDeleteOrders);
 router.delete('/admin/orders/:id', adminAuth, deleteOrder);
 

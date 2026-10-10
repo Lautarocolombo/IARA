@@ -274,9 +274,119 @@
   window.getCurrentRole = getCurrentRole;
   window.SECTION_ROLES = SECTION_ROLES;
 
+  async function loadDashboardStats() {
+    try {
+      var res = await window.adminFetch('/api/v1/admin/dashboard/stats');
+      if (!res || !res.sales) return;
+      
+      var stats = res;
+      var s = stats.sales;
+      
+      // Actualizar cards de ventas
+      updateStatCard('todaySales', s.today.total, s.today.count);
+      updateStatCard('weekSales', s.week.total, s.week.count);
+      updateStatCard('monthSales', s.month.total, s.month.count);
+      
+      // Actualizar alertas
+      if (window.adminSidebar && typeof window.adminSidebar.setBadges === 'function') {
+        window.adminSidebar.setBadges({
+          ordersPending: stats.alerts?.pendingOrders || 0,
+          lowStock: stats.alerts?.lowStockProducts || 0
+        });
+      }
+      
+      // Actualizar lista de stock bajo
+      if (typeof updateLowStockIndicator === 'function') {
+        // Forzar actualización con datos del dashboard
+        if (stats.alerts?.lowStockList) {
+          var indicator = document.getElementById('lowStockIndicator');
+          if (indicator) {
+            if (stats.alerts.lowStockList.length > 0) {
+              indicator.textContent = '⚠️ ' + stats.alerts.lowStockList.length + ' producto' + (stats.alerts.lowStockList.length > 1 ? 's' : '') + ' con stock bajo';
+              indicator.style.display = 'inline-flex';
+            } else {
+              indicator.style.display = 'none';
+            }
+          }
+        }
+      }
+      
+      // Actualizar pedidos recientes
+      renderRecentOrders(stats.recentOrders || []);
+      
+      // Actualizar activity log
+      renderActivityLog(stats.activityLog || []);
+      
+    } catch (err) {
+      console.error('[Dashboard] Error cargando stats:', err);
+    }
+  }
+  
+  function updateStatCard(prefix, total, count) {
+    var totalEl = document.getElementById(prefix + 'Total');
+    var countEl = document.getElementById(prefix + 'Count');
+    if (totalEl) totalEl.textContent = '$' + Number(total || 0).toLocaleString('es-AR');
+    if (countEl) countEl.textContent = count + ' pedido' + (count !== 1 ? 's' : '');
+  }
+  
+  function renderRecentOrders(orders) {
+    var container = document.getElementById('recentOrdersList');
+    if (!container) return;
+    if (!orders.length) {
+      container.innerHTML = '<p class="empty-state">No hay pedidos recientes</p>';
+      return;
+    }
+    container.innerHTML = orders.map(function(o) {
+      var customer = o.customerName || 'Cliente';
+      var statusClass = 'status-' + (o.status || 'pending');
+      return '<div class="recent-order-item">' +
+        '<div class="recent-order-info">' +
+          '<span class="recent-order-id">#' + o.id + '</span>' +
+          '<span class="recent-order-customer">' + escapeHtml(customer) + '</span>' +
+        '</div>' +
+        '<div class="recent-order-meta">' +
+          '<span class="recent-order-total">$' + Number(o.total || 0).toLocaleString('es-AR') + '</span>' +
+          '<span class="recent-order-status ' + statusClass + '">' + (o.status || 'pending') + '</span>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+  
+  function renderActivityLog(activities) {
+    var container = document.getElementById('activityLogList');
+    if (!container) return;
+    if (!activities.length) {
+      container.innerHTML = '<p class="empty-state">Sin actividad reciente</p>';
+      return;
+    }
+    container.innerHTML = activities.map(function(a) {
+      var time = a.createdAt ? new Date(a.createdAt).toLocaleString('es-AR') : '';
+      var actionLabel = a.action || a.action_type || 'Acción';
+      return '<div class="activity-item">' +
+        '<div class="activity-meta">' +
+          '<span class="activity-user">' + escapeHtml(a.username || 'Sistema') + '</span>' +
+          '<span class="activity-time">' + time + '</span>' +
+        '</div>' +
+        '<div class="activity-details">' +
+          '<span class="activity-action">' + escapeHtml(actionLabel) + '</span>' +
+          (a.details ? '<span class="activity-entity">' + escapeHtml(a.details) + '</span>' : '') +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+  
+  function escapeHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&')
+      .replace(/</g, '<')
+      .replace(/>/g, '>')
+      .replace(/"/g, '"');
+  }
+
   window.initAdminDashboard = initAdminDashboard;
   window.switchSection = switchSection;
   window.isTokenPresent = isTokenPresent;
+  window.loadDashboardStats = loadDashboardStats;
 
   window.addEventListener('load', function () {
     if (typeof initRevealAnimation === 'function') initRevealAnimation();

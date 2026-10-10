@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { adminAuth, requirePermission } = require('../middleware/auth');
-const { getPublicProducts, getProductById, getAdminProducts, createProduct, updateProduct, deleteProduct, searchProducts, syncToNeon, bulkImportProducts, toggleProductStatus, duplicateProduct, bulkDeleteProducts, bulkToggleProducts, getFeaturedProducts } = require('../controllers/productsController');
+const { getPublicProducts, getProductById, getAdminProducts, createProduct, updateProduct, deleteProduct, searchProducts, syncToNeon, bulkImportProducts, toggleProductStatus, duplicateProduct, bulkDeleteProducts, bulkToggleProducts, getFeaturedProducts, quickUpdateProduct } = require('../controllers/productsController');
 const { handleUploadError, uploadSingle, uploadMultiple } = require('../lib/upload');
 
 router.get('/products', getPublicProducts);
@@ -13,6 +13,7 @@ router.post('/admin/products', adminAuth, requirePermission('products:write'), u
 router.put('/admin/products/:id', adminAuth, requirePermission('products:write'), uploadMultiple, handleUploadError, updateProduct);
 router.patch('/admin/products/:id/estado', adminAuth, requirePermission('products:write'), toggleProductStatus);
 router.post('/admin/products/:id/duplicar', adminAuth, requirePermission('products:write'), duplicateProduct);
+router.patch('/admin/products/:id/quick-update', adminAuth, requirePermission('products:write'), quickUpdateProduct);
 router.delete('/admin/products/:id', adminAuth, requirePermission('products:delete'), deleteProduct);
 router.post('/admin/products/bulk-delete', adminAuth, requirePermission('products:delete'), bulkDeleteProducts);
 router.post('/admin/products/bulk-toggle', adminAuth, requirePermission('products:write'), bulkToggleProducts);

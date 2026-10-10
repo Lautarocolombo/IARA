@@ -634,6 +634,49 @@ const getPublicOrderTrack = async (req, res) => {
   }
 };
 
+const sendOrderWhatsApp = async (req, res) => {
+  const orderId = Number(req.params.id);
+  try {
+    const result = await query('SELECT * FROM orders WHERE id = $1 AND deleted_at IS NULL', [orderId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Pedido no encontrado' });
+    }
+    const order = result.rows[0];
+    const customer = safeJsonParse(order.customer, {});
+    const items = safeJsonParse(order.items, []);
+    
+    const whatsappNumber = '543444634444';
+    const customerName = customer.name || order.shipping_name || 'Cliente';
+    const total = Number(order.total || 0).toLocaleString('es-AR');
+    const alias = 'gualeguay.artesanias'; // alias por defecto, se puede configurar
+    
+    const itemsText = items.map(i => `• ${i.name || 'Producto'} x${i.quantity || 1}`).join('\n');
+    
+    const message = 
+      `Hola ${customerName}! 🌸\n\n` +
+      `Tu pedido #${orderId} ha sido confirmado.\n\n` +
+      `📦 *Detalle:*\n${itemsText}\n\n` +
+      `💰 *Total: $${total}*\n\n` +
+      `💳 Podés pagar por transferencia al alias: *${alias}*\n` +
+      `Una vez realizada la transferencia, subí el comprobante desde el link que te enviamos.\n\n` +
+      `¡Gracias por elegirnos! 🌸\n` +
+      `Artesanías Gualeguay`;
+    
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+    
+    await query(
+      'INSERT INTO activity_log (username, action, entity_type, entity_id, details, related_order_id, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      [req.user?.user || 'admin', 'whatsapp_sent', 'order', orderId, 'Notificación WhatsApp enviada al cliente', orderId, req.headers['x-tenant-id'] || req.user?.tenant_id || 'default']
+    );
+    
+    res.json({ ok: true, whatsappUrl, message });
+  } catch (err) {
+    logger.error({ err: err.message }, 'Error generando link WhatsApp');
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
 const uploadPublicReceipt = async (req, res) => {
   try {
     const orderId = Number(req.params.id);
@@ -708,4 +751,4 @@ const uploadPublicReceipt = async (req, res) => {
   }
 };
 
-module.exports = { getOrders, getUserOrders, createOrder, updateOrderStatus, deleteOrder, batchDeleteOrders, updateOrderNotes, updateOrder, getOrderDetail, exportOrders, addOrderActivity, getOrderReceipt, getOrderActivities, getPublicOrderTrack, uploadPublicReceipt };
+module.exports = { getOrders, getUserOrders, createOrder, updateOrderStatus, deleteOrder, batchDeleteOrders, updateOrderNotes, updateOrder, getOrderDetail, exportOrders, addOrderActivity, getOrderReceipt, getOrderActivities, getPublicOrderTrack, uploadPublicReceipt, sendOrderWhatsApp };

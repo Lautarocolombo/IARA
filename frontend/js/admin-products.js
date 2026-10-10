@@ -132,6 +132,9 @@ async function loadCategories() {
         '<td class="status-cell">' + renderFeaturedCell(p.featured, p.id) + '</td>' +
         '<td class="actions-cell">' +
           '<button class="btn btn-sm btn-secondary" onclick="window.editProduct(' + p.id + ')" title="Editar">✏️</button>' +
+          '<button class="btn btn-sm btn-primary" onclick="window.quickEditProduct(' + p.id + ', ' + Number(p.price || 0) + ', ' + Number(p.stock || 0) + ')" title="Editar precio/stock rápido">💰</button>' +
+          '<button class="btn btn-sm btn-outline" onclick="window.toggleProductActive(' + p.id + ', ' + (p.active ? 'true' : 'false') + ')" title="' + (p.active ? 'Desactivar' : 'Activar') + '">' + (p.active ? '✅' : '❌') + '</button>' +
+          '<button class="btn btn-sm btn-outline" onclick="window.duplicateProduct(' + p.id + ')" title="Duplicar">📋</button>' +
           '<button class="btn btn-sm btn-danger" onclick="window.deleteProductConfirm(' + p.id + ')" title="Eliminar">🗑️</button>' +
         '</td></tr>';
     }).join('');
@@ -161,11 +164,13 @@ renderStockBadge(stock) +
             renderStatusCell(p.active) +
             renderFeaturedCell(p.featured, p.id) +
           '</div>' +
-          '<div class="product-mobile-card-actions">' +
+'<div class="product-mobile-card-actions">' +
             '<button class="btn btn-sm btn-secondary" onclick="window.editProduct(' + p.id + ')" title="Editar">✏️ Editar</button>' +
+            '<button class="btn btn-sm btn-primary" onclick="window.quickEditProduct(' + p.id + ', ' + Number(p.price || 0) + ', ' + Number(p.stock || 0) + ')" title="Editar precio/stock rápido">💰 Precio/Stock</button>' +
+            '<button class="btn btn-sm btn-outline" onclick="window.toggleProductActive(' + p.id + ', ' + (p.active ? 'true' : 'false') + ')" title="' + (p.active ? 'Desactivar' : 'Activar') + '">' + (p.active ? '✅ Activo' : '❌ Inactivo') + '</button>' +
+            '<button class="btn btn-sm btn-outline" onclick="window.duplicateProduct(' + p.id + ')" title="Duplicar">📋 Duplicar</button>' +
             '<button class="btn btn-sm btn-danger" onclick="window.deleteProductConfirm(' + p.id + ')" title="Eliminar">🗑️ Eliminar</button>' +
-          '</div>' +
-        '</div>';
+          '</div>';
       }).join('');
     }
   }
@@ -905,6 +910,109 @@ var active = document.getElementById('prod_active');
   window.removeImagePreview = function (index) {
     selectedFiles.splice(index, 1);
     renderImagePreviews();
+  };
+
+  window.quickEditProduct = async function (id, currentPrice, currentStock) {
+    var product = productList.find(function (p) { return p.id === id; });
+    if (!product) return;
+
+    var newPrice = prompt('Nuevo precio (actual: $' + Number(currentPrice || 0).toLocaleString('es-AR') + '):', currentPrice);
+    if (newPrice === null) return;
+    var priceNum = Number(newPrice);
+    if (isNaN(priceNum) || priceNum < 0) {
+      window.showToast('❌', 'Precio inválido', 'error');
+      return;
+    }
+
+    var newStock = prompt('Nuevo stock (actual: ' + currentStock + '):', currentStock);
+    if (newStock === null) return;
+    var stockNum = Number(newStock);
+    if (isNaN(stockNum) || stockNum < 0) {
+      window.showToast('❌', 'Stock inválido', 'error');
+      return;
+    }
+
+    try {
+      var res = await window.adminFetch('/api/v1/admin/products/' + id + '/quick-update', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ price: priceNum, stock: stockNum })
+      });
+      if (!res || !res.ok) {
+        var errMsg = 'Error al actualizar.';
+        if (res) {
+          var errData = await res.json().catch(function () { return {}; });
+          errMsg = errData.error || errMsg;
+        }
+        throw new Error(errMsg);
+      }
+
+      product.price = priceNum;
+      product.stock = stockNum;
+      applyProductFilters();
+      window.showToast('✅', 'Producto actualizado: precio $' + priceNum.toLocaleString('es-AR') + ', stock ' + stockNum, 'success');
+    } catch (err) {
+      console.error('[Products] Error quick edit:', err);
+      window.showToast('❌', err.message || 'No se pudo actualizar el producto.', 'error');
+    }
+  };
+
+  window.toggleProductActive = async function (id, currentlyActive) {
+    var product = productList.find(function (p) { return p.id === id; });
+    if (!product) return;
+
+    var next = !currentlyActive;
+    try {
+      var res = await window.adminFetch('/api/v1/admin/products/' + id + '/quick-update', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: next })
+      });
+      if (!res || !res.ok) {
+        var errMsg = 'Error al cambiar estado.';
+        if (res) {
+          var errData = await res.json().catch(function () { return {}; });
+          errMsg = errData.error || errMsg;
+        }
+        throw new Error(errMsg);
+      }
+
+      product.active = next;
+      applyProductFilters();
+      window.showToast('✅', next ? 'Producto activado.' : 'Producto desactivado.', 'success');
+    } catch (err) {
+      console.error('[Products] Error toggle active:', err);
+      window.showToast('❌', err.message || 'No se pudo cambiar el estado.', 'error');
+    }
+  };
+
+  window.duplicateProduct = async function (id) {
+    var product = productList.find(function (p) { return p.id === id; });
+    if (!product) return;
+
+    window.showConfirmModal(
+      'Duplicar producto',
+      '¿Crear una copia de "' + product.name + '"?\n\nSe crearán nuevo producto con "(copia)" en el nombre y sin imágenes.',
+      async function () {
+        try {
+          var res = await window.adminFetch('/api/v1/admin/products/' + id + '/duplicar', { method: 'POST' });
+          if (!res || !res.ok) {
+            var errMsg = 'Error al duplicar.';
+            if (res) {
+              var errData = await res.json().catch(function () { return {}; });
+              errMsg = errData.error || errMsg;
+            }
+            throw new Error(errMsg);
+          }
+
+          window.showToast('✅', 'Producto duplicado correctamente.', 'success');
+          await loadProducts();
+        } catch (err) {
+          console.error('[Products] Error duplicando:', err);
+          window.showToast('❌', err.message || 'No se pudo duplicar el producto.', 'error');
+        }
+      }
+    );
   };
 
   function escapeHtml(str) {
