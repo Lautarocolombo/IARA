@@ -1685,6 +1685,19 @@
 
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
   <script src="../js/vendor/chart.umd.js"></script>
+  <script>
+    // Asegurar que Chart.js esté disponible globalmente
+    if (typeof Chart === 'undefined' && typeof window.Chart !== 'undefined') {
+      window.Chart = window.Chart;
+    }
+    // Fallback a CDN si falla la carga local
+    if (typeof Chart === 'undefined') {
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+      s.onload = function() { window.Chart = window.Chart; };
+      document.head.appendChild(s);
+    }
+  </script>
   <script src="../js/admin-dashboard.js"></script>
   <script src="../js/admin-sync.js"></script>
   <script src="../js/admin-content.js"></script>
