@@ -31,10 +31,11 @@ test.describe('Admin Sales Delete Buttons', () => {
       test.skip('Clear history button not found');
       return;
     }
+    await page.fill('#confirmDeleteHistoryInput', 'ELIMINAR');
     await clearBtn.click();
     const modal = page.locator('#confirmModalOverlay');
     await expect(modal).toHaveClass(/active/);
     const message = await page.locator('#confirmModalMessage').textContent();
-    expect(message).toContain('eliminar');
+    expect(message).toContain('historial');
   });
 });

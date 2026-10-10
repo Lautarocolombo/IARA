@@ -576,10 +576,26 @@ transactions.forEach(function (t) {
     });
   }
 
+  /* Zona avanzada: los botones nacen deshabilitados y se habilitan solo
+     cuando se escribe ELIMINAR en el input inline. Sin esto, las acciones
+     destructivas quedaban inalcanzables (botón disabled para siempre). */
+  function wireAdvancedConfirm(inputId, btnId, feedbackId) {
+    var input = document.getElementById(inputId);
+    var btn = document.getElementById(btnId);
+    var feedback = document.getElementById(feedbackId);
+    if (!input || !btn) return;
+    input.addEventListener('input', function () {
+      var ok = input.value.trim() === 'ELIMINAR';
+      btn.disabled = !ok;
+      if (feedback) {
+        feedback.textContent = ok ? 'Confirmado. Podés continuar.' : '';
+      }
+    });
+  }
+
   /* ===== INIT ===== */
 
-  function initSalesPanel() {
-    var rangeSelect = document.getElementById('sales_range');
+  function initSalesPanel() {    var rangeSelect = document.getElementById('sales_range');
     var customDateRange = document.getElementById('customDateRange');
 
     if (rangeSelect) {
@@ -617,6 +633,9 @@ transactions.forEach(function (t) {
         openClearHistoryModal();
       });
     }
+
+    wireAdvancedConfirm('confirmDeleteHistoryInput', 'resetSalesBtn', 'confirmDeleteHistoryFeedback');
+    wireAdvancedConfirm('confirmResetMetricsInput', 'resetMetricsBtn', 'confirmResetMetricsFeedback');
 
     var confirmOverlay = document.getElementById('confirmModalOverlay');
     if (confirmOverlay) {

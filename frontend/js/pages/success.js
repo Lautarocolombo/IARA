@@ -5,6 +5,9 @@
   if (typeof initNavbarScroll === 'function') initNavbarScroll();
   if (typeof initMobileNavbar === 'function') initMobileNavbar();
 
+  // Id del pedido para el modal de comprobante (init lo lee antes de limpiar el storage)
+  var receiptOrderId = null;
+
   function init() {
     document.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
 
@@ -21,6 +24,7 @@
     try {
       const order = JSON.parse(raw);
       sessionStorage.removeItem('ag_last_order');
+      receiptOrderId = order.id || null;
       if (order.number) {
         document.getElementById('successOrderNumber').textContent = order.number;
       }
@@ -140,4 +144,81 @@
       } catch (e) { /* noop */ }
     }
   });
+
+  /* ===== Modal de comprobante (subida pública al pedido) ===== */
+
+  function openReceiptModal() {
+    const modal = document.getElementById('receiptModal');
+    if (!modal) return;
+    const msg = document.getElementById('receiptFormMsg');
+    if (msg) msg.textContent = '';
+    modal.style.display = 'flex';
+  }
+
+  function closeReceiptModal() {
+    const modal = document.getElementById('receiptModal');
+    if (!modal) return;
+    modal.style.display = 'none';
+  }
+
+  document.addEventListener('click', function (e) {
+    if (e.target && e.target.closest && e.target.closest('#successReceiptBtn')) {
+      e.preventDefault();
+      openReceiptModal();
+      return;
+    }
+    if (e.target && e.target.closest && e.target.closest('[data-action="close-receipt-modal"]')) {
+      closeReceiptModal();
+    }
+  });
+
+  document.addEventListener('submit', async function (e) {
+    if (!e.target || e.target.id !== 'receiptForm') return;
+    e.preventDefault();
+    const msg = document.getElementById('receiptFormMsg');
+    const fileInput = document.getElementById('receiptFile');
+    const nameInput = document.getElementById('receiptHolderName');
+    const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+    if (!receiptOrderId) {
+      if (msg) msg.textContent = 'No se encontró el pedido. Volvé al checkout e intentá de nuevo.';
+      return;
+    }
+    if (!file) {
+      if (msg) msg.textContent = 'Elegí el archivo del comprobante.';
+      return;
+    }
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!allowed.includes(file.type)) {
+      if (msg) msg.textContent = 'Formato no permitido. Usá JPG, PNG, WEBP o PDF.';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      if (msg) msg.textContent = 'El archivo es muy grande (máx. 5 MB).';
+      return;
+    }
+    const submitBtn = e.target.querySelector('[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
+    if (msg) msg.textContent = 'Enviando...';
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      formData.append('customerName', nameInput ? nameInput.value.trim() : '');
+      const res = await fetch(`${CONFIG.API.BASE}/api/v1/orders/${receiptOrderId}/receipt`, {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'No se pudo subir el comprobante.');
+      if (typeof window.showToast === 'function') {
+        window.showToast('✅', 'Comprobante enviado correctamente.', 'success');
+      }
+      e.target.reset();
+      closeReceiptModal();
+    } catch (err) {
+      if (msg) msg.textContent = err.message || 'No se pudo subir el comprobante.';
+    } finally {
+      if (submitBtn) submitBtn.disabled = false;
+    }
+  });
+
 })();
