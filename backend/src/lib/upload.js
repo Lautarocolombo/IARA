@@ -348,36 +348,6 @@ async function processFile(file, _baseUrl) {
       thumbnailUrl 
     };
   }
-<<<<<<< HEAD
-
-  const optimizedPath = await optimizeImage(file.path, { format: 'webp', maxDimension: 800, webpQuality: 70 });
-  const buffer = fs.readFileSync(optimizedPath);
-  const base64 = buffer.toString('base64');
-  const dataUri = 'data:image/webp;base64,' + base64;
-
-  // Tope anti-bloat: el fallback base64 vive en la DB. Si aún optimizado
-  // (800px/q70) supera el tope, fallar con mensaje claro en vez de inflar
-  // la DB silenciosamente (un data-URI de 1MB rinde ~1.3MB en Postgres).
-  const BASE64_MAX_CHARS = 700 * 1024;
-  if (dataUri.length > BASE64_MAX_CHARS) {
-    removeIfExists(file.path);
-    removeIfExists(optimizedPath);
-    const err = new Error('La imagen optimizada sigue siendo muy pesada para guardar en base de datos. Configurá BLOB_READ_WRITE_TOKEN para usar almacenamiento en nube.');
-    err.code = 'IMAGE_TOO_HEAVY_FOR_DB';
-    throw err;
-  }
-
-  const ext = path.extname(file.path);
-  const baseName = path.basename(file.path, ext);
-  const expectedOptimized = path.join(path.dirname(file.path), `${baseName}.webp`);
-
-  removeIfExists(file.path);
-  removeIfExists(optimizedPath);
-  removeIfExists(expectedOptimized);
-
-  logger.info('[Upload] Imagen guardada como base64 en Neon:', { size: dataUri.length });
-  return { url: dataUri, filename: file.originalname, cloudinary_public_id: '', isCloudinary: false, isBlob: false, isBase64: true };
-=======
   
   const blob = await uploadToBlob(file);
   if (blob) {
@@ -417,7 +387,6 @@ async function processFile(file, _baseUrl) {
     isBase64: false,
     thumbnailUrl 
   };
->>>>>>> b091ff6922619009f758fa515ba900a6999ea8b7
 }
 
 async function saveFile(req, res) {

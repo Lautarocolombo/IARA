@@ -157,7 +157,7 @@ app.use(require('compression')({
   }
 }));
 
-const envOrigins = (process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || '').split(',').filter(Boolean);
+const envOrigins = (process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean);
 const defaultOrigins = [
   'https://artesaniagualeguay.com',
   'https://www.artesaniagualeguay.com',
@@ -169,7 +169,9 @@ const defaultOrigins = [
   'http://127.0.0.1:3000',
   'http://127.0.0.1:5173'
 ];
-const allowedOrigins = [...new Set([...defaultOrigins, ...envOrigins])];
+// Si hay orígenes configurados por env, SÓLO esos valen (producción).
+// Los defaults quedan como fallback para desarrollo local sin env.
+const allowedOrigins = envOrigins.length ? [...new Set(envOrigins)] : defaultOrigins;
 
 function isOriginAllowed(origin) {
   if (!origin) return true;
@@ -212,22 +214,6 @@ app.use((req, res, next) => {
   next();
 });
 
-<<<<<<< HEAD
-// Opciones CORS únicas: reutiliza isOriginAllowed. Se usa en /uploads y en
-// cualquier middleware del paquete `cors` (una sola fuente de verdad).
-// NOTA: allowedOrigins siempre tiene defaults, la rama `else` anterior era
-// código muerto y se eliminó.
-const corsOptions = {
-  origin: function(origin, callback) {
-    callback(null, isOriginAllowed(origin));
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Accept-Language', 'Origin', 'X-Requested-With', 'X-Request-ID'],
-};
-
-=======
->>>>>>> b091ff6922619009f758fa515ba900a6999ea8b7
 app.use(require('cookie-parser')());
 app.use(tenantContext);
 
@@ -294,6 +280,7 @@ const publicLimiter = rateLimit({
 
 app.use('/api', publicLimiter);
 app.use('/api/auth/login', authLimiter);
+app.use('/api/v1/auth/login', authLimiter);
 app.use('/api/contact', contactLimiter);
 app.use('/api/orders', ordersLimiter);
 app.use('/api/admin', adminLimiter);
@@ -635,7 +622,6 @@ if (Sentry) {
 
 app.use(errorHandler);
 
-<<<<<<< HEAD
 const dbReady = initDB().then(async () => {
     logger.info('Base de datos inicializada correctamente');
     // Seed local solo en desarrollo o con flag explícito: en producción con
@@ -654,53 +640,6 @@ const dbReady = initDB().then(async () => {
     logger.error({ err: err.message, stack: err.stack }, 'Error inicializando DB');
     throw err;
   });
-=======
-const dbReady = (async () => {
-    try {
-      await initDB();
-      logger.info('Base de datos inicializada correctamente');
-      try {
-        const { seedLocalData } = require('./lib/db');
-        if (process.env.SEED === 'true') {
-          await seedLocalData();
-        }
-      } catch (err) {
-        logger.warn({ err: err.message }, 'No se pudo sembrar datos locales');
-      }
-      try {
-        const { query } = require('./lib/db');
-        const result = await query('SELECT COUNT(*) FROM users');
-        if ((result.rows[0]?.count || 0) === 0 && process.env.ADMIN_USER && process.env.ADMIN_PASS_HASH) {
-          try {
-            await query(
-              'INSERT INTO users (username, password_hash, role, permissions, active) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (username) DO NOTHING',
-              [process.env.ADMIN_USER, process.env.ADMIN_PASS_HASH, 'admin', JSON.stringify({ all: true }), true]
-            );
-          } catch (err) {
-            if (!err.message.includes('UNIQUE constraint failed') && !err.message.includes('duplicate key')) {
-              throw err;
-            }
-          }
-          logger.info(`Usuario admin inicial creado: ${process.env.ADMIN_USER}`);
-        } else if (process.env.ADMIN_USER && process.env.ADMIN_PASS_HASH) {
-          const existing = await query('SELECT password_hash, permissions FROM users WHERE username = $1', [process.env.ADMIN_USER]);
-          if (existing.rows.length > 0) {
-            const needsUpdate = existing.rows[0].password_hash !== process.env.ADMIN_PASS_HASH || existing.rows[0].permissions !== JSON.stringify({ all: true });
-            if (needsUpdate) {
-              await query('UPDATE users SET password_hash = $1, permissions = $2, updated_at = CURRENT_TIMESTAMP WHERE username = $3', [process.env.ADMIN_PASS_HASH, JSON.stringify({ all: true }), process.env.ADMIN_USER]);
-              logger.info(`Hash/permisos de admin actualizados para: ${process.env.ADMIN_USER}`);
-            }
-          }
-        }
-      } catch (err) {
-        logger.warn({ err: err.message }, 'No se pudo verificar/crear usuario admin inicial');
-      }
-    } catch (err) {
-      logger.error({ err: err.message, stack: err.stack }, 'Error inicializando DB');
-      throw err;
-    }
-  })();
->>>>>>> b091ff6922619009f758fa515ba900a6999ea8b7
 
 if (process.env.REDIS_URL) {
   try {

@@ -924,7 +924,9 @@ async function initSQLite() {
   }
 
 
-<<<<<<< HEAD
+async function ensurePostgresBootstrap() {
+  // Bootstrap idempotente de Postgres rescatado del merge: asegura renombres,
+  // columnas tenant_id, índices y seeds. Corre solo en PG vía runMigrationsOnly().
   try {
     const pgRenameMigrations = [
       { name: 'rename_sort_order_to_orden', oldCol: 'sort_order', sql: 'ALTER TABLE product_images RENAME COLUMN sort_order TO orden' },
@@ -1077,45 +1079,9 @@ async function initSQLite() {
       logger.debug({ err: err.message }, 'No se pudo seedear section_content');
     }
   }
-  }
+}
 
-    async function ensureAdminUser() {
-      const ADMIN_USER = process.env.ADMIN_USER;
-      const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH;
-      if (!ADMIN_USER || !ADMIN_PASS_HASH) return;
-      const existing = await query('SELECT id, password_hash, permissions FROM users WHERE username = $1', [ADMIN_USER]);
-      if (existing.rows.length === 0) {
-        try {
-          if (isLocal) {
-            await query('INSERT OR IGNORE INTO users (username, password_hash, role, active, permissions) VALUES ($1, $2, $3, $4, $5)', [ADMIN_USER, ADMIN_PASS_HASH, 'admin', true, JSON.stringify({ all: true })]);
-          } else {
-            await query('INSERT INTO users (username, password_hash, role, active, permissions) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (username) DO NOTHING', [ADMIN_USER, ADMIN_PASS_HASH, 'admin', true, JSON.stringify({ all: true })]);
-          }
-        } catch (err) {
-          if (!err.message.includes('UNIQUE constraint failed') && !err.message.includes('duplicate key')) {
-            throw err;
-          }
-        }
-        const after = await query('SELECT id, password_hash, permissions FROM users WHERE username = $1', [ADMIN_USER]);
-        if (after.rows.length === 0) {
-          return;
-        }
-        const needsUpdate = after.rows[0].password_hash !== ADMIN_PASS_HASH || after.rows[0].permissions !== JSON.stringify({ all: true });
-        if (needsUpdate) {
-          await query('UPDATE users SET password_hash = $1, permissions = $2, updated_at = CURRENT_TIMESTAMP WHERE username = $3', [ADMIN_PASS_HASH, JSON.stringify({ all: true }), ADMIN_USER]);
-        }
-      } else {
-        const needsUpdate = existing.rows[0].password_hash !== ADMIN_PASS_HASH || existing.rows[0].permissions !== JSON.stringify({ all: true });
-        if (needsUpdate) {
-          await query('UPDATE users SET password_hash = $1, permissions = $2, updated_at = CURRENT_TIMESTAMP WHERE username = $3', [ADMIN_PASS_HASH, JSON.stringify({ all: true }), ADMIN_USER]);
-        }
-      }
-    }
-
-  async function setTenant(tenantId) {
-=======
 async function setTenant(tenantId) {
->>>>>>> b091ff6922619009f758fa515ba900a6999ea8b7
     if (!tenantId || typeof tenantId !== 'string') return;
     if (isLocal) return;
     try {
@@ -1235,7 +1201,7 @@ async function setTenant(tenantId) {
   }
 
 async function runMigrationsOnly() {
-  // Postgres: solo correr migraciones versionadas, sin ALTER TABLE loops
+  // Postgres: migraciones versionadas + bootstrap idempotente de seguridad.
   if (runMigrations) {
     try {
       await runMigrations(query);
@@ -1244,7 +1210,12 @@ async function runMigrationsOnly() {
       logger.warn({ err: err.message }, 'No se pudieron aplicar migraciones versionadas');
     }
   }
-  // ensureAdminUser se llama desde server.js después de initDB
+  try {
+    await ensurePostgresBootstrap();
+  } catch (err) {
+    logger.warn({ err: err.message }, 'No se pudo aplicar bootstrap de Postgres');
+  }
+  // ensureAdminUser corre dentro de ensurePostgresBootstrap()
 }
 
 async function runSQLiteMigrations() {
