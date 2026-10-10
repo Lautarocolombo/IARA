@@ -45,7 +45,7 @@ const getPublicConfig = async (req, res) => {
     const googlePlaceId = settings.google_place_id || process.env.GOOGLE_PLACE_ID || '';
     const googleWriteReviewUrl = settings.google_write_review_url || process.env.GOOGLE_WRITE_REVIEW_URL || '';
 
-    const rawWhatsApp = settings.whatsapp || process.env.WHATSAPP || '+5493444634444';
+    const rawWhatsApp = settings.whatsapp || process.env.WHATSAPP || '+543444634444';
     const whatsappForWaMe = normalizeWhatsAppForWaMe(rawWhatsApp);
 
     const config = {

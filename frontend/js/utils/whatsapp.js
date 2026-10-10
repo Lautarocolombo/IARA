@@ -1,6 +1,6 @@
 'use strict';
 
-export const WA_PHONE = '5493444634444';
+export const WA_PHONE = '543444634444';
 
 export const MAX_URL_LENGTH = 1800;
 export const MAX_MESSAGE_LENGTH = 1600;
