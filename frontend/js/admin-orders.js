@@ -883,6 +883,10 @@ if (orderTotalDisplay) orderTotalDisplay.textContent = formatCurrency(order.tota
     await loadOrders();
     resetOrderDetail();
 
+    if (typeof window.initFormPersistence === 'function') {
+      window.initFormPersistence();
+    }
+
     if (typeof window.updatePendingOrdersBadge === 'function') {
       window.updatePendingOrdersBadge();
     }

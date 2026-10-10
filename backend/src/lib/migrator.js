@@ -8,6 +8,30 @@ async function ensureMigrationsTable(query) {
   await query('CREATE TABLE IF NOT EXISTS migrations (name TEXT PRIMARY KEY, applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)');
 }
 
+async function migrateFromPgMigrations(query, isLocalDb) {
+  try {
+    let pgMigrationsExists = false;
+    if (isLocalDb) {
+      const result = await query("SELECT COUNT(*) AS count FROM sqlite_master WHERE type='table' AND name='pgmigrations'");
+      pgMigrationsExists = result.rows[0].count > 0;
+    } else {
+      const result = await query("SELECT COUNT(*) AS count FROM information_schema.tables WHERE table_name = 'pgmigrations'");
+      pgMigrationsExists = result.rows[0].count > 0;
+    }
+
+    if (pgMigrationsExists) {
+      logger.info('Migrando registros de pgmigrations a migrations...');
+      const result = await query('SELECT name FROM pgmigrations');
+      for (const row of result.rows) {
+        await query('INSERT INTO migrations (name) VALUES ($1) ON CONFLICT (name) DO NOTHING', [row.name]);
+      }
+      logger.info({ count: result.rows.length }, 'Registros migrados de pgmigrations');
+    }
+  } catch (err) {
+    logger.warn({ err: err.message }, 'No se pudo migrar desde pgmigrations (puede no existir)');
+  }
+}
+
 async function getAppliedMigrations(query) {
   const result = await query('SELECT name FROM migrations');
   return new Set(result.rows.map(r => r.name));
@@ -20,7 +44,7 @@ async function getAppliedMigrations(query) {
  * - Marca como aplicadas las migraciones cuyos cambios ya están reflejados en el esquema
  *   (útil cuando las tablas se crearon manualmente o por un script legacy).
  */
-async function repairMigrationConflicts(query) {
+async function repairMigrationConflicts(query, isLocalDb) {
   try {
     // 1. Eliminar registros huérfanos de migraciones antiguas que pueden causar conflictos
     const orphanMigrations = ['001_add_order_token'];
@@ -33,10 +57,15 @@ async function repairMigrationConflicts(query) {
     }
 
     // 2. Marcar 001_init_schema como aplicada si la tabla orders ya existe pero no está registrada
-    const ordersExists = await query(
-      "SELECT COUNT(*) AS count FROM information_schema.tables WHERE table_name = 'orders'"
-    );
-    if (ordersExists.rows[0].count > 0) {
+    let ordersExists = false;
+    if (isLocalDb) {
+      const result = await query("SELECT COUNT(*) AS count FROM sqlite_master WHERE type='table' AND name='orders'");
+      ordersExists = result.rows[0].count > 0;
+    } else {
+      const result = await query("SELECT COUNT(*) AS count FROM information_schema.tables WHERE table_name = 'orders'");
+      ordersExists = result.rows[0].count > 0;
+    }
+    if (ordersExists) {
       const initSchemaApplied = await query(
         'SELECT COUNT(*) AS count FROM migrations WHERE name = $1',
         ['001_init_schema.sql']
@@ -87,13 +116,16 @@ async function repairMigrationConflicts(query) {
   }
 }
 
-async function runMigrations(query) {
+async function runMigrations(query, isLocalDb) {
   try {
     await ensureMigrationsTable(query);
 
+    // Migrar desde pgmigrations si existe (unificación de sistemas)
+    await migrateFromPgMigrations(query, isLocalDb);
+
     // Reparar conflictos de migraciones heredados antes de ejecutar las nuevas
     try {
-      await repairMigrationConflicts(query);
+      await repairMigrationConflicts(query, isLocalDb);
     } catch (err) {
       logger.warn({ err: err.message }, 'No se pudieron reparar conflictos de migraciones');
     }

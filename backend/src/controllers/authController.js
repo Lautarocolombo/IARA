@@ -44,13 +44,13 @@ const login = async (req, res) => {
         if (!JWT_SECRET) {
           return res.status(500).json({ error: 'JWT_SECRET no configurado en el servidor' });
         }
-        const token = jwt.sign({ role, user: u.username, permissions, tenant_id: u.tenant_id }, JWT_SECRET, { expiresIn: '15m' });
+        const token = jwt.sign({ role, user: u.username, permissions, tenant_id: u.tenant_id }, JWT_SECRET, { expiresIn: '30m' });
         const refreshToken = jwt.sign({ role, user: u.username, permissions, tenant_id: u.tenant_id }, JWT_SECRET, { expiresIn: '7d' });
         res.cookie('adminToken', token, {
           httpOnly: true,
           secure: cookieSecure,
           sameSite: cookieSameSite,
-          maxAge: 15 * 60 * 1000,
+          maxAge: 30 * 60 * 1000,
           path: '/'
         });
         res.cookie('refreshToken', refreshToken, {
@@ -86,13 +86,13 @@ const login = async (req, res) => {
         if (!JWT_SECRET) {
           return res.status(500).json({ error: 'JWT_SECRET no configurado en el servidor' });
         }
-        const token = jwt.sign({ role, user: jwtUser, permissions, tenant_id: dbCheck.rows[0]?.tenant_id || 'default' }, JWT_SECRET, { expiresIn: '15m' });
+        const token = jwt.sign({ role, user: jwtUser, permissions, tenant_id: dbCheck.rows[0]?.tenant_id || 'default' }, JWT_SECRET, { expiresIn: '30m' });
         const refreshToken = jwt.sign({ role, user: jwtUser, permissions, tenant_id: dbCheck.rows[0]?.tenant_id || 'default' }, JWT_SECRET, { expiresIn: '7d' });
         res.cookie('adminToken', token, {
           httpOnly: true,
           secure: cookieSecure,
           sameSite: cookieSameSite,
-          maxAge: 15 * 60 * 1000,
+          maxAge: 30 * 60 * 1000,
           path: '/'
         });
         res.cookie('refreshToken', refreshToken, {
@@ -132,12 +132,12 @@ const refresh = async (req, res) => {
     }
 
     const decoded = jwt.verify(refreshToken, JWT_SECRET);
-    const accessToken = jwt.sign({ role: decoded.role, user: decoded.user, permissions: decoded.permissions || {}, tenant_id: decoded.tenant_id }, JWT_SECRET, { expiresIn: '15m' });
+    const accessToken = jwt.sign({ role: decoded.role, user: decoded.user, permissions: decoded.permissions || {}, tenant_id: decoded.tenant_id }, JWT_SECRET, { expiresIn: '30m' });
     res.cookie('adminToken', accessToken, {
       httpOnly: true,
       secure: cookieSecure,
       sameSite: cookieSameSite,
-      maxAge: 15 * 60 * 1000,
+      maxAge: 30 * 60 * 1000,
       path: '/'
     });
     res.json({ token: accessToken });

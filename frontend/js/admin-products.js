@@ -929,6 +929,10 @@ var active = document.getElementById('prod_active');
     loadCategories();
     loadProducts();
 
+    if (typeof window.initFormPersistence === 'function') {
+      window.initFormPersistence();
+    }
+
     var createBtn = document.getElementById('createProductBtn');
     if (createBtn) {
       createBtn.addEventListener('click', function () {

@@ -133,6 +133,32 @@ async function doLogin() {
   }
 }
 
+/* ===== RESTAURAR FORMULARIOS Y AUTO-GUARDADO ===== */
+function initFormPersistence() {
+  // Restaurar formularios guardados
+  var forms = document.querySelectorAll('form[id]');
+  forms.forEach(function (form) {
+    restoreFormData(form.id);
+    
+    // Auto-guardar en cambios
+    var inputs = form.querySelectorAll('input, select, textarea');
+    inputs.forEach(function (el) {
+      if (el.type === 'file' || el.type === 'password') return;
+      var eventType = (el.type === 'checkbox' || el.type === 'radio') ? 'change' : 'input';
+      el.addEventListener(eventType, function () {
+        saveFormData(form.id);
+      });
+    });
+  });
+  
+  // Guardar al salir de la página
+  window.addEventListener('beforeunload', function () {
+    saveAllForms();
+  });
+}
+
+window.initFormPersistence = initFormPersistence;
+
 let showPassword = false;
 
 function togglePasswordVisibility() {
@@ -193,12 +219,19 @@ async function adminFetch(url, opts = {}, isRetry = false) {
       } catch (e) {
         console.warn('[adminFetch] Error refrescando token:', e);
       }
+      // Guardar datos de formularios antes de redirigir al login
+      if (typeof window.saveAllForms === 'function') {
+        window.saveAllForms();
+      }
       window.__setAdminToken('');
       currentUser = null;
       document.getElementById('loginOverlay')?.classList.remove('hidden');
       throw new Error('Sesión expirada. Iniciá sesión nuevamente.');
     }
     if (res.status === 401) {
+      if (typeof window.saveAllForms === 'function') {
+        window.saveAllForms();
+      }
       window.__setAdminToken('');
       currentUser = null;
       document.getElementById('loginOverlay')?.classList.remove('hidden');
@@ -365,6 +398,56 @@ window.setButtonState = setButtonState;
 window.saveToCloud = saveToCloud;
 window.showConfirmModal = showConfirmModal;
 window.hideConfirmModal = hideConfirmModal;
+
+/* ===== FORMULARIO: GUARDAR/RESTAURAR EN SESSIONSTORAGE ===== */
+function saveFormData(formId) {
+  var form = document.getElementById(formId);
+  if (!form) return;
+  var data = {};
+  var inputs = form.querySelectorAll('input, select, textarea');
+  inputs.forEach(function (el) {
+    if (el.type === 'checkbox' || el.type === 'radio') {
+      data[el.name || el.id] = el.checked;
+    } else if (el.type !== 'file' && el.type !== 'password') {
+      data[el.name || el.id] = el.value;
+    }
+  });
+  try {
+    sessionStorage.setItem('admin_form_' + formId, JSON.stringify(data));
+  } catch (e) { /* noop */ }
+}
+
+function restoreFormData(formId) {
+  var form = document.getElementById(formId);
+  if (!form) return;
+  var stored = sessionStorage.getItem('admin_form_' + formId);
+  if (!stored) return;
+  try {
+    var data = JSON.parse(stored);
+    Object.keys(data).forEach(function (key) {
+      var el = form.querySelector('[name="' + key + '"]') || document.getElementById(key);
+      if (el) {
+        if (el.type === 'checkbox' || el.type === 'radio') {
+          el.checked = data[key];
+        } else {
+          el.value = data[key];
+        }
+      }
+    });
+    sessionStorage.removeItem('admin_form_' + formId);
+  } catch (e) { /* noop */ }
+}
+
+function saveAllForms() {
+  var forms = document.querySelectorAll('form[id]');
+  forms.forEach(function (form) {
+    saveFormData(form.id);
+  });
+}
+
+window.saveFormData = saveFormData;
+window.restoreFormData = restoreFormData;
+window.saveAllForms = saveAllForms;
 
 document.addEventListener('DOMContentLoaded', () => {
   const existingToken = typeof sessionStorage !== 'undefined' && sessionStorage.getItem('adminToken');

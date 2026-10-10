@@ -157,7 +157,7 @@ app.use(require('compression')({
   }
 }));
 
-const envOrigins = (process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || '').split(',').filter(Boolean);
+const envOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean);
 const defaultOrigins = [
   'https://artesaniagualeguay.com',
   'https://www.artesaniagualeguay.com',

@@ -40,9 +40,11 @@ function isBlobUrl(url) {
 
 async function uploadProofToBlob(file) {
   const mod = getBlobModule();
+  const isProd = process.env.NODE_ENV === 'production';
   if (!mod || !isBlobConfigured()) {
     const err = new Error('BLOB_READ_WRITE_TOKEN no configurado o inválido. Configurá el token en Vercel y agregalo como variable de entorno en Render para subir comprobantes a Vercel Blob.');
     err.code = 'BLOB_NOT_CONFIGURED';
+    err.status = 503;
     throw err;
   }
   try {
@@ -60,14 +62,27 @@ async function uploadProofToBlob(file) {
 
     return { url: blob.url, filename: blobName, blobName, isCloudinary: false, isBlob: true };
   } catch (err) {
-    logger.error({ err: err.message, stack: err.stack, code: err.code }, 'Error subiendo comprobante a Vercel Blob - fallback a storage local');
-    return null;
+    logger.error({ err: err.message, stack: err.stack, code: err.code }, 'Error subiendo comprobante a Vercel Blob');
+    if (isProd) {
+      const error = new Error('Error subiendo comprobante a Vercel Blob');
+      error.code = 'BLOB_UPLOAD_FAILED';
+      error.status = 503;
+      throw error;
+    }
+    throw err;
   }
 }
 
 async function uploadToBlob(file) {
   const mod = getBlobModule();
+  const isProd = process.env.NODE_ENV === 'production';
   if (!mod || !isBlobConfigured()) {
+    if (isProd) {
+      const err = new Error('BLOB_READ_WRITE_TOKEN no configurado en producción');
+      err.code = 'BLOB_NOT_CONFIGURED';
+      err.status = 503;
+      throw err;
+    }
     return null;
   }
   let tmpDir = null;
@@ -119,8 +134,14 @@ async function uploadToBlob(file) {
       : err.code === 'ENOTFOUND' || err.code === 'ECONNREFUSED'
         ? 'Error de red conectando a Vercel Blob. Verificá la conectividad desde Render.'
         : 'Error desconocido. Verificá los logs para más detalles.';
-    logger.error({ err: err.message, stack: err.stack, code: err.code, hint }, 'Error subiendo a Vercel Blob - fallback a storage local');
-    return null;
+    logger.error({ err: err.message, stack: err.stack, code: err.code, hint }, 'Error subiendo a Vercel Blob');
+    if (isProd) {
+      const error = new Error('Error subiendo imagen a Vercel Blob');
+      error.code = 'BLOB_UPLOAD_FAILED';
+      error.status = 503;
+      throw error;
+    }
+    throw err;
   } finally {
     if (tmpDir && fs.existsSync(tmpDir)) {
       try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch (e) { /* noop */ }

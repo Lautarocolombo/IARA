@@ -7,7 +7,7 @@ const { safeJsonParse } = require('../lib/parser');
 const path = require('path');
 const fs = require('fs');
 const PDFDocument = require('pdfkit');
-const { uploadProofToBlob, processFile } = require('../lib/upload');
+const { uploadProofToBlob } = require('../lib/upload');
 const { sendOrderConfirmationEmail } = require('../lib/email');
 const { logInventoryMovement } = require('../controllers/inventoryController');
 
@@ -671,21 +671,11 @@ const uploadPublicReceipt = async (req, res) => {
         try { fs.rmSync(req.file.path, { force: true, maxRetries: 3, retryDelay: 50 }); } catch (e) { /* noop */ }
       }
     } catch (blobErr) {
-      if (blobErr.code === 'BLOB_NOT_CONFIGURED') {
-        return res.status(503).json({ error: blobErr.message });
+      if (blobErr.code === 'BLOB_NOT_CONFIGURED' || blobErr.code === 'BLOB_UPLOAD_FAILED') {
+        return res.status(blobErr.status || 503).json({ error: blobErr.message });
       }
-      logger.warn({ err: blobErr.message }, 'Error subiendo a Vercel Blob, intentando fallback local');
-    }
-
-    if (!proofUrl) {
-      if (mime.startsWith('image/')) {
-        const processed = await processFile(req.file);
-        proofUrl = processed.url;
-      } else {
-        const buffer = fs.readFileSync(req.file.path);
-        proofUrl = `data:${mime};base64,${buffer.toString('base64')}`;
-      }
-      try { fs.rmSync(req.file.path, { force: true, maxRetries: 3, retryDelay: 50 }); } catch (e) { /* noop */ }
+      logger.error({ err: blobErr.message, code: blobErr.code }, 'Error subiendo comprobante a Vercel Blob');
+      return res.status(500).json({ error: 'Error subiendo el comprobante' });
     }
 
     const amount = Number(order.total || 0);
