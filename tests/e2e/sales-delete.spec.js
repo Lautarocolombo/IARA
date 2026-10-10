@@ -22,7 +22,7 @@ test.describe('Admin Sales Delete Buttons', () => {
     const modal = page.locator('#confirmModalOverlay');
     await expect(modal).toHaveClass(/active/);
     const message = await page.locator('#confirmModalMessage').textContent();
-    expect(message).toContain('Eliminar');
+    expect(message).toContain('Archivar');
   });
 
   test('clear history button opens confirm modal', async ({ page }) => {

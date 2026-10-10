@@ -261,7 +261,7 @@ const createOrder = async (req, res) => {
         }
         const currentStock = stockResult.rows[0].stock;
         if (currentStock < item.quantity) {
-          throw new Error(`Stock insuficiente para el producto ${item.id}. Disponible: ${currentStock}, solicitado: ${item.quantity}`);
+          throw new Error(`Stock insuficiente para el producto ${item.id}. Disponible: ${currentStock ?? 0}, solicitado: ${item.quantity}`);
         }
         const newStock = currentStock - Number(item.quantity);
         await query(
