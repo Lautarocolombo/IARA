@@ -530,8 +530,8 @@ describe('ordersController', () => {
 
       await deleteOrder(req, res);
 
-      expect(res.json).toHaveBeenCalledWith({ ok: true });
-      expect(query).toHaveBeenNthCalledWith(3, 'DELETE FROM orders WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [1], expect.anything());
+      expect(res.json).toHaveBeenCalledWith({ ok: true, soft: true });
+      expect(query).toHaveBeenNthCalledWith(3, 'UPDATE orders SET deleted_at = NOW() WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [1], expect.anything());
     });
   });
 
@@ -571,7 +571,7 @@ describe('ordersController', () => {
         if (sql.indexOf('INSERT INTO activity_log') === 0) {
           return Promise.resolve({ rows: [] });
         }
-        if (sql.indexOf('DELETE FROM orders') === 0) {
+        if (sql.indexOf('UPDATE orders SET deleted_at') === 0) {
           return Promise.resolve({ rowCount: 2 });
         }
         return Promise.resolve({ rows: [], rowCount: 0 });
@@ -579,8 +579,8 @@ describe('ordersController', () => {
 
       await batchDeleteOrders(req, res);
 
-      expect(res.json).toHaveBeenCalledWith({ ok: true, deleted: 2 });
-      expect(query).toHaveBeenCalledWith('DELETE FROM orders WHERE status = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', ['cancelled'], expect.anything());
+      expect(res.json).toHaveBeenCalledWith({ ok: true, deleted: 2, soft: true });
+      expect(query).toHaveBeenCalledWith('UPDATE orders SET deleted_at = NOW() WHERE status = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') AND deleted_at IS NULL', ['cancelled'], expect.anything());
     });
 
     test('maneja error de base de datos', async () => {

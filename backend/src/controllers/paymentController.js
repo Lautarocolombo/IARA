@@ -19,7 +19,7 @@ async function confirmTransferPayment(req, res) {
     }
 
     const orderResult = await query(
-      'SELECT id, status, total FROM orders WHERE id = $1',
+      'SELECT id, status, total FROM orders WHERE id = $1 AND deleted_at IS NULL',
       [Number(orderId)]
     );
 

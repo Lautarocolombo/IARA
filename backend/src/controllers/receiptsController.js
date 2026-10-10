@@ -9,7 +9,7 @@ const { uploadProofToBlob } = require('../lib/upload');
 const generateReceiptPDF = async (req, res) => {
   const orderId = Number(req.params.id);
   try {
-    const result = await query('SELECT * FROM orders WHERE id = $1', [orderId]);
+    const result = await query('SELECT * FROM orders WHERE id = $1 AND deleted_at IS NULL', [orderId]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
     
     const order = result.rows[0];
@@ -84,7 +84,7 @@ const generateReceiptPDF = async (req, res) => {
 const sendReceiptWhatsApp = async (req, res) => {
   const orderId = Number(req.params.id);
   try {
-    const result = await query('SELECT * FROM orders WHERE id = $1', [orderId]);
+    const result = await query('SELECT * FROM orders WHERE id = $1 AND deleted_at IS NULL', [orderId]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
     
     const order = result.rows[0];
@@ -125,7 +125,7 @@ const uploadReceipt = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ error: 'No se recibió ninguna imagen' });
     }
-    const result = await query('SELECT * FROM orders WHERE id = $1', [orderId]);
+    const result = await query('SELECT * FROM orders WHERE id = $1 AND deleted_at IS NULL', [orderId]);
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Pedido no encontrado' });
     }

@@ -53,7 +53,7 @@ async function uploadPaymentProof(req, res) {
       return res.status(400).json({ error: 'ID de pedido inválido' });
     }
 
-    const orderResult = await query('SELECT * FROM orders WHERE id = $1', [orderIdNum]);
+    const orderResult = await query('SELECT * FROM orders WHERE id = $1 AND deleted_at IS NULL', [orderIdNum]);
     if (orderResult.rows.length === 0) {
       return res.status(404).json({ error: 'Pedido no encontrado' });
     }

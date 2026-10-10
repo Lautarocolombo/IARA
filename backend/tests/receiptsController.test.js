@@ -220,7 +220,7 @@ describe('receiptsController', () => {
 
       await sendReceiptWhatsApp(req, res);
 
-      expect(query.mock.calls[0]).toEqual(['SELECT * FROM orders WHERE id = $1', [1]]);
+      expect(query.mock.calls[0]).toEqual(['SELECT * FROM orders WHERE id = $1 AND deleted_at IS NULL', [1]]);
       expect(query.mock.calls.length).toBeGreaterThanOrEqual(1);
 
       expect(res.json).toHaveBeenCalledWith(
