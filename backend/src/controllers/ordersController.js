@@ -39,8 +39,8 @@ const getOrders = async (req, res) => {
       where += ` AND (customer->>'name' ILIKE $${params.length} OR CAST(id AS TEXT) LIKE $${params.length})`;
     }
 
-    const pageNum = Number(page) || 1;
-    const limitNum = Number(limit) || 30;
+    const pageNum = Math.max(Number(page) || 1, 1);
+    const limitNum = Math.min(Math.max(Number(limit) || 30, 1), 100);
     const offset = (pageNum - 1) * limitNum;
 
     const countResult = await query(`SELECT COUNT(*) as total FROM orders ${where}`, params);

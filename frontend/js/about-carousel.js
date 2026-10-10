@@ -13,7 +13,7 @@
   var currentGroupId = null;
 
   function loadCarouselData() {
-    return fetchWithRetry(CONFIG.API.BASE + '/api/v1/carousel/public', {}, 2, 1000)
+    return fetchWithRetry(CONFIG.API.BASE + '/api/carousel/public', {}, 3, 1000, 15000, false)
       .then(function (res) {
         if (!res || !res.ok) throw new Error('No se pudo cargar carousel');
         return res.json();
@@ -25,9 +25,7 @@
       .catch(function () {
         carouselData = {};
         if (aboutTextEl && !aboutTextEl.innerHTML.trim()) {
-          var fallback = '<p>En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.</p>';
-          var sanitized = typeof window.sanitizeAboutText === 'function' ? window.sanitizeAboutText(fallback) : fallback;
-          aboutTextEl.innerHTML = sanitized;
+          aboutTextEl.innerHTML = '<p>En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.</p>';
         }
       });
   }
@@ -38,22 +36,30 @@
     var slot = carouselData[slotNum];
     var groupId = slot && slot.about_group ? slot.about_group : slotNum;
 
+    // También buscar en window.__aboutImages (cargado desde home-init con prioridad local)
+    var apiGroup = window.__aboutImages && window.__aboutImages['about_group_' + slotNum];
+    if (apiGroup) groupId = apiGroup;
+
     if (groupId === currentGroupId) return;
     currentGroupId = groupId;
 
     var caption = '';
+    // 1. Buscar en carouselData (API)
     for (var key in carouselData) {
       if (carouselData[key] && carouselData[key].about_group === groupId) {
         caption = carouselData[key].caption || '';
         break;
       }
     }
+    // 2. Fallback a window.__aboutImages (home-init)
+    if (!caption && window.__aboutImages) {
+      caption = window.__aboutImages['about_caption_' + slotNum] || '';
+    }
 
     if (caption) {
       aboutTextEl.style.opacity = '0';
       setTimeout(function () {
-        var sanitized = typeof window.sanitizeAboutText === 'function' ? window.sanitizeAboutText(caption) : caption;
-        aboutTextEl.innerHTML = '<p>' + sanitized + '</p>';
+        aboutTextEl.innerHTML = '<p>' + caption + '</p>';
         aboutTextEl.style.opacity = '1';
       }, 200);
     } else {
@@ -236,4 +242,3 @@
     build();
   }
 })();
-

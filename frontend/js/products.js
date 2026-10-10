@@ -20,8 +20,9 @@ function setProducts(newProducts) {
 
 async function fetchProducts(filters = {}) {
   const grid = document.getElementById('productsGrid');
+  let loadFailed = false;
   if (grid) {
-    grid.innerHTML = '<div class="loading-skeleton-grid" style="grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.5rem;"><div class="skeleton-card" style="background:var(--white);border-radius:16px;height:320px;animation:skeleton-pulse 1.5s infinite;"></div><div class="skeleton-card" style="background:var(--white);border-radius:16px;height:320px;animation:skeleton-pulse 1.5s infinite 0.2s;"></div><div class="skeleton-card" style="background:var(--white);border-radius:16px;height:320px;animation:skeleton-pulse 1.5s infinite 0.4s;"></div><div class="skeleton-card" style="background:var(--white);border-radius:16px;height:320px;animation:skeleton-pulse 1.5s infinite 0.6s;"></div></div>';
+    grid.innerHTML = '<div class="loading-skeleton-grid" style="grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.5rem;" aria-hidden="true"><div class="skeleton-card" style="background:var(--white);border-radius:16px;height:320px;animation:skeleton-pulse 1.5s infinite;"></div><div class="skeleton-card" style="background:var(--white);border-radius:16px;height:320px;animation:skeleton-pulse 1.5s infinite 0.2s;"></div><div class="skeleton-card" style="background:var(--white);border-radius:16px;height:320px;animation:skeleton-pulse 1.5s infinite 0.4s;"></div><div class="skeleton-card" style="background:var(--white);border-radius:16px;height:320px;animation:skeleton-pulse 1.5s infinite 0.6s;"></div></div>';
   }
   try {
     const params = new URLSearchParams();
@@ -29,26 +30,30 @@ async function fetchProducts(filters = {}) {
     if (filters.minPrice !== undefined && filters.minPrice !== '') params.set('minPrice', filters.minPrice);
     if (filters.maxPrice !== undefined && filters.maxPrice !== '') params.set('maxPrice', filters.maxPrice);
     const queryString = params.toString();
-    const url = `${CONFIG.API.BASE}/api/v1/products${queryString ? `?${queryString}` : ''}`;
-    const res = await window.fetchWithRetry(url, {}, 3, 1500, 10000);
+    const url = `${CONFIG.API.BASE}/api/products${queryString ? `?${queryString}` : ''}`;
+    const res = await window.fetchWithRetry(url, {}, 3, 1000, 15000, false);
     if (res) {
       products = await res.json();
-      renderProducts(getProducts());
     } else {
-      // API falló completamente (incluso después de reintentos)
-      products = defaultProducts;
-      if (grid) {
-        grid.innerHTML = '<div class="error-state" style="grid-column:1/-1;text-align:center;padding:3rem;"><h3>No se pudieron cargar los productos</h3><p>El servidor puede estar iniciando. Esperá unos segundos e intentá de nuevo.</p><button class="btn btn-primary" onclick="fetchProducts()" style="margin-top:1rem;">Reintentar</button></div>';
-      }
+      loadFailed = true;
     }
   } catch (err) {
     console.error('Error cargando productos:', err);
     products = defaultProducts;
-    if (grid) {
-      grid.innerHTML = '<div class="error-state" style="grid-column:1/-1;text-align:center;padding:3rem;"><h3>Error al cargar productos</h3><p>No se pudieron cargar los productos. Intentá de nuevo más tarde.</p><button class="btn btn-primary" onclick="fetchProducts()" style="margin-top:1rem;">Reintentar</button></div>';
-    }
+    loadFailed = true;
+  }
+  if (loadFailed && grid) {
+    grid.innerHTML = '<div class="error-state" style="grid-column:1/-1;text-align:center;padding:3rem;"><h3>No pudimos cargar el catálogo</h3><p>El servidor puede estar iniciando (tarda ~30 segundos la primera vez). Intentá de nuevo.</p><button type="button" class="btn btn-primary" onclick="window.retryLoadProducts()" style="margin-top:1rem;">Reintentar</button></div>';
+    grid.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
   }
 }
+
+async function retryLoadProducts() {
+  await fetchProducts();
+  renderProducts(getProducts());
+  if (typeof renderFeaturedProducts === 'function') renderFeaturedProducts();
+}
+if (typeof window !== 'undefined') window.retryLoadProducts = retryLoadProducts;
 
 async function searchProducts(query, filters = {}) {
   const trimmed = (query || '').trim();
@@ -62,15 +67,10 @@ async function searchProducts(query, filters = {}) {
     if (filters.category && filters.category !== 'all') params.set('category', filters.category);
     if (filters.minPrice !== undefined && filters.minPrice !== '') params.set('minPrice', filters.minPrice);
     if (filters.maxPrice !== undefined && filters.maxPrice !== '') params.set('maxPrice', filters.maxPrice);
-    const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/v1/products/search?${params.toString()}`, {}, 3, 1500, 10000);
+    const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/search?${params.toString()}`, {}, 3, 1000, 15000, false);
     if (res) {
       products = await res.json();
       renderProducts(getProducts());
-    } else {
-      showToast('', 'No se pudo buscar productos. El servidor puede estar iniciando.', 'error', {
-        onRetry: () => searchProducts(query, filters),
-        duration: 0
-      });
     }
   } catch (err) {
     console.error('Error buscando productos:', err);
@@ -89,7 +89,7 @@ async function applyFilters(filters = {}) {
       maxPrice: filters.maxPrice
     });
   }
-  // renderProducts se llama dentro de fetchProducts
+  renderProducts(getProducts());
 }
 
 function getProducts() {
@@ -143,12 +143,18 @@ return `
 }
 
 function observeRevealedCards(grid) {
-  if (!window.revealObserver) return;
-  grid.querySelectorAll('.reveal').forEach(el => {
-    if (!el.classList.contains('visible')) {
-      window.revealObserver.observe(el);
-    }
+  const cards = grid.querySelectorAll('.reveal:not(.visible)');
+  if (!window.revealObserver) {
+    cards.forEach(el => el.classList.add('visible'));
+    return;
+  }
+  cards.forEach(el => {
+    window.revealObserver.observe(el);
   });
+  // Fallback: si el observer no dispara, las cards igual se ven.
+  setTimeout(() => {
+    grid.querySelectorAll('.reveal:not(.visible)').forEach(el => el.classList.add('visible'));
+  }, 1500);
 }
 
 function renderProducts(productsToRender) {
@@ -168,7 +174,7 @@ function renderFeaturedProducts() {
   const grid = document.getElementById('featuredGrid');
   if (!grid) return;
   if (!products.length) {
-    grid.innerHTML = '<div class="loading-skeleton-grid" style="grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.5rem;"><div class="skeleton-card" style="background:var(--white);border-radius:16px;height:320px;animation:skeleton-pulse 1.5s infinite;"></div><div class="skeleton-card" style="background:var(--white);border-radius:16px;height:320px;animation:skeleton-pulse 1.5s infinite 0.2s;"></div><div class="skeleton-card" style="background:var(--white);border-radius:16px;height:320px;animation:skeleton-pulse 1.5s infinite 0.4s;"></div><div class="skeleton-card" style="background:var(--white);border-radius:16px;height:320px;animation:skeleton-pulse 1.5s infinite 0.6s;"></div></div>';
+    grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;text-align:center;padding:2rem;"><p>Nuestras piezas destacadas están en camino. Explorá el catálogo completo arriba.</p></div>';
     return;
   }
   const featured = getFeaturedProducts();

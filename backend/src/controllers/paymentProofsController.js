@@ -21,8 +21,8 @@ async function getAdminPaymentProofs(req, res) {
     const countResult = await query(`SELECT COUNT(*) as total FROM payment_proofs ${where}`, params);
     const total = Number(countResult.rows[0]?.total || 0);
 
-    const pageNum = Number(page) || 1;
-    const limitNum = Number(limit) || 15;
+    const pageNum = Math.max(Number(page) || 1, 1);
+    const limitNum = Math.min(Math.max(Number(limit) || 15, 1), 50);
     const offset = (pageNum - 1) * limitNum;
 
     params.push(limitNum, offset);
@@ -265,8 +265,8 @@ async function getPaymentStats(req, res) {
 async function getAdminActivityLog(req, res) {
   try {
     const { page, limit } = req.query;
-    const pageNum = Number(page) || 1;
-    const limitNum = Number(limit) || 50;
+    const pageNum = Math.max(Number(page) || 1, 1);
+    const limitNum = Math.min(Math.max(Number(limit) || 50, 1), 100);
     const offset = (pageNum - 1) * limitNum;
 
     const countResult = await query('SELECT COUNT(*) as total FROM activity_log WHERE entity_type = $1 OR details LIKE $2', ['payment_proof', '%Pedido%']);

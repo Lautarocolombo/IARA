@@ -33,8 +33,9 @@ async function logInventoryMovement(productId, type, quantity, previousStock, ne
 const getInventoryMovements = async (req, res) => {
   try {
     const productId = req.query.productId ? Number(req.query.productId) : null;
-    const limit = Number(req.query.limit) || 100;
-    const offset = Number(req.query.offset) || 0;
+    // Tope 1..100 (antes sin tope: ?limit=999999 traía todo el historial).
+    const limit = Math.min(Math.max(Number(req.query.limit) || 100, 1), 100);
+    const offset = Math.max(Number(req.query.offset) || 0, 0);
 
     let where = '';
     const params = [];

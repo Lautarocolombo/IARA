@@ -30,7 +30,7 @@ describe('historyController clearHistory', () => {
   });
 
   test('elimina historial correctamente', async () => {
-    const req = { user: { user: 'admin', tenant_id: 'default' }, ip: '', headers: {} };
+    const req = { user: { user: 'admin', tenant_id: 'default' }, ip: '', headers: {}, body: { confirm: 'ELIMINAR' } };
     const res = {
       status: jest.fn(() => res),
       json: jest.fn()
@@ -49,8 +49,21 @@ describe('historyController clearHistory', () => {
     );
   });
 
+  test('rechaza sin confirmación explícita', async () => {
+    const req = { user: { user: 'admin', tenant_id: 'default' }, ip: '', headers: {}, body: {} };
+    const res = {
+      status: jest.fn(() => res),
+      json: jest.fn()
+    };
+
+    await clearHistory(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(db.transaction).not.toHaveBeenCalled();
+  });
+
   test('maneja error de base de datos', async () => {
-    const req = { user: { user: 'admin', tenant_id: 'default' }, ip: '', headers: {} };
+    const req = { user: { user: 'admin', tenant_id: 'default' }, ip: '', headers: {}, body: { confirm: 'ELIMINAR' } };
     const res = {
       status: jest.fn(() => res),
       json: jest.fn()

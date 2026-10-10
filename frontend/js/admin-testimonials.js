@@ -1,4 +1,4 @@
-/* ==================== ADMIN TESTIMONIALS.JS ==================== */
+﻿/* ==================== ADMIN TESTIMONIALS.JS ==================== */
 /* CRUD + reorden drag&drop + contenido de sección + preview en vivo */
 
 (function () {
@@ -11,64 +11,25 @@
   var pendingPhotoFile = null;
   var sectionContent = { title: '', subtitle: '' };
 
-  /* ===== UTILIDADES DE RENDER SEGURO (UTF-8 SAFE) ===== */
-
   function escapeHtml(str) {
     if (str == null) return '';
-    var s = String(str);
-    s = s.replace(/&/g, '&');
-    s = s.replace(/</g, '<');
-    s = s.replace(/>/g, '>');
-    s = s.replace(/"/g, '"');
-    s = s.replace(/'/g, '&#39;');
-    return s;
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
   function escapeAttr(str) {
     return escapeHtml(str);
   }
 
-  /** Devuelve inicial del nombre (primera letra no espacio) en mayúscula */
-  function getInitial(name) {
-    if (!name) return '?';
-    var trimmed = String(name).trim();
-    if (!trimmed) return '?';
-    return trimmed.charAt(0).toUpperCase();
-  }
-
-  /** Genera estrellas de rating usando escapes Unicode (evita corrupción de encoding) */
-  function renderStars(rating, maxStars) {
-    maxStars = maxStars || 5;
-    var r = Number(rating) || 0;
-    var html = '';
-    for (var i = 0; i < maxStars; i++) {
-      html += i < r ? '\u2605' : '\u2606'; // ? ?
-    }
-    return html;
-  }
-
-  /** Genera avatar: usa emoji si existe en dato, si no inicial en círculo rosa */
-  function renderAvatar(t) {
-    // Si el testimonio tiene avatar (emoji) en BD, usarlo
-    if (t.avatar && typeof t.avatar === 'string' && t.avatar.length <= 4) {
-      // Heurstica: si parece emoji (1-2 codepoints), renderizarlo
-      var av = t.avatar.trim();
-      if (av && av !== '?' && av !== '??') {
-        return '<div class="testimonial-avatar">' + escapeHtml(av) + '</div>';
-      }
-    }
-    // Fallback: inicial del nombre en círculo rosa
-    return '<div class="testimonial-avatar" style="background:var(--blush);color:var(--rose-dark);font-weight:700;font-size:1rem;display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;border:1px solid var(--rose-light);">' + escapeHtml(getInitial(t.name)) + '</div>';
-  }
-
-  /** Placeholder para foto vacía: guion neutro */
-  var PHOTO_EMPTY = '<span style="color:var(--text-muted);font-size:1.2rem;"></span>';
-
-  /* ===== CONTENIDO DE SECCIN ===== */
+  /* ===== CONTENIDO DE SECCIÓN ===== */
 
   async function loadSectionContent() {
     try {
-      var res = await window.adminFetch('/api/v1/section-content/testimonials', { method: 'GET' });
+      var res = await window.adminFetch('/api/section-content/testimonials', { method: 'GET' });
       if (!res || !res.ok) throw new Error('Error cargando contenido de sección');
       sectionContent = await res.json();
       var titleEl = document.getElementById('testimonialsSectionTitle');
@@ -102,7 +63,7 @@
     if (statusEl) { statusEl.textContent = 'Guardando...'; statusEl.style.color = ''; }
 
     try {
-      var res = await window.adminFetch('/api/v1/admin/section-content/testimonials', {
+      var res = await window.adminFetch('/api/admin/section-content/testimonials', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: title, subtitle: subtitle })
@@ -127,13 +88,13 @@
 
   async function loadTestimonials() {
     try {
-      var res = await window.adminFetch('/api/v1/admin/testimonials', { method: 'GET' });
+      var res = await window.adminFetch('/api/admin/testimonials', { method: 'GET' });
       if (!res || !res.ok) throw new Error('Error cargando testimonios');
       testimonials = await res.json();
       renderTestimonials();
     } catch (err) {
       console.error('[Testimonials] Error cargando:', err);
-      window.showToast('\u274C', 'No se pudieron cargar los testimonios.', 'error');
+      window.showToast('❌', 'No se pudieron cargar los testimonios.', 'error');
     }
   }
 
@@ -152,13 +113,16 @@
     if (empty) empty.style.display = 'none';
 
     tbody.innerHTML = testimonials.map(function (t) {
-      var stars = renderStars(t.rating);
+      var stars = '';
+      for (var i = 0; i < 5; i++) {
+        stars += i < Number(t.rating || 0) ? '⭐' : '☆';
+      }
       var commentText = escapeHtml(t.comment || '');
       var photoCell = t.image
-        ? '<img src="' + escapeAttr(t.image) + '" alt="' + escapeAttr(t.name) + '" class="testimonial-thumb" onerror="this.style.display=\'none\'" />'
-        : PHOTO_EMPTY;
+        ? '<img src="' + escapeAttr(t.image) + '" alt="' + escapeAttr(t.name) + '" class="testimonial-thumb" loading="lazy" decoding="async" onerror="this.style.display=\'none\'" />'
+        : '<span style="color:var(--text-muted);">—</span>';
       return '<tr data-id="' + t.id + '" draggable="true" class="testimonial-row">' +
-        '<td class="text-center" style="cursor:grab;user-select:none;">' + renderAvatar(t) + '</td>' +
+        '<td class="text-center" style="cursor:grab;user-select:none;">↕</td>' +
         '<td>' + escapeHtml(t.name || '') + '</td>' +
         '<td>' + escapeHtml(t.role || '') + '</td>' +
         '<td title="' + commentText + '">' + commentText + '</td>' +
@@ -223,7 +187,7 @@
       var rowsAfter = Array.from(tbody.querySelectorAll('.testimonial-row')).map(function (el) { return Number(el.dataset.id); });
       var orderPayload = rowsAfter.map(function (id, idx) { return { id: id, orden: idx }; });
       try {
-        var res = await window.adminFetch('/api/v1/admin/testimonials/reorder', {
+        var res = await window.adminFetch('/api/admin/testimonials/reorder', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ orden: orderPayload })
@@ -233,10 +197,10 @@
           throw new Error(errData.error || 'Error al reordenar');
         }
       await loadTestimonials();
-      window.showToast('\u2705', 'Orden actualizado', 'success');
+      window.showToast('✅', 'Orden actualizado', 'success');
       } catch (err) {
       await loadTestimonials();
-      window.showToast('\u274C', err.message || 'Error al reordenar, se restauró el orden', 'error');
+      window.showToast('❌', err.message || 'Error al reordenar, se restauró el orden', 'error');
       }
     });
 
@@ -281,15 +245,15 @@
     }
     previewRow.style.display = 'block';
 
-    var stars = renderStars(rating);
-
-    // Objeto temporal para renderAvatar
-    var previewTestimonial = { name: name, avatar: '' };
+    var stars = '';
+    for (var i = 0; i < 5; i++) {
+      stars += i < rating ? '⭐' : '☆';
+    }
 
     container.innerHTML =
       '<div class="testimonial-card reveal" style="max-width:100%;">' +
         '<div class="testimonial-header">' +
-          renderAvatar(previewTestimonial) +
+          '<div class="testimonial-avatar">😊</div>' +
           '<div>' +
             '<div class="testimonial-name">' + escapeHtml(name || 'Nombre') + '</div>' +
             (role ? '<div style="font-size:0.8rem;color:var(--text-muted);">' + escapeHtml(role) + '</div>' : '') +
@@ -306,9 +270,9 @@
     var uploadBtn = document.getElementById('testimonialUploadPhotoBtn');
     if (!preview) return;
     if (!file && !imageUrl) {
-      preview.innerHTML = '<div class="testimonial-photo-empty">' + PHOTO_EMPTY + '</div>';
+      preview.innerHTML = '<div class="testimonial-photo-empty">😊</div>';
       if (removeBtn) removeBtn.classList.add('hidden');
-      if (uploadBtn) uploadBtn.textContent = '\uD83D\uDCF7 Subir foto'; // ??
+      if (uploadBtn) uploadBtn.textContent = '📷 Subir foto';
       return;
     }
     var src = imageUrl || URL.createObjectURL(file);
@@ -320,9 +284,9 @@
     img.style.borderRadius = '8px';
     img.style.objectFit = 'cover';
     img.onerror = function() {
-      preview.innerHTML = '<div class="testimonial-photo-empty">' + PHOTO_EMPTY + '</div>';
+      preview.innerHTML = '<div class="testimonial-photo-empty">😊</div>';
       if (removeBtn) removeBtn.classList.add('hidden');
-      if (uploadBtn) uploadBtn.textContent = '\uD83D\uDCF7 Subir foto';
+      if (uploadBtn) uploadBtn.textContent = '📷 Subir foto';
     };
     if (file) {
       img.onload = function () { URL.revokeObjectURL(src); };
@@ -330,7 +294,7 @@
     preview.innerHTML = '';
     preview.appendChild(img);
     if (removeBtn) removeBtn.classList.remove('hidden');
-    if (uploadBtn) uploadBtn.textContent = '\uD83D\uDCF7 Cambiar foto';
+    if (uploadBtn) uploadBtn.textContent = '🔄 Cambiar foto';
   }
 
   window.removeTestimonialPhoto = function() {
@@ -399,27 +363,27 @@
   window.deleteTestimonial = async function (id) {
     window.showConfirmModal(
       'Eliminar testimonio',
-      '¿Estás seguro de eliminar este testimonio? Esta accin no se puede deshacer.',
+      '¿Estás seguro de eliminar este testimonio? Esta acción no se puede deshacer.',
       function () { doDeleteTestimonial(id); }
     );
   };
 
   async function doDeleteTestimonial(id) {
     try {
-      var res = await window.adminFetch('/api/v1/admin/testimonials/' + id, { method: 'DELETE' });
+      var res = await window.adminFetch('/api/admin/testimonials/' + id, { method: 'DELETE' });
       if (!res || !res.ok) throw new Error('Error eliminando');
       testimonials = testimonials.filter(function (t) { return t.id !== id; });
       if (editingId === id) resetTestimonialForm();
       renderTestimonials();
-      window.showToast('\u2705', 'Testimonio eliminado', 'success');
+      window.showToast('✅', 'Testimonio eliminado', 'success');
     } catch (err) {
-      window.showToast('\u274C', err.message || 'Error al eliminar testimonio', 'error');
+      window.showToast('❌', err.message || 'Error al eliminar testimonio', 'error');
     }
   }
 
   window.updateTestimonialActive = async function (id, active) {
     try {
-      var res = await window.adminFetch('/api/v1/admin/testimonials/' + id + '/active', {
+      var res = await window.adminFetch('/api/admin/testimonials/' + id + '/active', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ active: active })
@@ -428,7 +392,7 @@
       var t = testimonials.find(function (x) { return x.id === id; });
       if (t) t.active = active;
     } catch (err) {
-      window.showToast('\u274C', err.message || 'Error al actualizar estado', 'error');
+      window.showToast('❌', err.message || 'Error al actualizar estado', 'error');
       renderTestimonials();
     }
   };
@@ -454,7 +418,7 @@
     }
 
     var isEdit = !!editingId;
-    var url = isEdit ? '/api/v1/admin/testimonials/' + editingId : '/api/v1/admin/testimonials';
+    var url = isEdit ? '/api/admin/testimonials/' + editingId : '/api/admin/testimonials';
     var method = isEdit ? 'PUT' : 'POST';
 
     if (saveBtn) {
@@ -509,11 +473,11 @@
       if (statusEl) { statusEl.textContent = 'Testimonio actualizado'; statusEl.style.color = 'green'; }
       setTimeout(function () { if (statusEl) statusEl.textContent = ''; }, 3000);
       renderTestimonials();
-      window.showToast('\u2705', 'Testimonio actualizado', 'success');
+      window.showToast('✅', 'Testimonio actualizado', 'success');
       if (window.clearDirty) window.clearDirty('testimonials');
     } catch (err) {
       if (statusEl) { statusEl.textContent = err.message; statusEl.style.color = 'red'; }
-      window.showToast('\u274C', err.message || 'Error al guardar testimonio', 'error');
+      window.showToast('❌', err.message || 'Error al guardar testimonio', 'error');
     } finally {
       if (saveBtn) {
         saveBtn.disabled = false;
@@ -594,13 +558,13 @@ function resetTestimonialForm() {
         if (pendingPhotoFile) {
           var allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
           if (allowedTypes.indexOf(pendingPhotoFile.type) === -1) {
-            window.showToast('\u274C', 'Formato no permitido. Usá JPG, PNG o WEBP.', 'error');
+            window.showToast('❌', 'Formato no permitido. Usá JPG, PNG o WEBP.', 'error');
             pendingPhotoFile = null;
             photoInput.value = '';
             return;
           }
           if (pendingPhotoFile.size > 5 * 1024 * 1024) {
-            window.showToast('\u274C', 'La imagen es muy grande (máximo 5MB)', 'error');
+            window.showToast('❌', 'La imagen es muy grande (máximo 5MB)', 'error');
             pendingPhotoFile = null;
             photoInput.value = '';
             return;
@@ -651,7 +615,6 @@ function resetTestimonialForm() {
     initTestimonials();
   }
 })();
-
 
 
 

@@ -181,9 +181,21 @@
             <span class="payment-total-amount" id="paymentTotalAmount">ARS 0,00</span>
           </div>
 
-          <div class="receipt-info-notice">
-            <h4>Enviá tu comprobante desde la app</h4>
-            <p>Una vez realizado el pago, subí el comprobante desde la app de Armario para que podamos confirmar tu pedido.</p>
+          <div class="receipt-upload-section">
+            <h4>Adjuntá tu comprobante</h4>
+            <p class="receipt-hint">JPG, PNG, WEBP o PDF (máx. 5 MB). Podés subirlo ahora o enviarlo por WhatsApp.</p>
+            <div class="receipt-dropzone" id="receiptDropzone">
+              <input type="file" id="receiptFileInput" accept="image/jpeg,image/png,image/webp,application/pdf" />
+              <div class="receipt-preview" id="receiptPreview" style="display:none;">
+                <img id="receiptPreviewImg" alt="Vista previa" />
+                <div id="receiptPreviewPdf" style="display:none;">
+                  <span class="pdf-icon">📄</span>
+                  <span class="pdf-name" id="receiptPdfName"></span>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm" id="removeReceiptBtn">Quitar</button>
+              </div>
+            </div>
+            <p class="receipt-status" id="receiptStatus" style="display:none;"></p>
           </div>
 
           <a id="sendWhatsappBtn" href="javascript:void(0)" target="_blank" class="btn btn-primary btn-full">Enviar por WhatsApp</a>
@@ -216,7 +228,6 @@
         <p>Creando pulseras y souvenirs únicos desde el corazón de Gualeguay, Entre Ríos.</p>
         <div class="social-links">
           <a href="https://wa.me/543444634444" title="WhatsApp" class="social-icon" aria-label="WhatsApp" data-wame-icon>💬</a>
-          <a href="javascript:void(0)" id="instagramLink" title="Instagram" class="social-icon" aria-label="Instagram">📷</a>
           <a href="javascript:void(0)" id="facebookLink" title="Facebook" class="social-icon" aria-label="Facebook">👍</a>
           <a href="javascript:void(0)" id="twitterLink" title="Twitter" class="social-icon" aria-label="Twitter">🐦</a>
         </div>
@@ -252,7 +263,5 @@
     </div>
   </footer>
   <div id="toastContainer" class="toast-container"></div>
-  <script>if (typeof populateContactLinks === "function") populateContactLinks();</script>`n</body>
+</body>
 </html>
-
-

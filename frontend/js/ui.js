@@ -120,22 +120,29 @@ function showToast(icon, message, type = 'default', options = {}) {
 })();
 
 // Reveal Animation on Scroll
+// El contenido NUNCA depende de la animación para ser visible: si
+// IntersectionObserver no existe, si el usuario prefiere movimiento reducido,
+// o si algo falla, todo pasa a visible (fallback a 1,5 s).
 function initRevealAnimation() {
-  // Respetar prefers-reduced-motion (verificar que matchMedia existe)
-  const prefersReducedMotion = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  
-  if (!('IntersectionObserver' in window) || prefersReducedMotion) {
-    document.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
+  const forceVisible = () => {
+    document.querySelectorAll('.reveal:not(.visible)').forEach(el => el.classList.add('visible'));
+  };
+  try {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      forceVisible();
+      return;
+    }
+  } catch (e) { /* noop */ }
+  if (!('IntersectionObserver' in window)) {
+    forceVisible();
     return;
   }
-  
   const revealElements = document.querySelectorAll('.reveal');
 
   window.revealObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       if (entry.isIntersecting) {
         entry.target.classList.add('visible');
-        window.revealObserver.unobserve(entry.target);
       }
     });
   }, {
@@ -143,22 +150,11 @@ function initRevealAnimation() {
     rootMargin: '0px 0px -100px 0px'
   });
 
-  revealElements.forEach(el => {
-    window.revealObserver.observe(el);
-    // Verificar si ya está en viewport al cargar
-    if (el.getBoundingClientRect().top < window.innerHeight && el.getBoundingClientRect().bottom > 0) {
-      el.classList.add('visible');
-      window.revealObserver.unobserve(el);
-    }
-  });
+  revealElements.forEach(el => window.revealObserver.observe(el));
 
-  // Fallback: forzar visibilidad después de 1.5s para evitar pantalla en blanco
-  setTimeout(() => {
-    document.querySelectorAll('.reveal:not(.visible)').forEach(el => {
-      el.classList.add('visible');
-      if (window.revealObserver) window.revealObserver.unobserve(el);
-    });
-  }, 1500);
+  // Fallback: tras 1,5 s todo lo .reveal pasa a visible aunque el observer
+  // no haya disparado (fetch lento, elemento fuera de viewport, etc.).
+  setTimeout(forceVisible, 1500);
 }
 
 // Navbar Scroll Effect
@@ -251,7 +247,7 @@ form.addEventListener('submit', async (e) => {
       const whatsappMessage = `Nuevo mensaje de contacto\n\nNombre: ${name}\nEmail: ${email}\n\nMensaje:\n${message}`;
 
       try {
-        const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/v1/contact`, {
+        const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/contact`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name, email, message })
@@ -293,7 +289,7 @@ function initNewsletterForm() {
       }
 
       try {
-        const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/v1/subscribe`, {
+        const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/subscribe`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email })
@@ -580,6 +576,7 @@ function initSakuraInteraction() {
 
 // Initialize Everything on DOM Ready
 function initUI() {
+  warmBackend();
   initRevealAnimation();
   initNavbarScroll();
   initMobileNavbar();
@@ -601,15 +598,11 @@ if (document.readyState === 'loading') {
 window.addEventListener('storage', (e) => {
   if (typeof CONFIG !== 'undefined' && CONFIG.CART && e.key === CONFIG.CART.STORAGE_KEY) {
     if (typeof window.updateCartBadge === 'function') window.updateCartBadge();
-    if (typeof window.updateCartDisplay === 'function') {
-      try { window.updateCartDisplay(); } catch (err) { console.debug('[ui] updateCartDisplay error:', err); }
-    }
+    if (typeof window.updateCartDisplay === 'function') window.updateCartDisplay();
   }
   if (e.key === 'ag_wishlist') {
     if (typeof updateWishlistBadge === 'function') updateWishlistBadge();
-    if (typeof renderWishlist === 'function') {
-      try { renderWishlist(); } catch (err) { console.debug('[ui] renderWishlist error:', err); }
-    }
+    if (typeof renderWishlist === 'function') renderWishlist();
   }
 });
 
@@ -635,32 +628,8 @@ window.addEventListener('error', (event) => {
   }
 });
 
-// Warm-up ping to wake up Render free tier backend
-async function warmUpBackend() {
-  try {
-    const healthUrl = `${CONFIG.API.BASE}/api/v1/health`;
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-    await fetch(healthUrl, { 
-      method: 'GET', 
-      cache: 'no-store',
-      signal: controller.signal,
-      // No credentials needed for health check
-      credentials: 'omit'
-    });
-    clearTimeout(timeout);
-    console.log('[WarmUp] Backend health check OK');
-  } catch (err) {
-    // Ignorar errores - solo es para despertar el backend
-    console.log('[WarmUp] Backend health check falló (esperado en cold start):', err.name || err.message);
-  }
-}
-
-// Ejecutar warm-up al cargar la página (no bloqueante)
-if (typeof window !== 'undefined') {
-  // Pequeño delay para no bloquear el render inicial
-  setTimeout(warmUpBackend, 100);
-}
+// Si hay error 404 en fetch, NO redirigir a página 404 del sitio
+// (un endpoint API que no existe no debe romper la navegación del frontend)
 function getFetchErrorMessage(err) {
   if (navigator.onLine === false) {
     return 'Sin conexión a internet. Verificá tu red.';
@@ -716,11 +685,11 @@ function getFetchErrorMessage(err) {
   return 'Error de conexión. Intentá nuevamente.';
 }
 
-async function safeFetch(url, opts = {}, timeoutMs = 0) {
-  return fetchWithRetry(url, opts, 2, 1000, timeoutMs);
+async function safeFetch(url, opts = {}, timeoutMs = 15000) {
+  return fetchWithRetry(url, opts, 3, 1000, timeoutMs);
 }
 
-async function fetchWithRetry(url, opts = {}, retries = 3, backoffMs = 1500, timeoutMs = 10000, showToastOnError = true) {
+async function fetchWithRetry(url, opts = {}, retries = 3, backoffMs = 1000, timeoutMs = 15000, showToastOnError = true) {
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const fetchPromise = fetch(url, opts);
@@ -790,6 +759,16 @@ async function fetchWithRetry(url, opts = {}, retries = 3, backoffMs = 1500, tim
 
 window.safeFetch = safeFetch;
 window.fetchWithRetry = fetchWithRetry;
+
+// Warm-up: despierta al backend (Render free se duerme ~30-60 s) con un ping
+// fire-and-forget a /health al cargar la página. Nunca bloquea ni muestra toast.
+function warmBackend() {
+  try {
+    const base = (typeof CONFIG !== 'undefined' && CONFIG.API && CONFIG.API.BASE) ? CONFIG.API.BASE : '';
+    fetch(`${base}/api/health`, { cache: 'no-store', keepalive: true }).catch(() => {});
+  } catch (e) { /* noop */ }
+}
+window.warmBackend = warmBackend;
 window.showToast = showToast;
 window.getFetchErrorMessage = getFetchErrorMessage;
 window.escapeHtml = escapeHtml;
@@ -836,7 +815,7 @@ window.sanitizeAboutText = sanitizeAboutText;
 
 async function loadSiteTexts() {
   try {
-    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/v1/site-texts`, {}, 2, 1000);
+    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-texts`, {}, 3, 1000, 15000, false);
     if (!res) {
       return;
     }
@@ -896,24 +875,22 @@ function applyAboutFallback() {
 
 function updateStatsFromTexts(data) {
   const statsMap = {
-    statClients: { target: 'stat_clients', suffix: '+', defaultValue: 500 },
-    statProductsSold: { target: 'stat_products_sold', suffix: '+', defaultValue: 1000 },
-    statYears: { target: 'stat_years', suffix: '+', defaultValue: 6 },
-    statArtesanal: { target: 'stat_artesanal', suffix: '%', defaultValue: 100 }
+    statClients: { target: 'stat_clients', suffix: '+' },
+    statProductsSold: { target: 'stat_products_sold', suffix: '+' },
+    statYears: { target: 'stat_years', suffix: '+' },
+    statArtesanal: { target: 'stat_artesanal', suffix: '%' }
   };
 
   Object.keys(statsMap).forEach(id => {
     const el = document.getElementById(id);
     const key = statsMap[id].target;
     const suffix = statsMap[id].suffix;
-    const defaultValue = statsMap[id].defaultValue;
-    if (!el) return;
-    const target = data[key] ? parseInt(data[key], 10) : defaultValue;
+    if (!el || !data[key]) return;
+    const target = parseInt(data[key], 10);
     if (isNaN(target)) return;
     el.setAttribute('data-target', target);
-    // Mostrar valor por defecto inmediatamente, animar solo cuando haya dato real de la API
-    el.textContent = target + suffix;
-    if (data[key] && typeof window.animateCount === 'function') {
+    el.textContent = '0' + suffix;
+    if (typeof window.animateCount === 'function') {
       window.animateCount(el);
     }
   });
@@ -921,7 +898,7 @@ function updateStatsFromTexts(data) {
 
 async function loadSiteSettings() {
   try {
-    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/v1/site-settings`, {}, 2, 1000);
+    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-settings`, {}, 3, 1000, 15000, false);
     if (!res) return;
     const settings = await res.json();
 
@@ -996,7 +973,7 @@ async function loadTestimonials() {
   if (section) section.style.display = '';
 
   try {
-    const contentRes = await fetchWithRetry(`${CONFIG.API.BASE}/api/v1/section-content/testimonials`, {}, 2, 1000);
+    const contentRes = await fetchWithRetry(`${CONFIG.API.BASE}/api/section-content/testimonials`, {}, 3, 1000, 15000, false);
     if (contentRes && contentRes.ok) {
       const content = await contentRes.json();
       if (titleEl && content.title) titleEl.textContent = content.title;
@@ -1007,7 +984,7 @@ async function loadTestimonials() {
   }
 
   try {
-    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/v1/testimonials`, {}, 2, 1000);
+    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/testimonials`, {}, 3, 1000, 15000, false);
     if (!res) {
       if (skeleton) skeleton.style.display = 'none';
       return;
@@ -1037,7 +1014,7 @@ function renderTestimonials(testimonials) {
     const productImageHtml = t.image
       ? `<div class="testimonial-product-image-wrap" role="button" tabindex="0" aria-label="Ampliar foto de ${escapeHtml(t.name)}">
           <img src="${escapeHtml(t.image)}" alt="${escapeHtml(t.alt || (t.name + ' con su producto'))}" class="testimonial-product-image" loading="lazy" onerror="this.parentElement.style.display='none'" />
-          <button type="button" class="testimonial-product-image-zoom" aria-label="Ampliar foto" aria-hidden="true">🔍</button>
+          <button type="button" class="testimonial-product-image-zoom" aria-label="Ampliar foto" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><line x1="21" y1="21" x2="16.5" y2="16.5"></line></svg></button>
         </div>`
       : '';
     return `
@@ -1061,6 +1038,8 @@ function renderTestimonials(testimonials) {
         window.revealObserver.observe(el);
       }
     });
+  } else {
+    grid.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
   }
 
   grid.querySelectorAll('.testimonial-product-image-wrap').forEach(function (wrap) {
@@ -1084,7 +1063,7 @@ window.loadTestimonials = loadTestimonials;
 
 async function loadPaymentConfig() {
   try {
-    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/v1/payment-config`, {}, 2, 1000);
+    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/payment-config`, {}, 3, 1000, 15000, false);
     if (!res || !res.ok) return;
     const data = await res.json();
     if (data.shippingCost !== undefined) CONFIG.CART.SHIPPING_COST = Number(data.shippingCost);

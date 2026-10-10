@@ -105,7 +105,7 @@
       html += '<div class="carousel-slot-card' + dirtyClass + '" data-slot="' + slotNum + '">' +
         '<div class="carousel-slot-thumb">' +
           (hasImage
-            ? '<img src="' + escapeAttr(slot.url) + '" alt="Carrusel slot ' + slotNum + '" class="carousel-slot-img" />'
+            ? '<img src="' + escapeAttr(slot.url) + '" alt="Carrusel slot ' + slotNum + '" class="carousel-slot-img" loading="lazy" decoding="async" />'
             : '<div class="carousel-slot-placeholder"><span class="carousel-slot-placeholder-icon">🖼️</span><span>Vacío</span></div>') +
         '</div>' +
         '<div class="carousel-slot-meta">' +

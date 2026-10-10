@@ -46,10 +46,11 @@ const getAdminTestimonials = async (req, res) => {
 };
 
 const createTestimonial = async (req, res) => {
-  let { name, comment, rating = 5, image = '', active = true, orden = 0, removeImage } = req.body || {};
-  if (req.files && req.files.image && req.files.image[0]) {
-    image = await handleImageUpload(req.files.image[0]);
-  }
+  try {
+    let { name, comment, rating = 5, image = '', active = true, orden = 0, removeImage } = req.body || {};
+    if (req.files && req.files.image && req.files.image[0]) {
+      image = await handleImageUpload(req.files.image[0]);
+    }
   if (removeImage === 'true' || removeImage === true) {
     image = '';
   }
@@ -59,8 +60,7 @@ const createTestimonial = async (req, res) => {
   }
   const { name: safeName, comment: safeComment, rating: safeRating } = parsed.data;
   const tenantId = getTenantId(req);
-  try {
-    const result = await query(
+  const result = await query(
       'INSERT INTO testimonials (name, comment, rating, image, avatar, active, orden, product_image_url, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
       [safeName, safeComment, Number(safeRating), image, image, active !== false, Number(orden), '', tenantId]
     );
@@ -133,26 +133,27 @@ const updateTestimonial = async (req, res) => {
   const updates = req.body || {};
   const tenantId = getTenantId(req);
 
-  if (req.files && req.files.image && req.files.image[0]) {
-    const existing = await query('SELECT * FROM testimonials WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
-    if (existing.rows.length > 0) {
-      await deleteOldAndSetNew('testimonials', 'id', id, IMAGE_COLUMNS, await handleImageUpload(req.files.image[0]), tenantId);
-    }
-  }
-  if (updates.removeImage === 'true' || updates.removeImage === true) {
-    const existing = await query('SELECT * FROM testimonials WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
-    if (existing.rows.length > 0) {
-      for (const col of IMAGE_COLUMNS) {
-        if (existing.rows[0][col]) {
-          await deleteImageAsset({ url: existing.rows[0][col] });
-        }
+  try {
+    if (req.files && req.files.image && req.files.image[0]) {
+      const existing = await query('SELECT * FROM testimonials WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
+      if (existing.rows.length > 0) {
+        await deleteOldAndSetNew('testimonials', 'id', id, IMAGE_COLUMNS, await handleImageUpload(req.files.image[0]), tenantId);
       }
     }
-    await clearImageField('testimonials', 'id', id, 'image', tenantId);
-    await clearImageField('testimonials', 'id', id, 'avatar', tenantId);
-    await clearImageField('testimonials', 'id', id, 'product_image_url', tenantId);
-    delete updates.removeImage;
-  }
+    if (updates.removeImage === 'true' || updates.removeImage === true) {
+      const existing = await query('SELECT * FROM testimonials WHERE id = $1 AND tenant_id = $2', [id, tenantId]);
+      if (existing.rows.length > 0) {
+        for (const col of IMAGE_COLUMNS) {
+          if (existing.rows[0][col]) {
+            await deleteImageAsset({ url: existing.rows[0][col] });
+          }
+        }
+      }
+      await clearImageField('testimonials', 'id', id, 'image', tenantId);
+      await clearImageField('testimonials', 'id', id, 'avatar', tenantId);
+      await clearImageField('testimonials', 'id', id, 'product_image_url', tenantId);
+      delete updates.removeImage;
+    }
   const fields = Object.keys(updates).filter(k => k !== 'id' && ALLOWED_TESTIMONIAL_COLUMNS.includes(k));
   if (!fields.length) return res.status(400).json({ error: 'Sin datos para actualizar' });
   if (fields.includes('name')) {
@@ -183,8 +184,7 @@ const updateTestimonial = async (req, res) => {
     }
   });
   values.push(id, tenantId);
-  try {
-    const result = await query(`UPDATE testimonials SET ${setParts.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = $${values.length - 1} AND tenant_id = $${values.length} RETURNING *`, values);
+  const result = await query(`UPDATE testimonials SET ${setParts.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = $${values.length - 1} AND tenant_id = $${values.length} RETURNING *`, values);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Testimonio no encontrado' });
     res.json(result.rows[0]);
     try { syncBus.emit('testimonials_updated', { id: Number(req.params.id) }); } catch (e) { /* noop */ }

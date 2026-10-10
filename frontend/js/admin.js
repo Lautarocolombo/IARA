@@ -363,6 +363,23 @@ async function saveToCloud(section, options) {
   }
 }
 
+function resetConfirmModal() {
+  // Deja el modal en estado neutro: sin input destructivo, botón por defecto.
+  // Necesario porque el modal se reutiliza (confirms simples, guía de
+  // comprobante, confirmación destructiva).
+  var msgEl = document.getElementById('confirmModalMessage');
+  var actionBtn = document.getElementById('confirmModalAction');
+  var wrap = document.getElementById('confirmModalDestructiveWrap');
+  if (wrap && wrap.parentNode) wrap.parentNode.removeChild(wrap);
+  if (msgEl) msgEl.textContent = '¿Estás seguro?';
+  if (actionBtn) {
+    actionBtn.textContent = 'Confirmar';
+    actionBtn.className = 'btn btn-danger';
+    actionBtn.disabled = false;
+    actionBtn.onclick = null;
+  }
+}
+
 function showConfirmModal(title, message, onConfirm) {
   var overlay = document.getElementById('confirmModalOverlay');
   var titleEl = document.getElementById('confirmModalTitle');
@@ -370,6 +387,7 @@ function showConfirmModal(title, message, onConfirm) {
   var actionBtn = document.getElementById('confirmModalAction');
   var cancelBtn = document.getElementById('cancelConfirmBtn');
   if (!overlay || !actionBtn) return;
+  resetConfirmModal();
   if (titleEl) titleEl.textContent = title || 'Confirmar';
   if (msgEl) msgEl.textContent = message || '¿Estás seguro?';
   actionBtn.textContent = 'Confirmar';
@@ -386,6 +404,7 @@ function showConfirmModal(title, message, onConfirm) {
 }
 
 function hideConfirmModal() {
+  resetConfirmModal();
   var overlay = document.getElementById('confirmModalOverlay');
   if (overlay) {
     overlay.classList.remove('active');
@@ -393,11 +412,69 @@ function hideConfirmModal() {
   }
 }
 
+/* Confirmación destructiva en 2 pasos: además del modal hay que escribir
+   una palabra (ej: ELIMINAR) para habilitar el botón. Para borrados
+   irreversibles como "Eliminar historial". */
+function showDestructiveConfirmModal(title, message, requiredText, onConfirm) {
+  var overlay = document.getElementById('confirmModalOverlay');
+  var titleEl = document.getElementById('confirmModalTitle');
+  var msgEl = document.getElementById('confirmModalMessage');
+  var actionBtn = document.getElementById('confirmModalAction');
+  var cancelBtn = document.getElementById('cancelConfirmBtn');
+  if (!overlay || !actionBtn) {
+    // Sin modal (tests/entornos sin DOM): pedir confirmación nativa.
+    if (typeof window.confirm === 'function' && window.confirm((title || 'Confirmar') + '\n' + (message || ''))) {
+      if (typeof onConfirm === 'function') onConfirm();
+    }
+    return;
+  }
+  resetConfirmModal();
+  var needed = String(requiredText || 'ELIMINAR');
+  if (titleEl) titleEl.textContent = title || 'Confirmar eliminación';
+  if (msgEl) msgEl.textContent = message || 'Esta acción no se puede deshacer.';
+
+  var wrap = document.createElement('div');
+  wrap.id = 'confirmModalDestructiveWrap';
+  wrap.className = 'form-group';
+  wrap.style.marginTop = '12px';
+  var label = document.createElement('label');
+  label.textContent = 'Escribí ' + needed + ' para habilitar el botón:';
+  label.setAttribute('for', 'confirmModalDestructiveInput');
+  var input = document.createElement('input');
+  input.type = 'text';
+  input.id = 'confirmModalDestructiveInput';
+  input.placeholder = needed;
+  input.autocomplete = 'off';
+  wrap.appendChild(label);
+  wrap.appendChild(input);
+  if (msgEl && msgEl.parentNode) msgEl.parentNode.appendChild(wrap);
+
+  actionBtn.textContent = 'Eliminar definitivamente';
+  actionBtn.className = 'btn btn-danger';
+  actionBtn.disabled = true;
+  input.addEventListener('input', function () {
+    actionBtn.disabled = input.value.trim() !== needed;
+  });
+  actionBtn.onclick = function () {
+    if (input.value.trim() !== needed) return;
+    hideConfirmModal();
+    if (typeof onConfirm === 'function') onConfirm();
+  };
+  if (cancelBtn) {
+    cancelBtn.onclick = hideConfirmModal;
+  }
+  overlay.classList.add('active');
+  overlay.style.display = '';
+  setTimeout(function () { try { input.focus(); } catch (e) { /* noop */ } }, 50);
+}
+
 window.showSaveStatus = showSaveStatus;
 window.setButtonState = setButtonState;
 window.saveToCloud = saveToCloud;
 window.showConfirmModal = showConfirmModal;
 window.hideConfirmModal = hideConfirmModal;
+window.resetConfirmModal = resetConfirmModal;
+window.showDestructiveConfirmModal = showDestructiveConfirmModal;
 
 /* ===== FORMULARIO: GUARDAR/RESTAURAR EN SESSIONSTORAGE ===== */
 function saveFormData(formId) {
@@ -470,6 +547,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   } else if (loginBtn) {
     loginBtn.addEventListener('click', doLogin);
+  }
+
+  // La ✕ del modal de confirmación no estaba cableada: ahora cierra y resetea.
+  const closeConfirmBtn = document.getElementById('closeConfirmModal');
+  if (closeConfirmBtn) {
+    closeConfirmBtn.onclick = hideConfirmModal;
   }
 
   if (window.location.protocol === 'file:') {

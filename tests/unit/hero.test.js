@@ -116,7 +116,7 @@ describe('hero.js', () => {
       document.body.innerHTML = '<div class="hero-content"><h1>Regalos <em>artesanales</em><br>que cuentan historias</h1><p class="hero-subtitle"></p><a class="btn-primary"></a></div><div id="heroCardsContainer"></div>';
       await window.loadHeroCards();
 
-      expect(fetchWithRetryMock).toHaveBeenCalledWith('/api/v1/hero-cards', {}, 2, 1000);
+      expect(fetchWithRetryMock).toHaveBeenCalledWith('/api/hero-cards', {}, 3, 1000, 15000, false);
     });
 
     test('maneja error al cargar tarjetas', async () => {

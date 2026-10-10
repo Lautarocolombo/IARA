@@ -924,7 +924,198 @@ async function initSQLite() {
   }
 
 
+<<<<<<< HEAD
+  try {
+    const pgRenameMigrations = [
+      { name: 'rename_sort_order_to_orden', oldCol: 'sort_order', sql: 'ALTER TABLE product_images RENAME COLUMN sort_order TO orden' },
+      { name: 'rename_is_primary_to_es_principal', oldCol: 'is_primary', sql: 'ALTER TABLE product_images RENAME COLUMN is_primary TO es_principal' }
+    ];
+
+    for (const mig of pgRenameMigrations) {
+      try {
+        const applied = await query('SELECT COUNT(*) AS count FROM migrations WHERE name = $1', [mig.name]);
+        if (applied.rows[0].count > 0) continue;
+        const colExists = await query(
+          'SELECT COUNT(*) AS count FROM information_schema.columns WHERE table_name = \'product_images\' AND column_name = $1',
+          [mig.oldCol]
+        );
+        if (colExists.rows[0].count > 0) {
+          await query(mig.sql);
+        }
+        await query('INSERT INTO migrations (name) VALUES ($1) ON CONFLICT (name) DO NOTHING', [mig.name]);
+      } catch (err) {
+        logger.debug({ err: err.message }, `Migración de rename ${mig.name} falló`);
+      }
+    }
+  } catch (err) {
+    logger.debug({ err: err.message }, 'Error en migraciones de rename');
+  }
+
+  try {
+    logger.info('Tablas de base de datos inicializadas (PostgreSQL)');
+    const tenantTables = [
+      'products', 'categories', 'orders', 'contacts', 'reviews',
+      'testimonials', 'product_images', 'subscribers', 'webhook_events',
+      'hero_cards', 'payment_config', 'payment_proofs', 'site_settings', 'site_texts', 'section_content'
+    ];
+    // Paralelo en vez de secuencial: 15 checks en ~1 round-trip en vez de 15.
+    await Promise.all(tenantTables.map(async (table) => {
+      try {
+        const colExists = await query(
+          "SELECT COUNT(*) AS count FROM information_schema.columns WHERE table_name = $1 AND column_name = 'tenant_id'",
+          [table]
+        );
+        if (String(colExists.rows[0].count) === '0') {
+          await query(`ALTER TABLE ${table} ADD COLUMN tenant_id TEXT DEFAULT 'default'`);
+        }
+      } catch (err) {
+        logger.debug({ err: err.message }, `Error asegurando columna tenant_id en ${table}`);
+      }
+    }));
+  } catch (err) {
+    logger.debug({ err: err.message }, 'Error asegurando columnas tenant_id (PostgreSQL)');
+  }
+
+  try {
+    const carouselColumns = ['caption', 'about_group'];
+    for (const col of carouselColumns) {
+      try {
+        const colExists = await query(
+          "SELECT COUNT(*) AS count FROM information_schema.columns WHERE table_name = 'carousel_images' AND column_name = $1",
+          [col]
+        );
+        if (colExists.rows[0].count === 0) {
+          const type = col === 'about_group' ? 'INTEGER DEFAULT 0' : "TEXT DEFAULT ''";
+          await query(`ALTER TABLE carousel_images ADD COLUMN ${col} ${type}`);
+          logger.info(`Columna ${col} agregada a carousel_images`);
+        }
+      } catch (err) {
+        logger.debug({ err: err.message }, `Error asegurando columna ${col} en carousel_images`);
+      }
+    }
+  } catch (err) {
+    logger.debug({ err: err.message }, 'Error asegurando columnas de carousel_images');
+  }
+
+     try {
+       await query(`CREATE TABLE IF NOT EXISTS shipping_rates_by_province (
+         id SERIAL PRIMARY KEY,
+         province TEXT UNIQUE NOT NULL,
+         shipping_cost NUMERIC(10,2) DEFAULT 0,
+         tenant_id TEXT DEFAULT 'default',
+         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+       )`);
+     const colExists = await query("SELECT COUNT(*) AS count FROM information_schema.columns WHERE table_name = 'payment_config' AND column_name = 'included_shipping_cost'");
+     if (String(colExists.rows[0].count) === '0') {
+       await query('ALTER TABLE payment_config ADD COLUMN included_shipping_cost NUMERIC(10,2) DEFAULT 0');
+     }
+     // Seed de provincias solo si la tabla está vacía (antes: 24 UPSERTs en cada arranque).
+     const provCount = await query('SELECT COUNT(*) AS count FROM shipping_rates_by_province');
+     if (String(provCount.rows[0].count) === '0') {
+       const defaultProvinces = [
+         ['Buenos Aires', 1500], ['Catamarca', 1800], ['Chaco', 1800], ['Chubut', 2200],
+         ['Ciudad Autónoma de Buenos Aires', 1500], ['Córdoba', 1700], ['Corrientes', 1800],
+         ['Entre Ríos', 1500], ['Formosa', 2000], ['Jujuy', 2200], ['La Pampa', 1800],
+         ['La Rioja', 1800], ['Mendoza', 1900], ['Misiones', 1800], ['Neuquén', 2200],
+         ['Río Negro', 2200], ['Salta', 2200], ['San Juan', 1900], ['San Luis', 1700],
+         ['Santa Cruz', 2500], ['Santa Fe', 1600], ['Santiago del Estero', 1800],
+         ['Tierra del Fuego', 2800], ['Tucumán', 1700]
+       ];
+       await Promise.all(defaultProvinces.map(([prov, cost]) =>
+         query('INSERT INTO shipping_rates_by_province (province, shipping_cost) VALUES ($1, $2) ON CONFLICT (province) DO NOTHING', [prov, cost])
+       ));
+       await query("UPDATE payment_config SET included_shipping_cost = 1500 WHERE included_shipping_cost IS NULL OR included_shipping_cost = 0");
+     }
+   } catch (err) {
+     logger.debug({ err: err.message }, 'Error asegurando shipping_rates_by_province (PostgreSQL)');
+   }
+
+   // Reset de sequences solo en desarrollo: en prod es costoso y rara vez necesario.
+   if (process.env.FIX_SEQUENCES === 'true') {
+     try {
+       const seqTables = ['products', 'categories', 'orders', 'contacts', 'reviews', 'testimonials', 'product_images', 'subscribers', 'webhook_events', 'hero_cards'];
+       await Promise.all(seqTables.map((table) =>
+         query(`SELECT setval('${table}_id_seq', COALESCE((SELECT MAX(id) FROM ${table}), 1), true)`).catch(() => {})
+       ));
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Error reseteando sequences');
+     }
+   }
+
+   try {
+     await ensureAdminUser();
+   } catch (err) {
+     logger.warn({ err: err.message }, 'No se pudo asegurar usuario admin (PostgreSQL)');
+   }
+
+   try {
+     const missingIndexes = [
+       'CREATE INDEX IF NOT EXISTS idx_orders_order_token ON orders(order_token)',
+       'CREATE INDEX IF NOT EXISTS idx_products_featured ON products(featured) WHERE featured = TRUE',
+       'CREATE INDEX IF NOT EXISTS idx_webhook_events_status ON webhook_events(status)',
+       'CREATE INDEX IF NOT EXISTS idx_activity_log_created_at ON activity_log(created_at DESC)',
+       'CREATE INDEX IF NOT EXISTS idx_activity_log_related_order ON activity_log(related_order_id)'
+     ];
+     await Promise.all(missingIndexes.map((idxSql) =>
+       query(idxSql).catch((err) => logger.debug({ err: err.message }, 'No se pudo crear índice adicional'))
+     ));
+   } catch (err) {
+     logger.debug({ err: err.message }, 'Error creando índices adicionales (PostgreSQL)');
+   }
+
+  // Seeds de contenido default solo con flag explícito (antes corrían en cada boot).
+  if (process.env.SEED_DEFAULT_CONTENT === 'true') {
+    try {
+      await query("INSERT INTO site_texts (key, value, tenant_id) VALUES ('hero_subtitle', 'Artesanía Gualeguay nació en el corazón de Entre Ríos con la misión de crear pulseras, souvenirs y accesorios únicos que capturen la esencia de nuestra tierra.', 'default') ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP");
+    } catch (err) {
+      logger.debug({ err: err.message }, 'No se pudo actualizar hero_subtitle');
+    }
+
+    try {
+      await query("INSERT INTO section_content (section_key, title, subtitle, tenant_id) VALUES ('testimonials', 'Lo que dicen nuestros clientes', 'Historias reales de personas que confiaron en nosotros', 'default') ON CONFLICT (section_key) DO NOTHING");
+    } catch (err) {
+      logger.debug({ err: err.message }, 'No se pudo seedear section_content');
+    }
+  }
+  }
+
+    async function ensureAdminUser() {
+      const ADMIN_USER = process.env.ADMIN_USER;
+      const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH;
+      if (!ADMIN_USER || !ADMIN_PASS_HASH) return;
+      const existing = await query('SELECT id, password_hash, permissions FROM users WHERE username = $1', [ADMIN_USER]);
+      if (existing.rows.length === 0) {
+        try {
+          if (isLocal) {
+            await query('INSERT OR IGNORE INTO users (username, password_hash, role, active, permissions) VALUES ($1, $2, $3, $4, $5)', [ADMIN_USER, ADMIN_PASS_HASH, 'admin', true, JSON.stringify({ all: true })]);
+          } else {
+            await query('INSERT INTO users (username, password_hash, role, active, permissions) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (username) DO NOTHING', [ADMIN_USER, ADMIN_PASS_HASH, 'admin', true, JSON.stringify({ all: true })]);
+          }
+        } catch (err) {
+          if (!err.message.includes('UNIQUE constraint failed') && !err.message.includes('duplicate key')) {
+            throw err;
+          }
+        }
+        const after = await query('SELECT id, password_hash, permissions FROM users WHERE username = $1', [ADMIN_USER]);
+        if (after.rows.length === 0) {
+          return;
+        }
+        const needsUpdate = after.rows[0].password_hash !== ADMIN_PASS_HASH || after.rows[0].permissions !== JSON.stringify({ all: true });
+        if (needsUpdate) {
+          await query('UPDATE users SET password_hash = $1, permissions = $2, updated_at = CURRENT_TIMESTAMP WHERE username = $3', [ADMIN_PASS_HASH, JSON.stringify({ all: true }), ADMIN_USER]);
+        }
+      } else {
+        const needsUpdate = existing.rows[0].password_hash !== ADMIN_PASS_HASH || existing.rows[0].permissions !== JSON.stringify({ all: true });
+        if (needsUpdate) {
+          await query('UPDATE users SET password_hash = $1, permissions = $2, updated_at = CURRENT_TIMESTAMP WHERE username = $3', [ADMIN_PASS_HASH, JSON.stringify({ all: true }), ADMIN_USER]);
+        }
+      }
+    }
+
+  async function setTenant(tenantId) {
+=======
 async function setTenant(tenantId) {
+>>>>>>> b091ff6922619009f758fa515ba900a6999ea8b7
     if (!tenantId || typeof tenantId !== 'string') return;
     if (isLocal) return;
     try {

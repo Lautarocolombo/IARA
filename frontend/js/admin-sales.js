@@ -9,20 +9,6 @@
   var currentView = 'weekly';
   var salesData = null;
   var productsForSale = [];
-  var chartLoaded = false;
-
-  async function loadChartJS() {
-    if (chartLoaded) return true;
-    try {
-      var ChartModule = await import('chart.js');
-      window.Chart = ChartModule.default || ChartModule;
-      chartLoaded = true;
-      return true;
-    } catch (err) {
-      console.error('[Sales] Error cargando Chart.js:', err);
-      return false;
-    }
-  }
 
   /* ===== CARGA DE DATOS ===== */
 
@@ -39,7 +25,7 @@
     if (syncLoading) syncLoading.classList.remove('hidden');
 
     try {
-      var res = await window.adminFetch('/api/v1/admin/reports/summary?view=' + view, { method: 'GET' });
+      var res = await window.adminFetch('/api/admin/reports/summary?view=' + view, { method: 'GET' });
       if (!res || !res.ok) {
         throw new Error('No se pudieron cargar los reportes');
       }
@@ -55,7 +41,7 @@
       renderRangeToggle(view);
     } catch (err) {
       console.error('[Sales] Error:', err);
-      window.showToast('?No se pudieron cargar los reportes.error');
+      window.showToast('❌', 'No se pudieron cargar los reportes.', 'error');
     } finally {
       if (syncBtn) syncBtn.disabled = false;
       if (syncText) syncText.style.display = '';
@@ -65,7 +51,7 @@
 
   async function loadProductsForSale() {
     try {
-      var res = await window.adminFetch('/api/v1/products?limit=100', { method: 'GET' });
+      var res = await window.adminFetch('/api/products?limit=100', { method: 'GET' });
       if (res && res.ok) {
         var data = await res.json();
         productsForSale = Array.isArray(data) ? data : (data.products || []);
@@ -83,7 +69,7 @@
     if (!tbody) return;
 
     try {
-      var res = await window.adminFetch('/api/v1/admin/earnings', { method: 'GET' });
+      var res = await window.adminFetch('/api/admin/earnings', { method: 'GET' });
       if (!res || !res.ok) {
         throw new Error('No se pudieron cargar las transacciones');
       }
@@ -122,7 +108,7 @@ transactions.forEach(function (t) {
           '<td style="text-align:center;"><span class="' + escapeAttr(statusClass) + '">' + escapeAttr(statusLabel) + '</span></td>' +
           '<td style="text-align:right;">$' + Number(t.total || 0).toLocaleString('es-AR') + '</td>' +
           '<td style="text-align:center;">' +
-            '<button type="button" class="btn-delete-tx" data-tx-id="' + escapeAttr(rawId) + '" data-tx-type="' + (isManual ? 'manual' : 'order') + '" title="Eliminar transacciÃ³n" style="background:none;border:none;color:#94a3b8;cursor:pointer;padding:0.3rem;border-radius:6px;">' +
+            '<button type="button" class="btn-delete-tx" data-tx-id="' + escapeAttr(rawId) + '" data-tx-type="' + (isManual ? 'manual' : 'order') + '" title="Eliminar transacción" style="background:none;border:none;color:#94a3b8;cursor:pointer;padding:0.3rem;border-radius:6px;">' +
               '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>' +
             '</button>' +
           '</td>';
@@ -148,14 +134,14 @@ transactions.forEach(function (t) {
       });
     } catch (err) {
       console.error('[Sales] Error cargando transacciones:', err);
-      window.showToast('?No se pudieron cargar las transacciones.error');
+      window.showToast('❌', 'No se pudieron cargar las transacciones.', 'error');
     }
   }
 
   function deleteTransaction(txId, txType) {
     window.showConfirmModal(
-      'Eliminar transacciÃ³n',
-      'Â¿Eliminar esta transacciÃ³n (' + txId + ')? Esta accin no se puede deshacer.',
+      'Eliminar transacción',
+      '¿Eliminar esta transacción (' + txId + ')? Esta acción no se puede deshacer.',
       function () { processDeleteTransaction(txId, txType); }
     );
   }
@@ -163,26 +149,26 @@ transactions.forEach(function (t) {
   async function processDeleteTransaction(txId, txType) {
     var numericId = txId.replace(/^V-/, '');
     var url = txType === 'manual'
-      ? '/api/v1/admin/sales/' + numericId
-      : '/api/v1/admin/orders/' + numericId;
+      ? '/api/admin/sales/' + numericId
+      : '/api/admin/orders/' + numericId;
 
-    console.warn('[Sales] Eliminando transacciÃ³n:', { txId, txType, numericId, url });
+    console.warn('[Sales] Eliminando transacción:', { txId, txType, numericId, url });
 
     try {
       var res = await window.adminFetch(url, { method: 'DELETE' });
       if (!res || !res.ok) {
         var errData = await res.json().catch(function () { return {}; });
-        throw new Error(errData.error || 'Error eliminando transacciÃ³n');
+        throw new Error(errData.error || 'Error eliminando transacción');
       }
-      window.showToast('?Transaccin eliminadasuccess');
+      window.showToast('✅', 'Transacción eliminada', 'success');
       await loadTransactions();
       await loadSalesSummary(currentView);
       if (window.dispatchEvent) {
         window.dispatchEvent(new CustomEvent('sync', { detail: { event: 'transactions_updated' } }));
       }
     } catch (err) {
-      console.error('[Sales] Error eliminando transacciÃ³n:', err);
-      window.showToast('?', err.message || 'Error eliminando transacciÃ³nerror');
+      console.error('[Sales] Error eliminando transacción:', err);
+      window.showToast('❌', err.message || 'Error eliminando transacción', 'error');
     }
   }
 
@@ -212,16 +198,7 @@ transactions.forEach(function (t) {
 
   /* ===== CHART.JS ===== */
 
-  async function updateChart(data) {
-    var loaded = await loadChartJS();
-    if (!loaded) {
-      var ctx = document.getElementById('salesChart');
-      if (ctx) {
-        ctx.parentNode.innerHTML = '<p class="form-hint">GrÃ¡ficos no disponibles (Chart.js no cargÃ³). Los nÃºmeros de arriba siguen funcionando.</p>';
-      }
-      return;
-    }
-
+  function updateChart(data) {
     var groups = Array.isArray(data.groups) ? data.groups : [];
     var labels = groups.map(function (g) { return g.label || g.date || ''; });
     var revenue = groups.map(function (g) { return Number(g.total || 0); });
@@ -233,11 +210,15 @@ transactions.forEach(function (t) {
         : 'Ingresos semanales';
 
     /* Bar chart (principal) */
-    var ctxBar = document.getElementById('salesChart');
-    if (ctxBar) {
+    var ctx = document.getElementById('salesChart');
+    if (ctx) {
+      if (typeof Chart === 'undefined') {
+        ctx.parentNode.innerHTML = '<p class="form-hint">Gráficos no disponibles (CDN Chart.js bloqueado). Los números de arriba siguen funcionando.</p>';
+        return;
+      }
       if (salesChart) salesChart.destroy();
 
-      salesChart = new Chart(ctxBar, {
+      salesChart = new Chart(ctx, {
         type: 'bar',
         data: {
           labels: labels,
@@ -281,7 +262,7 @@ transactions.forEach(function (t) {
                   var label = context.dataset.label || '';
                   if (label) label += ': ';
                   if (context.dataset.type === 'line') {
-                    label += context.parsed.y + ' Ã³rdenes';
+                    label += context.parsed.y + ' órdenes';
                   } else {
                     label += '$' + Number(context.parsed.y).toLocaleString('es-AR');
                   }
@@ -316,7 +297,7 @@ transactions.forEach(function (t) {
       });
     }
 
-    /* Donut chart (categorÃ­as) */
+    /* Donut chart (categorías) */
     renderDonut(data);
   }
 
@@ -324,7 +305,7 @@ transactions.forEach(function (t) {
     var donutCtx = document.getElementById('salesDonut');
     if (!donutCtx) return;
     if (typeof Chart === 'undefined') {
-      donutCtx.parentNode.innerHTML = '<p class="form-hint">GrÃ¡fico no disponible (CDN bloqueado).</p>';
+      donutCtx.parentNode.innerHTML = '<p class="form-hint">Gráfico no disponible (CDN bloqueado).</p>';
       return;
     }
 
@@ -368,7 +349,7 @@ transactions.forEach(function (t) {
   }
 
   function buildCategoryBreakdown(data) {
-    /* Si el backend provee category_breakdown, usarlo; si no, vacÃ­o */
+    /* Si el backend provee category_breakdown, usarlo; si no, vacío */
     var breakdown = (data && data.category_breakdown) ? data.category_breakdown : null;
     if (breakdown && typeof breakdown === 'object') {
       var labels = Object.keys(breakdown);
@@ -388,7 +369,7 @@ transactions.forEach(function (t) {
       .filter(function (p) { return p.active && !p.deleted; })
       .map(function (p) {
         return '<option value="' + p.id + '" data-price="' + (p.price || 0) + '">' +
-          escapeAttr(p.name) + '  $' + Number(p.price || 0).toLocaleString('es-AR') +
+          escapeAttr(p.name) + ' — $' + Number(p.price || 0).toLocaleString('es-AR') +
         '</option>';
       });
 
@@ -428,11 +409,11 @@ transactions.forEach(function (t) {
     var quantity = parseInt(document.getElementById('sale_quantity')?.value || '0', 10);
 
     if (!productId) {
-      window.showToast('?SeleccionÃ¡ un producto.error');
+      window.showToast('❌', 'Seleccioná un producto.', 'error');
       return;
     }
     if (!quantity || quantity <= 0) {
-      window.showToast('?La cantidad debe ser mayor a 0.error');
+      window.showToast('❌', 'La cantidad debe ser mayor a 0.', 'error');
       document.getElementById('sale_quantity')?.focus();
       return;
     }
@@ -446,7 +427,7 @@ transactions.forEach(function (t) {
     if (btnLoading) btnLoading.classList.remove('hidden');
 
     try {
-      var res = await window.adminFetch('/api/v1/admin/sales', {
+      var res = await window.adminFetch('/api/admin/sales', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -464,7 +445,7 @@ transactions.forEach(function (t) {
         throw new Error(errMsg);
       }
 
-      window.showToast('?Venta registrada correctamente.success');
+      window.showToast('✅', 'Venta registrada correctamente.', 'success');
 
       var form = document.getElementById('manualSaleForm');
       if (form) form.reset();
@@ -481,7 +462,7 @@ transactions.forEach(function (t) {
       await loadSalesSummary(currentView);
     } catch (err) {
       console.error('[Sales] Error registrando venta:', err);
-      window.showToast('?', err.message || 'Error al registrar la venta.error');
+      window.showToast('❌', err.message || 'Error al registrar la venta.', 'error');
     } finally {
       if (btn) btn.disabled = false;
       if (btnText) {
@@ -492,160 +473,105 @@ transactions.forEach(function (t) {
     }
   }
 
-/* ===== ADVANCED SECTION HANDLERS ===== */
+  function openResetModal() {
+    window.showConfirmModal(
+      'Reiniciar métricas',
+      '¿Estás seguro? Esto no elimina pedidos ni ventas, solo reinicia el resumen visual a partir de este momento.',
+      function () { confirmReset(); }
+    );
+  }
 
-  function initAdvancedSection() {
-    // Delete History
-    var confirmDeleteInput = document.getElementById('confirmDeleteHistoryInput');
-    var confirmDeleteFeedback = document.getElementById('confirmDeleteHistoryFeedback');
-    var deleteBtn = document.getElementById('resetSalesBtn');
-    var deleteStatus = document.getElementById('resetSalesStatus');
+  async function confirmReset() {
+    var btn = document.getElementById('resetMetricsBtn');
+    var btnText = document.getElementById('resetMetricsBtnText');
+    var btnLoading = document.getElementById('resetMetricsBtnLoading');
 
-    if (confirmDeleteInput) {
-      confirmDeleteInput.addEventListener('input', function () {
-        var val = (confirmDeleteInput.value || '').trim().toUpperCase();
-        var isValid = val === 'ELIMINAR';
-        confirmDeleteInput.classList.toggle('valid', isValid && val.length > 0);
-        confirmDeleteInput.classList.toggle('invalid', !isValid && val.length > 0);
-        if (confirmDeleteFeedback) {
-          confirmDeleteFeedback.textContent = isValid ? 'ConfirmaciÃ³n vÃ¡lida. Se procederÃ¡ con respaldo automÃ¡tico.' : (val.length > 0 ? 'EscribÃ­ exactamente "ELIMINAR"' : '');
-          confirmDeleteFeedback.className = 'advanced-confirm-feedback ' + (isValid ? 'valid' : 'invalid');
-        }
-        if (deleteBtn) deleteBtn.disabled = !isValid;
+    if (btn) btn.disabled = true;
+    if (btnText) btnText.style.display = 'none';
+    if (btnLoading) btnLoading.classList.remove('hidden');
+
+    try {
+      var res = await window.adminFetch('/api/admin/reports/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: true })
       });
-    }
-
-    if (deleteBtn) {
-      deleteBtn.addEventListener('click', async function () {
-        var val = (confirmDeleteInput?.value || '').trim().toUpperCase();
-        if (val !== 'ELIMINAR') return;
-
-        if (deleteBtn) deleteBtn.disabled = true;
-        var btnText = document.getElementById('resetSalesBtnText');
-        var btnLoading = document.getElementById('resetSalesBtnLoading');
-        if (btnText) btnText.style.display = 'none';
-        if (btnLoading) btnLoading.classList.remove('hidden');
-        if (deleteStatus) {
-          deleteStatus.className = 'save-status visible saving';
-          deleteStatus.textContent = 'Eliminando historial y creando respaldo...';
-        }
-
-        try {
-          var res = await window.adminFetch('/api/v1/admin/earnings/history', { method: 'DELETE' });
-          if (!res || !res.ok) {
-            var errData = await res.json().catch(function () { return {}; });
-            throw new Error(errData.error || 'Error al eliminar el historial.');
-          }
-          if (deleteStatus) {
-            deleteStatus.className = 'save-status visible success';
-            deleteStatus.textContent = 'Historial eliminado y respaldado correctamente âœ…';
-          }
-          window.showToast('?Historial eliminado y respaldado correctamente.success');
-          await loadSalesSummary(currentView);
-          await loadTransactions();
-          confirmDeleteInput.value = '';
-          confirmDeleteInput.classList.remove('validinvalid');
-          if (confirmDeleteFeedback) {
-            confirmDeleteFeedback.textContent = '';
-            confirmDeleteFeedback.className = 'advanced-confirm-feedback';
-          }
-          deleteBtn.disabled = true;
-        } catch (err) {
-          console.error('[Sales] Error eliminando historial:', err);
-          if (deleteStatus) {
-            deleteStatus.className = 'save-status visible error';
-            deleteStatus.textContent = err.message || 'Error al eliminar el historial.';
-          }
-          window.showToast('?', err.message || 'Error al eliminar el historial.error');
-        } finally {
-          if (deleteBtn) deleteBtn.disabled = val !== 'ELIMINAR';
-          if (btnText) btnText.style.display = '';
-          if (btnLoading) btnLoading.classList.add('hidden');
-        }
-      });
-    }
-
-    // Reset Metrics
-    var confirmResetInput = document.getElementById('confirmResetMetricsInput');
-    var confirmResetFeedback = document.getElementById('confirmResetMetricsFeedback');
-    var resetBtn = document.getElementById('resetMetricsBtn');
-    var resetStatus = document.getElementById('resetMetricsStatus');
-
-    if (confirmResetInput) {
-      confirmResetInput.addEventListener('input', function () {
-        var val = (confirmResetInput.value || '').trim().toUpperCase();
-        var isValid = val === 'ELIMINAR';
-        confirmResetInput.classList.toggle('valid', isValid && val.length > 0);
-        confirmResetInput.classList.toggle('invalid', !isValid && val.length > 0);
-        if (confirmResetFeedback) {
-          confirmResetFeedback.textContent = isValid ? 'ConfirmaciÃ³n vÃ¡lida. Se procederÃ¡ con respaldo automÃ¡tico.' : (val.length > 0 ? 'EscribÃ­ exactamente "ELIMINAR"' : '');
-          confirmResetFeedback.className = 'advanced-confirm-feedback ' + (isValid ? 'valid' : 'invalid');
-        }
-        if (resetBtn) resetBtn.disabled = !isValid;
-      });
-    }
-
-    if (resetBtn) {
-      resetBtn.addEventListener('click', async function () {
-        var val = (confirmResetInput?.value || '').trim().toUpperCase();
-        if (val !== 'ELIMINAR') return;
-
-        if (resetBtn) resetBtn.disabled = true;
-        var btnText = document.getElementById('resetMetricsBtnText');
-        var btnLoading = document.getElementById('resetMetricsBtnLoading');
-        if (btnText) btnText.style.display = 'none';
-        if (btnLoading) btnLoading.classList.remove('hidden');
-        if (resetStatus) {
-          resetStatus.className = 'save-status visible saving';
-          resetStatus.textContent = 'Reiniciando mÃ©tricas y creando respaldo...';
-        }
-
-        try {
-          var res = await window.adminFetch('/api/v1/admin/reports/reset', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ confirm: true })
-          });
-          if (!res || !res.ok) {
-            var errData = await res.json().catch(function () { return {}; });
-            throw new Error(errData.error || 'Error al reiniciar las mÃ©tricas.');
-          }
-          if (resetStatus) {
-            resetStatus.className = 'save-status visible success';
-            resetStatus.textContent = 'MÃ©tricas reiniciadas y respaldadas correctamente âœ…';
-          }
-          window.showToast('?MÃ©tricas reiniciadas y respaldadas correctamente.success');
-          await loadSalesSummary(currentView);
-          await loadTransactions();
-          confirmResetInput.value = '';
-          confirmResetInput.classList.remove('validinvalid');
-          if (confirmResetFeedback) {
-            confirmResetFeedback.textContent = '';
-            confirmResetFeedback.className = 'advanced-confirm-feedback';
-          }
-          resetBtn.disabled = true;
-        } catch (err) {
-          console.error('[Sales] Error reiniciando mÃ©tricas:', err);
-          if (resetStatus) {
-            resetStatus.className = 'save-status visible error';
-            resetStatus.textContent = err.message || 'Error al reiniciar las mÃ©tricas.';
-          }
-          window.showToast('?', err.message || 'Error al reiniciar las mÃ©tricas.error');
-        } finally {
-          if (resetBtn) resetBtn.disabled = val !== 'ELIMINAR';
-          if (btnText) btnText.style.display = '';
-          if (btnLoading) btnLoading.classList.add('hidden');
-        }
-      });
+      if (!res || !res.ok) {
+        var errData = await res.json().catch(function () { return {}; });
+        throw new Error(errData.error || 'Error al reiniciar las métricas.');
+      }
+      window.showToast('✅', 'Métricas reiniciadas correctamente.', 'success');
+      await loadSalesSummary(currentView);
+      await loadTransactions();
+    } catch (err) {
+      console.error('[Sales] Error reiniciando métricas:', err);
+      window.showToast('❌', err.message || 'Error al reiniciar las métricas.', 'error');
+    } finally {
+      if (btn) btn.disabled = false;
+      if (btnText) btnText.style.display = '';
+      if (btnLoading) btnLoading.classList.add('hidden');
     }
   }
 
+
+  function openClearHistoryModal() {
+    // Paso 1: aviso de lo que se va a borrar.
+    window.showConfirmModal(
+      'Eliminar historial',
+      '¿Estás seguro? Se eliminará todo el historial de transacciones, pedidos, ventas y comprobantes. Esta acción no se puede deshacer.',
+      function () {
+        // Paso 2: hay que escribir ELIMINAR (anti-clic-accidental).
+        if (typeof window.showDestructiveConfirmModal === 'function') {
+          window.showDestructiveConfirmModal(
+            'Confirmar eliminación total',
+            'Último paso: esto borra TODOS los pedidos, ventas, comprobantes y recibos. Escribí ELIMINAR para continuar.',
+            'ELIMINAR',
+            function () { confirmClearHistory(); }
+          );
+        } else {
+          confirmClearHistory();
+        }
+      }
+    );
+  }
+
+  async function confirmClearHistory() {
+    var btn = document.getElementById('resetSalesBtn');
+    var btnText = document.getElementById('resetSalesBtnText');
+    var btnLoading = document.getElementById('resetSalesBtnLoading');
+
+    if (btn) btn.disabled = true;
+    if (btnText) btnText.classList.add('hidden');
+    if (btnLoading) btnLoading.classList.remove('hidden');
+
+    try {
+      var res = await window.adminFetch('/api/admin/earnings/history', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirm: 'ELIMINAR' })
+      });
+      if (!res || !res.ok) {
+        var errData = await res.json().catch(function () { return {}; });
+        throw new Error(errData.error || 'Error al eliminar el historial.');
+      }
+      window.showToast('✅', 'Historial eliminado correctamente.', 'success');
+      await loadSalesSummary(currentView);
+      await loadTransactions();
+    } catch (err) {
+      console.error('[Sales] Error eliminando historial:', err);
+      window.showToast('❌', err.message || 'Error al eliminar el historial.', 'error');
+    } finally {
+      if (btn) btn.disabled = false;
+      if (btnText) btnText.classList.remove('hidden');
+      if (btnLoading) btnLoading.classList.add('hidden');
+    }
+  }
   /* ===== HELPERS GLOBALES ===== */
 
   function escapeAttr(str) {
     if (!str) return '';
     return String(str).replace(/[&'"<>]/g, function (c) {
-      var m = { '&': '&', '"': '"', '\'': '\'', '<': '<', '>': '>' };
+      var m = { '&': '&amp;', '"': '&quot;', '\'': '&#39;', '<': '&lt;', '>': '&gt;' };
       return m[c] || c;
     });
   }
@@ -678,7 +604,28 @@ transactions.forEach(function (t) {
       });
     }
 
-    initAdvancedSection();
+    var resetBtn = document.getElementById('resetMetricsBtn');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', function () {
+        openResetModal();
+      });
+    }
+
+    var resetSalesBtn = document.getElementById('resetSalesBtn');
+    if (resetSalesBtn) {
+      resetSalesBtn.addEventListener('click', function () {
+        openClearHistoryModal();
+      });
+    }
+
+    var confirmOverlay = document.getElementById('confirmModalOverlay');
+    if (confirmOverlay) {
+      confirmOverlay.addEventListener('click', function (e) {
+        if (e.target === confirmOverlay) {
+          confirmOverlay.classList.remove('active');
+        }
+      });
+    }
 
     attachManualSaleHandlers();
 
@@ -695,6 +642,5 @@ transactions.forEach(function (t) {
     return loadSalesSummary(currentView);
   };
 })();
-
 
 

@@ -116,7 +116,7 @@ async function loadCategories() {
     var rowsHtml = products.map(function (p) {
       var imgUrl = window.getProductImageUrl(p) || '';
       var thumbnail = imgUrl
-        ? '<img src="' + escapeAttr(imgUrl) + '" alt="' + escapeAttr(p.name) + '" class="thumb" onerror="window.imgError(this)" />'
+        ? '<img src="' + escapeAttr(imgUrl) + '" alt="' + escapeAttr(p.name) + '" class="thumb" loading="lazy" decoding="async" onerror="window.imgError(this)" />'
         : '<div class="thumb">' + (p.emoji || '📹') + '</div>';
 
       var stock = Number(p.stock || 0);
@@ -145,7 +145,7 @@ async function loadCategories() {
       mobileContainer.innerHTML = products.map(function (p) {
         var imgUrl = window.getProductImageUrl(p) || '';
         var thumbnail = imgUrl
-          ? '<img src="' + escapeAttr(imgUrl) + '" alt="' + escapeAttr(p.name) + '" class="product-mobile-thumb" onerror="window.imgError(this)" />'
+          ? '<img src="' + escapeAttr(imgUrl) + '" alt="' + escapeAttr(p.name) + '" class="product-mobile-thumb" loading="lazy" decoding="async" onerror="window.imgError(this)" />'
           : '<div class="product-mobile-thumb">' + (p.emoji || '📹') + '</div>';
         var stock = Number(p.stock || 0);
 

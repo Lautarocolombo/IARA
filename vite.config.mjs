@@ -23,15 +23,16 @@ function copyRecursive(src, dest) {
   }
 }
 
-const isProduction = process.env.NODE_ENV === 'production';
-
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   customLogger: viteLogger,
   root: resolve(__dirname, 'frontend'),
-  publicDir: resolve(__dirname, 'public'),
+  publicDir: false,
   build: {
     outDir: resolve(__dirname, 'dist'),
     emptyOutDir: true,
+    target: 'es2020',
+    chunkSizeWarningLimit: 600,
+    assetsInlineLimit: 4096,
     rollupOptions: {
       input: (() => {
         const pagesDir = resolve(__dirname, 'frontend', 'pages');
@@ -50,19 +51,16 @@ export default defineConfig({
         return entries;
       })(),
       output: {
-        manualChunks: (id) => {
-          if (id.includes('node_modules')) {
-            if (id.includes('chart.js')) return 'chart';
-            if (id.includes('quill')) return 'quill';
-            if (id.includes('qrcode')) return 'qrcode';
-            return 'vendor';
-          }
+        manualChunks(id) {
+          if (id.includes('node_modules')) return 'vendor';
+          return undefined;
         },
       }
     },
     minify: 'esbuild',
     cssCodeSplit: true,
-    sourcemap: !isProduction
+    cssMinify: true,
+    sourcemap: mode !== 'production'
   },
   server: {
     proxy: {
@@ -75,13 +73,33 @@ export default defineConfig({
   },
   plugins: [
     {
-      name: 'copy-images',
+      name: 'copy-static-assets',
       closeBundle() {
-        const srcDir = resolve(__dirname, 'public', 'imagenes');
-        const destDir = resolve(__dirname, 'dist', 'imagenes');
-        if (existsSync(srcDir)) {
-          copyRecursive(srcDir, destDir);
-          console.log('[vite] Imágenes copiadas a dist/imagenes/');
+        const pairs = [
+          ['imagenes', 'imagenes'],
+          ['assets', 'assets'],
+          ['js', 'js'],
+        ];
+        for (const [srcName, destName] of pairs) {
+          const srcDir = resolve(__dirname, 'frontend', srcName);
+          const destDir = resolve(__dirname, 'dist', destName);
+          if (existsSync(srcDir)) {
+            copyRecursive(srcDir, destDir);
+            console.log(`[vite] ${srcName}/ copiado a dist/${destName}/`);
+          }
+        }
+        const rootFiles = ['sw-v4.js', 'robots.txt', 'sitemap.xml'];
+        try {
+          for (const f of readdirSync(resolve(__dirname, 'frontend'))) {
+            if (f.startsWith('google') && f.endsWith('.html')) rootFiles.push(f);
+          }
+        } catch (e) { /* noop */ }
+        for (const file of rootFiles) {
+          const src = resolve(__dirname, 'frontend', file);
+          if (existsSync(src)) {
+            copyFileSync(src, resolve(__dirname, 'dist', file));
+            console.log(`[vite] ${file} copiado a dist/`);
+          }
         }
         // Los scripts clásicos (<script src="js/..."> sin type="module") no los
         // empaqueta Vite: hay que copiarlos tal cual para que dist/index.html
@@ -96,4 +114,4 @@ export default defineConfig({
       }
     }
   ]
-});
+}));

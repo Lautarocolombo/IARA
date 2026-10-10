@@ -2,12 +2,11 @@
 
 // Valores por defecto (fallback si falla la API)
 const DEFAULT_CONFIG = {
-  REVIEWS: {
+REVIEWS: {
     GOOGLE_PLACE_ID: '',
     GOOGLE_WRITE_REVIEW_URL: ''
   },
-CONTACT: {
-    WHATSAPP: '+543444634444',
+  CONTACT: {
     WHATSAPP_ALIAS: 'iara-salgueiro',
     PHONE: '+54 (3444) 634-4444',
     EMAIL: 'noreply@artesaniagualeguay.com',
@@ -44,7 +43,10 @@ CONTACT: {
   },
   API: {
     BASE: '',
-    BACKEND_URL: 'https://iara-os3h.onrender.com'
+    BACKEND_URL: '',
+    // Prefijo único de la API. El backend responde en /api y /api/v1
+    // (compatibilidad); el frontend usa siempre PREFIX.
+    PREFIX: '/api'
   },
   PLACEHOLDER: {
     IMAGE: 'assets/placeholder-product.svg'
@@ -77,27 +79,6 @@ function deepMerge(target, source) {
 // CONFIG inicial con valores por defecto (síncrono)
 let CONFIG = { ...DEFAULT_CONFIG };
 
-// Detectar entorno y configurar API.BASE
-function detectEnvironment() {
-  const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-  const isProduction = hostname.includes('vercel.app') || hostname === 'artesaniagualeguay.com' || hostname === 'www.artesaniagualeguay.com';
-  const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
-  
-  if (isProduction) {
-    // En Vercel, los rewrites manejan /api/* -> backend
-    CONFIG.API.BASE = '';
-  } else if (isLocalhost) {
-    // En desarrollo local, apuntar al backend local
-    CONFIG.API.BASE = 'http://localhost:3000';
-  } else {
-    // Fallback: usar BACKEND_URL configurado
-    CONFIG.API.BASE = CONFIG.API.BACKEND_URL || '';
-  }
-}
-
-// Ejecutar detección inmediatamente
-detectEnvironment();
-
 let configPromise = null;
 let configLoaded = false;
 
@@ -107,12 +88,25 @@ async function loadConfigFromAPI() {
 
   configPromise = (async () => {
     try {
-      const res = await fetch('/api/v1/config', { cache: 'no-store' });
-      if (res.ok) {
+      // Prefijo único: /api/config, con fallback a /api/v1/config por compatibilidad.
+      const base = (CONFIG.API && CONFIG.API.BASE) || '';
+      const prefix = (CONFIG.API && CONFIG.API.PREFIX) || '/api';
+      let res = null;
+      try {
+        res = await fetch(`${base}${prefix}/config`, { cache: 'no-store' });
+      } catch (e) { res = null; }
+      if (!res || !res.ok) {
+        try {
+          res = await fetch(`${base}/api/v1/config`, { cache: 'no-store' });
+        } catch (e) { res = null; }
+      }
+      if (res && res.ok) {
         const apiConfig = await res.json();
         CONFIG = deepMerge(DEFAULT_CONFIG, apiConfig);
-        // Re-detect environment after loading config (in case BACKEND_URL changed)
-        detectEnvironment();
+        // No permitir que la API pise el prefijo con un valor inválido.
+        if (!CONFIG.API || typeof CONFIG.API.PREFIX !== 'string' || !CONFIG.API.PREFIX.startsWith('/')) {
+          CONFIG.API = { ...(CONFIG.API || {}), PREFIX: '/api' };
+        }
       }
     } catch (err) {
       console.warn('No se pudo cargar config desde API, usando valores por defecto:', err);
@@ -122,6 +116,7 @@ async function loadConfigFromAPI() {
       if (typeof window !== 'undefined') {
         window.CONFIG = CONFIG;
         try { applyReviewLinks(); } catch (e) { /* noop */ }
+        try { applyWhatsAppLinks(); } catch (e) { /* noop */ }
       }
     }
     return CONFIG;
@@ -164,6 +159,23 @@ function applyReviewLinks() {
   });
 }
 
+// Unifica todos los links wa.me al número configurado (admin > Contacto o
+// env WHATSAPP). Los HTML traen un href de fallback; con JS se reescribe
+// SOLO el número (wa.me/<numero>) y se conserva el ?text= de cada link
+// (ej: consulta de producto específico).
+function applyWhatsAppLinks() {
+  if (typeof document === 'undefined') return;
+  try {
+    const phone = normalizeWhatsAppPhone(CONFIG.CONTACT.WHATSAPP);
+    if (!phone) return;
+    document.querySelectorAll('a[href*="wa.me/"]').forEach(function (el) {
+      const href = el.getAttribute('href') || '';
+      const next = href.replace(/wa\.me\/\d+/, 'wa.me/' + phone);
+      if (next !== href) el.setAttribute('href', next);
+    });
+  } catch (e) { /* noop: los fallbacks hardcodeados siguen funcionando */ }
+}
+
 function normalizeWhatsAppPhone(phone) {
   let cleaned = String(phone || '').replace(/[^\d]/g, '');
   if (cleaned.startsWith('549')) {
@@ -196,6 +208,15 @@ function buildWhatsAppLink({ phone = CONFIG.CONTACT.WHATSAPP, message = '' } = {
 
 function getWhatsAppLink(message = '') {
   return buildWhatsAppLink({ message });
+}
+
+// Helper único para construir URLs de la API: apiUrl('/products').
+// Usa CONFIG.API.BASE + CONFIG.API.PREFIX en un solo lugar.
+function apiUrl(path) {
+  const base = (typeof CONFIG !== 'undefined' && CONFIG.API && CONFIG.API.BASE) ? CONFIG.API.BASE : '';
+  const prefix = (typeof CONFIG !== 'undefined' && CONFIG.API && CONFIG.API.PREFIX) ? CONFIG.API.PREFIX : '/api';
+  const clean = String(path || '');
+  return `${base}${prefix}${clean.startsWith('/') ? clean : '/' + clean}`;
 }
 
 // Función auxiliar para enviar email
@@ -235,51 +256,19 @@ function openWhatsAppSafe(primaryUrl, fallbackUrl, deeplinkUrl) {
   }
 }
 
-// Genera link tel: usando el número de CONFIG (formato E.164 con 9 para llamadas)
-function getTelLink() {
-  const phone = CONFIG.CONTACT.WHATSAPP || '+543444634444';
-  // Para tel: en Argentina se usa +54 9 + código de área + número (sin 15)
-  const waPhone = normalizeWhatsAppPhone(phone);
-  if (waPhone.startsWith('54') && !waPhone.startsWith('549')) {
-    return 'tel:+549' + waPhone.slice(2);
-  }
-  return 'tel:+54' + waPhone;
-}
-
-// Genera link wa.me usando el número de CONFIG (sin 9 para WhatsApp web)
-function getWaMeLink(message = '') {
-  const phone = CONFIG.CONTACT.WHATSAPP || '+543444634444';
-  const waPhone = normalizeWhatsAppPhone(phone);
-  const text = encodeURIComponent(message || 'Hola! Quisiera más información sobre tus productos.');
-  return `https://wa.me/${waPhone}?text=${text}`;
-}
-
-// Pobla todos los enlaces tel: y wa.me en la página desde CONFIG
-function populateContactLinks() {
-  // tel: links
-  document.querySelectorAll('[data-tel-link]').forEach(el => {
-    el.href = getTelLink();
-    if (!el.textContent.trim() || el.textContent === 'CONFIGURAR_TELEFONO') {
-      el.textContent = CONFIG.CONTACT.PHONE || '+54 (3444) 634-4444';
-    }
-  });
-
-  // wa.me links (botones principales con mensaje opcional)
-  document.querySelectorAll('[data-wame-link]').forEach(el => {
-    const message = el.dataset.wameMessage || '';
-    el.href = getWaMeLink(message);
-  });
-
-  // wa.me social icons (sin mensaje)
-  document.querySelectorAll('[data-wame-icon]').forEach(el => {
-    el.href = getWaMeLink('');
-  });
-}
-
 // Cargar config al iniciar (no bloqueante)
 if (typeof window !== 'undefined') {
   loadConfigFromAPI();
+  if (typeof document !== 'undefined') {
+    // Unificar wa.me con los valores por defecto ya; se repite al llegar la API.
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function () { try { applyWhatsAppLinks(); } catch (e) { /* noop */ } });
+    } else {
+      try { applyWhatsAppLinks(); } catch (e) { /* noop */ }
+    }
+  }
   window.CONFIG = CONFIG;
+  window.apiUrl = apiUrl;
   window.formatARS = formatARS;
   window.buildWhatsAppLink = buildWhatsAppLink;
   window.normalizeWhatsAppPhone = normalizeWhatsAppPhone;
@@ -288,16 +277,14 @@ if (typeof window !== 'undefined') {
   window.getGoogleWriteReviewLink = getGoogleWriteReviewLink;
   window.isReviewConfigured = isReviewConfigured;
   window.applyReviewLinks = applyReviewLinks;
+  window.applyWhatsAppLinks = applyWhatsAppLinks;
   window.openWhatsAppSafe = openWhatsAppSafe;
-  window.getTelLink = getTelLink;
-  window.getWaMeLink = getWaMeLink;
-  window.populateContactLinks = populateContactLinks;
   window.reloadConfig = reloadConfig;
 }
 
 // Exportar para uso en Node.js (si aplica)
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { CONFIG, buildWhatsAppLink, getWhatsAppLink, getMailtoLink, getGoogleWriteReviewLink, isReviewConfigured, applyReviewLinks, formatARS, loadConfigFromAPI, reloadConfig };
+  module.exports = { CONFIG, apiUrl, buildWhatsAppLink, getWhatsAppLink, getMailtoLink, getGoogleWriteReviewLink, isReviewConfigured, applyReviewLinks, applyWhatsAppLinks, formatARS, loadConfigFromAPI, reloadConfig };
 }
 
 if (typeof jest !== 'undefined') {
