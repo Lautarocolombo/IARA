@@ -236,6 +236,10 @@ function renderFeaturedProducts() {
         filterButtons.forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
         refreshProducts();
+        const catalog = document.querySelector('.catalog');
+        if (catalog) {
+          catalog.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       });
     });
 

@@ -140,8 +140,21 @@ async function runMigrations(query, isLocalDb) {
       .filter(f => f.endsWith('.sql') || f.endsWith('.js'))
       .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
+    // Migraciones específicas de PostgreSQL que deben omitirse en SQLite
+    const pgOnlyMigrations = new Set([
+      '004_enable_rls.sql',
+      '005_add_orders_missing_columns.sql'
+    ]);
+
     for (const file of files) {
       if (applied.has(file)) continue;
+
+      // Saltar migraciones solo para PostgreSQL cuando se ejecuta en SQLite
+      if (isLocalDb && pgOnlyMigrations.has(file)) {
+        logger.info({ migration: file }, 'Migración omitida (solo PostgreSQL)');
+        await query('INSERT INTO migrations (name) VALUES ($1) ON CONFLICT (name) DO NOTHING', [file]);
+        continue;
+      }
 
       const filePath = path.join(MIGRATIONS_DIR, file);
       let sql = '';

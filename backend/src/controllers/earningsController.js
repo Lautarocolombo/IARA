@@ -23,7 +23,7 @@ const getEarnings = async (req, res) => {
       return res.status(400).json({ error: 'start_date no puede ser posterior a end_date' });
     }
 
-    const whereClauses = [];
+    const whereClauses = ["status != 'cancelled'"];
     const whereParams = [];
     if (start_date) {
       whereParams.push(start_date);
@@ -33,7 +33,7 @@ const getEarnings = async (req, res) => {
       whereParams.push(end_date);
       whereClauses.push('substr(created_at, 1, 10) <= $' + whereParams.length);
     }
-    const whereSql = whereClauses.length ? 'WHERE ' + whereClauses.join(' AND ') : 'WHERE TRUE';
+    const whereSql = 'WHERE ' + whereClauses.join(' AND ');
 
     let resetAt = null;
     try {
@@ -97,7 +97,7 @@ const getEarnings = async (req, res) => {
     const totalRevenue = ordersTotal + manualSalesTotal;
     const avgOrderValue = totalOrders > 0 ? ordersTotal / totalOrders : 0;
 
-    const monthWhereClauses = [];
+    const monthWhereClauses = ["status != 'cancelled'"];
     const monthWhereParams = [];
     if (start_date) {
       monthWhereParams.push(start_date);

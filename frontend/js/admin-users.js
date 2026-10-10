@@ -249,6 +249,17 @@
           if (typeof doLogout === 'function') doLogout();
         }
       });
+    } else {
+      // Esperar a que el sidebar esté listo
+      document.addEventListener('adminSidebar:ready', function () {
+        if (window.adminSidebar && typeof window.adminSidebar.init === 'function') {
+          window.adminSidebar.init({
+            onLogout: function () {
+              if (typeof doLogout === 'function') doLogout();
+            }
+          });
+        }
+      });
     }
 
     var nav = document.getElementById('adminNav');
@@ -259,6 +270,11 @@
           window.adminSidebar.closeDrawer(true);
         }
       });
+    }
+
+    // Inicializar persistencia de formularios
+    if (typeof window.initFormPersistence === 'function') {
+      window.initFormPersistence();
     }
 
     var createBtn = document.getElementById('createUserBtn');

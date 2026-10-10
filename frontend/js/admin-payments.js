@@ -46,15 +46,19 @@
 
   async function loadPaymentConfig() {
     try {
-      var res = await window.adminFetch('/api/v1/admin/payment-config', { method: 'GET' });
+      var res = await window.adminFetch('/api/admin/payment-config', { method: 'GET' });
       if (!res || !res.ok) throw new Error('Error cargando configuración');
       var data = await res.json();
 
       var aliasEl = document.getElementById('pmAlias');
       var holderEl = document.getElementById('pmHolderName');
+      var cbuCvuEl = document.getElementById('pmCbuCvu');
+      var messageEl = document.getElementById('pmMessage');
       var activeEl = document.getElementById('pmActive');
       if (aliasEl) aliasEl.value = data.transferAlias || data.mpAlias || '';
       if (holderEl) holderEl.value = data.holderName || '';
+      if (cbuCvuEl) cbuCvuEl.value = data.cbuCvu || '';
+      if (messageEl) messageEl.value = data.message || '';
       if (activeEl) activeEl.checked = data.active !== false;
 
       var shippingCostEl = document.getElementById('pmShippingCost');
@@ -73,9 +77,11 @@
 
       var previewAlias = document.getElementById('pmPreviewAlias');
       var previewHolder = document.getElementById('pmPreviewHolder');
+      var previewCbuCvu = document.getElementById('pmPreviewCbuCvu');
       var previewStatus = document.getElementById('pmPreviewStatus');
       if (previewAlias) previewAlias.textContent = data.transferAlias || data.mpAlias || '—';
       if (previewHolder) previewHolder.textContent = data.holderName || '—';
+      if (previewCbuCvu) previewCbuCvu.textContent = data.cbuCvu || '—';
       if (previewStatus) previewStatus.textContent = data.active !== false ? 'Habilitado' : 'Deshabilitado';
     } catch (err) {
       console.error('[Payments] Error cargando config:', err);
@@ -91,18 +97,22 @@
     try {
       var alias = (document.getElementById('pmAlias')?.value || '').trim();
       var holder = (document.getElementById('pmHolderName')?.value || '').trim();
+      var cbuCvu = (document.getElementById('pmCbuCvu')?.value || '').trim();
+      var message = (document.getElementById('pmMessage')?.value || '').trim();
       var active = document.getElementById('pmActive')?.checked !== false;
       var shippingCost = Number(document.getElementById('pmShippingCost')?.value || 0);
       var freeShippingFrom = Number(document.getElementById('pmFreeShippingFrom')?.value || 0);
       var includedShippingCost = Number(document.getElementById('pmIncludedShippingCost')?.value || 0);
 
-      var res = await window.adminFetch('/api/v1/admin/payment-config', {
+      var res = await window.adminFetch('/api/admin/payment-config', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           mpAlias: alias,
           transferAlias: alias,
           holderName: holder,
+          cbuCvu: cbuCvu,
+          message: message,
           active: active,
           shippingCost: shippingCost,
           freeShippingFrom: freeShippingFrom,
@@ -154,7 +164,7 @@
       if (currentProofStatus) params.set('status', currentProofStatus);
       if (currentProofSearch) params.set('search', currentProofSearch);
 
-      var res = await window.adminFetch('/api/v1/admin/payment-proofs?' + params.toString(), { method: 'GET' });
+      var res = await window.adminFetch('/api/admin/payment-proofs?' + params.toString(), { method: 'GET' });
       if (!res || !res.ok) throw new Error('Error cargando comprobantes');
       var data = await res.json();
       proofData = data;
@@ -295,7 +305,7 @@
   async function doApproveProof(proofId, orderId) {
 
     try {
-      var res = await window.adminFetch('/api/v1/admin/payment-proofs/' + proofId + '/approve', { method: 'POST' });
+      var res = await window.adminFetch('/api/admin/payment-proofs/' + proofId + '/approve', { method: 'POST' });
       if (!res || !res.ok) {
         var data = await res.json().catch(function () { return {}; });
         throw new Error(data.error || 'Error al aprobar');
@@ -318,7 +328,7 @@
 
   async function doRejectProof(proofId, orderId, reason) {
     try {
-      var res = await window.adminFetch('/api/v1/admin/payment-proofs/' + proofId + '/reject', {
+      var res = await window.adminFetch('/api/admin/payment-proofs/' + proofId + '/reject', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reason: reason || '' })
@@ -338,7 +348,7 @@
 
   async function loadPaymentStats() {
     try {
-      var res = await window.adminFetch('/api/v1/admin/payment-stats', { method: 'GET' });
+      var res = await window.adminFetch('/api/admin/payment-stats', { method: 'GET' });
       if (!res || !res.ok) throw new Error('Error cargando estadísticas');
       var data = await res.json();
 
@@ -428,7 +438,7 @@
     if (emptyEl) emptyEl.style.display = 'none';
 
     try {
-      var res = await window.adminFetch('/api/v1/admin/activity-log?limit=50', { method: 'GET' });
+      var res = await window.adminFetch('/api/admin/activity-log?limit=50', { method: 'GET' });
       if (!res || !res.ok) throw new Error('Error cargando actividad');
       var data = await res.json();
 
@@ -458,11 +468,11 @@
     if (!container) return;
     container.innerHTML = '<p style="color:#64748b;">Cargando provincias...</p>';
     try {
-      var res = await window.adminFetch('/api/v1/admin/shipping-rates', { method: 'GET' });
+      var res = await window.adminFetch('/api/admin/shipping-rates', { method: 'GET' });
       if (!res || !res.ok) throw new Error('Error cargando tarifas');
       var data = await res.json();
       var includedCost = 0;
-      var configRes = await window.adminFetch('/api/v1/admin/payment-config', { method: 'GET' });
+      var configRes = await window.adminFetch('/api/admin/payment-config', { method: 'GET' });
       if (configRes && configRes.ok) {
         var config = await configRes.json();
         includedCost = Number(config.includedShippingCost || 0);
@@ -510,7 +520,7 @@
           shipping_cost: Number(input.value || 0)
         });
       });
-      var res = await window.adminFetch('/api/v1/admin/shipping-rates', {
+      var res = await window.adminFetch('/api/admin/shipping-rates', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ rates: rates })

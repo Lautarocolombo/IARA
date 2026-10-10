@@ -9,6 +9,7 @@
   var currentView = 'weekly';
   var salesData = null;
   var productsForSale = [];
+  var categoryCache = null;
 
   /* ===== CARGA DE DATOS ===== */
 
@@ -37,6 +38,7 @@
         avg_order_value: salesData.ticketPromedio || 0
       });
 
+      await loadCategoryBreakdown(view);
       updateChart(salesData);
       renderRangeToggle(view);
     } catch (err) {
@@ -46,6 +48,22 @@
       if (syncBtn) syncBtn.disabled = false;
       if (syncText) syncText.style.display = '';
       if (syncLoading) syncLoading.classList.add('hidden');
+    }
+  }
+
+  async function loadCategoryBreakdown(view) {
+    var period = view === 'monthly' ? '30d' : '7d';
+    try {
+      var res = await window.adminFetch('/api/admin/reports/sales?period=' + period, { method: 'GET' });
+      if (res && res.ok) {
+        var data = await res.json();
+        if (data && data.byCategory) {
+          categoryCache = data.byCategory;
+        }
+      }
+    } catch (err) {
+      console.warn('[Sales] No se pudo cargar desglose por categoría:', err);
+      categoryCache = null;
     }
   }
 
@@ -213,7 +231,7 @@ transactions.forEach(function (t) {
     var ctx = document.getElementById('salesChart');
     if (ctx) {
       if (typeof Chart === 'undefined') {
-        ctx.parentNode.innerHTML = '<p class="form-hint">Gráficos no disponibles (CDN Chart.js bloqueado). Los números de arriba siguen funcionando.</p>';
+        ctx.parentNode.innerHTML = '<p class="form-hint">Gráficos no disponibles (Chart.js no cargó). Los números de arriba siguen funcionando.</p>';
         return;
       }
       if (salesChart) salesChart.destroy();
@@ -234,7 +252,7 @@ transactions.forEach(function (t) {
               yAxisID: 'y'
             },
             {
-              label: 'Ã“rdenes',
+              label: 'Órdenes',
               data: orders,
               type: 'line',
               backgroundColor: 'rgba(212, 112, 144, 0.2)',
@@ -298,20 +316,20 @@ transactions.forEach(function (t) {
     }
 
     /* Donut chart (categorías) */
-    renderDonut(data);
+    renderDonut();
   }
 
-  function renderDonut(data) {
+  function renderDonut() {
     var donutCtx = document.getElementById('salesDonut');
     if (!donutCtx) return;
     if (typeof Chart === 'undefined') {
-      donutCtx.parentNode.innerHTML = '<p class="form-hint">Gráfico no disponible (CDN bloqueado).</p>';
+      donutCtx.parentNode.innerHTML = '<p class="form-hint">Gráfico no disponible (Chart.js no cargó).</p>';
       return;
     }
 
     if (salesDonut) salesDonut.destroy();
 
-    var categoryData = buildCategoryBreakdown(data);
+    var categoryData = buildCategoryBreakdown();
     if (!categoryData.labels.length) {
       donutCtx.parentNode.style.display = 'none';
       return;
@@ -342,18 +360,25 @@ transactions.forEach(function (t) {
           legend: {
             position: 'bottom',
             labels: { font: { size: 10 }, padding: 8 }
+          },
+          tooltip: {
+            callbacks: {
+              label: function (context) {
+                var label = context.label || '';
+                var value = Number(context.parsed || 0);
+                return label + ': $' + value.toLocaleString('es-AR');
+              }
+            }
           }
         }
       }
     });
   }
 
-  function buildCategoryBreakdown(data) {
-    /* Si el backend provee category_breakdown, usarlo; si no, vacío */
-    var breakdown = (data && data.category_breakdown) ? data.category_breakdown : null;
-    if (breakdown && typeof breakdown === 'object') {
-      var labels = Object.keys(breakdown);
-      var values = labels.map(function (k) { return Number(breakdown[k] || 0); });
+  function buildCategoryBreakdown() {
+    if (categoryCache && Array.isArray(categoryCache) && categoryCache.length > 0) {
+      var labels = categoryCache.map(function (c) { return c.category || c.name || 'Sin categoría'; });
+      var values = categoryCache.map(function (c) { return Number(c.total || 0); });
       return { labels: labels, values: values };
     }
     return { labels: [], values: [] };

@@ -359,7 +359,6 @@ const getPublicProducts = async (req, res) => {
     const enriched = await attachImagesToProducts(result.rows, baseUrl);
     if (applyETag(req, res, enriched)) return;
     res.json(enriched);
-    try { syncBus.emit('products_updated', {}); } catch (e) { /* noop */ }
   } catch (err) {
     logger.error('Error obteniendo productos:', err);
     if (err.message && (err.message.includes('does not exist') || err.message.includes('no existe') || err.code === '42P01' || err.code === '42703')) {

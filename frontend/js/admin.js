@@ -119,7 +119,11 @@ async function doLogin() {
      currentUser = { user: data.user, role: data.role, permissions: data.permissions };
      var userNameEl = document.getElementById('adminUserName');
      if (userNameEl && data.user) userNameEl.textContent = data.user;
-     window.location.href = '../pages/dashboard.html';
+     if (window.location.pathname.includes('/pages/admin.html')) {
+       window.location.href = '../pages/dashboard.html';
+     } else {
+       document.getElementById('loginOverlay')?.classList.add('hidden');
+     }
   } catch (err) {
     let userMessage = 'Error inesperado. Por favor, recargá la página.';
     if (err.name === 'AbortError') userMessage = 'El servidor tardó demasiado en responder. Recargá la página e intentá nuevamente.';

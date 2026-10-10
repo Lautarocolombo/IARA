@@ -309,7 +309,8 @@ async function initSQLite() {
       coupon_code TEXT DEFAULT '',
       coupon_discount REAL DEFAULT 0,
       tenant_id TEXT DEFAULT 'default',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      deleted_at DATETIME
     )`);
     await query(`CREATE TABLE IF NOT EXISTS order_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,

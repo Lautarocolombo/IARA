@@ -164,17 +164,21 @@ const updateAdminPaymentConfig = async (req, res) => {
       mpAlias,
       transferAlias,
       holderName,
+      cbuCvu,
       active,
       shippingCost,
       freeShippingFrom,
       includedShippingCost,
       notifyAdminNewProof,
       notifyClientApproved,
-      notifyClientRejected
+      notifyClientRejected,
+      message
     } = req.body || {};
 
     const alias = (mpAlias || transferAlias || '').trim();
     const holder = (holderName || '').trim();
+    const cbu = (cbuCvu || '').trim();
+    const msg = (message || '').trim();
     const isActive = active !== false;
     const shipping = Number(shippingCost || 0);
     const freeShipping = Number(freeShippingFrom || 0);
@@ -190,24 +194,26 @@ const updateAdminPaymentConfig = async (req, res) => {
         `UPDATE payment_config SET 
           transfer_alias = $1,
           holder_name = $2,
-          active = $3,
-          shipping_cost = $4,
-          free_shipping_from = $5,
-          included_shipping_cost = $6,
-          notify_admin_new_proof = $7,
-          notify_client_approved = $8,
-          notify_client_rejected = $9,
+          cbu_cvu = $3,
+          message = $4,
+          active = $5,
+          shipping_cost = $6,
+          free_shipping_from = $7,
+          included_shipping_cost = $8,
+          notify_admin_new_proof = $9,
+          notify_client_approved = $10,
+          notify_client_rejected = $11,
           updated_at = CURRENT_TIMESTAMP
-        WHERE id = $10`,
-        [alias, holder, isActive, shipping, freeShipping, includedShipping, notifyAdmin, notifyClientAppr, notifyClientRej, existingRow.rows[0].id]
+        WHERE id = $12`,
+        [alias, holder, cbu, msg, isActive, shipping, freeShipping, includedShipping, notifyAdmin, notifyClientAppr, notifyClientRej, existingRow.rows[0].id]
       );
     } else {
       await query(
         `INSERT INTO payment_config (
-          transfer_alias, holder_name, active, shipping_cost, free_shipping_from, 
+          transfer_alias, holder_name, cbu_cvu, message, active, shipping_cost, free_shipping_from, 
           included_shipping_cost, notify_admin_new_proof, notify_client_approved, notify_client_rejected
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-        [alias, holder, isActive, shipping, freeShipping, includedShipping, notifyAdmin, notifyClientAppr, notifyClientRej]
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+        [alias, holder, cbu, msg, isActive, shipping, freeShipping, includedShipping, notifyAdmin, notifyClientAppr, notifyClientRej]
       );
     }
 

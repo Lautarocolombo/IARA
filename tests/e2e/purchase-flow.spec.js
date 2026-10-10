@@ -61,7 +61,7 @@ test('checkout crea pedido con transferencia', async ({ page }) => {
 
   await page.selectOption('#paymentMethod', 'transfer');
 
-  await page.route('/api/orders', async (route) => {
+  await page.route('/api/v1/orders', async (route) => {
     await route.fulfill({
       status: 201,
       contentType: 'application/json',
@@ -69,7 +69,7 @@ test('checkout crea pedido con transferencia', async ({ page }) => {
     });
   });
 
-  await page.route('/api/payment-config', async (route) => {
+  await page.route('/api/v1/payment-config', async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -85,6 +85,6 @@ holderName: 'Artesanías Gualeguay',
 
   await page.click('#checkoutSubmitBtn');
 
-  await expect(page.locator('#paymentInstructions')).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('#paymentSection')).toBeVisible({ timeout: 15000 });
   await expect(page.locator('#paymentOrderId')).not.toContainText('--');
 });

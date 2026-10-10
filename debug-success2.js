@@ -1,0 +1,22 @@
+const { chromium } = require('@playwright/test');
+(async () => {
+  const browser = await chromium.launch({ headless: false });
+  const page = await browser.newPage();
+  page.on('console', msg => console.log('CONSOLE:', msg.type(), msg.text()));
+  page.on('pageerror', err => console.log('PAGE ERROR:', err.message));
+  await page.goto('http://localhost:3000/pages/success.html');
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForTimeout(3000);
+  const fallback = page.locator('#successFallback');
+  const card = page.locator('#successCard');
+  console.log('Fallback display:', await fallback.evaluate(el => getComputedStyle(el).display));
+  console.log('Fallback opacity:', await fallback.evaluate(el => getComputedStyle(el).opacity));
+  console.log('Fallback visibility:', await fallback.evaluate(el => getComputedStyle(el).visibility));
+  console.log('Fallback width:', await fallback.evaluate(el => el.offsetWidth));
+  console.log('Fallback height:', await fallback.evaluate(el => el.offsetHeight));
+  console.log('Card display:', await card.evaluate(el => getComputedStyle(el).display));
+  console.log('Card opacity:', await card.evaluate(el => getComputedStyle(el).opacity));
+  console.log('Card visibility:', await card.evaluate(el => getComputedStyle(el).visibility));
+  console.log('Card classes:', await card.getAttribute('class'));
+  await browser.close();
+})();

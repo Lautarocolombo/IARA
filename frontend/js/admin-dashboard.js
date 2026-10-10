@@ -212,6 +212,11 @@
     setupContentTabs();
     applyRoleVisibility();
 
+    // Inicializar persistencia de formularios
+    if (typeof window.initFormPersistence === 'function') {
+      window.initFormPersistence();
+    }
+
     checkAuth().then(function (ok) {
       if (ok) {
         var user = window.getCurrentUser ? window.getCurrentUser() : { username: 'Admin', role: 'admin' };
@@ -382,6 +387,39 @@
       .replace(/>/g, '>')
       .replace(/"/g, '"');
   }
+
+  var initializedSections = {};
+
+  function onSectionChange(section) {
+    if (initializedSections[section]) return;
+    initializedSections[section] = true;
+
+    switch (section) {
+      case 'orders':
+        if (typeof window.initOrdersPanel === 'function') window.initOrdersPanel();
+        break;
+      case 'sales':
+        if (typeof window.initSalesPanel === 'function') window.initSalesPanel();
+        break;
+      case 'payments':
+        if (typeof window.initPaymentsPanel === 'function') window.initPaymentsPanel();
+        break;
+      case 'products':
+        if (typeof window.initProductsPanel === 'function') window.initProductsPanel();
+        break;
+      case 'categories':
+        if (typeof window.initCategoriesPanel === 'function') window.initCategoriesPanel();
+        break;
+      case 'testimonials':
+        if (typeof window.initTestimonialsPanel === 'function') window.initTestimonialsPanel();
+        break;
+      case 'inventory':
+        if (typeof window.initInventoryPanel === 'function') window.initInventoryPanel();
+        break;
+    }
+  }
+
+  window.onDashboardSectionChange = onSectionChange;
 
   window.initAdminDashboard = initAdminDashboard;
   window.switchSection = switchSection;

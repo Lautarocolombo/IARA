@@ -1,7 +1,6 @@
 ﻿const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const { safeJsonParse } = require('../lib/parser');
-const { logAudit } = require('../lib/audit');
 
 const WEEKLY_BAJA_THRESHOLD = 300;
 const WEEKLY_MEDIA_THRESHOLD = 800;
@@ -127,37 +126,9 @@ const getSalesTrend = async (req, res) => {
        GROUP BY date(created_at) ORDER BY date ASC`,
       [cutoff.toISOString().split('T')[0]]
     );
-    res.json(result.rows);
+res.json(result.rows);
   } catch (err) {
     logger.error('Error obteniendo tendencia:', err);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-};
-
-const resetMetrics = async (req, res) => {
-  try {
-    const { confirm } = req.body || {};
-    if (!confirm) {
-      return res.status(400).json({ error: 'Falta confirmación. Enviá { confirm: true } en el body para confirmar el reseteo.' });
-    }
-
-    const result = await query(
-      "INSERT INTO site_settings (key, value, tenant_id) VALUES ('metrics_reset_at', $1, COALESCE(current_setting('app.current_tenant', TRUE), 'default')) ON CONFLICT (key) DO UPDATE SET value = $1, updated_at = CURRENT_TIMESTAMP",
-      [new Date().toISOString()]
-    );
-
-    res.json({ ok: true, resetAt: result.rows[0]?.value || new Date().toISOString() });
-    logAudit({
-      user: req.user?.user || 'admin',
-      action: 'reset',
-      entityType: 'reports',
-      entityId: 0,
-      details: 'Métricas reiniciadas desde ' + new Date().toISOString(),
-      ip: req.ip || '',
-      tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
-    }).catch(() => {});
-  } catch (err) {
-    logger.error({ err: err.message }, 'Error reiniciando métricas');
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
@@ -371,5 +342,5 @@ function formatDate(d) {
   return `${y}-${m}-${day}`;
 }
 
-module.exports = { getSalesReport, getSalesTrend, resetMetrics, getWeeklySummary, getSalesSummary };
+module.exports = { getSalesReport, getSalesTrend, getWeeklySummary, getSalesSummary };
 

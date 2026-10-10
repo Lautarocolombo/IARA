@@ -4,9 +4,9 @@ test.describe('Admin Users', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/pages/admin-users.html');
     await page.waitForLoadState('domcontentloaded');
-    await page.fill('#adminPageUsername', 'admin');
-    await page.fill('#adminPagePassword', 'admin');
-    await page.click('#adminPageLoginSubmit');
+    await page.fill('#loginUser', 'admin');
+    await page.fill('#loginPass', 'admin');
+    await page.click('#loginBtn');
     await page.waitForTimeout(1000);
     await page.waitForSelector('#usersTable', { timeout: 10000 }).catch(() => {});
   });

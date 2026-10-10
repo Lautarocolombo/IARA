@@ -105,7 +105,7 @@
       html += '<div class="carousel-slot-card' + dirtyClass + '" data-slot="' + slotNum + '">' +
         '<div class="carousel-slot-thumb">' +
           (hasImage
-            ? '<img src="' + escapeAttr(slot.url) + '" alt="Carrusel slot ' + slotNum + '" class="carousel-slot-img" loading="lazy" decoding="async" />'
+            ? '<img src="' + escapeAttr(slot.url) + '" alt="Carrusel slot ' + slotNum + '" class="carousel-slot-img" loading="lazy" decoding="async" onerror="this.onerror=null; this.src=window.getPlaceholderDataUri ? window.getPlaceholderDataUri(\'🖼️\') : \'\'; this.alt=\'No se pudo cargar la imagen\';" />'
             : '<div class="carousel-slot-placeholder"><span class="carousel-slot-placeholder-icon">🖼️</span><span>Vacío</span></div>') +
         '</div>' +
         '<div class="carousel-slot-meta">' +
@@ -367,7 +367,7 @@
 
     container.innerHTML = slides.map(function (slot, idx) {
       return '<div class="carousel-preview-slide' + (idx === currentPreviewIndex ? ' active' : '') + '" data-preview-index="' + idx + '">' +
-        '<img src="' + escapeAttr(slot.url) + '" alt="' + escapeAttr(slot.alt_text || 'Preview') + '" class="carousel-preview-img" />' +
+        '<img src="' + escapeAttr(slot.url) + '" alt="' + escapeAttr(slot.alt_text || 'Preview') + '" class="carousel-preview-img" onerror="this.onerror=null; this.src=window.getPlaceholderDataUri ? window.getPlaceholderDataUri(\'🖼️\') : \'\'; this.alt=\'No se pudo cargar la imagen\';" />' +
       '</div>';
     }).join('');
 
