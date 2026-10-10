@@ -6,14 +6,35 @@ const logger = require('../lib/logger');
 const BACKUP_DIR = path.join(__dirname, '..', '..', 'backups');
 const MAX_BACKUPS = 7;
 const TABLES = [
+  'users',
+  'user_tenants',
   'products',
   'product_images',
+  'media_assets',
   'categories',
   'orders',
+  'order_items',
+  'customers',
+  'contacts',
   'testimonials',
+  'reviews',
+  'sales',
+  'subscribers',
+  'payment_config',
+  'payment_proofs',
+  'receipts',
+  'site_texts',
+  'site_settings',
+  'section_content',
   'hero_cards',
+  'carousel_images',
   'webhook_events',
-  'receipts'
+  'activity_log',
+  'product_bulk_imports',
+  'coupons',
+  'shipping_rates_by_province',
+  'inventory_movements',
+  'inventory_alerts'
 ];
 
 async function backupDatabase() {

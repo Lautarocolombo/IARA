@@ -1,13 +1,13 @@
 const crypto = require('crypto');
 const { query, transaction } = require('../lib/db');
 const logger = require('../lib/logger');
-const { orderSchema } = require('../lib/validators');
+const { orderSchema, roundMoney } = require('../lib/validators');
 const { syncBus } = require('../routes/sync');
 const { safeJsonParse } = require('../lib/parser');
 const path = require('path');
 const fs = require('fs');
 const PDFDocument = require('pdfkit');
-const { uploadProofToBlob, processFile } = require('../lib/upload');
+const { uploadProofToBlob, processFile, deleteImageAsset } = require('../lib/upload');
 const { sendOrderConfirmationEmail } = require('../lib/email');
 const { logInventoryMovement } = require('../controllers/inventoryController');
 
@@ -24,6 +24,46 @@ async function logActivity(user, action, entityType = '', entityId = 0, details 
 }
 
 const VALID_STATUSES = ['pending', 'confirmed', 'preparing', 'shipped', 'delivered', 'cancelled'];
+
+/* Limpieza best-effort de comprobantes huérfanos al archivar: borra las filas
+   (payment_proofs, receipts) y los archivos (Blob/local; base64 es noop).
+   Cada paso está aislado en try/catch: la limpieza nunca debe romper el
+   archivado. Se ejecuta DESPUÉS del commit, no dentro de la transacción. */
+async function deleteOrderAttachments(orderId) {
+  const urls = [];
+  try {
+    const proofs = await query('SELECT proof_url FROM payment_proofs WHERE order_id = $1', [orderId]);
+    urls.push(...proofs.rows.map(r => r.proof_url).filter(Boolean));
+    await query('DELETE FROM payment_proofs WHERE order_id = $1', [orderId]);
+  } catch (err) {
+    logger.warn({ err: err.message, orderId }, 'No se pudieron limpiar payment_proofs del pedido archivado');
+  }
+  try {
+    const receipts = await query('SELECT url FROM receipts WHERE order_id = $1', [orderId]);
+    urls.push(...receipts.rows.map(r => r.url).filter(Boolean));
+    await query('DELETE FROM receipts WHERE order_id = $1', [orderId]);
+  } catch (err) {
+    logger.warn({ err: err.message, orderId }, 'No se pudieron limpiar receipts del pedido archivado');
+  }
+  try {
+    const o = await query('SELECT receipt_url FROM orders WHERE id = $1', [orderId]);
+    if (o.rows[0] && o.rows[0].receipt_url) urls.push(o.rows[0].receipt_url);
+  } catch (err) {
+    logger.warn({ err: err.message, orderId }, 'No se pudo leer receipt_url del pedido archivado');
+  }
+  let cleaned = 0;
+  for (const url of urls) {
+    try {
+      if (await deleteImageAsset({ url })) cleaned++;
+    } catch (err) {
+      logger.warn({ err: err.message, orderId }, 'No se pudo borrar archivo de comprobante');
+    }
+  }
+  if (urls.length > 0) {
+    logger.info({ orderId, files: urls.length, cleaned }, 'Comprobantes huérfanos limpiados al archivar');
+  }
+  return cleaned;
+}
 
 const getOrders = async (req, res) => {
   try {
@@ -147,6 +187,8 @@ const createOrder = async (req, res) => {
       if (dbPrice === undefined) {
         throw new Error(`Producto ${item.id} no encontrado en la base de datos`);
       }
+      // El precio guardado es SIEMPRE el de la DB, nunca el del cliente.
+      item.price = dbPrice;
       calculatedSubtotal += dbPrice * Number(item.quantity || 1);
     }
 
@@ -203,7 +245,7 @@ const createOrder = async (req, res) => {
       }
     }
 
-    const calculatedTotal = calculatedSubtotal - couponDiscount + calculatedShipping;
+    const calculatedTotal = roundMoney(calculatedSubtotal - couponDiscount + calculatedShipping);
 
     if (Math.abs(calculatedTotal - Number(total)) > 0.01) {
       logger.warn({ frontendTotal: total, calculatedTotal }, 'createOrder: total del frontend no coincide con el calculado por el backend');
@@ -265,7 +307,7 @@ const createOrder = async (req, res) => {
         );
       }
 
-      const finalTotal = calculatedSubtotal - finalCouponDiscount + calculatedShipping;
+      const finalTotal = roundMoney(calculatedSubtotal - finalCouponDiscount + calculatedShipping);
 
       const orderResult = await query(
         'INSERT INTO orders (items, total, customer, status, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, subtotal, shipping_cost, notes, order_token, coupon_code, coupon_discount, payment_method, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) RETURNING *',
@@ -385,6 +427,7 @@ const deleteOrder = async (req, res) => {
       await logActivity(user, 'archive', 'order', id, `Pedido #${id} archivado (borrado lógico)`, req.ip || '', id, req.headers['x-tenant-id'] || req.user?.tenant_id || 'default', client);
       await query('UPDATE orders SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted_at IS NULL AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [id], client);
     });
+    await deleteOrderAttachments(id);
     res.json({ ok: true, archived: true });
   } catch (err) {
     if (err.message === 'NOT_FOUND') return res.status(404).json({ error: 'Pedido no encontrado' });
@@ -411,8 +454,11 @@ const batchDeleteOrders = async (req, res) => {
         await logActivity(user, 'batch_archive', 'order', order.id, `Pedido #${order.id} archivado en lote (estado: ${status})`, req.ip || '', order.id, req.headers['x-tenant-id'] || req.user?.tenant_id || 'default', client);
       }
       const deleteResult = await query('UPDATE orders SET deleted_at = CURRENT_TIMESTAMP WHERE status = $1 AND deleted_at IS NULL AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [status], client);
-      return { deleted: deleteResult.rowCount, archived: true };
+      return { deleted: deleteResult.rowCount, archived: true, ids: orders.map(o => o.id) };
     });
+    for (const oid of (result.ids || [])) {
+      await deleteOrderAttachments(oid);
+    }
     res.json({ ok: true, deleted: result.deleted });
   } catch (err) {
     logger.error({ err: err.message }, 'Error eliminando pedidos en lote');

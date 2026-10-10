@@ -2,6 +2,7 @@ const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const { syncBus } = require('../routes/sync');
 const { logAudit } = require('../lib/audit');
+const { roundMoney } = require('../lib/validators');
 
 const getSales = async (req, res) => {
   try {
@@ -70,7 +71,7 @@ const createManualSale = async (req, res) => {
       return res.status(400).json({ error: 'El precio del producto es inválido' });
     }
 
-    const total = unitPrice * qty;
+    const total = roundMoney(unitPrice * qty);
 
     const insertResult = await query(
       `INSERT INTO sales (product_id, quantity, unit_price, total, sale_date, created_at, tenant_id)

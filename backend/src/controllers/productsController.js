@@ -1,5 +1,5 @@
 const { query, isLocal } = require('../lib/db');
-const { productSchema } = require('../lib/validators');
+const { productSchema, roundMoney } = require('../lib/validators');
 const logger = require('../lib/logger');
 const { deleteImageAsset, getPublicUrl, handleImageUpload, updateImageField, getTenantId } = require('../lib/imageService');
 const { syncBus } = require('../routes/sync');
@@ -516,7 +516,7 @@ const createProduct = async (req, res) => {
     const tenantId = getTenantId(req);
     const result = await query(
       `INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, FALSE, $13) RETURNING *`,
-      [data.name, slug, data.category, Number(data.price), data.description || '', data.emoji || '📿', imageUrl, data.badge || '', Number(data.stock), data.featured || false, data.active !== false, data.sku || '', tenantId]
+      [data.name, slug, data.category, roundMoney(data.price), data.description || '', data.emoji || '📿', imageUrl, data.badge || '', Number(data.stock), data.featured || false, data.active !== false, data.sku || '', tenantId]
     );
     logger.info({ productId: result.rows[0].id, name: data.name, slug }, 'createProduct: producto creado');
     res.status(201).json(result.rows[0]);
@@ -572,7 +572,7 @@ const updateProduct = async (req, res) => {
     const fields = rawFields.filter(f => f !== 'image' || data[f]);
     if (!fields.length && !(req.files && req.files.length > 0)) return res.status(400).json({ error: 'Sin datos para actualizar' });
     const setClause = fields.map((_, i) => `${fields[i]} = $${i + 1}`).join(', ');
-    const values = fields.map(f => (['price', 'stock'].includes(f) ? Number(data[f]) : data[f]));
+    const values = fields.map(f => (f === 'price' ? roundMoney(data[f]) : (f === 'stock' ? Number(data[f]) : data[f])));
     values.push(id, tenantId);
 
     let previousStock = 0;

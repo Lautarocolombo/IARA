@@ -11,6 +11,14 @@ function toBoolean(val) {
   return Boolean(val);
 }
 
+/* Redondeo a centavos: evita artefactos binarios de REAL/float
+   (ej: 0.1 + 0.2 = 0.30000000000000004) antes de guardar dinero. */
+function roundMoney(val) {
+  const n = Number(val);
+  if (!Number.isFinite(n)) return 0;
+  return Math.round(n * 100) / 100;
+}
+
 const productSchema = z.object({
   name: z.string().min(1, 'Nombre es requerido').max(200),
   slug: z.string().max(200).optional().default(''),
@@ -49,7 +57,7 @@ const orderSchema = z.object({
   items: z.array(z.object({
     id: z.number(),
     name: z.string(),
-    price: z.number(),
+    price: z.number().nonnegative('Precio de item inválido'),
     quantity: z.number().int().positive().optional(),
     qty: z.number().int().positive().optional(),
     emoji: z.string().max(10).optional().default('📿'),
@@ -87,6 +95,8 @@ const contactSchema = z.object({
 });
 
 module.exports = {
+  toBoolean,
+  roundMoney,
   productSchema,
   testimonialSchema,
   siteTextSchema,

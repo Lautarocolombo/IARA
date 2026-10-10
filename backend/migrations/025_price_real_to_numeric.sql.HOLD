@@ -1,0 +1,254 @@
+-- =============================================================================
+-- 025_price_real_to_numeric — CONVERSIÓN REAL → NUMERIC(12,2)
+-- ESTADO: EN ESPERA (.HOLD). El migrador IGNORA este archivo a propósito.
+-- =============================================================================
+-- POR QUÉ EN ESPERA: convierte columnas de dinero de REAL (float binario,
+-- artefactos tipo 0.30000000000000004) a NUMERIC(12,2) exacto. Es un cambio
+-- de esquema sobre Neon PRODUCCIÓN y, por regla del proyecto, debe probarse
+-- primero en staging. NO renombrar a .sql sin completar el runbook.
+--
+-- RUNBOOK (hacer en orden, con confirmación del dueño antes del paso 4):
+--   1. Backup: pg_dump $DATABASE_URL > backup-antes-025.sql
+--   2. Crear un branch de Neon desde producción y apuntar una instancia de
+--      staging a ese branch (DATABASE_URL del branch).
+--   3. Renombrar este archivo a 025_price_real_to_numeric.sql SOLO en staging,
+--      correr `npm run migrate` (backend/) y verificar:
+--        a) el boot no falla y el log muestra "Migración aplicada" sin errores;
+--        b) SELECT de verificación (abajo) devuelve 0 filas en todas las tablas;
+--        c) `npm test` (backend) en verde contra staging;
+--        d) el panel admin muestra precios/totales idénticos (spot-check).
+--   4. Recién entonces, aplicar en producción en horario valle, con el backup
+--      del paso 1 a mano y el dueño avisado.
+--   5. COMPATIBILIDAD DE CÓDIGO: pg devuelve NUMERIC como string. El backend
+--      ya envuelve lecturas monetarias en Number()/roundMoney() (ver
+--      validators.js, orders/sales/products controllers). Si algún endpoint
+--      nuevo devuelve el valor crudo, normalizarlo antes de responder.
+--
+-- VERIFICACIÓN POST-MIGRACIÓN (debe devolver 0 en todas):
+--   SELECT 'products' t, COUNT(*) FROM products WHERE price IS NULL AND id IS NOT NULL
+--   UNION ALL SELECT 'orders', COUNT(*) FROM orders WHERE total IS NULL;
+--
+-- ROLLBACK MANUAL (solo si el paso 4 falló y hay backup): restaurar el
+-- pg_dump del paso 1. No hay "down" automático a REAL porque implicaría
+-- perder la exactitud ganada; si igual se necesita, por columna:
+--   ALTER TABLE <t> ALTER COLUMN <c> TYPE REAL USING <c>::real;
+-- =============================================================================
+
+-- ---------- products.price (NOT NULL) ----------
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns
+             WHERE table_name = 'products' AND column_name = 'price' AND data_type = 'real') THEN
+    ALTER TABLE products ADD COLUMN IF NOT EXISTS price_numeric NUMERIC(12,2);
+    UPDATE products SET price_numeric = ROUND(price::numeric, 2) WHERE price_numeric IS NULL AND price IS NOT NULL;
+    IF EXISTS (SELECT 1 FROM products
+               WHERE ABS(COALESCE(price_numeric, 0) - ROUND(COALESCE(price, 0)::numeric, 2)) > 0.001) THEN
+      RAISE EXCEPTION 'products.price: hay filas que no coinciden tras la conversión';
+    END IF;
+    ALTER TABLE products DROP COLUMN price;
+    ALTER TABLE products RENAME COLUMN price_numeric TO price;
+    ALTER TABLE products ALTER COLUMN price SET NOT NULL;
+  END IF;
+END $$;
+
+-- ---------- orders.total (NOT NULL) ----------
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns
+             WHERE table_name = 'orders' AND column_name = 'total' AND data_type = 'real') THEN
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS total_numeric NUMERIC(12,2);
+    UPDATE orders SET total_numeric = ROUND(total::numeric, 2) WHERE total_numeric IS NULL AND total IS NOT NULL;
+    IF EXISTS (SELECT 1 FROM orders
+               WHERE ABS(COALESCE(total_numeric, 0) - ROUND(COALESCE(total, 0)::numeric, 2)) > 0.001) THEN
+      RAISE EXCEPTION 'orders.total: hay filas que no coinciden tras la conversión';
+    END IF;
+    ALTER TABLE orders DROP COLUMN total;
+    ALTER TABLE orders RENAME COLUMN total_numeric TO total;
+    ALTER TABLE orders ALTER COLUMN total SET NOT NULL;
+  END IF;
+END $$;
+
+-- ---------- orders.subtotal (DEFAULT 0) ----------
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns
+             WHERE table_name = 'orders' AND column_name = 'subtotal' AND data_type = 'real') THEN
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS subtotal_numeric NUMERIC(12,2) DEFAULT 0;
+    UPDATE orders SET subtotal_numeric = ROUND(subtotal::numeric, 2) WHERE subtotal_numeric IS NULL AND subtotal IS NOT NULL;
+    IF EXISTS (SELECT 1 FROM orders
+               WHERE ABS(COALESCE(subtotal_numeric, 0) - ROUND(COALESCE(subtotal, 0)::numeric, 2)) > 0.001) THEN
+      RAISE EXCEPTION 'orders.subtotal: hay filas que no coinciden tras la conversión';
+    END IF;
+    ALTER TABLE orders DROP COLUMN subtotal;
+    ALTER TABLE orders RENAME COLUMN subtotal_numeric TO subtotal;
+    ALTER TABLE orders ALTER COLUMN subtotal SET DEFAULT 0;
+  END IF;
+END $$;
+
+-- ---------- orders.shipping_cost (DEFAULT 0) ----------
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns
+             WHERE table_name = 'orders' AND column_name = 'shipping_cost' AND data_type = 'real') THEN
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_cost_numeric NUMERIC(12,2) DEFAULT 0;
+    UPDATE orders SET shipping_cost_numeric = ROUND(shipping_cost::numeric, 2) WHERE shipping_cost_numeric IS NULL AND shipping_cost IS NOT NULL;
+    IF EXISTS (SELECT 1 FROM orders
+               WHERE ABS(COALESCE(shipping_cost_numeric, 0) - ROUND(COALESCE(shipping_cost, 0)::numeric, 2)) > 0.001) THEN
+      RAISE EXCEPTION 'orders.shipping_cost: hay filas que no coinciden tras la conversión';
+    END IF;
+    ALTER TABLE orders DROP COLUMN shipping_cost;
+    ALTER TABLE orders RENAME COLUMN shipping_cost_numeric TO shipping_cost;
+    ALTER TABLE orders ALTER COLUMN shipping_cost SET DEFAULT 0;
+  END IF;
+END $$;
+
+-- ---------- orders.coupon_discount (DEFAULT 0) ----------
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns
+             WHERE table_name = 'orders' AND column_name = 'coupon_discount' AND data_type = 'real') THEN
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS coupon_discount_numeric NUMERIC(12,2) DEFAULT 0;
+    UPDATE orders SET coupon_discount_numeric = ROUND(coupon_discount::numeric, 2) WHERE coupon_discount_numeric IS NULL AND coupon_discount IS NOT NULL;
+    IF EXISTS (SELECT 1 FROM orders
+               WHERE ABS(COALESCE(coupon_discount_numeric, 0) - ROUND(COALESCE(coupon_discount, 0)::numeric, 2)) > 0.001) THEN
+      RAISE EXCEPTION 'orders.coupon_discount: hay filas que no coinciden tras la conversión';
+    END IF;
+    ALTER TABLE orders DROP COLUMN coupon_discount;
+    ALTER TABLE orders RENAME COLUMN coupon_discount_numeric TO coupon_discount;
+    ALTER TABLE orders ALTER COLUMN coupon_discount SET DEFAULT 0;
+  END IF;
+END $$;
+
+-- ---------- order_items.price (NOT NULL) ----------
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns
+             WHERE table_name = 'order_items' AND column_name = 'price' AND data_type = 'real') THEN
+    ALTER TABLE order_items ADD COLUMN IF NOT EXISTS price_numeric NUMERIC(12,2);
+    UPDATE order_items SET price_numeric = ROUND(price::numeric, 2) WHERE price_numeric IS NULL AND price IS NOT NULL;
+    IF EXISTS (SELECT 1 FROM order_items
+               WHERE ABS(COALESCE(price_numeric, 0) - ROUND(COALESCE(price, 0)::numeric, 2)) > 0.001) THEN
+      RAISE EXCEPTION 'order_items.price: hay filas que no coinciden tras la conversión';
+    END IF;
+    ALTER TABLE order_items DROP COLUMN price;
+    ALTER TABLE order_items RENAME COLUMN price_numeric TO price;
+    ALTER TABLE order_items ALTER COLUMN price SET NOT NULL;
+  END IF;
+END $$;
+
+-- ---------- sales.unit_price (NOT NULL) ----------
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns
+             WHERE table_name = 'sales' AND column_name = 'unit_price' AND data_type = 'real') THEN
+    ALTER TABLE sales ADD COLUMN IF NOT EXISTS unit_price_numeric NUMERIC(12,2);
+    UPDATE sales SET unit_price_numeric = ROUND(unit_price::numeric, 2) WHERE unit_price_numeric IS NULL AND unit_price IS NOT NULL;
+    IF EXISTS (SELECT 1 FROM sales
+               WHERE ABS(COALESCE(unit_price_numeric, 0) - ROUND(COALESCE(unit_price, 0)::numeric, 2)) > 0.001) THEN
+      RAISE EXCEPTION 'sales.unit_price: hay filas que no coinciden tras la conversión';
+    END IF;
+    ALTER TABLE sales DROP COLUMN unit_price;
+    ALTER TABLE sales RENAME COLUMN unit_price_numeric TO unit_price;
+    ALTER TABLE sales ALTER COLUMN unit_price SET NOT NULL;
+  END IF;
+END $$;
+
+-- ---------- sales.total (NOT NULL) ----------
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns
+             WHERE table_name = 'sales' AND column_name = 'total' AND data_type = 'real') THEN
+    ALTER TABLE sales ADD COLUMN IF NOT EXISTS total_numeric NUMERIC(12,2);
+    UPDATE sales SET total_numeric = ROUND(total::numeric, 2) WHERE total_numeric IS NULL AND total IS NOT NULL;
+    IF EXISTS (SELECT 1 FROM sales
+               WHERE ABS(COALESCE(total_numeric, 0) - ROUND(COALESCE(total, 0)::numeric, 2)) > 0.001) THEN
+      RAISE EXCEPTION 'sales.total: hay filas que no coinciden tras la conversión';
+    END IF;
+    ALTER TABLE sales DROP COLUMN total;
+    ALTER TABLE sales RENAME COLUMN total_numeric TO total;
+    ALTER TABLE sales ALTER COLUMN total SET NOT NULL;
+  END IF;
+END $$;
+
+-- ---------- payment_proofs.amount (DEFAULT 0) ----------
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns
+             WHERE table_name = 'payment_proofs' AND column_name = 'amount' AND data_type = 'real') THEN
+    ALTER TABLE payment_proofs ADD COLUMN IF NOT EXISTS amount_numeric NUMERIC(12,2) DEFAULT 0;
+    UPDATE payment_proofs SET amount_numeric = ROUND(amount::numeric, 2) WHERE amount_numeric IS NULL AND amount IS NOT NULL;
+    IF EXISTS (SELECT 1 FROM payment_proofs
+               WHERE ABS(COALESCE(amount_numeric, 0) - ROUND(COALESCE(amount, 0)::numeric, 2)) > 0.001) THEN
+      RAISE EXCEPTION 'payment_proofs.amount: hay filas que no coinciden tras la conversión';
+    END IF;
+    ALTER TABLE payment_proofs DROP COLUMN amount;
+    ALTER TABLE payment_proofs RENAME COLUMN amount_numeric TO amount;
+    ALTER TABLE payment_proofs ALTER COLUMN amount SET DEFAULT 0;
+  END IF;
+END $$;
+
+-- ---------- coupons.value (NOT NULL) y coupons.min_amount (DEFAULT 0) ----------
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns
+             WHERE table_name = 'coupons' AND column_name = 'value' AND data_type = 'real') THEN
+    ALTER TABLE coupons ADD COLUMN IF NOT EXISTS value_numeric NUMERIC(12,2);
+    UPDATE coupons SET value_numeric = ROUND(value::numeric, 2) WHERE value_numeric IS NULL AND value IS NOT NULL;
+    IF EXISTS (SELECT 1 FROM coupons
+               WHERE ABS(COALESCE(value_numeric, 0) - ROUND(COALESCE(value, 0)::numeric, 2)) > 0.001) THEN
+      RAISE EXCEPTION 'coupons.value: hay filas que no coinciden tras la conversión';
+    END IF;
+    ALTER TABLE coupons DROP COLUMN value;
+    ALTER TABLE coupons RENAME COLUMN value_numeric TO value;
+    ALTER TABLE coupons ALTER COLUMN value SET NOT NULL;
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns
+             WHERE table_name = 'coupons' AND column_name = 'min_amount' AND data_type = 'real') THEN
+    ALTER TABLE coupons ADD COLUMN IF NOT EXISTS min_amount_numeric NUMERIC(12,2) DEFAULT 0;
+    UPDATE coupons SET min_amount_numeric = ROUND(min_amount::numeric, 2) WHERE min_amount_numeric IS NULL AND min_amount IS NOT NULL;
+    IF EXISTS (SELECT 1 FROM coupons
+               WHERE ABS(COALESCE(min_amount_numeric, 0) - ROUND(COALESCE(min_amount, 0)::numeric, 2)) > 0.001) THEN
+      RAISE EXCEPTION 'coupons.min_amount: hay filas que no coinciden tras la conversión';
+    END IF;
+    ALTER TABLE coupons DROP COLUMN min_amount;
+    ALTER TABLE coupons RENAME COLUMN min_amount_numeric TO min_amount;
+    ALTER TABLE coupons ALTER COLUMN min_amount SET DEFAULT 0;
+  END IF;
+END $$;
+
+-- ---------- payment_config.shipping_cost / free_shipping_from (DEFAULT 0) ----------
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns
+             WHERE table_name = 'payment_config' AND column_name = 'shipping_cost' AND data_type = 'real') THEN
+    ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS shipping_cost_numeric NUMERIC(12,2) DEFAULT 0;
+    UPDATE payment_config SET shipping_cost_numeric = ROUND(shipping_cost::numeric, 2) WHERE shipping_cost_numeric IS NULL AND shipping_cost IS NOT NULL;
+    IF EXISTS (SELECT 1 FROM payment_config
+               WHERE ABS(COALESCE(shipping_cost_numeric, 0) - ROUND(COALESCE(shipping_cost, 0)::numeric, 2)) > 0.001) THEN
+      RAISE EXCEPTION 'payment_config.shipping_cost: hay filas que no coinciden tras la conversión';
+    END IF;
+    ALTER TABLE payment_config DROP COLUMN shipping_cost;
+    ALTER TABLE payment_config RENAME COLUMN shipping_cost_numeric TO shipping_cost;
+    ALTER TABLE payment_config ALTER COLUMN shipping_cost SET DEFAULT 0;
+  END IF;
+END $$;
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.columns
+             WHERE table_name = 'payment_config' AND column_name = 'free_shipping_from' AND data_type = 'real') THEN
+    ALTER TABLE payment_config ADD COLUMN IF NOT EXISTS free_shipping_from_numeric NUMERIC(12,2) DEFAULT 0;
+    UPDATE payment_config SET free_shipping_from_numeric = ROUND(free_shipping_from::numeric, 2) WHERE free_shipping_from_numeric IS NULL AND free_shipping_from IS NOT NULL;
+    IF EXISTS (SELECT 1 FROM payment_config
+               WHERE ABS(COALESCE(free_shipping_from_numeric, 0) - ROUND(COALESCE(free_shipping_from, 0)::numeric, 2)) > 0.001) THEN
+      RAISE EXCEPTION 'payment_config.free_shipping_from: hay filas que no coinciden tras la conversión';
+    END IF;
+    ALTER TABLE payment_config DROP COLUMN free_shipping_from;
+    ALTER TABLE payment_config RENAME COLUMN free_shipping_from_numeric TO free_shipping_from;
+    ALTER TABLE payment_config ALTER COLUMN free_shipping_from SET DEFAULT 0;
+  END IF;
+END $$;
