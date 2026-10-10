@@ -553,6 +553,7 @@
   async function updateOrderActions(order) {
     var approveBtn = document.getElementById('approvePaymentBtn');
     var rejectBtn = document.getElementById('rejectPaymentBtn');
+    var advanceBtn = document.getElementById('advanceOrderBtn');
     if (!approveBtn || !rejectBtn) return;
 
     var blocked = whatsappChecked && !isShippingComplete(order);
@@ -564,6 +565,22 @@
       approveBtn.title = isPaymentValidated(order) ? 'Pago ya validado' : '';
     }
     rejectBtn.disabled = order.status === 'cancelled';
+
+    var nextMap = {
+      confirmed: { status: 'preparing', label: 'Preparar envío' },
+      preparing: { status: 'shipped', label: 'Marcar enviado' },
+      shipped: { status: 'delivered', label: 'Marcar entregado' }
+    };
+    var next = nextMap[order.status];
+    if (advanceBtn) {
+      if (next && !blocked && order.status !== 'cancelled') {
+        advanceBtn.classList.remove('hidden');
+        advanceBtn.textContent = next.label;
+        advanceBtn.disabled = false;
+      } else {
+        advanceBtn.classList.add('hidden');
+      }
+    }
   }
 
   async function saveShippingInfo() {
@@ -724,6 +741,99 @@
     }
   }
 
+  var NEXT_STATUS = {
+    confirmed: { status: 'preparing', label: 'Preparar envío' },
+    preparing: { status: 'shipped', label: 'Marcar enviado' },
+    shipped: { status: 'delivered', label: 'Marcar entregado' }
+  };
+
+  async function advanceOrder() {
+    if (!selectedOrderId) return;
+    var order = await fetchOrderDetail(selectedOrderId);
+    if (!order) return;
+    var next = NEXT_STATUS[order.status];
+    if (!next) {
+      showToast('ℹ️', 'Este pedido no tiene un siguiente estado.', 'info');
+      return;
+    }
+    window.showConfirmModal(
+      next.label,
+      '¿Cambiar el pedido #' + selectedOrderId + ' a "' + getStatusLabel(next.status) + '"?',
+      function () { processAdvance(selectedOrderId, next); }
+    );
+  }
+
+  async function processAdvance(id, next) {
+    try {
+      var res = await window.adminFetch('/api/admin/orders/' + id + '/status', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: next.status })
+      });
+      if (!res || !res.ok) {
+        var data = await res.json().catch(function () { return {}; });
+        throw new Error(data.error || 'Error cambiando estado');
+      }
+      await postActivity(id, 'Status cambiado a ' + next.status, 'Estado actualizado por el administrador');
+      showToast('✅', 'Pedido actualizado a "' + getStatusLabel(next.status) + '"', 'success');
+      var order = await fetchOrderDetail(id);
+      if (order) {
+        currentReceipt = await fetchReceipt(id);
+        renderWizard(order);
+        renderPaymentDetails(order);
+        renderShippingInfo(order);
+        updateOrderActions(order);
+        var idx = ordersList.findIndex(function (o) { return o.id === id; });
+        if (idx !== -1) ordersList[idx].status = next.status;
+        renderOrdersList(ordersList);
+      }
+    } catch (err) {
+      showToast('❌', err.message || 'Error cambiando estado', 'error');
+    }
+  }
+
+  function getClientPhone(order) {
+    var raw = order.shipping_phone || '';
+    try {
+      var customer = typeof order.customer === 'string' ? JSON.parse(order.customer) : (order.customer || {});
+      raw = raw || customer.phone || '';
+    } catch (e) { /* noop */ }
+    if (typeof window.normalizeWhatsAppPhone === 'function') {
+      return window.normalizeWhatsAppPhone(raw);
+    }
+    return String(raw || '').replace(/[^\d]/g, '');
+  }
+
+  function getClientPlainName(order) {
+    try {
+      var customer = typeof order.customer === 'string' ? JSON.parse(order.customer) : (order.customer || {});
+      return customer.name || order.shipping_name || 'cliente';
+    } catch (e) {
+      return order.shipping_name || 'cliente';
+    }
+  }
+
+  async function notifyClient() {
+    if (!selectedOrderId) {
+      showToast('⚠️', 'Seleccioná un pedido primero.', 'error');
+      return;
+    }
+    var order = await fetchOrderDetail(selectedOrderId);
+    if (!order) return;
+    var phone = getClientPhone(order);
+    if (!phone) {
+      showToast('⚠️', 'Este pedido no tiene teléfono para avisar por WhatsApp.', 'error');
+      return;
+    }
+    var msg = 'Hola ' + getClientPlainName(order) + ', somos de Artesanías Gualeguay. ' +
+      'Tu pedido #' + order.id + ' está: ' + getStatusLabel(order.status) +
+      ' (total ' + formatCurrency(order.total) + '). ¡Gracias por tu compra!';
+    var url = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(msg);
+    window.open(url, '_blank', 'noopener,noreferrer');
+    await postActivity(selectedOrderId, 'Aviso por WhatsApp', 'Se abrió chat con el cliente para avisar el estado');
+    showToast('✅', 'Abriendo WhatsApp con mensaje prearmado.', 'success');
+  }
+
   async function deleteOrder(id) {
     window.showConfirmModal(
       'Archivar pedido',
@@ -803,11 +913,31 @@
       });
     }
 
+    var dateFromInput = document.getElementById('orderDateFrom');
+    if (dateFromInput) {
+      dateFromInput.addEventListener('change', function () {
+        loadOrders();
+      });
+    }
+
+    var dateToInput = document.getElementById('orderDateTo');
+    if (dateToInput) {
+      dateToInput.addEventListener('change', function () {
+        loadOrders();
+      });
+    }
+
     var approveBtn = document.getElementById('approvePaymentBtn');
     if (approveBtn) approveBtn.addEventListener('click', approvePayment);
 
     var rejectBtn = document.getElementById('rejectPaymentBtn');
     if (rejectBtn) rejectBtn.addEventListener('click', rejectPayment);
+
+    var advanceBtn = document.getElementById('advanceOrderBtn');
+    if (advanceBtn) advanceBtn.addEventListener('click', advanceOrder);
+
+    var notifyBtn = document.getElementById('notifyClientBtn');
+    if (notifyBtn) notifyBtn.addEventListener('click', notifyClient);
 
     var uploadBtn = document.getElementById('uploadReceiptBtn');
     var fileInput = document.getElementById('receiptFileInput');
@@ -937,11 +1067,27 @@
     if (empty) empty.style.display = 'none';
     var search = document.getElementById('orderSearch');
     var status = document.getElementById('orderStatusFilter');
+    var dateFrom = document.getElementById('orderDateFrom');
+    var dateTo = document.getElementById('orderDateTo');
     var q = search ? search.value : '';
     var s = status ? status.value : '';
+    var from = dateFrom && dateFrom.value ? dateFrom.value : '';
+    var to = dateTo && dateTo.value ? dateTo.value : '';
     ordersList = await fetchOrders(q);
     if (s) {
       ordersList = ordersList.filter(function (o) { return o.status === s; });
+    }
+    if (from) {
+      ordersList = ordersList.filter(function (o) {
+        var d = o.created_at ? String(o.created_at).slice(0, 10) : '';
+        return d >= from;
+      });
+    }
+    if (to) {
+      ordersList = ordersList.filter(function (o) {
+        var d = o.created_at ? String(o.created_at).slice(0, 10) : '';
+        return d <= to;
+      });
     }
     if (ordersError && !ordersList.length) {
       if (tbody) {

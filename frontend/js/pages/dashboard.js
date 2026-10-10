@@ -13,6 +13,7 @@
     }
 
     if (typeof initAdminDashboard === 'function') initAdminDashboard();
+    if (typeof initHomePanel === 'function') initHomePanel();
     if (typeof initContentEditor === 'function') initContentEditor();
     if (typeof initProductManager === 'function') initProductManager();
     if (typeof initCategoryManager === 'function') initCategoryManager();

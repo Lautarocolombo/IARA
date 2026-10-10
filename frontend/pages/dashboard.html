@@ -87,8 +87,86 @@
       </header>
 
       <div class="admin-content">
+        <!-- ===== SECCIÓN: RESUMEN (Fase 4) ===== -->
+        <section id="section-home" class="admin-section-active">
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-header-title">Resumen del negocio</h3>
+              <div class="card-header-actions">
+                <button class="btn btn-secondary btn-sm" id="refreshHomeBtn">
+                  <span id="refreshHomeBtnText">Actualizar</span>
+                  <span id="refreshHomeBtnLoading" class="hidden">Actualizando...</span>
+                </button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="homeMetrics">
+                <div class="metrics-grid">
+                  <div class="metric-card">
+                    <div class="metric-value" id="homeToday">—</div>
+                    <div class="metric-label">Ventas de hoy</div>
+                  </div>
+                  <div class="metric-card">
+                    <div class="metric-value" id="homeWeek">—</div>
+                    <div class="metric-label">Ventas de la semana</div>
+                  </div>
+                  <div class="metric-card">
+                    <div class="metric-value" id="homeMonth">—</div>
+                    <div class="metric-label">Ventas del mes</div>
+                  </div>
+                  <div class="metric-card">
+                    <div class="metric-value" id="homePending">—</div>
+                    <div class="metric-label">Pedidos pendientes</div>
+                  </div>
+                  <div class="metric-card">
+                    <div class="metric-value" id="homeLowStock">—</div>
+                    <div class="metric-label">Productos con stock bajo</div>
+                  </div>
+                </div>
+              </div>
+              <div class="save-status" id="homeStatus"></div>
+            </div>
+          </div>
+
+          <div class="sales-bottom-grid mt-2">
+            <div>
+              <div class="admin-section-title admin-section-title--space-between">
+                <span>Últimos pedidos</span>
+                <button class="btn btn-secondary btn-sm" data-goto-section="orders">Ver pedidos</button>
+              </div>
+              <div class="report-section table-wrap">
+                <table class="table-admin" id="homeOrdersTable">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Cliente</th>
+                      <th class="text-center">Estado</th>
+                      <th class="text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody id="homeOrdersBody">
+                    <tr><td colspan="4" class="loading-row">Cargando...</td></tr>
+                  </tbody>
+                </table>
+                <div id="homeOrdersEmpty" class="empty-state hidden">
+                  <h3>Sin pedidos recientes</h3>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div class="admin-section-title">Actividad reciente</div>
+              <div id="homeActivityList">
+                <p class="text-muted">Cargando...</p>
+              </div>
+              <div id="homeActivityEmpty" class="empty-state hidden">
+                <h3>Sin actividad reciente</h3>
+              </div>
+            </div>
+          </div>
+        </section>
+
         <!-- ===== SECCIÓN: CONTENIDO DEL SITIO ===== -->
-        <section id="section-content" class="admin-section-active">
+        <section id="section-content" class="admin-section-inactive">
           <div id="contentEditorRoot">
             <div class="content-tabs-nav" id="contentTabsNav">
               <button class="content-tab active" data-content-tab="home-blocks" type="button">Bloques del Home</button>
@@ -982,6 +1060,8 @@
                         <option value="delivered">Entregado</option>
                         <option value="cancelled">Cancelado</option>
                       </select>
+                      <input type="date" id="orderDateFrom" class="card-filter" title="Desde" />
+                      <input type="date" id="orderDateTo" class="card-filter" title="Hasta" />
                     </div>
                     <div class="btn-group">
                       <button class="btn btn-secondary btn-sm" id="saveOrdersCloudBtn" data-scope="orders">
@@ -989,10 +1069,10 @@
                         <span id="saveOrdersCloudBtnLoading" class="hidden">Guardando...</span>
                       </button>
                       <button class="btn btn-danger btn-sm" id="batchDeleteCancelledBtn">
-                        <span>Eliminar cancelados</span>
+                        <span>Archivar cancelados</span>
                       </button>
                       <button class="btn btn-outline btn-sm btn-warning" id="batchDeletePendingBtn">
-                        <span>Eliminar pendientes</span>
+                        <span>Archivar pendientes</span>
                       </button>
                     </div>
                   </div>
@@ -1089,6 +1169,8 @@
                       <div class="order-actions">
                         <button class="btn btn-success" id="approvePaymentBtn">Aprobar Pago</button>
                         <button class="btn btn-danger" id="rejectPaymentBtn">Rechazar Pago</button>
+                        <button class="btn btn-primary hidden" id="advanceOrderBtn">Avanzar estado</button>
+                        <button class="btn btn-secondary" id="notifyClientBtn" title="Avisar al cliente por WhatsApp">Avisar por WhatsApp</button>
                       </div>
                     </div>
                   </div>
@@ -1742,6 +1824,7 @@
   <script src="../js/admin-orders.js"></script>
   <script src="../js/admin-payments.js"></script>
   <script src="../js/admin-inventory.js"></script>
+  <script src="../js/admin-home.js"></script>
   <script src="../js/pages/dashboard.js"></script>`n  <script>if (typeof populateContactLinks === "function") populateContactLinks();</script>`n</body>
 </html>
 

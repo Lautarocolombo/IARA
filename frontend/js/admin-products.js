@@ -126,12 +126,14 @@ async function loadCategories() {
         '<td><div class="product-name">' + escapeHtml(p.name || '') + '</div>' +
           '<div class="product-desc" title="' + escapeHtml(p.description || '') + '">' + escapeHtml((p.description || '').substring(0, 60)) + '</div></td>' +
         '<td>' + escapeHtml(p.category || 'Sin categoría') + '</td>' +
-        '<td class="price-cell">$' + Number(p.price || 0).toLocaleString('es-AR') + '</td>' +
-        '<td class="stock-cell">' + renderStockCell(stock) + '</td>' +
+        '<td class="price-cell" data-quickedit="price" data-product-id="' + p.id + '" title="Clic para editar precio">$' + Number(p.price || 0).toLocaleString('es-AR') + '</td>' +
+        '<td class="stock-cell" data-quickedit="stock" data-product-id="' + p.id + '" title="Clic para editar stock">' + renderStockCell(stock) + '</td>' +
 '<td class="status-cell">' + renderStatusCell(p.active) + '</td>' +
         '<td class="status-cell">' + renderFeaturedCell(p.featured, p.id) + '</td>' +
         '<td class="actions-cell">' +
           '<button class="btn btn-sm btn-secondary" onclick="window.editProduct(' + p.id + ')" title="Editar">✏️</button>' +
+          '<button class="btn btn-sm btn-secondary" onclick="window.toggleProductActive(' + p.id + ')" title="' + (p.active ? 'Desactivar' : 'Activar') + '">' + (p.active ? '⏸️' : '▶️') + '</button>' +
+          '<button class="btn btn-sm btn-secondary" onclick="window.duplicateProductConfirm(' + p.id + ')" title="Duplicar">⧉</button>' +
           '<button class="btn btn-sm btn-danger" onclick="window.deleteProductConfirm(' + p.id + ')" title="Eliminar">🗑️</button>' +
         '</td></tr>';
     }).join('');
@@ -163,6 +165,8 @@ renderStockBadge(stock) +
           '</div>' +
           '<div class="product-mobile-card-actions">' +
             '<button class="btn btn-sm btn-secondary" onclick="window.editProduct(' + p.id + ')" title="Editar">✏️ Editar</button>' +
+            '<button class="btn btn-sm btn-secondary" onclick="window.toggleProductActive(' + p.id + ')" title="' + (p.active ? 'Desactivar' : 'Activar') + '">' + (p.active ? '⏸️ Pausar' : '▶️ Activar') + '</button>' +
+            '<button class="btn btn-sm btn-secondary" onclick="window.duplicateProductConfirm(' + p.id + ')" title="Duplicar">⧉ Duplicar</button>' +
             '<button class="btn btn-sm btn-danger" onclick="window.deleteProductConfirm(' + p.id + ')" title="Eliminar">🗑️ Eliminar</button>' +
           '</div>' +
         '</div>';
@@ -901,6 +905,142 @@ var active = document.getElementById('prod_active');
     }
   }
 
+  window.toggleProductActive = async function (id) {
+    var product = productList.find(function (p) { return p.id === id; });
+    if (!product) return;
+    try {
+      var res = await window.adminFetch('/api/v1/admin/products/' + id + '/estado', {
+        method: 'PATCH'
+      });
+      if (!res || !res.ok) {
+        var errData = await res.json().catch(function () { return {}; });
+        throw new Error(errData.error || 'No se pudo cambiar el estado.');
+      }
+      var data = await res.json();
+      product.active = !!data.active;
+      applyProductFilters();
+      window.showToast('✅', product.active ? 'Producto activado.' : 'Producto desactivado.', 'success');
+    } catch (err) {
+      console.error('[Products] Error cambiando estado:', err);
+      window.showToast('❌', err.message || 'No se pudo cambiar el estado.', 'error');
+    }
+  };
+
+  window.duplicateProductConfirm = function (id) {
+    var product = productList.find(function (p) { return p.id === id; });
+    if (!product) return;
+    window.showConfirmModal(
+      'Duplicar producto',
+      '¿Crear una copia de "' + product.name + '"? La copia se crea desactivada.',
+      function () { processDuplicateProduct(id); }
+    );
+  };
+
+  async function processDuplicateProduct(id) {
+    try {
+      var res = await window.adminFetch('/api/v1/admin/products/' + id + '/duplicar', {
+        method: 'POST'
+      });
+      if (!res || !res.ok) {
+        var errData = await res.json().catch(function () { return {}; });
+        throw new Error(errData.error || 'No se pudo duplicar.');
+      }
+      window.showToast('✅', 'Producto duplicado (revisalo en inactivos).', 'success');
+      await loadProducts();
+    } catch (err) {
+      console.error('[Products] Error duplicando:', err);
+      window.showToast('❌', err.message || 'No se pudo duplicar el producto.', 'error');
+    }
+  }
+
+  /* ===== EDICIÓN RÁPIDA DE PRECIO Y STOCK (clic en la celda) ===== */
+
+  function openQuickEditor(cell) {
+    if (!cell || cell.querySelector('input')) return;
+    var field = cell.getAttribute('data-quickedit');
+    var id = Number(cell.getAttribute('data-product-id'));
+    var product = productList.find(function (p) { return p.id === id; });
+    if (!product) return;
+
+    var current = Number(field === 'price' ? product.price : product.stock) || 0;
+    var original = cell.innerHTML;
+    var input = document.createElement('input');
+    input.type = 'number';
+    input.value = current;
+    input.min = '0';
+    if (field === 'stock') input.step = '1';
+    else input.step = '0.01';
+    input.className = 'quickedit-input';
+    input.setAttribute('aria-label', field === 'price' ? 'Editar precio' : 'Editar stock');
+    cell.innerHTML = '';
+    cell.appendChild(input);
+    input.focus();
+    try { input.select(); } catch (e) { /* noop */ }
+
+    var done = false;
+    function close(restore) {
+      if (done) return;
+      done = true;
+      if (restore) cell.innerHTML = original;
+    }
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        saveQuickEdit(cell, field, id, input.value, original, close);
+      } else if (e.key === 'Escape') {
+        close(true);
+      }
+      e.stopPropagation();
+    });
+    input.addEventListener('blur', function () {
+      if (String(input.value) !== String(current)) {
+        saveQuickEdit(cell, field, id, input.value, original, close);
+      } else {
+        close(true);
+      }
+    });
+    input.addEventListener('click', function (e) { e.stopPropagation(); });
+  }
+
+  async function saveQuickEdit(cell, field, id, rawValue, original, close) {
+    var value = Number(rawValue);
+    if (field === 'price' && !(value > 0)) {
+      window.showToast('❌', 'Ingresá un precio mayor a 0.', 'error');
+      close(true);
+      return;
+    }
+    if (field === 'stock' && (!Number.isFinite(value) || value < 0 || Math.floor(value) !== value)) {
+      window.showToast('❌', 'Ingresá un stock entero mayor o igual a 0.', 'error');
+      close(true);
+      return;
+    }
+    cell.innerHTML = '<span class="text-muted">Guardando...</span>';
+    try {
+      var formData = new FormData();
+      formData.append(field, String(value));
+      var res = await window.adminFetch('/api/v1/admin/products/' + id, {
+        method: 'PUT',
+        body: formData
+      });
+      if (!res || !res.ok) {
+        var errData = await res.json().catch(function () { return {}; });
+        throw new Error(errData.error || 'No se pudo guardar.');
+      }
+      var updated = await res.json();
+      var product = productList.find(function (p) { return p.id === id; });
+      if (product) {
+        product[field] = updated[field] !== undefined ? updated[field] : value;
+      }
+      close(false);
+      applyProductFilters();
+      window.showToast('✅', (field === 'price' ? 'Precio' : 'Stock') + ' actualizado.', 'success');
+    } catch (err) {
+      console.error('[Products] Error en edición rápida:', err);
+      close(true);
+      window.showToast('❌', err.message || 'No se pudo guardar.', 'error');
+    }
+  }
+
   /* HELPERS GLOBALES */
   window.removeImagePreview = function (index) {
     selectedFiles.splice(index, 1);
@@ -1040,6 +1180,14 @@ var active = document.getElementById('prod_active');
     if (filterInput) {
       filterInput.addEventListener('input', function () {
         applyProductFilters();
+      });
+    }
+
+    var productsTbody = document.getElementById('productsTableBody');
+    if (productsTbody) {
+      productsTbody.addEventListener('click', function (e) {
+        var cell = e.target && e.target.closest ? e.target.closest('[data-quickedit]') : null;
+        if (cell && productsTbody.contains(cell)) openQuickEditor(cell);
       });
     }
 
