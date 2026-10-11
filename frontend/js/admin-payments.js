@@ -589,5 +589,13 @@
   }
 
   window.initPaymentsPanel = initPaymentsPanel;
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('dashboard:section-changed', function (e) {
+      if (e.detail && e.detail.section === 'payments') {
+        initPaymentsPanel();
+      }
+    });
+  }
 })();
 

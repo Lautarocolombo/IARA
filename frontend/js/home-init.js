@@ -20,21 +20,24 @@ if (typeof loadTestimonials === 'function') {
 
   function loadAboutImages() {
     if (typeof fetchWithRetry !== 'function') return;
-    fetchWithRetry(CONFIG.API.BASE + '/api/carousel/public', {}, 3, 1000, 15000, false).then(function(res) {
-      if (!res || !res.ok) return;
-      res.json().then(function(data) {
-        var slots = data.slots || {};
-        for (var i = 1; i <= 5; i++) {
-          var slot = slots[i];
-          if (slot && slot.caption) {
-            window.__aboutImages['about_caption_' + i] = slot.caption;
-            window.__aboutImages['about_group_' + i] = slot.about_group;
-          }
+    fetchWithRetry(CONFIG.API.BASE + '/api/carousel/public', {}, {
+      retries: 4,
+      firstAttemptTimeoutMs: 50000,
+      retryTimeoutMs: 25000,
+      showToastOnError: false
+    }).then(function(data) {
+      if (!data) return;
+      var slots = data.slots || {};
+      for (var i = 1; i <= 5; i++) {
+        var slot = slots[i];
+        if (slot && slot.caption) {
+          window.__aboutImages['about_caption_' + i] = slot.caption;
+          window.__aboutImages['about_group_' + i] = slot.about_group;
         }
-        if (typeof window.initAboutCarousel === 'function') {
-          window.initAboutCarousel();
-        }
-      });
+      }
+      if (typeof window.initAboutCarousel === 'function') {
+        window.initAboutCarousel();
+      }
     }).catch(function(err) {
       if (typeof console !== 'undefined' && console.error) {
         console.error('[home-init] Error cargando metadatos del carrusel:', err);

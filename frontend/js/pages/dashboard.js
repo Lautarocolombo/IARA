@@ -18,8 +18,6 @@
     if (typeof initProductManager === 'function') initProductManager();
     if (typeof initCategoryManager === 'function') initCategoryManager();
     if (typeof initSalesPanel === 'function') initSalesPanel();
-    if (typeof initOrdersPanel === 'function') initOrdersPanel();
-    if (typeof initPaymentsPanel === 'function') initPaymentsPanel();
 
     var nav = document.getElementById('adminNav');
     if (nav) {

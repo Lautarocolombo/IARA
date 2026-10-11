@@ -89,7 +89,8 @@ describe('checkout.js', () => {
     jest.clearAllMocks();
     jest.resetModules();
     fetchWithRetryMock = jest.fn();
-    global.fetchWithRetry = fetchWithRetryMock;
+    global.fetchWithRetry = (...args) => Promise.resolve(fetchWithRetryMock(...args))
+      .then(response => response && typeof response.json === 'function' ? response.json() : response);
     global.getCart = jest.fn(() => []);
     global.clearCart = jest.fn();
     document.body.innerHTML = '';
@@ -212,8 +213,12 @@ describe('checkout.js', () => {
       expect(fetchWithRetryMock).toHaveBeenCalledWith(
         '/api/v1/shipping-diff?province=Buenos%20Aires',
         {},
-        1,
-        500
+        {
+          retries: 1,
+          firstAttemptTimeoutMs: 10000,
+          retryTimeoutMs: 5000,
+          showToastOnError: false
+        }
       );
     });
 
@@ -260,16 +265,17 @@ describe('checkout.js', () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: 'DESCUENTO10', amount: 0 })
-      }, 2, 1000);
+      }, {
+        retries: 2,
+        firstAttemptTimeoutMs: 30000,
+        retryTimeoutMs: 15000,
+        showToastOnError: true
+      });
     });
 
     test('maneja cupón inválido', async () => {
       document.getElementById('couponCode').value = 'INVALID';
-      const mockRes = {
-        ok: false,
-        json: async () => ({ error: 'Cupón inválido' })
-      };
-      fetchWithRetryMock.mockResolvedValue(mockRes);
+      fetchWithRetryMock.mockResolvedValue(null);
       await checkout.applyCoupon();
       expect(document.getElementById('couponError').textContent).toBe('Cupón inválido');
     });
@@ -439,4 +445,3 @@ describe('checkout.js', () => {
     });
   });
 });
-

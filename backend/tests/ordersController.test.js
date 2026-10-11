@@ -3,6 +3,15 @@ jest.mock('../src/lib/db', () => ({
   transaction: jest.fn((fn) => fn({ query: jest.fn().mockResolvedValue({ rows: [], rowCount: 0 }) }))
 }));
 
+jest.mock('../src/controllers/orders/stock', () => ({
+  restoreStockForOrder: jest.fn(),
+  checkAndUpdateStock: jest.fn().mockResolvedValue(undefined),
+  restoreStockOnCancellation: jest.fn().mockResolvedValue(undefined),
+  restoreStockOnBatchDelete: jest.fn()
+}));
+
+// Don't mock activities - let it use the real module with mocked query
+
 jest.mock('../src/lib/logger', () => ({
   error: jest.fn(),
   warn: jest.fn(),
@@ -61,7 +70,9 @@ jest.mock('pdfkit', () => {
 });
 
 const { query, transaction } = require('../src/lib/db');
-const { getOrders, getUserOrders, getOrderDetail, getPublicOrderTrack, createOrder, updateOrderStatus, deleteOrder, batchDeleteOrders, updateOrderNotes, getOrderReceipt, getOrderActivities, exportOrders, addOrderActivity } = require('../src/controllers/ordersController');
+const { restoreStockOnCancellation } = require('../src/controllers/orders/stock');
+const { logActivity } = require('../src/controllers/orders/activities');
+const { getOrders, getUserOrders, getOrderDetail, getPublicOrderTrack, createOrder, updateOrderStatus, deleteOrder, batchDeleteOrders, updateOrderNotes, getOrderReceipt, getOrderActivities, exportOrders, addOrderActivity } = require('../src/controllers/orders');
 
 describe('ordersController', () => {
   beforeEach(() => {
@@ -90,7 +101,7 @@ describe('ordersController', () => {
     });
 
     test('filtra por status cuando se proporciona', async () => {
-      const req = { query: { status: 'pending' } };
+      const req = { query: { status: 'pending' }, tenantId: 'default' };
       const res = { json: jest.fn() };
 
       query.mockResolvedValueOnce({ rows: [{ total: '1' }], rowCount: 1 });
@@ -98,12 +109,12 @@ describe('ordersController', () => {
 
       await getOrders(req, res);
 
-      expect(query.mock.calls[1][0]).toContain('status = $1');
-      expect(query.mock.calls[1][1]).toEqual(expect.arrayContaining(['pending']));
+      expect(query.mock.calls[1][0]).toContain('status = $2');
+      expect(query.mock.calls[1][1]).toEqual(expect.arrayContaining(['default', 'pending']));
     });
 
     test('filtra por rango de fechas', async () => {
-      const req = { query: { start_date: '2024-01-01', end_date: '2024-01-31' } };
+      const req = { query: { start_date: '2024-01-01', end_date: '2024-01-31' }, tenantId: 'default' };
       const res = { json: jest.fn() };
 
       query.mockResolvedValueOnce({ rows: [{ total: '0' }], rowCount: 0 });
@@ -111,8 +122,8 @@ describe('ordersController', () => {
 
       await getOrders(req, res);
 
-      expect(query.mock.calls[1][0]).toContain('date(created_at) >= $1');
-      expect(query.mock.calls[1][0]).toContain('date(created_at) <= $2');
+      expect(query.mock.calls[1][0]).toContain('date(created_at) >= $2');
+      expect(query.mock.calls[1][0]).toContain('date(created_at) <= $3');
     });
 
     test('maneja errores de base de datos', async () => {
@@ -161,7 +172,7 @@ describe('ordersController', () => {
     });
 
     test('filtra por order_token cuando se proporciona', async () => {
-      const req = { query: { email: 'test@example.com', order_token: 'abc-123' } };
+      const req = { query: { email: 'test@example.com', order_token: 'abc-123' }, tenantId: 'default' };
       const res = {
         setHeader: jest.fn(),
         json: jest.fn()
@@ -172,8 +183,8 @@ describe('ordersController', () => {
       await getUserOrders(req, res);
 
       expect(query).toHaveBeenCalledWith(
-        expect.stringContaining('order_token = $2'),
-        ['test@example.com', 'abc-123']
+        expect.stringContaining('order_token = $3'),
+        ['test@example.com', 'default', 'abc-123']
       );
       expect(res.json).toHaveBeenCalledWith([{ id: 1 }]);
     });
@@ -398,9 +409,11 @@ describe('ordersController', () => {
         json: jest.fn()
       };
 
+      const { checkAndUpdateStock } = require('../src/controllers/orders/stock');
+      checkAndUpdateStock.mockRejectedValueOnce(new Error('Stock insuficiente para el producto 1. Disponible: 2, solicitado: 5'));
+
       query.mockResolvedValueOnce({ rows: [{ id: 1, price: 100 }] });
       query.mockResolvedValueOnce({ rows: [] });
-      query.mockResolvedValueOnce({ rows: [{ stock: 2 }] });
 
       await createOrder(req, res);
 
@@ -465,22 +478,23 @@ describe('ordersController', () => {
         body: { status: 'cancelled' },
         user: { user: 'admin' },
         ip: '127.0.0.1',
-        headers: {}
+        headers: {},
+        tenantId: 'default'
       };
       const res = {
         status: jest.fn(() => res),
         json: jest.fn()
       };
 
-      query.mockResolvedValueOnce({ rows: [{ id: 1, status: 'pending', items: JSON.stringify([{ id: 1, quantity: 2 }]) }] });
-      query.mockResolvedValueOnce({ rows: [] });
+      // Mock internal functions
+      restoreStockOnCancellation.mockResolvedValue(undefined);
+
       query.mockResolvedValueOnce({ rows: [{ id: 1, status: 'cancelled' }] });
-      query.mockResolvedValueOnce({ rows: [] });
 
       await updateOrderStatus(req, res);
 
+      expect(restoreStockOnCancellation).toHaveBeenCalledWith(1, 'default', null);
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ id: 1, status: 'cancelled' }));
-      expect(query).toHaveBeenNthCalledWith(2, 'UPDATE products SET stock = stock + $1 WHERE id = $2 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [2, 1], undefined);
     });
 
     test('maneja error de base de datos', async () => {
@@ -520,7 +534,8 @@ describe('ordersController', () => {
         params: { id: 1 },
         user: { user: 'admin' },
         ip: '127.0.0.1',
-        headers: {}
+        headers: {},
+        tenantId: 'default'
       };
       const res = { json: jest.fn() };
 
@@ -531,7 +546,7 @@ describe('ordersController', () => {
       await deleteOrder(req, res);
 
       expect(res.json).toHaveBeenCalledWith({ ok: true, archived: true });
-      expect(query).toHaveBeenNthCalledWith(3, 'UPDATE orders SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted_at IS NULL AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [1], expect.anything());
+      expect(query).toHaveBeenNthCalledWith(3, 'UPDATE orders SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted_at IS NULL AND (tenant_id = $2 OR tenant_id = \'default\')', [1, 'default'], expect.anything());
     });
   });
 
@@ -554,17 +569,21 @@ describe('ordersController', () => {
         body: { status: 'cancelled' },
         user: { user: 'admin' },
         ip: '127.0.0.1',
-        headers: {}
+        headers: {},
+        tenantId: 'default'
       };
-      const res = { json: jest.fn() };
+      const res = {
+        status: jest.fn(() => res),
+        json: jest.fn()
+      };
+
+      const { restoreStockOnBatchDelete } = require('../src/controllers/orders/stock');
+      restoreStockOnBatchDelete.mockResolvedValueOnce([
+        { id: 1, status: 'cancelled', items: JSON.stringify([{ id: 1, quantity: 2 }]) },
+        { id: 2, status: 'cancelled', items: JSON.stringify([{ id: 2, quantity: 1 }]) }
+      ]);
 
       query.mockImplementation(function(sql, params) {
-        if (sql.indexOf('SELECT') === 0 && sql.indexOf('orders') !== -1) {
-          return Promise.resolve({ rows: [
-            { id: 1, status: 'cancelled', items: JSON.stringify([{ id: 1, quantity: 2 }]) },
-            { id: 2, status: 'cancelled', items: JSON.stringify([{ id: 2, quantity: 1 }]) }
-          ] });
-        }
         if (sql.indexOf('UPDATE products') === 0) {
           return Promise.resolve({ rows: [] });
         }
@@ -580,7 +599,7 @@ describe('ordersController', () => {
       await batchDeleteOrders(req, res);
 
       expect(res.json).toHaveBeenCalledWith({ ok: true, deleted: 2 });
-      expect(query).toHaveBeenCalledWith('UPDATE orders SET deleted_at = CURRENT_TIMESTAMP WHERE status = $1 AND deleted_at IS NULL AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', ['cancelled'], expect.anything());
+      expect(query).toHaveBeenCalledWith('UPDATE orders SET deleted_at = CURRENT_TIMESTAMP WHERE status = $1 AND deleted_at IS NULL AND (tenant_id = $2 OR tenant_id = \'default\')', ['cancelled', 'default'], expect.anything());
     });
 
     test('maneja error de base de datos', async () => {

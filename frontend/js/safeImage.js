@@ -109,11 +109,13 @@
      if (opts.className) attrs.push(' class="' + escapeAttr(opts.className) + '"');
      if (opts.style) attrs.push(' style="' + escapeAttr(opts.style) + '"');
      if (opts.ariaHidden === true) attrs.push(' aria-hidden="true"');
-     attrs.push(' loading="' + (opts.lazy === false ? 'eager' : 'lazy') + '"');
-     attrs.push(' decoding="async"');
-     attrs.push(' data-fallback="' + escapeAttr(symbol) + '"');
-     attrs.push(' onerror="window.imgError(this)"');
-     attrs.push(' />');
+attrs.push(' loading="' + (opts.lazy === false ? 'eager' : 'lazy') + '"');
+      attrs.push(' decoding="async"');
+      if (opts.aspectRatio) attrs.push(' style="aspect-ratio:' + escapeAttr(opts.aspectRatio) + ';' + (opts.style ? escapeAttr(opts.style) : '') + '"');
+      else if (opts.style) attrs.push(' style="' + escapeAttr(opts.style) + '"');
+      attrs.push(' data-fallback="' + escapeAttr(symbol) + '"');
+      attrs.push(' onerror="window.imgError(this)"');
+      attrs.push(' />');
      return attrs.join('');
    };
 

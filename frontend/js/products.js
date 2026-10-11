@@ -3,24 +3,33 @@
 function escapeHtml(str) {
   if (!str) return '';
   return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+    .replace(/&/g, '&' + 'amp;')
+    .replace(/</g, '&' + 'lt;')
+    .replace(/>/g, '&' + 'gt;')
+    .replace(/"/g, '&' + 'quot;')
+    .replace(/'/g, '&#' + '39;');
 }
 
 const defaultProducts = [];
 
 let products = [];
+let productsLoadingState = 'idle';
 
 function setProducts(newProducts) {
   products = newProducts;
 }
 
+function setProductsLoadingState(state) {
+  productsLoadingState = state;
+}
+
+function getProductsLoadingState() {
+  return productsLoadingState;
+}
+
 async function fetchProducts(filters = {}) {
   const grid = document.getElementById('productsGrid');
-  let loadFailed = false;
+  setProductsLoadingState('loading');
   if (grid) {
     grid.innerHTML = '<div class="loading-skeleton-grid" style="grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1.5rem;" aria-hidden="true"><div class="skeleton-card" style="background:var(--white);border-radius:16px;height:320px;animation:skeleton-pulse 1.5s infinite;"></div><div class="skeleton-card" style="background:var(--white);border-radius:16px;height:320px;animation:skeleton-pulse 1.5s infinite 0.2s;"></div><div class="skeleton-card" style="background:var(--white);border-radius:16px;height:320px;animation:skeleton-pulse 1.5s infinite 0.4s;"></div><div class="skeleton-card" style="background:var(--white);border-radius:16px;height:320px;animation:skeleton-pulse 1.5s infinite 0.6s;"></div></div>';
   }
@@ -31,26 +40,36 @@ async function fetchProducts(filters = {}) {
     if (filters.maxPrice !== undefined && filters.maxPrice !== '') params.set('maxPrice', filters.maxPrice);
     const queryString = params.toString();
     const url = `${CONFIG.API.BASE}/api/products${queryString ? `?${queryString}` : ''}`;
-    const res = await window.fetchWithRetry(url, {}, 3, 1000, 15000, false);
-    if (res) {
-      products = await res.json();
+    const data = await fetchWithRetry(url, {}, {
+      retries: 4,
+      firstAttemptTimeoutMs: 50000,
+      retryTimeoutMs: 25000,
+      showToastOnError: false
+    });
+    if (data) {
+      products = data;
+      setProductsLoadingState('loaded');
+      renderProducts(getProducts());
     } else {
-      loadFailed = true;
+      setProductsLoadingState('error');
+      if (grid) {
+        grid.innerHTML = '<div class="error-state" style="grid-column:1/-1;text-align:center;padding:3rem;"><h3>No pudimos cargar el catálogo</h3><p>El servidor puede estar iniciando (tarda ~30 segundos la primera vez). Intentá de nuevo.</p><button type="button" class="btn btn-primary" onclick="window.retryLoadProducts()" style="margin-top:1rem;">Reintentar</button></div>';
+        grid.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
+      }
     }
   } catch (err) {
     console.error('Error cargando productos:', err);
+    setProductsLoadingState('error');
     products = defaultProducts;
-    loadFailed = true;
-  }
-  if (loadFailed && grid) {
-    grid.innerHTML = '<div class="error-state" style="grid-column:1/-1;text-align:center;padding:3rem;"><h3>No pudimos cargar el catálogo</h3><p>El servidor puede estar iniciando (tarda ~30 segundos la primera vez). Intentá de nuevo.</p><button type="button" class="btn btn-primary" onclick="window.retryLoadProducts()" style="margin-top:1rem;">Reintentar</button></div>';
-    grid.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
+    if (grid) {
+      grid.innerHTML = '<div class="error-state" style="grid-column:1/-1;text-align:center;padding:3rem;"><h3>No pudimos cargar el catálogo</h3><p>El servidor puede estar iniciando (tarda ~30 segundos la primera vez). Intentá de nuevo.</p><button type="button" class="btn btn-primary" onclick="window.retryLoadProducts()" style="margin-top:1rem;">Reintentar</button></div>';
+      grid.querySelectorAll('.reveal').forEach(el => el.classList.add('visible'));
+    }
   }
 }
 
 async function retryLoadProducts() {
   await fetchProducts();
-  renderProducts(getProducts());
   if (typeof renderFeaturedProducts === 'function') renderFeaturedProducts();
 }
 if (typeof window !== 'undefined') window.retryLoadProducts = retryLoadProducts;
@@ -67,9 +86,14 @@ async function searchProducts(query, filters = {}) {
     if (filters.category && filters.category !== 'all') params.set('category', filters.category);
     if (filters.minPrice !== undefined && filters.minPrice !== '') params.set('minPrice', filters.minPrice);
     if (filters.maxPrice !== undefined && filters.maxPrice !== '') params.set('maxPrice', filters.maxPrice);
-    const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/search?${params.toString()}`, {}, 3, 1000, 15000, false);
-    if (res) {
-      products = await res.json();
+    const data = await fetchWithRetry(`${CONFIG.API.BASE}/api/products/search?${params.toString()}`, {}, {
+      retries: 4,
+      firstAttemptTimeoutMs: 50000,
+      retryTimeoutMs: 25000,
+      showToastOnError: true
+    });
+    if (data) {
+      products = data;
       renderProducts(getProducts());
     }
   } catch (err) {
@@ -89,7 +113,6 @@ async function applyFilters(filters = {}) {
       maxPrice: filters.maxPrice
     });
   }
-  renderProducts(getProducts());
 }
 
 function getProducts() {
@@ -161,8 +184,13 @@ function renderProducts(productsToRender) {
   const grid = document.getElementById('productsGrid');
   if (!grid) return;
 
-  if (!productsToRender.length) {
+  // Solo mostrar estado vacío real si ya se cargaron productos (no en error de red)
+  if (!productsToRender.length && getProductsLoadingState() === 'loaded') {
     grid.innerHTML = '<div class="empty-state" style="grid-column:1/-1;text-align:center;padding:3rem;"><h3>No se encontraron productos</h3><p>Intentá con otro filtro o búsqueda.</p></div>';
+    return;
+  }
+  // Si está en error o cargando, no renderizar nada (fetchProducts maneja esos estados)
+  if (getProductsLoadingState() !== 'loaded') {
     return;
   }
 
@@ -198,7 +226,6 @@ function renderFeaturedProducts() {
 
   async function initProducts() {
     await fetchProducts();
-    renderProducts(getProducts());
     if (typeof renderFeaturedProducts === 'function') {
       renderFeaturedProducts();
     }
@@ -339,5 +366,5 @@ function renderFeaturedProducts() {
 
 // Exportar para Node.js (si aplica)
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { getProducts, getProductsByCategory, getFeaturedProducts, renderProducts, renderFeaturedProducts, fetchProducts, setProducts, defaultProducts };
+  module.exports = { getProducts, getProductsByCategory, getFeaturedProducts, renderProducts, renderFeaturedProducts, fetchProducts, setProducts, setProductsLoadingState, getProductsLoadingState, defaultProducts };
 }

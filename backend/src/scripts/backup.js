@@ -42,7 +42,7 @@ async function backupDatabase() {
   
   if (!databaseUrl) {
     logger.warn('DATABASE_URL no configurada, saltando backup');
-    console.error('ERROR: DATABASE_URL no configurada');
+    logger.error('ERROR: DATABASE_URL no configurada');
     process.exit(1);
   }
 
@@ -117,7 +117,7 @@ async function backupDatabase() {
     process.exit(0);
   } catch (err) {
     logger.error({ err: err.message, stack: err.stack }, 'Error en backup de base de datos');
-    console.error('ERROR en backup:', err);
+    logger.error('ERROR en backup:', err);
     try {
       await pool.end();
     } catch (e) {

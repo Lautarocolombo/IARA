@@ -9,6 +9,7 @@ dotenv.config({ path: path.join(__dirname, '..', '.env') });
 const { query } = require('../src/lib/db');
 const { initDB } = require('../src/lib/db');
 const { isBlobConfigured, uploadToBlob } = require('../src/lib/upload');
+const logger = require('../lib/logger');
 
 const DRY_RUN = process.env.DRY_RUN === 'true';
 
@@ -29,10 +30,10 @@ async function fetchUrl(url) {
 }
 
 async function migrateTable(tableName, urlColumn, idColumn, extraUpdateFields = [], whereClause = '') {
-  console.log(`\n=== Migrating ${tableName} ===`);
+  logger.info(`=== Migrating ${tableName} ===`);
   const result = await query(`SELECT ${idColumn}, ${urlColumn} FROM ${tableName} WHERE ${urlColumn} IS NOT NULL AND ${urlColumn} != '' ${whereClause} ORDER BY ${idColumn}`);
   const rows = result.rows || [];
-  console.log(`Found ${rows.length} rows with images in ${tableName}`);
+  logger.info(`Found ${rows.length} rows with images in ${tableName}`);
 
   let migrated = 0;
   let skipped = 0;
@@ -49,7 +50,7 @@ async function migrateTable(tableName, urlColumn, idColumn, extraUpdateFields = 
     }
 
     if (DRY_RUN) {
-      console.log(`  [DRY] ${tableName}.${row[idColumn]}: ${currentUrl.substring(0, 60)}`);
+      logger.info(`  [DRY] ${tableName}.${row[idColumn]}: ${currentUrl.substring(0, 60)}`);
       migrated++;
       continue;
     }
@@ -65,7 +66,7 @@ async function migrateTable(tableName, urlColumn, idColumn, extraUpdateFields = 
           contentType = match[1];
         }
         if (!buffer) {
-          console.log(`  SKIP (invalid data URI): ${tableName}.${row[idColumn]}: ${currentUrl.substring(0, 60)}`);
+          logger.warn(`  SKIP (invalid data URI): ${tableName}.${row[idColumn]}: ${currentUrl.substring(0, 60)}`);
           skipped++;
           continue;
         }
@@ -83,7 +84,7 @@ async function migrateTable(tableName, urlColumn, idColumn, extraUpdateFields = 
       }
 
       if (!buffer) {
-        console.log(`  SKIP (not found): ${tableName}.${row[idColumn]}: ${currentUrl.substring(0, 60)}`);
+        logger.warn(`  SKIP (not found): ${tableName}.${row[idColumn]}: ${currentUrl.substring(0, 60)}`);
         skipped++;
         continue;
       }
@@ -103,7 +104,7 @@ async function migrateTable(tableName, urlColumn, idColumn, extraUpdateFields = 
       try { fs.unlinkSync(tmpPath); } catch (e) { /* noop */ }
 
       if (!blobResult || !blobResult.url) {
-        console.log(`  FAIL (blob upload): ${tableName}.${row[idColumn]}`);
+        logger.error(`  FAIL (blob upload): ${tableName}.${row[idColumn]}`);
         failed++;
         continue;
       }
@@ -118,15 +119,15 @@ async function migrateTable(tableName, urlColumn, idColumn, extraUpdateFields = 
 
       await query(`UPDATE ${tableName} SET ${setParts.map((c, i) => `${c} = $${i + 1}`).join(', ')} WHERE ${idColumn} = $${values.length}`, values);
 
-      console.log(`  OK: ${tableName}.${row[idColumn]} → ${blobResult.url.substring(0, 60)}`);
+      logger.info(`  OK: ${tableName}.${row[idColumn]} → ${blobResult.url.substring(0, 60)}`);
       migrated++;
     } catch (err) {
-      console.log(`  ERROR: ${tableName}.${row[idColumn]}: ${err.message}`);
+      logger.error({ err: err.message }, `  ERROR: ${tableName}.${row[idColumn]}`);
       failed++;
     }
   }
 
-  console.log(`Result: ${migrated} migrated, ${skipped} skipped, ${failed} failed`);
+  logger.info(`Result: ${migrated} migrated, ${skipped} skipped, ${failed} failed`);
   return { migrated, skipped, failed };
 }
 
@@ -135,13 +136,13 @@ async function migrateTable(tableName, urlColumn, idColumn, extraUpdateFields = 
     await initDB();
 
     if (!isBlobConfigured()) {
-      console.error('ERROR: BLOB_READ_WRITE_TOKEN no está configurado. Esta migración requiere Vercel Blob.');
-      console.error('Configurá el token en Render y volvé a ejecutar el script.');
+      logger.error('ERROR: BLOB_READ_WRITE_TOKEN no está configurado. Esta migración requiere Vercel Blob.');
+      logger.error('Configurá el token en Render y volvé a ejecutar el script.');
       process.exit(1);
     }
 
-    console.log('BLOB_READ_WRITE_TOKEN detectado. Iniciando migración...');
-    console.log('DRY_RUN:', DRY_RUN);
+    logger.info('BLOB_READ_WRITE_TOKEN detectado. Iniciando migración...');
+    logger.info('DRY_RUN:', DRY_RUN);
 
     let totalMigrated = 0;
     let totalSkipped = 0;
@@ -159,10 +160,10 @@ async function migrateTable(tableName, urlColumn, idColumn, extraUpdateFields = 
     const hm = await migrateTable('hero_cards', 'imagen', 'id', []);
     totalMigrated += hm.migrated; totalSkipped += hm.skipped; totalFailed += hm.failed;
 
-    console.log('\n=== Migrating site_texts ===');
+    logger.info('\n=== Migrating site_texts ===');
     const textsResult = await query("SELECT key, value FROM site_texts WHERE value LIKE '%/imagenes/%' OR value LIKE '%iara-peach%' OR value LIKE '%uploads/imagenes%' OR value LIKE 'http%' OR value LIKE 'data:image/%'");
     const textRows = textsResult.rows || [];
-    console.log(`Found ${textRows.length} site_texts rows with image URLs`);
+    logger.info(`Found ${textRows.length} site_texts rows with image URLs`);
     for (const row of textRows) {
       const oldVal = row.value;
       if (!oldVal || oldVal.includes('blob.vercel-storage.com')) {
@@ -170,7 +171,7 @@ async function migrateTable(tableName, urlColumn, idColumn, extraUpdateFields = 
         continue;
       }
       if (DRY_RUN) {
-        console.log(`  [DRY] site_texts.${row.key}: ${oldVal.substring(0, 60)}`);
+        logger.info(`  [DRY] site_texts.${row.key}: ${oldVal.substring(0, 60)}`);
         totalMigrated++;
         continue;
       }
@@ -193,7 +194,7 @@ async function migrateTable(tableName, urlColumn, idColumn, extraUpdateFields = 
         contentType = 'image/jpeg';
       }
       if (!buffer) {
-        console.log(`  SKIP: site_texts.${row.key}`);
+        logger.warn(`  SKIP: site_texts.${row.key}`);
         totalSkipped++;
         continue;
       }
@@ -203,25 +204,25 @@ async function migrateTable(tableName, urlColumn, idColumn, extraUpdateFields = 
       const blobResult = await uploadToBlob({ path: tmpPath, originalname: `text_${row.key}${ext}`, mimetype: contentType, size: buffer.length });
       try { fs.unlinkSync(tmpPath); } catch (e) { /* noop */ }
       if (!blobResult || !blobResult.url) {
-        console.log(`  FAIL: site_texts.${row.key}`);
+        logger.error(`  FAIL: site_texts.${row.key}`);
         totalFailed++;
         continue;
       }
       await query('UPDATE site_texts SET value = $1 WHERE key = $2', [blobResult.url, row.key]);
-      console.log(`  OK: site_texts.${row.key} → ${blobResult.url.substring(0, 60)}`);
+      logger.info(`  OK: site_texts.${row.key} → ${blobResult.url.substring(0, 60)}`);
       totalMigrated++;
     }
 
-    console.log('\n=== MIGRATION COMPLETE ===');
-    console.log(`Total migrated: ${totalMigrated}`);
-    console.log(`Total skipped: ${totalSkipped}`);
-    console.log(`Total failed: ${totalFailed}`);
+    logger.info('\n=== MIGRATION COMPLETE ===');
+    logger.info(`Total migrated: ${totalMigrated}`);
+    logger.info(`Total skipped: ${totalSkipped}`);
+    logger.info(`Total failed: ${totalFailed}`);
 
     if (DRY_RUN) {
-      console.log('\nThis was a DRY RUN. Set DRY_RUN=false to apply changes.');
+      logger.info('\nThis was a DRY RUN. Set DRY_RUN=false to apply changes.');
     }
   } catch (err) {
-    console.error('Migration error:', err.message);
+    logger.error({ err: err.message }, 'Migration error');
     process.exit(1);
   }
 })();

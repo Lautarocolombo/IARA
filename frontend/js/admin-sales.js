@@ -25,7 +25,7 @@
     if (syncLoading) syncLoading.classList.remove('hidden');
 
     try {
-      var res = await window.adminFetch('/api/admin/reports/summary?view=' + view, { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/reports/summary?view=' + view, { method: 'GET' });
       if (!res || !res.ok) {
         throw new Error('No se pudieron cargar los reportes');
       }
@@ -51,7 +51,7 @@
 
   async function loadProductsForSale() {
     try {
-      var res = await window.adminFetch('/api/products?limit=100', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/products?limit=100', { method: 'GET' });
       if (res && res.ok) {
         var data = await res.json();
         productsForSale = Array.isArray(data) ? data : (data.products || []);
@@ -69,7 +69,7 @@
     if (!tbody) return;
 
     try {
-      var res = await window.adminFetch('/api/admin/earnings', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/earnings', { method: 'GET' });
       if (!res || !res.ok) {
         throw new Error('No se pudieron cargar las transacciones');
       }
@@ -149,8 +149,8 @@ transactions.forEach(function (t) {
   async function processDeleteTransaction(txId, txType) {
     var numericId = txId.replace(/^V-/, '');
     var url = txType === 'manual'
-      ? '/api/admin/sales/' + numericId
-      : '/api/admin/orders/' + numericId;
+      ? '/api/v1/admin/sales/' + numericId
+      : '/api/v1/admin/orders/' + numericId;
 
     console.warn('[Sales] Eliminando transacción:', { txId, txType, numericId, url });
 
@@ -427,7 +427,7 @@ transactions.forEach(function (t) {
     if (btnLoading) btnLoading.classList.remove('hidden');
 
     try {
-      var res = await window.adminFetch('/api/admin/sales', {
+      var res = await window.adminFetch('/api/v1/admin/sales', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -491,7 +491,7 @@ transactions.forEach(function (t) {
     if (btnLoading) btnLoading.classList.remove('hidden');
 
     try {
-      var res = await window.adminFetch('/api/admin/reports/reset', {
+      var res = await window.adminFetch('/api/v1/admin/reports/reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ confirm: true })
@@ -545,7 +545,7 @@ transactions.forEach(function (t) {
     if (btnLoading) btnLoading.classList.remove('hidden');
 
     try {
-      var res = await window.adminFetch('/api/admin/earnings/history', {
+      var res = await window.adminFetch('/api/v1/admin/earnings/history', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ confirm: 'ELIMINAR' })

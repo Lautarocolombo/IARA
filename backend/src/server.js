@@ -8,6 +8,9 @@ const pino = require('pino');
 
 dotenv.config({ override: false });
 
+const { validateEnv } = require('./config/env');
+validateEnv();
+
 const { initDB } = require('./lib/db');
 const { handleUploadError, processFile, uploadSingle, getPublicUrl, isBlobConfigured } = require('./lib/upload');
 const { errorHandler } = require('./middleware/errorHandler');
@@ -18,6 +21,7 @@ const { sanitizeBody } = require('./middleware/xssClean');
 const { nonceMiddleware } = require('./middleware/nonce');
 const { cspMiddleware } = require('./middleware/csp');
 const { apiVersioningMiddleware } = require('./middleware/apiVersioning');
+const { initSession } = require('./middleware/session');
 
 const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
 
@@ -28,7 +32,7 @@ logger.info('[Blob] Configuración al arrancar:', {
   isRender: !!process.env.RENDER_EXTERNAL_HOSTNAME
 });
 if (!blobConfigured && process.env.NODE_ENV === 'production') {
-  logger.warn('[Blob] BLOB_READ_WRITE_TOKEN ausente en producción: las imágenes se guardan como base64 en DB (funciona pero sin CDN).');
+  logger.info('[Blob] BLOB_READ_WRITE_TOKEN no configurado: usando almacenamiento base64 en Neon DB (funciona sin CDN).');
 }
 if (!process.env.RESEND_API_KEY) {
   logger.warn('[Email] RESEND_API_KEY ausente: los emails se omiten con log (verificación/pedidos siguen funcionando).');
@@ -73,6 +77,12 @@ async function gracefulShutdown(signal) {
     }
   } catch (err) {
     logger.error({ err: err.message }, 'Error cerrando pool de DB');
+  }
+  try {
+    const { closeSession } = require('./middleware/session');
+    await closeSession();
+  } catch (err) {
+    logger.error({ err: err.message }, 'Error cerrando session Redis');
   }
   process.exit(0);
 }
@@ -195,7 +205,7 @@ app.use((req, res, next) => {
     if (isAllowed) {
       res.setHeader('Access-Control-Allow-Origin', origin || '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Accept-Language, Origin, X-Requested-With, X-Request-ID');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Accept-Language, Origin, X-Requested-With, X-Request-ID, X-CSRF-Token');
       res.setHeader('Access-Control-Allow-Credentials', 'true');
       res.setHeader('Access-Control-Max-Age', '86400');
       res.setHeader('Vary', 'Origin');
@@ -215,6 +225,17 @@ app.use((req, res, next) => {
 });
 
 app.use(require('cookie-parser')());
+
+// Session middleware (required for CSRF token storage)
+let sessionMiddleware = null;
+initSession().then(mw => { sessionMiddleware = mw; });
+app.use((req, res, next) => {
+  if (sessionMiddleware) {
+    return sessionMiddleware(req, res, next);
+  }
+  next();
+});
+
 app.use(tenantContext);
 
 let rateLimitStore = undefined;
@@ -346,12 +367,14 @@ app.use('/api', (req, res, next) => {
 app.use('/api', apiVersioningMiddleware);
 app.use('/api/v1', apiVersioningMiddleware);
 
-// Mount routes at /api/v1 (current version)
+// Mount routes at /api/v1 (current version - CANONICAL)
 app.use('/api/v1/auth', require('./routes/auth'));
 app.use('/api/v1/admin', require('./routes/auth'));
+app.use('/api/v1/admin', require('./routes/admin'));
 
 // Public config route (must be before tenantContext/csrfProtection)
 app.use('/api/v1', require('./routes/config'));
+app.use('/api/v1', require('./routes/settings'));
 
 app.use('/api/v1', tenantContext);
 app.use('/api/v1', csrfProtection);
@@ -394,13 +417,22 @@ app.use('/docs', require('./routes/docs'));
 app.use('/api/v1/admin', require('./routes/coupons'));
 app.use('/api/v1/admin/inventory', require('./routes/inventory'));
 
-// Backward compatibility: mount at /api with deprecation headers
+// Backward compatibility: /api as alias of /api/v1 with deprecation headers
+const deprecatedApiMiddleware = (req, res, next) => {
+  res.setHeader('Deprecation', 'true');
+  res.setHeader('Sunset', 'Sat, 01 Jan 2026 00:00:00 GMT');
+  res.setHeader('Link', '<https://api.example.com/api/v1/>; rel="successor-version"');
+  res.setHeader('X-API-Deprecated', 'true');
+  res.setHeader('Warning', '299 - "This API version is deprecated. Use /api/v1/ instead."');
+  next();
+};
+
+// Mount /api as alias of /api/v1 with deprecation headers
+app.use('/api', deprecatedApiMiddleware);
+app.use('/api', apiVersioningMiddleware);
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/admin', require('./routes/auth'));
-
-// Public config route (must be before tenantContext/csrfProtection)
 app.use('/api', require('./routes/config'));
-
 app.use('/api', tenantContext);
 app.use('/api', csrfProtection);
 app.use('/api', require('./routes/products'));
@@ -427,8 +459,6 @@ app.use('/api', require('./routes/heroCards'));
 app.use('/api', require('./routes/sales'));
 app.use('/api', require('./routes/earnings'));
 app.use('/api', require('./routes/carousel'));
-// CRITICAL: mount /api/sync BEFORE /api/users so the literal path wins over
-// users' catch-all GET /:id (which would otherwise 401 every public SSE client).
 app.use('/api/sync', require('./routes/sync'));
 app.use('/api', require('./routes/users'));
 app.use('/api', require('./routes/docs'));
@@ -477,30 +507,27 @@ try {
 }
 
 app.get('/health', async (req, res) => {
+  // Lightweight health check for warm-up (no DB query)
+  // Used by frontend to wake up the server without loading the database
   const health = {
     status: 'ok',
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
-    env: process.env.NODE_ENV || 'development',
-    checks: {}
+    env: process.env.NODE_ENV || 'development'
   };
+  res.setHeader('X-Commit', gitCommit);
+  res.status(200).json(health);
+});
 
+app.get('/health/db', async (req, res) => {
   try {
     const { query } = require('./lib/db');
     await query('SELECT 1');
-    health.checks.database = 'ok';
+    res.status(200).json({ status: 'ok', database: 'connected' });
   } catch (err) {
-    health.checks.database = 'error';
-    health.status = 'degraded';
+    logger.warn({ err: err.message }, 'Database health check failed');
+    res.status(503).json({ status: 'degraded', database: 'error' });
   }
-
-  health.checks.sentry = Sentry ? 'ok' : 'disabled';
-
-  health.checks.blob = blobConfigured ? 'configured' : 'not_configured';
-  health.blob = { configured: blobConfigured };
-
-  res.setHeader('X-Commit', gitCommit);
-  res.status(health.status === 'ok' ? 200 : 503).json(health);
 });
 
 app.get('/ready', async (req, res) => {
@@ -539,8 +566,8 @@ app.post('/api/admin/upload', require('./middleware/auth').adminAuth, uploadSing
     logger.error('[Upload] Error procesando imagen:', { message: err.message, stack: err.stack });
     logger.error('[Upload] Error completo:', { name: err.name, message: err.message, stack: err.stack, code: err.code });
     const message = err.message || 'Error al procesar la imagen';
-    const status = err.code === 'IMAGE_TOO_HEAVY_FOR_DB' ? 413 : 500;
-    res.status(status).json({ error: message });
+    const status = err.statusCode || (err.code === 'IMAGE_TOO_HEAVY_FOR_DB' ? 413 : 500);
+    res.status(status).json({ error: message, code: err.code || 'UPLOAD_FAILED' });
   }
 });
 
@@ -602,6 +629,10 @@ app.use((req, res, next) => {
 app.get('/sitemap.xml', require('./routes/sitemap'));
 
 app.get('/*', (req, res) => {
+  // Exclude health check endpoints from frontend catch-all
+  if (req.path === '/health' || req.path === '/health/db' || req.path === '/ready') {
+    return res.status(404).json({ error: 'Not Found' });
+  }
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ error: 'Not Found' });
   }

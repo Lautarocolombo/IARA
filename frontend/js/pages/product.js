@@ -11,24 +11,36 @@
       return;
     }
     try {
-      const [productRes, reviewsRes] = await Promise.all([
-        window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}`, {}, 2, 1000),
-        window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}/reviews`, {}, 2, 1000)
+      const [fetchedProduct, reviewsData] = await Promise.all([
+        fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}`, {}, {
+          retries: 4,
+          firstAttemptTimeoutMs: 50000,
+          retryTimeoutMs: 25000,
+          showToastOnError: false
+        }),
+        fetchWithRetry(`${CONFIG.API.BASE}/api/products/${productId}/reviews`, {}, {
+          retries: 4,
+          firstAttemptTimeoutMs: 50000,
+          retryTimeoutMs: 25000,
+          showToastOnError: false
+        })
       ]);
-      const reviewsData = reviewsRes ? await reviewsRes.json() : [];
-      let product = null;
-      if (productRes && productRes.ok) {
-        product = await productRes.json();
-      } else {
-        const fallbackRes = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products`, {}, 2, 1000);
-        const productData = fallbackRes ? await fallbackRes.json() : [];
-        const products = Array.isArray(productData) && productData.length ? productData : (typeof defaultProducts !== 'undefined' ? defaultProducts : []);
+      let product = fetchedProduct;
+      if (!product) {
+        const fallbackData = await fetchWithRetry(`${CONFIG.API.BASE}/api/products`, {}, {
+          retries: 2,
+          firstAttemptTimeoutMs: 30000,
+          retryTimeoutMs: 15000,
+          showToastOnError: false
+        });
+        const products = Array.isArray(fallbackData) && fallbackData.length ? fallbackData : (typeof defaultProducts !== 'undefined' ? defaultProducts : []);
         product = products.find(p => p.id === Number(productId));
       }
       if (!product) {
         container.innerHTML = '<p>Producto no encontrado.</p>';
         return;
       }
+      const reviews = Array.isArray(reviewsData) ? reviewsData : [];
        const images = Array.isArray(product.images) && product.images.length
              ? product.images
              : [{ url: window.getProductImageUrl(product) || '../assets/placeholder-product.svg', es_principal: true }];
@@ -91,7 +103,7 @@
         <div class="reviews-section">
           <h2>Reseñas</h2>
           <div id="reviewsList">
-             ${reviewsData.length ? reviewsData.map(r => `
+             ${reviews.length ? reviews.map(r => `
                <div class="review-card">
                  <div class="review-header">
                    ${r.avatar ? `<img src="${escapeHtml(r.avatar)}" class="review-avatar" alt="${escapeHtml(r.name || '')}" loading="lazy" />` : ''}
@@ -158,14 +170,16 @@
            formData.append('avatar', avatarInput.files[0]);
          }
           try {
-            const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/products/${id}/reviews`, {
+            const data = await fetchWithRetry(`${CONFIG.API.BASE}/api/products/${id}/reviews`, {
               method: 'POST',
               body: formData
-            }, 2, 1000);
-            if (!res || !res.ok) {
-              const data = await res.json().catch(() => ({}));
-              throw new Error(data.error || 'Error al enviar la reseña');
-            }
+            }, {
+              retries: 2,
+              firstAttemptTimeoutMs: 30000,
+              retryTimeoutMs: 15000,
+              showToastOnError: true
+            });
+            if (!data) throw new Error('Error de red');
            showToast('', '¡Reseña enviada! Gracias.', 'success');
            document.getElementById('reviewName').value = '';
            document.getElementById('reviewComment').value = '';

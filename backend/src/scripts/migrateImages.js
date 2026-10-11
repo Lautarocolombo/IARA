@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { query } = require('../lib/db');
 const { isBlobConfigured, uploadToBlob } = require('../lib/upload');
+const logger = require('../lib/logger');
 
 (async () => {
   const dir = path.join(__dirname, '..', 'uploads', 'imagenes');
@@ -10,7 +11,7 @@ const { isBlobConfigured, uploadToBlob } = require('../lib/upload');
   const useBlob = isBlobConfigured();
 
   const productResult = await query('SELECT id, image FROM products WHERE image LIKE $1', ['data:image/%']);
-  console.log('Productos con base64:', productResult.rows.length);
+  logger.info('Productos con base64:', { count: productResult.rows.length });
 
   for (const row of productResult.rows) {
     const match = row.image.match(/^data:(image\/[a-z]+);base64,(.*)$/);
@@ -34,11 +35,11 @@ const { isBlobConfigured, uploadToBlob } = require('../lib/upload');
     }
 
     await query('UPDATE products SET image = $1 WHERE id = $2', [url, row.id]);
-    console.log('Migrado producto', row.id, '→', url);
+    logger.info('Migrado producto', { productId: row.id, url });
   }
 
   const imagesResult = await query('SELECT id, product_id, url FROM product_images WHERE url LIKE $1', ['data:image/%']);
-  console.log('Imágenes de producto con base64:', imagesResult.rows.length);
+  logger.info('Imágenes de producto con base64:', { count: imagesResult.rows.length });
 
   for (const row of imagesResult.rows) {
     const match = row.url.match(/^data:(image\/[a-z]+);base64,(.*)$/);
@@ -62,9 +63,9 @@ const { isBlobConfigured, uploadToBlob } = require('../lib/upload');
     }
 
     await query('UPDATE product_images SET url = $1 WHERE id = $2', [url, row.id]);
-    console.log('Migrada imagen', row.id, 'de producto', row.product_id, '→', url);
+    logger.info('Migrada imagen', { imageId: row.id, productId: row.product_id, url });
   }
 
-  console.log('Migration OK');
+  logger.info('Migration OK');
   process.exit(0);
-})().catch(e => { console.error(e.message); process.exit(1); });
+})().catch(e => { logger.error({ err: e.message }, 'Migration failed'); process.exit(1); });

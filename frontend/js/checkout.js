@@ -22,9 +22,13 @@ async function fetchShippingDiff(province) {
     return;
   }
   try {
-    const res = await window.fetchWithRetry(`/api/v1/shipping-diff?province=${encodeURIComponent(province)}`, {}, 1, 500);
-    if (res && res.ok) {
-      const data = await res.json();
+    const data = await fetchWithRetry(`/api/v1/shipping-diff?province=${encodeURIComponent(province)}`, {}, {
+      retries: 1,
+      firstAttemptTimeoutMs: 10000,
+      retryTimeoutMs: 5000,
+      showToastOnError: false
+    });
+    if (data) {
       shippingDiff = Number(data.diff || 0);
       shippingDiffProvince = data.province || province;
       includedShippingCost = Number(data.included_shipping_cost || 0);
@@ -58,19 +62,22 @@ async function applyCoupon() {
   const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
 
   try {
-    const res = await window.fetchWithRetry('/api/v1/coupons/validate', {
+    const data = await fetchWithRetry('/api/v1/coupons/validate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code, amount: subtotal })
-    }, 2, 1000);
-    if (!res || !res.ok) {
-      const data = await res.json().catch(() => ({ error: 'Cupón inválido' }));
-      if (errorEl) { errorEl.textContent = data.error || 'Cupón inválido'; errorEl.style.display = 'block'; }
+    }, {
+      retries: 2,
+      firstAttemptTimeoutMs: 30000,
+      retryTimeoutMs: 15000,
+      showToastOnError: true
+    });
+    if (!data) {
+      if (errorEl) { errorEl.textContent = 'Cupón inválido'; errorEl.style.display = 'block'; }
       appliedCoupon = null;
       updateSummary();
       return;
     }
-    const data = await res.json();
     appliedCoupon = data;
     if (successEl) { successEl.textContent = `Cupón aplicado: descuento de ${formatARS(data.discount)}`; successEl.style.display = 'block'; }
     updateSummary();
@@ -158,13 +165,17 @@ async function loadPaymentConfig() {
   if (holderEl) holderEl.textContent = 'Cargando...';
   try {
     const url = '/api/v1/payment-config';
-    const res = await window.fetchWithRetry(url, {}, 2, 1000, 8000);
-    if (!res) {
+    const data = await fetchWithRetry(url, {}, {
+      retries: 2,
+      firstAttemptTimeoutMs: 30000,
+      retryTimeoutMs: 15000,
+      showToastOnError: false
+    });
+    if (!data) {
       if (aliasEl) aliasEl.textContent = 'No configurado';
       if (holderEl) holderEl.textContent = 'No configurado';
       return { alias: CONFIG.CONTACT.WHATSAPP_ALIAS || '', whatsapp: WA_PHONE_RAW, message: '', active: false };
     }
-    const data = await res.json();
     if (data.shippingCost !== undefined) CONFIG.CART.SHIPPING_COST = Number(data.shippingCost);
     if (data.freeShippingFrom !== undefined) CONFIG.CART.SHIPPING_THRESHOLD = Number(data.freeShippingFrom);
     if (data.includedShippingCost !== undefined) includedShippingCost = Number(data.includedShippingCost);
@@ -385,7 +396,7 @@ if (shippingForm) {
       const paymentMethodEl = document.getElementById('paymentMethod');
       const paymentMethod = paymentMethodEl ? paymentMethodEl.value : 'transfer';
 
-      const orderRes = await window.fetchWithRetry('/api/v1/orders', {
+      const orderData = await fetchWithRetry('/api/v1/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -403,12 +414,14 @@ if (shippingForm) {
           couponCode: appliedCoupon ? appliedCoupon.code : '',
           payment_method: paymentMethod
         })
+      }, {
+        retries: 2,
+        firstAttemptTimeoutMs: 30000,
+        retryTimeoutMs: 15000,
+        showToastOnError: true
       });
 
-      if (!orderRes) throw new Error('Error al guardar el pedido');
-      const orderData = await orderRes.json();
-      if (!orderRes.ok) throw new Error(orderData.error || 'Error al guardar el pedido');
-
+      if (!orderData) throw new Error('Error al guardar el pedido');
       clearCart();
 
       if (typeof fetchProducts === 'function') {
@@ -485,13 +498,18 @@ if (shippingForm) {
       }));
 
       try {
-        await window.fetchWithRetry('/api/v1/payments/transfer', {
+        await fetchWithRetry('/api/v1/payments/transfer', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'X-Order-Token': currentOrderToken || ''
           },
           body: JSON.stringify({ orderId, amount: total, reference: `web-${Date.now()}` })
+        }, {
+          retries: 2,
+          firstAttemptTimeoutMs: 30000,
+          retryTimeoutMs: 15000,
+          showToastOnError: false
         });
       } catch (e) {
         console.warn('[checkout] No se pudo confirmar el pago automáticamente:', e);

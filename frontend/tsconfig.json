@@ -1,0 +1,32 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "outDir": "./dist",
+    "rootDir": ".",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["js/*"],
+      "@components/*": ["js/*"],
+      "@utils/*": ["js/utils/*"],
+      "@pages/*": ["pages/*"]
+    },
+    "types": ["jest", "node", "vite/client"],
+    "allowSyntheticDefaultImports": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "jsx": "preserve"
+  },
+  "include": ["js/**/*", "pages/**/*", "vite.config.mjs", "tests/**/*"],
+  "exclude": ["node_modules", "dist", "coverage", "assets", "css", "*.config.*"],
+  "tsBuildInfoFile": "./dist/.tsbuildinfo"
+}

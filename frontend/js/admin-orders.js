@@ -160,7 +160,7 @@
       var params = new URLSearchParams();
       if (q) params.set('q', q);
       params.set('limit', '100');
-      var res = await window.adminFetch('/api/admin/orders?' + params.toString(), { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/orders?' + params.toString(), { method: 'GET' });
       if (!res || !res.ok) throw new Error('Error cargando pedidos');
       var data = await res.json();
       ordersError = null;
@@ -174,7 +174,7 @@
 
   async function fetchOrderDetail(id) {
     try {
-      var res = await window.adminFetch('/api/admin/orders/' + id, { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/orders/' + id, { method: 'GET' });
       if (!res || !res.ok) throw new Error('Error cargando detalle');
       var data = await res.json();
       return data;
@@ -186,7 +186,7 @@
 
   async function fetchPaymentConfig() {
     try {
-      var res = await window.adminFetch('/api/admin/payment-config', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/payment-config', { method: 'GET' });
       if (!res || !res.ok) return {};
       var data = await res.json();
       return data || {};
@@ -197,7 +197,7 @@
 
   async function fetchReceipt(orderId) {
     try {
-      var res = await window.adminFetch('/api/admin/orders/' + orderId + '/receipt', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/orders/' + orderId + '/receipt', { method: 'GET' });
       if (!res || !res.ok) return null;
       var data = await res.json();
       return data;
@@ -208,7 +208,7 @@
 
   async function fetchActivities(orderId) {
     try {
-      var res = await window.adminFetch('/api/admin/orders/' + orderId + '/activity', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/orders/' + orderId + '/activity', { method: 'GET' });
       if (!res || !res.ok) return [];
       var data = await res.json();
       return data.activities || [];
@@ -604,7 +604,7 @@
     setLoading('saveShippingBtn', 'saveShippingBtnLoading', true, 'Guardar', 'Guardando...');
 
     try {
-      var res = await window.adminFetch('/api/admin/orders/' + selectedOrderId, {
+      var res = await window.adminFetch('/api/v1/admin/orders/' + selectedOrderId, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -650,7 +650,7 @@
     if (rejectBtn) rejectBtn.disabled = true;
 
     try {
-      var res = await window.adminFetch('/api/admin/orders/' + id + '/status', {
+      var res = await window.adminFetch('/api/v1/admin/orders/' + id + '/status', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'confirmed' })
@@ -715,7 +715,7 @@
     if (rejectBtn) rejectBtn.disabled = true;
 
     try {
-      var res = await window.adminFetch('/api/admin/orders/' + id + '/status', {
+      var res = await window.adminFetch('/api/v1/admin/orders/' + id + '/status', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'pending' })
@@ -765,7 +765,7 @@
 
   async function processAdvance(id, next) {
     try {
-      var res = await window.adminFetch('/api/admin/orders/' + id + '/status', {
+      var res = await window.adminFetch('/api/v1/admin/orders/' + id + '/status', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: next.status })
@@ -844,7 +844,7 @@
 
   async function processDeleteOrder(id) {
     try {
-      var res = await window.adminFetch('/api/admin/orders/' + id, { method: 'DELETE' });
+      var res = await window.adminFetch('/api/v1/admin/orders/' + id, { method: 'DELETE' });
       if (!res || !res.ok) {
         var data = await res.json().catch(function () { return {}; });
         throw new Error(data.error || 'Error archivando pedido');
@@ -876,7 +876,7 @@
 
   async function processBatchDelete(status) {
     try {
-      var res = await window.adminFetch('/api/admin/orders/batch', {
+      var res = await window.adminFetch('/api/v1/admin/orders/batch', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: status })
@@ -939,26 +939,6 @@
     var notifyBtn = document.getElementById('notifyClientBtn');
     if (notifyBtn) notifyBtn.addEventListener('click', notifyClient);
 
-    var uploadBtn = document.getElementById('uploadReceiptBtn');
-    var fileInput = document.getElementById('receiptFileInput');
-    if (uploadBtn && fileInput) {
-      uploadBtn.addEventListener('click', function () {
-        fileInput.click();
-      });
-      fileInput.addEventListener('change', function () {
-        if (!fileInput.files || !fileInput.files[0] || !selectedOrderId) return;
-        uploadReceipt(fileInput.files[0]);
-      });
-    }
-
-    var guideLink = document.getElementById('receiptGuideLink');
-    if (guideLink) {
-      guideLink.addEventListener('click', function (e) {
-        e.preventDefault();
-        showReceiptGuide();
-      });
-    }
-
     var saveShippingBtn = document.getElementById('saveShippingBtn');
     if (saveShippingBtn) saveShippingBtn.addEventListener('click', saveShippingInfo);
 
@@ -1010,53 +990,6 @@
         var modal = document.getElementById('confirmModalOverlay');
         if (modal) modal.classList.remove('active');
       };
-    }
-  }
-
-  async function uploadReceipt(file) {
-    if (!selectedOrderId) return;
-    var formData = new FormData();
-    formData.append('file', file);
-    try {
-      var res = await window.adminFetch('/api/admin/orders/' + selectedOrderId + '/receipt', {
-        method: 'POST',
-        body: formData
-      });
-      if (!res || !res.ok) {
-        var data = await res.json().catch(function () { return {}; });
-        throw new Error(data.error || 'Error subiendo comprobante');
-      }
-      showToast('✅', 'Comprobante subido correctamente', 'success');
-      currentReceipt = await fetchReceipt(selectedOrderId);
-      var order = await fetchOrderDetail(selectedOrderId);
-      if (order) {
-        renderPaymentDetails(order);
-        renderWizard(order);
-        updateOrderActions(order);
-      }
-    } catch (err) {
-      showToast('❌', err.message || 'Error subiendo comprobante', 'error');
-    }
-  }
-
-  function showReceiptGuide() {
-    var modal = document.getElementById('confirmModalOverlay');
-    var msg = document.getElementById('confirmModalMessage');
-    var actionBtn = document.getElementById('confirmModalAction');
-    if (modal) {
-      // El modal se reutiliza: resetear primero para no arrastrar el input
-      // de la confirmación destructiva ni botones de otros usos.
-      if (typeof window.resetConfirmModal === 'function') window.resetConfirmModal();
-      if (msg) msg.innerHTML = '<strong>Cómo generar el comprobante desde tu banco:</strong><br>1) Ingresá a la app de tu banco.<br>2) Buscá la transferencia realizada a <strong>' + escapeHtml(getPaymentAlias(paymentConfig) || 'el alias configurado') + '</strong>.<br>3) Descargá o capturá el comprobante de la operación.<br>4) Subilo acá con el botón "Subir Comprobante".';
-      if (actionBtn) {
-        actionBtn.textContent = 'Entendido';
-        actionBtn.className = 'btn btn-primary';
-        actionBtn.onclick = function () {
-          if (modal) modal.classList.remove('active');
-          if (msg) msg.textContent = '¿Estás seguro?';
-        };
-      }
-      modal.classList.add('active');
     }
   }
 
@@ -1130,4 +1063,12 @@
       }
     });
   };
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('dashboard:section-changed', function (e) {
+      if (e.detail && e.detail.section === 'orders') {
+        initOrdersPanel();
+      }
+    });
+  }
 })();

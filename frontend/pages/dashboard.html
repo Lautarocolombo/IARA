@@ -23,6 +23,9 @@
   <script src="../js/admin.js"></script>
   <script src="../js/admin-sidebar.js"></script>
   <script src="../js/admin-autosave.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" />
+  <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.umd.js"></script>
 </head>
  <body>
   <div class="login-overlay" id="loginOverlay">
@@ -1329,15 +1332,15 @@
                       <span class="switch-label switch-label--bold">Habilitar este método de pago</span>
                    </label>
                  </div>
-                   <div class="form-group">
-                     <label class="toggle-field">
-                       <span class="toggle">
-                         <input type="checkbox" id="pmNotifyAdmin" checked />
-                         <span class="toggle-slider"></span>
-                       </span>
-                       <span class="switch-label switch-label--bold">Notificar al admin cuando se sube un comprobante</span>
-                     </label>
-                   </div>
+<div class="form-group">
+                      <label class="toggle-field">
+                        <span class="toggle">
+                          <input type="checkbox" id="pmNotifyAdmin" checked />
+                          <span class="toggle-slider"></span>
+                        </span>
+                        <span class="switch-label switch-label--bold">Notificar al admin cuando se recibe un comprobante por WhatsApp</span>
+                      </label>
+                    </div>
                    <div class="form-group">
                      <label class="toggle-field">
                        <span class="toggle">
@@ -1376,10 +1379,10 @@
                          <div class="payment-step-label">Hacer la transferencia</div>
                        </div>
                        <div class="payment-step-arrow">→</div>
-                       <div class="payment-step">
-                         <div class="payment-step-num">4</div>
-                         <div class="payment-step-label">Subir comprobante</div>
-                       </div>
+<div class="payment-step">
+                          <div class="payment-step-num">4</div>
+                          <div class="payment-step-label">Enviar comprobante por WhatsApp</div>
+                        </div>
                      </div>
                      <div class="payment-preview-data">
                        <div class="payment-preview-row">

@@ -9,6 +9,7 @@ dotenv.config({ path: path.join(__dirname, '..', '.env') });
 const { query } = require('../src/lib/db');
 const { initDB } = require('../src/lib/db');
 const sharp = require('sharp');
+const logger = require('../lib/logger');
 
 const DRY_RUN = process.env.DRY_RUN === 'true';
 
@@ -35,16 +36,16 @@ async function optimizeToWebp(buffer) {
       .toBuffer();
     return webpBuffer;
   } catch (err) {
-    console.warn('Sharp falló, usando buffer original:', err.message);
+    logger.warn({ err: err.message }, 'Sharp falló, usando buffer original');
     return buffer;
   }
 }
 
 async function migrateTable(tableName, urlColumn, idColumn, extraFields = []) {
-  console.log(`\n=== Migrando ${tableName} ===`);
+  logger.info(`=== Migrando ${tableName} ===`);
   const result = await query(`SELECT ${idColumn}, ${urlColumn}${extraFields.length ? ', ' + extraFields.join(', ') : ''} FROM ${tableName} WHERE ${urlColumn} IS NOT NULL AND ${urlColumn} != '' ORDER BY ${idColumn}`);
   const rows = result.rows || [];
-  console.log(`Encontradas ${rows.length} filas con imágenes`);
+  logger.info(`Encontradas ${rows.length} filas con imágenes`);
 
   let migrated = 0;
   let skipped = 0;
@@ -60,7 +61,7 @@ async function migrateTable(tableName, urlColumn, idColumn, extraFields = []) {
     }
 
     if (DRY_RUN) {
-      console.log(`  [DRY] ${tableName}.${row[idColumn]}: ${currentUrl.substring(0, 80)}`);
+      logger.info(`  [DRY] ${tableName}.${row[idColumn]}: ${currentUrl.substring(0, 80)}`);
       migrated++;
       continue;
     }
@@ -83,7 +84,7 @@ async function migrateTable(tableName, urlColumn, idColumn, extraFields = []) {
       }
 
       if (!buffer) {
-        console.log(`  SKIP (no encontrado): ${tableName}.${row[idColumn]}: ${currentUrl.substring(0, 60)}`);
+        logger.warn(`  SKIP (no encontrado): ${tableName}.${row[idColumn]}: ${currentUrl.substring(0, 60)}`);
         skipped++;
         continue;
       }
@@ -102,15 +103,15 @@ async function migrateTable(tableName, urlColumn, idColumn, extraFields = []) {
 
       await query(`UPDATE ${tableName} SET ${setParts.map((c, i) => `${c} = $${i + 1}`).join(', ')} WHERE ${idColumn} = $${values.length}`, values);
 
-      console.log(`  OK: ${tableName}.${row[idColumn]} → base64 (${dataUri.length} chars)`);
+      logger.info(`  OK: ${tableName}.${row[idColumn]} → base64 (${dataUri.length} chars)`);
       migrated++;
     } catch (err) {
-      console.log(`  ERROR: ${tableName}.${row[idColumn]}: ${err.message}`);
+      logger.error({ err: err.message }, `  ERROR: ${tableName}.${row[idColumn]}`);
       failed++;
     }
   }
 
-  console.log(`Resultado: ${migrated} migrados, ${skipped} omitidos, ${failed} errores`);
+  logger.info(`Resultado: ${migrated} migrados, ${skipped} omitidos, ${failed} errores`);
   return { migrated, skipped, failed };
 }
 
@@ -118,8 +119,8 @@ async function migrateTable(tableName, urlColumn, idColumn, extraFields = []) {
   try {
     await initDB();
 
-    console.log('=== Migración de imágenes a base64 en PostgreSQL ===');
-    console.log('Modo:', DRY_RUN ? 'DRY RUN (sin cambios)' : 'APLICAR CAMBIOS');
+    logger.info('=== Migración de imágenes a base64 en PostgreSQL ===');
+    logger.info('Modo:', DRY_RUN ? 'DRY RUN (sin cambios)' : 'APLICAR CAMBIOS');
 
     let totalMigrated = 0;
     let totalSkipped = 0;
@@ -140,10 +141,10 @@ async function migrateTable(tableName, urlColumn, idColumn, extraFields = []) {
     }
 
     // Migrar site_texts que contengan URLs de imagen
-    console.log('\n=== Migrando site_texts ===');
+    logger.info('\n=== Migrando site_texts ===');
     const textsResult = await query("SELECT key, value FROM site_texts WHERE value LIKE '%/imagenes/%' OR value LIKE '%iara-peach%' OR value LIKE '%uploads/imagenes%' OR value LIKE 'http%'");
     const textRows = textsResult.rows || [];
-    console.log(`Encontrados ${textRows.length} registros con URLs de imagen`);
+    logger.info(`Encontrados ${textRows.length} registros con URLs de imagen`);
 
     for (const row of textRows) {
       const oldVal = row.value;
@@ -153,7 +154,7 @@ async function migrateTable(tableName, urlColumn, idColumn, extraFields = []) {
       }
 
       if (DRY_RUN) {
-        console.log(`  [DRY] site_texts.${row.key}: ${oldVal.substring(0, 80)}`);
+        logger.info(`  [DRY] site_texts.${row.key}: ${oldVal.substring(0, 80)}`);
         totalMigrated++;
         continue;
       }
@@ -173,7 +174,7 @@ async function migrateTable(tableName, urlColumn, idColumn, extraFields = []) {
         }
 
         if (!buffer) {
-          console.log(`  SKIP: site_texts.${row.key}`);
+          logger.warn(`  SKIP: site_texts.${row.key}`);
           totalSkipped++;
           continue;
         }
@@ -183,25 +184,25 @@ async function migrateTable(tableName, urlColumn, idColumn, extraFields = []) {
         const dataUri = 'data:image/webp;base64,' + base64;
 
         await query('UPDATE site_texts SET value = $1 WHERE key = $2', [dataUri, row.key]);
-        console.log(`  OK: site_texts.${row.key} → base64 (${dataUri.length} chars)`);
+        logger.info(`  OK: site_texts.${row.key} → base64 (${dataUri.length} chars)`);
         totalMigrated++;
       } catch (err) {
-        console.log(`  ERROR: site_texts.${row.key}: ${err.message}`);
+        logger.error({ err: err.message }, `  ERROR: site_texts.${row.key}`);
         totalFailed++;
       }
     }
 
-    console.log('\n=== MIGRACIÓN COMPLETA ===');
-    console.log(`Total migrados: ${totalMigrated}`);
-    console.log(`Total omitidos: ${totalSkipped}`);
-    console.log(`Total errores: ${totalFailed}`);
+    logger.info('\n=== MIGRACIÓN COMPLETA ===');
+    logger.info(`Total migrados: ${totalMigrated}`);
+    logger.info(`Total omitidos: ${totalSkipped}`);
+    logger.info(`Total errores: ${totalFailed}`);
 
     if (DRY_RUN) {
-      console.log('\nEsto fue un DRY RUN. Ejecutá sin DRY_RUN para aplicar cambios.');
-      console.log('Ejemplo: node src/scripts/migrate-to-base64.js');
+      logger.info('\nEsto fue un DRY RUN. Ejecutá sin DRY_RUN para aplicar cambios.');
+      logger.info('Ejemplo: node src/scripts/migrate-to-base64.js');
     }
   } catch (err) {
-    console.error('Error en migración:', err.message);
+    logger.error({ err: err.message }, 'Error en migración');
     process.exit(1);
   }
 })();

@@ -6,12 +6,8 @@
     window.__aboutImages = {};
     global.fetchWithRetry = jest.fn(function () {
       return Promise.resolve({
-        ok: true,
-        json: function () {
-          return Promise.resolve({
-            about_text: '<p>En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.</p>'
-          });
-        }
+        slots: {},
+        about_text: '<p>En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.</p>'
       });
     });
     global.CONFIG = { API: { BASE: 'http://localhost' } };
@@ -356,14 +352,9 @@
       var prevFetch = global.fetchWithRetry;
       global.fetchWithRetry = jest.fn(function () {
         return Promise.resolve({
-          ok: true,
-          json: function () {
-            return Promise.resolve({
-              slots: {
-                1: { about_group: 'g1', caption: 'Otro' },
-                2: { about_group: 'g2', caption: 'Caption match' }
-              }
-            });
+          slots: {
+            1: { about_group: 'g1', caption: 'Otro' },
+            2: { about_group: 'g2', caption: 'Caption match' }
           }
         });
       });
@@ -388,14 +379,9 @@
       var prevFetch = global.fetchWithRetry;
       global.fetchWithRetry = jest.fn(function () {
         return Promise.resolve({
-          ok: true,
-          json: function () {
-            return Promise.resolve({
-              slots: {
-                1: null,
-                2: { about_group: 'g2', caption: 'Caption match' }
-              }
-            });
+          slots: {
+            1: null,
+            2: { about_group: 'g2', caption: 'Caption match' }
           }
         });
       });

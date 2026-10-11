@@ -13,7 +13,13 @@ const {
   syncHeroCards
 } = require('../controllers/heroCardsController');
 
-router.get('/hero-cards', getPublicHeroCards);
+// Cache-Control para GET públicos de contenido: 60s cache, 5min stale-while-revalidate
+const publicCache = (req, res, next) => {
+  res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+  next();
+};
+
+router.get('/hero-cards', publicCache, getPublicHeroCards);
 router.get('/admin/hero-cards', adminAuth, getHeroCards);
 router.get('/admin/hero-cards/slot/:slot', adminAuth, getHeroCardBySlot);
 router.post('/admin/hero-cards', adminAuth, uploadSingle, handleUploadError, upsertHeroCard);
