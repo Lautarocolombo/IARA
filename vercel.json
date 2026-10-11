@@ -10,6 +10,18 @@
       "destination": "/sw-v5.js"
     },
     {
+      "source": "/health",
+      "destination": "https://iara-os3h.onrender.com/health"
+    },
+    {
+      "source": "/health/db",
+      "destination": "https://iara-os3h.onrender.com/health/db"
+    },
+    {
+      "source": "/ready",
+      "destination": "https://iara-os3h.onrender.com/ready"
+    },
+    {
       "source": "/api/ready",
       "destination": "https://iara-os3h.onrender.com/ready"
     },
