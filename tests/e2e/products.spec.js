@@ -10,8 +10,12 @@ test('products: catálogo carga con grid de productos', async ({ page }) => {
 
 test('products: filtro por categoría pulseras muestra solo pulseras', async ({ page }) => {
   await page.goto('/#catalog');
+  await page.waitForResponse('**/api/products*');
   await page.locator('.filter-btn[data-filter="pulseras"]').click();
-  await page.waitForTimeout(500);
+  await page.waitForFunction(
+    () => document.querySelectorAll('.product-card.cat-pulseras').length > 0,
+    { timeout: 15000 }
+  );
   const cards = page.locator('#productsGrid .product-card');
   const count = await cards.count();
   expect(count).toBeGreaterThan(0);
@@ -22,8 +26,12 @@ test('products: filtro por categoría pulseras muestra solo pulseras', async ({ 
 
 test('products: filtro por categoría accesorios muestra solo accesorios', async ({ page }) => {
   await page.goto('/#catalog');
+  await page.waitForResponse('**/api/products*');
   await page.locator('.filter-btn[data-filter="accesorios"]').click();
-  await page.waitForTimeout(500);
+  await page.waitForFunction(
+    () => document.querySelectorAll('.product-card.cat-accesorios').length > 0,
+    { timeout: 15000 }
+  );
   const cards = page.locator('#productsGrid .product-card');
   const count = await cards.count();
   expect(count).toBeGreaterThan(0);
@@ -34,8 +42,12 @@ test('products: filtro por categoría accesorios muestra solo accesorios', async
 
 test('products: filtro por categoría souvenirs muestra solo souvenirs', async ({ page }) => {
   await page.goto('/#catalog');
+  await page.waitForResponse('**/api/products*');
   await page.locator('.filter-btn[data-filter="souvenirs"]').click();
-  await page.waitForTimeout(500);
+  await page.waitForFunction(
+    () => document.querySelectorAll('.product-card.cat-souvenirs').length > 0,
+    { timeout: 15000 }
+  );
   const cards = page.locator('#productsGrid .product-card');
   const count = await cards.count();
   expect(count).toBeGreaterThan(0);

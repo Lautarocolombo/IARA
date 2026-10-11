@@ -1,3 +1,4 @@
+/* global loadDashboardStats */
 (function() {
   if (window.location.protocol === 'file:') {
     document.body.innerHTML = '<div style="padding:2rem;text-align:center;"><h2>⚠️ Panel de administración</h2><p>Este panel debe abrirse desde el servidor, no desde el sistema de archivos.</p></div>';
@@ -18,6 +19,9 @@
     if (typeof initProductManager === 'function') initProductManager();
     if (typeof initCategoryManager === 'function') initCategoryManager();
     if (typeof initSalesPanel === 'function') initSalesPanel();
+    if (typeof initOrdersPanel === 'function') initOrdersPanel();
+    if (typeof initPaymentsPanel === 'function') initPaymentsPanel();
+    if (typeof loadDashboardStats === 'function') loadDashboardStats();
 
     var nav = document.getElementById('adminNav');
     if (nav) {

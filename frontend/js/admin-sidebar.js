@@ -27,8 +27,9 @@
   /* Rosa de la marca: mismo SVG que el favicon público (frontend/index.html).
      Inline para que no dependa de la ruta ni de un request extra. */
   var BRAND_ROSE =
-    '<svg viewBox="0 0 100 100" role="img" aria-label="Artesanía Gualeguay">' +
-    '<text y=".9em" font-size="90">🌸</text>' +
+    '<svg viewBox="0 0 100 100" role="img" aria-label="Artesanía Gualeguay" xmlns="http://www.w3.org/2000/svg">' +
+    '<circle cx="50" cy="40" r="20" fill="#fce7f3"/>' +
+    '<text x="50" y="68" text-anchor="middle" font-size="36">🌸</text>' +
     '</svg>';
 
   function svg(name) {
@@ -72,6 +73,14 @@
         { section: 'orders', label: 'Pedidos Individuales', icon: 'clipboardList', badge: { key: 'ordersPending', tone: 'accent', srText: 'pedidos pendientes', srTextOne: 'pedido pendiente' } },
         { section: 'sales', label: 'Ganancias', icon: 'trendingUp' },
         { section: 'payments', label: 'Medio de pago', icon: 'creditCard' }
+      ]
+    },
+    {
+      id: 'admin',
+      title: 'Administración',
+      items: [
+        { section: 'users', label: 'Usuarios', icon: 'clipboardList' },
+        { section: 'settings', label: 'Configuración', icon: 'creditCard' }
       ]
     }
   ];
@@ -370,10 +379,21 @@
     init: function (options) {
       var opts = options || {};
       var mount = opts.mount || document.getElementById('adminSidebar');
-      if (!mount) return null;
-      if (!mount.parentNode) return null;
+      if (!mount) {
+        console.warn('[adminSidebar] No se encontró el contenedor #adminSidebar');
+        return null;
+      }
+      if (!mount.parentNode) {
+        console.warn('[adminSidebar] El contenedor no tiene padre');
+        return null;
+      }
 
-      mount.parentNode.replaceChild(Sidebar(opts), mount);
+      try {
+        mount.parentNode.replaceChild(Sidebar(opts), mount);
+      } catch (err) {
+        console.error('[adminSidebar] Error al montar sidebar:', err);
+        return null;
+      }
 
       var collapseBtn = document.getElementById('sidebarCollapseBtn');
       if (collapseBtn) {
@@ -411,6 +431,9 @@
       if (!isMobile()) applyCollapsed(readStoredCollapsed());
       else applyCollapsed(false);
 
+      // Disparar evento de inicialización completa
+      document.dispatchEvent(new CustomEvent('adminSidebar:ready'));
+      
       return api;
     },
 

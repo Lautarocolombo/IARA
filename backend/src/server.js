@@ -401,6 +401,7 @@ app.use('/api/v1', require('./routes/receipts'));
 app.use('/api/v1', require('./routes/heroCards'));
 app.use('/api/v1', require('./routes/sales'));
 app.use('/api/v1', require('./routes/earnings'));
+app.use('/api/v1', require('./routes/adminConfig'));
 app.use('/api/v1', require('./routes/carousel'));
 // CRITICAL: mount /api/v1/sync BEFORE /api/v1/users so the literal path wins over
 // users' catch-all GET /:id (which would otherwise 401 every public SSE client).
@@ -458,6 +459,7 @@ app.use('/api', require('./routes/receipts'));
 app.use('/api', require('./routes/heroCards'));
 app.use('/api', require('./routes/sales'));
 app.use('/api', require('./routes/earnings'));
+app.use('/api', require('./routes/adminConfig'));
 app.use('/api', require('./routes/carousel'));
 app.use('/api/sync', require('./routes/sync'));
 app.use('/api', require('./routes/users'));

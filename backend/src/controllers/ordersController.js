@@ -1,13 +1,13 @@
 const crypto = require('crypto');
 const { query, transaction } = require('../lib/db');
 const logger = require('../lib/logger');
-const { orderSchema, roundMoney } = require('../lib/validators');
+const { orderSchema } = require('../lib/validators');
 const { syncBus } = require('../routes/sync');
 const { safeJsonParse } = require('../lib/parser');
 const path = require('path');
 const fs = require('fs');
 const PDFDocument = require('pdfkit');
-const { deleteImageAsset } = require('../lib/upload');
+const { uploadProofToBlob } = require('../lib/upload');
 const { sendOrderConfirmationEmail } = require('../lib/email');
 const { logInventoryMovement } = require('../controllers/inventoryController');
 
@@ -25,52 +25,11 @@ async function logActivity(user, action, entityType = '', entityId = 0, details 
 
 const VALID_STATUSES = ['pending', 'confirmed', 'preparing', 'shipped', 'delivered', 'cancelled'];
 
-/* Limpieza best-effort de comprobantes huérfanos al archivar: borra las filas
-   (payment_proofs, receipts) y los archivos (Blob/local; base64 es noop).
-   Cada paso está aislado en try/catch: la limpieza nunca debe romper el
-   archivado. Se ejecuta DESPUÉS del commit, no dentro de la transacción. */
-async function deleteOrderAttachments(orderId) {
-  const urls = [];
-  try {
-    const proofs = await query('SELECT proof_url FROM payment_proofs WHERE order_id = $1', [orderId]);
-    urls.push(...proofs.rows.map(r => r.proof_url).filter(Boolean));
-    await query('DELETE FROM payment_proofs WHERE order_id = $1', [orderId]);
-  } catch (err) {
-    logger.warn({ err: err.message, orderId }, 'No se pudieron limpiar payment_proofs del pedido archivado');
-  }
-  try {
-    const receipts = await query('SELECT url FROM receipts WHERE order_id = $1', [orderId]);
-    urls.push(...receipts.rows.map(r => r.url).filter(Boolean));
-    await query('DELETE FROM receipts WHERE order_id = $1', [orderId]);
-  } catch (err) {
-    logger.warn({ err: err.message, orderId }, 'No se pudieron limpiar receipts del pedido archivado');
-  }
-  try {
-    const o = await query('SELECT receipt_url FROM orders WHERE id = $1', [orderId]);
-    if (o.rows[0] && o.rows[0].receipt_url) urls.push(o.rows[0].receipt_url);
-  } catch (err) {
-    logger.warn({ err: err.message, orderId }, 'No se pudo leer receipt_url del pedido archivado');
-  }
-  let cleaned = 0;
-  for (const url of urls) {
-    try {
-      if (await deleteImageAsset({ url })) cleaned++;
-    } catch (err) {
-      logger.warn({ err: err.message, orderId }, 'No se pudo borrar archivo de comprobante');
-    }
-  }
-  if (urls.length > 0) {
-    logger.info({ orderId, files: urls.length, cleaned }, 'Comprobantes huérfanos limpiados al archivar');
-  }
-  return cleaned;
-}
-
 const getOrders = async (req, res) => {
   try {
     const { status, start_date, end_date, page, limit, q } = req.query;
-    const tenantId = req.tenantId || 'default';
-    let where = 'WHERE (tenant_id = $1 OR tenant_id = \'default\') AND deleted_at IS NULL';
-    const params = [tenantId];
+    let where = 'WHERE (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') AND deleted_at IS NULL';
+    const params = [];
 
     if (status) { params.push(status); where += ` AND status = $${params.length}`; }
     if (start_date) { params.push(start_date); where += ` AND date(created_at) >= $${params.length}`; }
@@ -80,8 +39,8 @@ const getOrders = async (req, res) => {
       where += ` AND (customer->>'name' ILIKE $${params.length} OR CAST(id AS TEXT) LIKE $${params.length})`;
     }
 
-    const pageNum = Math.max(Number(page) || 1, 1);
-    const limitNum = Math.min(Math.max(Number(limit) || 30, 1), 100);
+    const pageNum = Number(page) || 1;
+    const limitNum = Number(limit) || 30;
     const offset = (pageNum - 1) * limitNum;
 
     const countResult = await query(`SELECT COUNT(*) as total FROM orders ${where}`, params);
@@ -100,10 +59,10 @@ const getOrders = async (req, res) => {
       pages: Math.ceil(total / limitNum),
       hasMore: pageNum * limitNum < total
     });
-} catch (err) {
-      logger.error({ err: err.message, stack: err.stack }, 'Error obteniendo pedidos');
-      res.status(500).json({ error: 'Error interno del servidor' });
-    }
+  } catch (err) {
+    logger.error({ err: err.message }, 'Error obteniendo pedidos');
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
 };
 
 const getUserOrders = async (req, res) => {
@@ -112,9 +71,8 @@ const getUserOrders = async (req, res) => {
     if (!email) {
       return res.status(400).json({ error: 'Email es requerido para buscar pedidos' });
     }
-    const tenantId = req.tenantId || 'default';
-    const params = [email, tenantId];
-    let whereClause = 'WHERE shipping_email = $1 AND (tenant_id = $2 OR tenant_id = \'default\')';
+    const params = [email];
+    let whereClause = 'WHERE shipping_email = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') AND deleted_at IS NULL';
     if (order_token) {
       params.push(String(order_token));
       whereClause += ` AND order_token = $${params.length}`;
@@ -137,7 +95,7 @@ const createOrder = async (req, res) => {
   logger.info('createOrder: body parseado');
 
   if (idempotency_key) {
-    const existing = await query('SELECT id, status FROM orders WHERE order_token = $1', [String(idempotency_key)]);
+    const existing = await query('SELECT id, status FROM orders WHERE order_token = $1 AND deleted_at IS NULL', [String(idempotency_key)]);
     if (existing.rows.length > 0) {
       logger.info({ orderId: existing.rows[0].id }, 'createOrder: idempotency key encontrada, retornando orden existente');
       return res.status(200).json({ ...existing.rows[0], cached: true });
@@ -189,8 +147,6 @@ const createOrder = async (req, res) => {
       if (dbPrice === undefined) {
         throw new Error(`Producto ${item.id} no encontrado en la base de datos`);
       }
-      // El precio guardado es SIEMPRE el de la DB, nunca el del cliente.
-      item.price = dbPrice;
       calculatedSubtotal += dbPrice * Number(item.quantity || 1);
     }
 
@@ -220,11 +176,10 @@ const createOrder = async (req, res) => {
 
     let couponDiscount = 0;
     let couponRow = null;
-    const tenantId = req.tenantId || 'default';
     if (couponCode) {
       const couponResult = await query(
-        'SELECT * FROM coupons WHERE code = $1 AND active = TRUE AND (tenant_id = $2 OR tenant_id = \'default\')',
-        [String(couponCode).trim(), tenantId]
+        'SELECT * FROM coupons WHERE code = $1 AND active = TRUE AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')',
+        [String(couponCode).trim()]
       );
       if (couponResult.rows.length > 0) {
         couponRow = couponResult.rows[0];
@@ -248,7 +203,7 @@ const createOrder = async (req, res) => {
       }
     }
 
-    const calculatedTotal = roundMoney(calculatedSubtotal - couponDiscount + calculatedShipping);
+    const calculatedTotal = calculatedSubtotal - couponDiscount + calculatedShipping;
 
     if (Math.abs(calculatedTotal - Number(total)) > 0.01) {
       logger.warn({ frontendTotal: total, calculatedTotal }, 'createOrder: total del frontend no coincide con el calculado por el backend');
@@ -258,18 +213,18 @@ const createOrder = async (req, res) => {
       logger.info('createOrder: dentro de transaccion');
       for (const item of validatedItems) {
         logger.info('createOrder: consultando stock para producto', { itemId: item.id });
-        const stockResult = await query('SELECT stock FROM products WHERE id = $1 AND (tenant_id = $3 OR tenant_id = \'default\')', [Number(item.id), 0, tenantId], client);
+        const stockResult = await query('SELECT stock FROM products WHERE id = $1', [Number(item.id)], client);
         if (stockResult.rows.length === 0) {
           throw new Error(`Producto ${item.id} no encontrado`);
         }
         const currentStock = stockResult.rows[0].stock;
         if (currentStock < item.quantity) {
-          throw new Error(`Stock insuficiente para el producto ${item.id}. Disponible: ${currentStock ?? 0}, solicitado: ${item.quantity}`);
+          throw new Error(`Stock insuficiente para el producto ${item.id}. Disponible: ${currentStock}, solicitado: ${item.quantity}`);
         }
         const newStock = currentStock - Number(item.quantity);
         await query(
-          'UPDATE products SET stock = stock - $1 WHERE id = $2 AND (tenant_id = $3 OR tenant_id = \'default\')',
-          [Number(item.quantity), Number(item.id), tenantId],
+          'UPDATE products SET stock = stock - $1 WHERE id = $2 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')',
+          [Number(item.quantity), Number(item.id)],
           client
         );
         logInventoryMovement(Number(item.id), 'sale', Number(item.quantity), currentStock, newStock, 'Venta', '').catch(() => {});
@@ -279,8 +234,8 @@ const createOrder = async (req, res) => {
       let finalCouponDiscount = 0;
       if (couponRow) {
         const lockedCoupon = await query(
-          'SELECT * FROM coupons WHERE code = $1 AND (tenant_id = $2 OR tenant_id = \'default\') FOR UPDATE',
-          [finalCouponCode, tenantId],
+          'SELECT * FROM coupons WHERE code = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') FOR UPDATE',
+          [finalCouponCode],
           client
         );
         if (lockedCoupon.rows.length === 0) {
@@ -304,16 +259,16 @@ const createOrder = async (req, res) => {
         finalCouponDiscount = Math.min(finalCouponDiscount, calculatedSubtotal);
 
         await query(
-          'UPDATE coupons SET used_count = used_count + 1 WHERE code = $1 AND (tenant_id = $2 OR tenant_id = \'default\')',
-          [finalCouponCode, tenantId],
+          'UPDATE coupons SET used_count = used_count + 1 WHERE code = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')',
+          [finalCouponCode],
           client
         );
       }
 
-      const finalTotal = roundMoney(calculatedSubtotal - finalCouponDiscount + calculatedShipping);
+      const finalTotal = calculatedSubtotal - finalCouponDiscount + calculatedShipping;
 
       const orderResult = await query(
-        'INSERT INTO orders (items, total, customer, status, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, subtotal, shipping_cost, notes, order_token, coupon_code, coupon_discount, payment_method, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) RETURNING *',
+        'INSERT INTO orders (items, total, customer, status, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, subtotal, shipping_cost, notes, order_token, coupon_code, coupon_discount, payment_method, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) RETURNING *',
         [
           JSON.stringify(validatedItems),
           finalTotal,
@@ -331,8 +286,7 @@ const createOrder = async (req, res) => {
           orderToken,
           finalCouponCode,
           finalCouponDiscount,
-          payment_method || 'transfer',
-          tenantId
+          payment_method || 'transfer'
         ],
         client
       );
@@ -356,19 +310,18 @@ const createOrder = async (req, res) => {
   }
 };
 
-async function restoreStockForOrder(items, client, tenantId = 'default') {
+async function restoreStockForOrder(items, client) {
   const itemsArr = typeof items === 'string' ? JSON.parse(items) : items;
   if (!Array.isArray(itemsArr)) return;
   for (const item of itemsArr) {
     const productId = Number(item.id);
     const qty = Number(item.quantity || 1);
-    await query('UPDATE products SET stock = stock + $1 WHERE id = $2 AND (tenant_id = $3 OR tenant_id = \'default\')', [qty, productId, tenantId], client);
+    await query('UPDATE products SET stock = stock + $1 WHERE id = $2 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [qty, productId], client);
   }
 }
 
 const updateOrderStatus = async (req, res) => {
   const id = Number(req.params.id);
-  const tenantId = req.tenantId || 'default';
   const { status, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, subtotal, shipping_cost, notes, payment_method } = req.body || {};
   const updates = {};
   const logMsgs = [];
@@ -393,19 +346,19 @@ const updateOrderStatus = async (req, res) => {
   const fields = Object.keys(updates);
   if (!fields.length) return res.status(400).json({ error: 'Sin datos para actualizar' });
   const values = fields.map(f => updates[f]);
-  values.push(id, tenantId);
+  values.push(id);
   const setClause = fields.map((_, i) => `${fields[i]} = $${i + 1}`).join(', ');
 
   try {
     if (status === 'cancelled') {
-      const existing = await query('SELECT items, status FROM orders WHERE id = $1 AND deleted_at IS NULL AND (tenant_id = $2 OR tenant_id = \'default\')', [id, tenantId]);
+      const existing = await query('SELECT items, status FROM orders WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') AND deleted_at IS NULL', [id]);
       if (existing.rows.length > 0 && existing.rows[0].status !== 'cancelled') {
-        await restoreStockForOrder(existing.rows[0].items, null, tenantId);
+        await restoreStockForOrder(existing.rows[0].items);
         logMsgs.push('Stock restaurado');
       }
     }
 
-    const result = await query(`UPDATE orders SET ${setClause} WHERE id = $${values.length - 1} AND deleted_at IS NULL AND (tenant_id = $${values.length} OR tenant_id = 'default') RETURNING *`, values);
+    const result = await query(`UPDATE orders SET ${setClause} WHERE id = $${values.length} AND (tenant_id = current_setting('app.current_tenant', TRUE) OR tenant_id = 'default') AND deleted_at IS NULL RETURNING *`, values);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
     const user = req.user?.user || 'admin';
     await logActivity(user, 'update', 'order', id, logMsgs.join('; '), req.ip || '', id, req.headers['x-tenant-id'] || req.user?.tenant_id || 'default');
@@ -419,22 +372,24 @@ const updateOrderStatus = async (req, res) => {
 
 const deleteOrder = async (req, res) => {
   const id = Number(req.params.id);
-  const tenantId = req.tenantId || 'default';
   try {
     await transaction(async (client) => {
-      const orderResult = await query('SELECT * FROM orders WHERE id = $1 AND deleted_at IS NULL AND (tenant_id = $2 OR tenant_id = \'default\')', [id, tenantId], client);
+      const orderResult = await query('SELECT * FROM orders WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') AND deleted_at IS NULL', [id], client);
       if (orderResult.rows.length === 0) throw new Error('NOT_FOUND');
       const order = orderResult.rows[0];
       const items = safeJsonParse(order.items, []);
       if (order.status === 'pending' || order.status === 'confirmed' || order.status === 'cancelled') {
-        await restoreStockForOrder(items, client, tenantId);
+        await restoreStockForOrder(items, client);
       }
       const user = req.user?.user || 'admin';
-      await logActivity(user, 'archive', 'order', id, `Pedido #${id} archivado (borrado lógico)`, req.ip || '', id, req.headers['x-tenant-id'] || req.user?.tenant_id || 'default', client);
-      await query('UPDATE orders SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted_at IS NULL AND (tenant_id = $2 OR tenant_id = \'default\')', [id, tenantId], client);
+      await logActivity(user, 'delete', 'order', id, `Pedido #${id} archivado (soft delete)`, req.ip || '', id, req.headers['x-tenant-id'] || req.user?.tenant_id || 'default', client);
+      await query('UPDATE orders SET deleted_at = NOW() WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [id], client);
+      
+      // Limpiar comprobantes huérfanos (payment_proofs y receipts) al archivar pedido
+      await query('UPDATE payment_proofs SET deleted_at = NOW() WHERE order_id = $1 AND deleted_at IS NULL', [id], client);
+      await query('UPDATE receipts SET deleted_at = NOW() WHERE order_id = $1 AND deleted_at IS NULL', [id], client);
     });
-    await deleteOrderAttachments(id);
-    res.json({ ok: true, archived: true });
+    res.json({ ok: true, soft: true });
   } catch (err) {
     if (err.message === 'NOT_FOUND') return res.status(404).json({ error: 'Pedido no encontrado' });
     logger.error({ err: err.message }, 'Error eliminando pedido');
@@ -444,29 +399,25 @@ const deleteOrder = async (req, res) => {
 
 const batchDeleteOrders = async (req, res) => {
   const { status } = req.body || {};
-  const tenantId = req.tenantId || 'default';
   if (!status || !VALID_STATUSES.includes(status)) {
     return res.status(400).json({ error: 'Estado inválido para eliminación en lote' });
   }
   try {
     const result = await transaction(async (client) => {
-      const ordersResult = await query('SELECT id, items, status FROM orders WHERE status = $1 AND deleted_at IS NULL AND (tenant_id = $2 OR tenant_id = \'default\')', [status, tenantId], client);
+      const ordersResult = await query('SELECT id, items, status FROM orders WHERE status = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') AND deleted_at IS NULL', [status], client);
       const orders = ordersResult.rows;
       for (const order of orders) {
         const items = safeJsonParse(order.items, []);
         if (order.status === 'pending' || order.status === 'confirmed' || order.status === 'cancelled') {
-          await restoreStockForOrder(items, client, tenantId);
+          await restoreStockForOrder(items, client);
         }
         const user = req.user?.user || 'admin';
-        await logActivity(user, 'batch_archive', 'order', order.id, `Pedido #${order.id} archivado en lote (estado: ${status})`, req.ip || '', order.id, req.headers['x-tenant-id'] || req.user?.tenant_id || 'default', client);
+        await logActivity(user, 'batch_delete', 'order', order.id, `Pedido #${order.id} archivado en lote (estado: ${status})`, req.ip || '', order.id, req.headers['x-tenant-id'] || req.user?.tenant_id || 'default', client);
       }
-      const deleteResult = await query('UPDATE orders SET deleted_at = CURRENT_TIMESTAMP WHERE status = $1 AND deleted_at IS NULL AND (tenant_id = $2 OR tenant_id = \'default\')', [status, tenantId], client);
-      return { deleted: deleteResult.rowCount, archived: true, ids: orders.map(o => o.id) };
+      const deleteResult = await query('UPDATE orders SET deleted_at = NOW() WHERE status = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') AND deleted_at IS NULL', [status], client);
+      return { deleted: deleteResult.rowCount };
     });
-    for (const oid of (result.ids || [])) {
-      await deleteOrderAttachments(oid);
-    }
-    res.json({ ok: true, deleted: result.deleted });
+    res.json({ ok: true, deleted: result.deleted, soft: true });
   } catch (err) {
     logger.error({ err: err.message }, 'Error eliminando pedidos en lote');
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -475,12 +426,11 @@ const batchDeleteOrders = async (req, res) => {
 
 const updateOrderNotes = async (req, res) => {
   const id = Number(req.params.id);
-  const tenantId = req.tenantId || 'default';
   const { notes } = req.body || {};
   try {
     const result = await query(
-      'UPDATE orders SET notes = $1 WHERE id = $2 AND deleted_at IS NULL AND (tenant_id = $3 OR tenant_id = \'default\') RETURNING *',
-      [notes || '', id, tenantId]
+      'UPDATE orders SET notes = $1 WHERE id = $2 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') AND deleted_at IS NULL RETURNING *',
+      [notes || '', id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
     const user = req.user?.user || 'admin';
@@ -494,7 +444,6 @@ const updateOrderNotes = async (req, res) => {
 
 const updateOrder = async (req, res) => {
   const id = Number(req.params.id);
-  const tenantId = req.tenantId || 'default';
   const {
     shipping_name, shipping_address, shipping_phone, shipping_zip,
     shipping_city, shipping_email, notes, subtotal, shipping_cost,
@@ -522,28 +471,28 @@ const updateOrder = async (req, res) => {
   if (!fields.length) return res.status(400).json({ error: 'Sin datos para actualizar' });
 
   const values = fields.map(f => updates[f]);
-  values.push(id, tenantId);
+  values.push(id);
   const setClause = fields.map((_, i) => `${fields[i]} = $${i + 1}`).join(', ');
 
   try {
     if (status === 'cancelled') {
-      const existing = await query('SELECT items, status FROM orders WHERE id = $1 AND deleted_at IS NULL AND (tenant_id = $2 OR tenant_id = \'default\')', [id, tenantId]);
+      const existing = await query('SELECT items, status FROM orders WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') AND deleted_at IS NULL', [id]);
       if (existing.rows.length > 0 && existing.rows[0].status !== 'cancelled') {
         const items = safeJsonParse(existing.rows[0].items, []);
         for (const item of items) {
           const productId = Number(item.id);
           const qty = Number(item.quantity || 1);
-          const stockResult = await query('SELECT stock FROM products WHERE id = $1 AND (tenant_id = $2 OR tenant_id = \'default\')', [productId, tenantId]);
+          const stockResult = await query('SELECT stock FROM products WHERE id = $1', [productId]);
           const currentStock = stockResult.rows[0]?.stock || 0;
           const newStock = currentStock + qty;
-          await query('UPDATE products SET stock = stock + $1 WHERE id = $2 AND (tenant_id = $3 OR tenant_id = \'default\')', [qty, productId, tenantId]);
+          await query('UPDATE products SET stock = stock + $1 WHERE id = $2 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\')', [qty, productId]);
           logInventoryMovement(productId, 'cancellation', qty, currentStock, newStock, 'Cancelación de pedido', String(id)).catch(() => {});
         }
         logMsgs.push('Stock restaurado');
       }
     }
 
-    const result = await query(`UPDATE orders SET ${setClause} WHERE id = $${values.length - 1} AND deleted_at IS NULL AND (tenant_id = $${values.length} OR tenant_id = 'default') RETURNING *`, values);
+    const result = await query(`UPDATE orders SET ${setClause} WHERE id = $${values.length} AND (tenant_id = current_setting('app.current_tenant', TRUE) OR tenant_id = 'default') AND deleted_at IS NULL RETURNING *`, values);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
     const user = req.user?.user || 'admin';
     await logActivity(user, 'update', 'order', id, logMsgs.join('; '), req.ip || '', id, req.headers['x-tenant-id'] || req.user?.tenant_id || 'default');
@@ -557,9 +506,8 @@ const updateOrder = async (req, res) => {
 
 const getOrderReceipt = async (req, res) => {
   const orderId = Number(req.params.id);
-  const tenantId = req.tenantId || 'default';
   try {
-    const result = await query('SELECT r.* FROM receipts r JOIN orders o ON r.order_id = o.id WHERE r.order_id = $1 AND (o.tenant_id = $2 OR o.tenant_id = \'default\')', [orderId, tenantId]);
+    const result = await query('SELECT r.* FROM receipts r JOIN orders o ON r.order_id = o.id WHERE r.order_id = $1 AND (o.tenant_id = current_setting(\'app.current_tenant\', TRUE) OR o.tenant_id = \'default\')', [orderId]);
     if (result.rows.length === 0) return res.json({});
     res.json(result.rows[0]);
   } catch (err) {
@@ -570,9 +518,8 @@ const getOrderReceipt = async (req, res) => {
 
 const getOrderDetail = async (req, res) => {
   const id = Number(req.params.id);
-  const tenantId = req.tenantId || 'default';
   try {
-    const result = await query('SELECT * FROM orders WHERE id = $1 AND deleted_at IS NULL AND (tenant_id = $2 OR tenant_id = \'default\')', [id, tenantId]);
+    const result = await query('SELECT * FROM orders WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') AND deleted_at IS NULL', [id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
     res.json(result.rows[0]);
   } catch (err) {
@@ -681,14 +628,131 @@ const getPublicOrderTrack = async (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!id) return res.status(400).json({ error: 'ID de pedido requerido' });
-    const result = await query('SELECT id, items, total, status, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, created_at FROM orders WHERE id = $1 AND (tenant_id = $2 OR tenant_id = \'default\')', [id, req.tenantId || 'default']);
+    const result = await query('SELECT id, items, total, status, shipping_name, shipping_address, shipping_phone, shipping_zip, shipping_city, shipping_email, created_at FROM orders WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') AND deleted_at IS NULL', [id]);
     if (result.rows.length === 0) return res.status(404).json({ error: 'Pedido no encontrado' });
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     res.json(result.rows[0]);
   } catch (err) {
     logger.error({ err: err.message }, 'Error obteniendo pedido público');
-res.status(500).json({ error: 'Error interno del servidor' });
+    res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
-module.exports = { getOrders, getUserOrders, createOrder, updateOrderStatus, deleteOrder, batchDeleteOrders, updateOrderNotes, updateOrder, getOrderDetail, exportOrders, addOrderActivity, getOrderReceipt, getOrderActivities, getPublicOrderTrack };
+const sendOrderWhatsApp = async (req, res) => {
+  const orderId = Number(req.params.id);
+  try {
+    const result = await query('SELECT * FROM orders WHERE id = $1 AND deleted_at IS NULL', [orderId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Pedido no encontrado' });
+    }
+    const order = result.rows[0];
+    const customer = safeJsonParse(order.customer, {});
+    const items = safeJsonParse(order.items, []);
+    
+    const whatsappNumber = '543444634444';
+    const customerName = customer.name || order.shipping_name || 'Cliente';
+    const total = Number(order.total || 0).toLocaleString('es-AR');
+    const alias = 'gualeguay.artesanias'; // alias por defecto, se puede configurar
+    
+    const itemsText = items.map(i => `• ${i.name || 'Producto'} x${i.quantity || 1}`).join('\n');
+    
+    const message = 
+      `Hola ${customerName}! 🌸\n\n` +
+      `Tu pedido #${orderId} ha sido confirmado.\n\n` +
+      `📦 *Detalle:*\n${itemsText}\n\n` +
+      `💰 *Total: $${total}*\n\n` +
+      `💳 Podés pagar por transferencia al alias: *${alias}*\n` +
+      `Una vez realizada la transferencia, subí el comprobante desde el link que te enviamos.\n\n` +
+      `¡Gracias por elegirnos! 🌸\n` +
+      `Artesanías Gualeguay`;
+    
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
+    
+    await query(
+      'INSERT INTO activity_log (username, action, entity_type, entity_id, details, related_order_id, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      [req.user?.user || 'admin', 'whatsapp_sent', 'order', orderId, 'Notificación WhatsApp enviada al cliente', orderId, req.headers['x-tenant-id'] || req.user?.tenant_id || 'default']
+    );
+    
+    res.json({ ok: true, whatsappUrl, message });
+  } catch (err) {
+    logger.error({ err: err.message }, 'Error generando link WhatsApp');
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+const uploadPublicReceipt = async (req, res) => {
+  try {
+    const orderId = Number(req.params.id);
+    if (!orderId || orderId <= 0) {
+      return res.status(400).json({ error: 'ID de pedido inválido' });
+    }
+
+    const orderResult = await query('SELECT * FROM orders WHERE id = $1 AND deleted_at IS NULL', [orderId]);
+    if (orderResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Pedido no encontrado' });
+    }
+    const order = orderResult.rows[0];
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No se recibió el comprobante' });
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+    if (req.file.size > maxSize) {
+      return res.status(400).json({ error: 'El archivo es muy grande (máx. 5 MB).' });
+    }
+
+    const mime = req.file.mimetype || 'application/octet-stream';
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    if (!allowedTypes.includes(mime)) {
+      return res.status(400).json({ error: 'Tipo de archivo no permitido. Usá JPG, PNG, WEBP o PDF.' });
+    }
+
+    let proofUrl = null;
+
+    try {
+      const blobResult = await uploadProofToBlob(req.file);
+      if (blobResult && blobResult.url) {
+        proofUrl = blobResult.url;
+        try { fs.rmSync(req.file.path, { force: true, maxRetries: 3, retryDelay: 50 }); } catch (e) { /* noop */ }
+      }
+    } catch (blobErr) {
+      if (blobErr.code === 'BLOB_NOT_CONFIGURED' || blobErr.code === 'BLOB_UPLOAD_FAILED') {
+        return res.status(blobErr.status || 503).json({ error: blobErr.message });
+      }
+      logger.error({ err: blobErr.message, code: blobErr.code }, 'Error subiendo comprobante a Vercel Blob');
+      return res.status(500).json({ error: 'Error subiendo el comprobante' });
+    }
+
+    const amount = Number(order.total || 0);
+    const customerData = safeJsonParse(order.customer, {});
+    const customerNameStr = ((req.body && req.body.customerName) || '').toString().trim() || (customerData.name || '');
+
+    const insertResult = await query(
+      'INSERT INTO payment_proofs (order_id, customer_name, amount, proof_url, tenant_id) VALUES ($1, $2, $3, $4, COALESCE(current_setting(\'app.current_tenant\', TRUE), \'default\')) RETURNING id',
+      [orderId, customerNameStr, amount, proofUrl]
+    );
+
+    const proofId = insertResult.rows[0]?.id || orderId;
+
+    await query(
+      'INSERT INTO activity_log (username, action, entity_type, entity_id, details, related_order_id, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7)',
+      ['Cliente', 'Comprobante subido', 'payment_proof', proofId, `Pedido #${orderId}`, orderId, req.headers['x-tenant-id'] || 'default']
+    );
+
+    await query(
+      'UPDATE orders SET receipt_url = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [proofUrl, orderId]
+    );
+
+    try { syncBus.emit('payment_proof_uploaded', { orderId, proofId }); } catch (e) { /* noop */ }
+
+    res.status(201).json({ ok: true, url: proofUrl, id: proofId });
+  } catch (err) {
+    logger.error({ err: err.message }, 'Error subiendo comprobante público');
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+module.exports = { getOrders, getUserOrders, createOrder, updateOrderStatus, deleteOrder, batchDeleteOrders, updateOrderNotes, updateOrder, getOrderDetail, exportOrders, addOrderActivity, getOrderReceipt, getOrderActivities, getPublicOrderTrack, uploadPublicReceipt, sendOrderWhatsApp };

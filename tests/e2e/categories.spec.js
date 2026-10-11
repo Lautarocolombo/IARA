@@ -28,13 +28,18 @@ test('categories: click en Pulseras filtra productos', async ({ page }) => {
 
 test('categories: cambiar de categoría actualiza vista', async ({ page }) => {
   await page.goto('/#catalog');
-  await page.waitForLoadState('domcontentloaded');
-  await page.waitForTimeout(500);
+  await page.waitForResponse('**/api/products*');
   await page.locator('.filter-btn[data-filter="pulseras"]').click();
-  await page.waitForTimeout(1500);
+  await page.waitForFunction(
+    () => document.querySelectorAll('.product-card.cat-pulseras').length > 0,
+    { timeout: 15000 }
+  );
   const pulserasCount = await page.locator('.product-card').count();
   await page.locator('.filter-btn[data-filter="accesorios"]').click();
-  await page.waitForTimeout(1500);
+  await page.waitForFunction(
+    () => document.querySelectorAll('.product-card.cat-accesorios').length > 0,
+    { timeout: 15000 }
+  );
   const accesoriosCount = await page.locator('.product-card').count();
   expect(pulserasCount).not.toBe(accesoriosCount);
 });

@@ -21,7 +21,7 @@ test('success: muestra información de transferencia', async ({ page }) => {
   await expect(page.locator('#successTransferTotal')).toBeVisible();
 });
 
-test('success: muestra botón de WhatsApp', async ({ page }) => {
+test('success: muestra botón de WhatsApp para enviar comprobante', async ({ page }) => {
   await page.goto('/pages/success.html');
   await page.evaluate(() => sessionStorage.setItem('ag_last_order', JSON.stringify({
     id: 1, number: 'TEST-001', total: 1500,
@@ -32,9 +32,10 @@ test('success: muestra botón de WhatsApp', async ({ page }) => {
   await page.waitForTimeout(500);
   await expect(page.locator('#successWhatsappBtn')).toBeVisible();
   await expect(page.locator('#successWhatsappBtn')).toHaveAttribute('href', /wa\.me/);
+  await expect(page.locator('#successWhatsappBtn')).toContainText('Enviar comprobante por WhatsApp');
 });
 
-test('success: copiar alias funciona', async ({ page }) => {
+test('success: botón copiar alias funciona', async ({ page }) => {
   await page.goto('/pages/success.html');
   await page.evaluate(() => sessionStorage.setItem('ag_last_order', JSON.stringify({
     id: 1, number: 'TEST-001', total: 1500,
@@ -49,7 +50,7 @@ test('success: copiar alias funciona', async ({ page }) => {
   await expect(page.locator('#copySuccessAliasBtn')).toContainText('Copiado');
 });
 
-test('success: sin datos de pedido muestra fallback', async ({ page }) => {
+test('success: botón de tracking navega a página de seguimiento', async ({ page }) => {
   await page.goto('/pages/success.html');
   await page.evaluate(() => sessionStorage.removeItem('ag_last_order'));
   await page.reload();
@@ -101,7 +102,11 @@ test('success: botón de tracking presente cuando hay order id', async ({ page }
       id: 42,
       number: 'TEST-042',
       total: 1500,
-      items: [{ name: 'Pulsera Test', qty: 1, price: 1500 }]
+      items: [{ name: 'Pulsera Test', qty: 1, price: 1500 }],
+      shippingName: 'Test',
+      shippingAddress: 'Calle Test',
+      shippingCity: 'Gualeguay',
+      shippingPhone: '+5491234567890'
     }));
   });
   await page.reload();

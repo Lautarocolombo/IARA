@@ -801,6 +801,54 @@ const bulkDeleteProducts = async (req, res) => {
   }
 };
 
+const quickUpdateProduct = async (req, res) => {
+  const id = Number(req.params.id);
+  const tenantId = getTenantId(req);
+  const validation = productSchema.pick({ price: true, stock: true, active: true }).partial().safeParse(req.body || {});
+  if (!validation.success) {
+    return res.status(400).json({ error: validation.error.issues[0]?.message || 'Datos inválidos' });
+  }
+
+  const updates = validation.data;
+  const fields = Object.keys(updates);
+  if (!fields.length) {
+    return res.status(400).json({ error: 'Se requiere al menos uno: price, stock o active' });
+  }
+
+  const values = fields.map(field => {
+    if (field === 'price') return roundMoney(updates[field]);
+    if (field === 'stock') return Number(updates[field]);
+    return updates[field];
+  });
+  values.push(id, tenantId);
+  const setClause = fields.map((field, index) => `${field} = $${index + 1}`).join(', ');
+
+  try {
+    const result = await query(
+      `UPDATE products SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = $${values.length - 1} AND deleted = FALSE AND tenant_id = $${values.length} RETURNING *`,
+      values
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+
+    res.json(result.rows[0]);
+    try { syncBus.emit('products_updated', { id }); } catch (err) { logger.debug({ err: err.message }, 'No se pudo emitir products_updated'); }
+    logAudit({
+      user: req.user?.user || 'admin',
+      action: 'quick_update',
+      entityType: 'product',
+      entityId: id,
+      details: `Actualización rápida: ${fields.map(field => `${field}=${updates[field]}`).join(', ')}`,
+      ip: req.ip || '',
+      tenantId
+    }).catch(err => logger.warn({ err: err.message }, 'No se pudo registrar quick_update'));
+  } catch (err) {
+    logger.error('Error actualizando producto rápido:', err);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
 const bulkToggleProducts = async (req, res) => {
   try {
     const { ids, active } = req.body || {};
@@ -826,6 +874,7 @@ module.exports = {
   toggleProductStatus,
   deleteProduct,
   duplicateProduct,
+  quickUpdateProduct,
   searchProducts,
   syncToNeon,
   bulkImportProducts,

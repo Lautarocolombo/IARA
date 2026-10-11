@@ -40,29 +40,18 @@ function isBlobUrl(url) {
 
 async function uploadProofToBlob(file) {
   const mod = getBlobModule();
+  const isProd = process.env.NODE_ENV === 'production';
   if (!mod || !isBlobConfigured()) {
     const err = new Error('BLOB_READ_WRITE_TOKEN no configurado o inválido. Configurá el token en Vercel y agregalo como variable de entorno en Render para subir comprobantes a Vercel Blob.');
     err.code = 'BLOB_NOT_CONFIGURED';
+    err.status = 503;
     throw err;
   }
   try {
-    // Comprobantes: optimizar imágenes (los PDF se suben tal cual).
-    // Antes se subía el original sin tocar (hasta 20MB) -> Blob caro + admin lento.
-    let buffer;
-    let contentType;
-    let ext = path.extname(file.originalname).toLowerCase() || '.bin';
-    const isImage = (file.mimetype || '').startsWith('image/');
-    if (isImage) {
-      const optimizedPath = await optimizeImage(file.path, { format: 'webp', maxDimension: 1600, webpQuality: 82 });
-      buffer = fs.readFileSync(optimizedPath);
-      contentType = 'image/webp';
-      ext = '.webp';
-      if (optimizedPath !== file.path) removeIfExists(optimizedPath);
-    } else {
-      buffer = fs.readFileSync(file.path);
-      contentType = file.mimetype || 'application/octet-stream';
-    }
-    const safe = file.originalname.replace(path.extname(file.originalname).toLowerCase(), '').replace(/[^a-zA-Z0-9._-]/g, '_');
+    const buffer = fs.readFileSync(file.path);
+    const ext = path.extname(file.originalname).toLowerCase() || '.bin';
+    const safe = file.originalname.replace(ext, '').replace(/[^a-zA-Z0-9._-]/g, '_');
+    const contentType = file.mimetype || 'application/octet-stream';
     const blobName = `comprobantes/${Date.now()}_${safe}${ext}`;
 
     const blob = await mod.put(blobName, buffer, {
@@ -73,14 +62,27 @@ async function uploadProofToBlob(file) {
 
     return { url: blob.url, filename: blobName, blobName, isCloudinary: false, isBlob: true };
   } catch (err) {
-    logger.error({ err: err.message, stack: err.stack, code: err.code }, 'Error subiendo comprobante a Vercel Blob - fallback a storage local');
-    return null;
+    logger.error({ err: err.message, stack: err.stack, code: err.code }, 'Error subiendo comprobante a Vercel Blob');
+    if (isProd) {
+      const error = new Error('Error subiendo comprobante a Vercel Blob');
+      error.code = 'BLOB_UPLOAD_FAILED';
+      error.status = 503;
+      throw error;
+    }
+    throw err;
   }
 }
 
 async function uploadToBlob(file) {
   const mod = getBlobModule();
+  const isProd = process.env.NODE_ENV === 'production';
   if (!mod || !isBlobConfigured()) {
+    if (isProd) {
+      const err = new Error('BLOB_READ_WRITE_TOKEN no configurado en producción');
+      err.code = 'BLOB_NOT_CONFIGURED';
+      err.status = 503;
+      throw err;
+    }
     return null;
   }
   let tmpDir = null;
@@ -91,12 +93,9 @@ async function uploadToBlob(file) {
     const tmpPath = path.join(tmpDir, `${Date.now()}_${safe}${ext}`);
     fs.copyFileSync(file.path, tmpPath);
 
-    const optimizedPath = await optimizeImage(tmpPath, { format: 'webp', maxDimension: 1600, webpQuality: 82 });
-    const buffer = fs.readFileSync(optimizedPath);
-    // Los bytes SIEMPRE son WebP tras optimizeImage: el ContentType debe
-    // decirlo (antes se mandaba el mimetype original y el CDN servía webp
-    // rotulado como image/png o image/jpeg).
-    const contentType = 'image/webp';
+    const optimizedPath = await optimizeImage(tmpPath, { format: 'webp' });
+    let buffer = fs.readFileSync(optimizedPath);
+    let contentType = path.extname(optimizedPath).toLowerCase() === '.webp' ? 'image/webp' : file.mimetype || 'application/octet-stream';
 
     // Generate thumbnail
     const thumbPath = await generateThumbnail(optimizedPath);
@@ -135,8 +134,14 @@ async function uploadToBlob(file) {
       : err.code === 'ENOTFOUND' || err.code === 'ECONNREFUSED'
         ? 'Error de red conectando a Vercel Blob. Verificá la conectividad desde Render.'
         : 'Error desconocido. Verificá los logs para más detalles.';
-    logger.error({ err: err.message, stack: err.stack, code: err.code, hint }, 'Error subiendo a Vercel Blob - fallback a storage local');
-    return null;
+    logger.error({ err: err.message, stack: err.stack, code: err.code, hint }, 'Error subiendo a Vercel Blob');
+    if (isProd) {
+      const error = new Error('Error subiendo imagen a Vercel Blob');
+      error.code = 'BLOB_UPLOAD_FAILED';
+      error.status = 503;
+      throw error;
+    }
+    throw err;
   } finally {
     if (tmpDir && fs.existsSync(tmpDir)) {
       try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch (e) { /* noop */ }
@@ -394,8 +399,7 @@ async function saveFile(req, res) {
   if (!req.file) {
     return res.status(400).json({ error: 'No se recibió imagen' });
   }
-  try {
-    const processed = await processFile(req.file, '');
+  const processed = await processFile(req.file, '');
   res.json({
     url: processed.url,
     filename: processed.filename,
@@ -403,10 +407,6 @@ async function saveFile(req, res) {
     isCloudinary: processed.isCloudinary,
     isBlob: processed.isBlob
   });
-  } catch (err) {
-    const status = err.code === 'IMAGE_TOO_HEAVY_FOR_DB' ? 413 : 500;
-    res.status(status).json({ error: err.message || 'Error al procesar la imagen' });
-  }
 }
 
 const fileExistsCache = new Set();

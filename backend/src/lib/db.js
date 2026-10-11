@@ -1,3 +1,1099 @@
-const db = require('./db_test');
+﻿const fs = require('fs');
+const path = require('path');
+const logger = require('./logger');
 
-module.exports = db;
+const { runMigrations } = require('./migrator');
+
+let sqlite3;
+try {
+  sqlite3 = require('sqlite3').verbose();
+} catch (err) {
+  logger.error({ err: err.message }, 'Error cargando sqlite3');
+  sqlite3 = null;
+}
+
+const connectionString = process.env.DATABASE_URL;
+const isLocal = !connectionString;
+let db = null;
+let pool = null;
+
+function createPool(connectionString) {
+  const { Pool } = require('pg');
+  let finalConnectionString = connectionString;
+  if (process.env.NODE_ENV === 'production' && connectionString && !connectionString.includes('sslmode=')) {
+    const separator = connectionString.includes('?') ? '&' : '?';
+    finalConnectionString = connectionString + separator + 'sslmode=require';
+  }
+  if (finalConnectionString && !finalConnectionString.includes('uselibpqcompat=')) {
+    const separator = finalConnectionString.includes('?') ? '&' : '?';
+    finalConnectionString = finalConnectionString + separator + 'uselibpqcompat=true';
+  }
+  if (finalConnectionString && !finalConnectionString.includes('client_encoding=')) {
+    const separator = finalConnectionString.includes('?') ? '&' : '?';
+    finalConnectionString = finalConnectionString + separator + 'client_encoding=UTF8';
+  }
+  const pool = new Pool({
+    connectionString: finalConnectionString,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+    allowExitOnIdle: false
+  });
+
+  pool.on('acquire', () => {
+    if (pool.waitingCount > 5) {
+      logger.warn({ total: pool.totalCount, idle: pool.idleCount, waiting: pool.waitingCount }, 'Pool cerca del agotamiento');
+    }
+  });
+
+  pool.on('error', (err) => {
+    logger.error({ err: err.message }, 'Error inesperado en pool de conexiones');
+  });
+
+  return pool;
+}
+
+async function waitForPool(poolInstance, retries = 5, delay = 1000) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      const client = await poolInstance.connect();
+      client.release();
+      return poolInstance;
+    } catch (err) {
+      logger.warn({ attempt: i + 1, err: err.message }, 'Pool no listo, reintentando...');
+      if (i === retries - 1) throw err;
+      await new Promise(resolve => setTimeout(resolve, delay * Math.pow(2, i)));
+    }
+  }
+}
+
+if (isLocal) {
+  if (!sqlite3) {
+    logger.error('sqlite3 no está disponible. Verificá que esté instalado correctamente.');
+  } else {
+    const dbDir = process.env.VERCEL
+      ? '/tmp/ag-data'
+      : path.join(__dirname, '..', '..', 'data');
+    const dbPath = path.join(dbDir, 'iara.db');
+    if (!fs.existsSync(dbDir)) {
+      fs.mkdirSync(dbDir, { recursive: true });
+    }
+    db = new sqlite3.Database(dbPath);
+  }
+} else {
+  (async () => {
+    try {
+      pool = createPool(connectionString);
+      pool.on('error', (err) => {
+        logger.error({ err: err.message }, 'Pool error');
+      });
+
+      await waitForPool(pool);
+      logger.info('Pool de PostgreSQL inicializado correctamente');
+    } catch (err) {
+      logger.error({ err: err.message, stack: err.stack }, 'Error inicializando pool de PostgreSQL');
+    }
+  })();
+}
+
+function toSqlite(sql) {
+  return sql
+    .replace(/\$\d+/g, '?')
+    .replace(/SERIAL PRIMARY KEY/g, 'INTEGER PRIMARY KEY AUTOINCREMENT')
+    .replace(/JSONB/g, 'TEXT')
+    .replace(/TIMESTAMP DEFAULT CURRENT_TIMESTAMP/g, 'DATETIME DEFAULT CURRENT_TIMESTAMP')
+    .replace(/ON CONFLICT \((.+?)\) DO UPDATE SET/gi, (match, col) => `ON CONFLICT(${col}) DO UPDATE SET`);
+}
+
+async function query(text, params, transactionClient = null) {
+  const client = transactionClient || pool;
+  if (!client && isLocal) {
+    return new Promise((resolve, reject) => {
+      let sql = text;
+      if (isLocal) {
+        sql = sql.replace(/current_setting\('app\.current_tenant',\s*TRUE\)/gi, "'default'");
+      }
+      const sqliteSql = toSqlite(sql);
+      const values = params || [];
+      const trimmed = sqliteSql.trim().toUpperCase();
+      if (trimmed.startsWith('SELECT') || trimmed.startsWith('WITH') || trimmed.startsWith('PRAGMA') || sqliteSql.toUpperCase().includes('RETURNING')) {
+        db.all(sqliteSql, values, (err, rows) => {
+          if (err) return reject(err);
+          resolve({ rows, rowCount: rows ? rows.length : 0 });
+        });
+      } else {
+        db.run(sqliteSql, values, function (err) {
+          if (err) return reject(err);
+          resolve({ rows: [], rowCount: this.changes || 0 });
+        });
+      }
+    });
+  }
+
+  if (!client) {
+    throw new Error('No hay conexión a base de datos disponible');
+  }
+
+  const start = Date.now();
+  const maxRetries = 3;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const result = await client.query(text, params);
+      const duration = Date.now() - start;
+      logger.debug({ duration, rows: result.rowCount }, 'Query ejecutada');
+      return result;
+    } catch (err) {
+      const isFinalAttempt = attempt === maxRetries;
+      const isRetryable = isRetryableError(err);
+
+      logger.error({ err: err.message, sql: text.substring(0, 200), attempt: attempt + 1, retryable: isRetryable }, 'Error en query');
+
+      if (isFinalAttempt || !isRetryable) {
+        throw err;
+      }
+
+      const backoff = Math.pow(2, attempt) * 1000;
+      logger.warn({ attempt: attempt + 1, backoff }, 'Reintentando query...');
+      await new Promise(resolve => setTimeout(resolve, backoff));
+    }
+  }
+}
+
+function isRetryableError(err) {
+  const retryableCodes = ['ECONNRESET', 'ETIMEDOUT', 'ECONNREFUSED', 'EHOSTUNREACH', 'ENETUNREACH', 'EPIPE'];
+  const retryablePgCodes = ['57P03', '57P01', '55P03', '40001', '40P01', '08003', '08006', '08001', '08007'];
+  if (!err.code) return true;
+  if (retryableCodes.includes(err.code)) return true;
+  if (retryablePgCodes.includes(err.code)) return true;
+  return false;
+}
+
+async function getClient() {
+  if (!pool) throw new Error('Pool no inicializado');
+  return await pool.connect();
+}
+
+async function transaction(fn) {
+  if (isLocal) {
+    return new Promise((resolve, reject) => {
+      db.serialize(() => {
+        db.run('BEGIN', (err) => {
+          if (err) return reject(err);
+          const run = (sql, params) => {
+            return new Promise((res, rej) => {
+              let sqlite = toSqlite(sql);
+              if (isLocal) {
+                sqlite = sqlite.replace(/current_setting\('app\.current_tenant',\s*TRUE\)/gi, "'default'");
+              }
+              const trimmed = sqlite.trim().toUpperCase();
+              if (trimmed.startsWith('SELECT') || trimmed.startsWith('WITH') || trimmed.startsWith('PRAGMA')) {
+                db.all(sqlite, params, (e, rows) => {
+                  if (e) return rej(e);
+                  res({ rows, rowCount: rows ? rows.length : 0 });
+                });
+              } else {
+                db.run(sqlite, params, function (e) {
+                  if (e) return rej(e);
+                  res({ rows: [], rowCount: this.changes || 0 });
+                });
+              }
+            });
+          };
+          const client = { query: run };
+          fn(client)
+            .then(result => {
+              db.run('COMMIT', err => {
+                if (err) return reject(err);
+                resolve(result);
+              });
+            })
+            .catch(err => {
+              db.run('ROLLBACK', () => reject(err));
+            });
+        });
+      });
+    });
+  }
+
+  const client = await getClient();
+  try {
+    await client.query('BEGIN');
+    const result = await fn(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function initDB() {
+  if (isLocal) {
+    // Full initialization for SQLite (local development)
+    await initSQLite();
+    await runSQLiteMigrations();
+  } else {
+    // Postgres: only run versioned migrations, no ALTER TABLE loops
+    await runMigrationsOnly();
+  }
+}
+
+async function initSQLite() {
+    await query(`CREATE TABLE IF NOT EXISTS products (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      slug TEXT DEFAULT '',
+      category TEXT DEFAULT 'pulseras',
+      price REAL NOT NULL,
+      description TEXT DEFAULT '',
+      emoji TEXT DEFAULT '📿',
+      image TEXT DEFAULT '',
+      badge TEXT DEFAULT '',
+      stock INTEGER DEFAULT 0,
+      featured BOOLEAN DEFAULT FALSE,
+      active BOOLEAN DEFAULT TRUE,
+      sku TEXT DEFAULT '',
+      deleted BOOLEAN DEFAULT FALSE,
+      tenant_id TEXT DEFAULT 'default',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS site_texts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      key TEXT UNIQUE NOT NULL,
+      value TEXT DEFAULT '',
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      tenant_id TEXT DEFAULT 'default'
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS testimonials (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      comment TEXT NOT NULL,
+      rating INTEGER DEFAULT 5 CHECK (rating >= 1 AND rating <= 5),
+      image TEXT DEFAULT '',
+      avatar TEXT DEFAULT '',
+      role TEXT DEFAULT '',
+      active BOOLEAN DEFAULT TRUE,
+      featured BOOLEAN DEFAULT FALSE,
+      orden INTEGER DEFAULT 0,
+      tenant_id TEXT DEFAULT 'default',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS section_content (
+      section_key TEXT PRIMARY KEY,
+      title TEXT DEFAULT '',
+      subtitle TEXT DEFAULT '',
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      tenant_id TEXT DEFAULT 'default'
+    )`);
+    await query("INSERT OR IGNORE INTO section_content (section_key, title, subtitle, tenant_id) VALUES ('testimonials', 'Lo que dicen nuestros clientes', 'Historias reales de personas que confiaron en nosotros', 'default')");
+    await query(`CREATE TABLE IF NOT EXISTS orders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      items TEXT NOT NULL,
+      total REAL NOT NULL,
+      customer TEXT,
+      status TEXT DEFAULT 'pending',
+      notes TEXT DEFAULT '',
+      shipping_name TEXT DEFAULT '',
+      shipping_address TEXT DEFAULT '',
+      shipping_phone TEXT DEFAULT '',
+      shipping_zip TEXT DEFAULT '',
+      shipping_city TEXT DEFAULT '',
+      shipping_email TEXT DEFAULT '',
+      subtotal REAL DEFAULT 0,
+      shipping_cost REAL DEFAULT 0,
+      payment_method TEXT DEFAULT 'transfer',
+      coupon_code TEXT DEFAULT '',
+      coupon_discount REAL DEFAULT 0,
+      tenant_id TEXT DEFAULT 'default',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      deleted_at DATETIME
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS order_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id INTEGER NOT NULL,
+      product_id INTEGER NOT NULL,
+      name TEXT DEFAULT '',
+      price REAL DEFAULT 0,
+      quantity INTEGER DEFAULT 1,
+      emoji TEXT DEFAULT '',
+      image TEXT DEFAULT '',
+      category_name TEXT DEFAULT '',
+      category_slug TEXT DEFAULT '',
+      tenant_id TEXT DEFAULT 'default',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS subscribers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      email TEXT UNIQUE NOT NULL,
+      tenant_id TEXT DEFAULT 'default',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS sales (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL,
+      quantity INTEGER NOT NULL,
+      unit_price REAL NOT NULL,
+      total REAL NOT NULL,
+      sale_date DATE DEFAULT CURRENT_DATE,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query('CREATE INDEX IF NOT EXISTS idx_sales_sale_date ON sales(sale_date)');
+    await query(`CREATE TABLE IF NOT EXISTS inventory_movements (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL,
+      type TEXT DEFAULT 'adjustment',
+      quantity INTEGER DEFAULT 0,
+      previous_stock INTEGER DEFAULT 0,
+      new_stock INTEGER DEFAULT 0,
+      reason TEXT DEFAULT '',
+      reference_id TEXT DEFAULT '',
+      tenant_id TEXT DEFAULT 'default',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query('CREATE INDEX IF NOT EXISTS idx_inventory_movements_product ON inventory_movements(product_id)');
+    await query('CREATE INDEX IF NOT EXISTS idx_inventory_movements_created ON inventory_movements(created_at)');
+    await query(`CREATE TABLE IF NOT EXISTS inventory_alerts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL,
+      type TEXT DEFAULT 'low_stock',
+      message TEXT DEFAULT '',
+      resolved BOOLEAN DEFAULT FALSE,
+      tenant_id TEXT DEFAULT 'default',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      resolved_at DATETIME
+    )`);
+    await query('CREATE INDEX IF NOT EXISTS idx_inventory_alerts_product ON inventory_alerts(product_id)');
+    await query(`CREATE TABLE IF NOT EXISTS reviews (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL,
+      rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+      comment TEXT DEFAULT '',
+      name TEXT DEFAULT '',
+      tenant_id TEXT DEFAULT 'default',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+     try {
+      await query('ALTER TABLE reviews ADD COLUMN name TEXT DEFAULT \'\'');
+    } catch (err) {
+      if (!err.message.includes('duplicate column name')) {
+        throw err;
+      }
+    }
+    try {
+      await query('ALTER TABLE reviews ADD COLUMN avatar TEXT DEFAULT \'\'');
+    } catch (err) {
+      if (!err.message.includes('duplicate column name')) {
+        throw err;
+      }
+    }
+    await query(`CREATE TABLE IF NOT EXISTS contacts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT NOT NULL,
+      message TEXT NOT NULL,
+      status TEXT DEFAULT 'new',
+      tenant_id TEXT DEFAULT 'default',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS payment_config (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      mp_alias TEXT DEFAULT '',
+      transfer_alias TEXT DEFAULT '',
+      holder_name TEXT DEFAULT '',
+      cbu_cvu TEXT DEFAULT '',
+      whatsapp TEXT DEFAULT '',
+      message TEXT DEFAULT '',
+      active BOOLEAN DEFAULT TRUE,
+      mp_enabled BOOLEAN DEFAULT FALSE,
+      cash_enabled BOOLEAN DEFAULT FALSE,
+      shipping_cost REAL DEFAULT 0,
+      free_shipping_from REAL DEFAULT 0,
+      notify_admin_new_proof BOOLEAN DEFAULT TRUE,
+      notify_client_approved BOOLEAN DEFAULT TRUE,
+      notify_client_rejected BOOLEAN DEFAULT TRUE,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS payment_proofs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id INTEGER NOT NULL,
+      customer_name TEXT DEFAULT '',
+      amount REAL DEFAULT 0,
+      proof_url TEXT DEFAULT '',
+      status TEXT DEFAULT 'pending',
+      rejection_reason TEXT DEFAULT '',
+      reviewed_at DATETIME,
+      tenant_id TEXT DEFAULT 'default',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query('CREATE INDEX IF NOT EXISTS idx_payment_proofs_order_id ON payment_proofs(order_id)');
+    await query('CREATE INDEX IF NOT EXISTS idx_payment_proofs_status ON payment_proofs(status)');
+    await query('CREATE INDEX IF NOT EXISTS idx_payment_proofs_created_at ON payment_proofs(created_at)');
+    await query(`CREATE TABLE IF NOT EXISTS site_settings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      key TEXT UNIQUE NOT NULL,
+      value TEXT DEFAULT '',
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      tenant_id TEXT DEFAULT 'default'
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS hero_cards (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nombre TEXT DEFAULT '',
+      precio TEXT DEFAULT '',
+      imagen TEXT DEFAULT '',
+      emoji TEXT DEFAULT '📿',
+      orden INTEGER DEFAULT 0,
+      activo BOOLEAN DEFAULT TRUE,
+      titulo TEXT DEFAULT '',
+      subtitulo TEXT DEFAULT '',
+      descripcion TEXT DEFAULT '',
+      cta_texto TEXT DEFAULT '',
+      cta_url TEXT DEFAULT '',
+      slot INTEGER DEFAULT 0,
+      tipo TEXT DEFAULT 'hero',
+      tenant_id TEXT DEFAULT 'default',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS product_images (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      product_id INTEGER NOT NULL,
+      url TEXT NOT NULL,
+      alt TEXT DEFAULT '',
+      filename TEXT DEFAULT '',
+      cloudinary_public_id TEXT DEFAULT '',
+      orden INTEGER DEFAULT 0,
+      es_principal BOOLEAN DEFAULT FALSE,
+      descripcion TEXT DEFAULT '',
+      categoria TEXT DEFAULT '',
+      tenant_id TEXT DEFAULT 'default',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS carousel_images (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      slot INTEGER NOT NULL CHECK (slot BETWEEN 1 AND 5),
+      url TEXT NOT NULL,
+      public_id TEXT DEFAULT '',
+      alt_text TEXT DEFAULT '',
+      link_url TEXT DEFAULT '',
+      caption TEXT DEFAULT '',
+      about_group INTEGER DEFAULT 0,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      tenant_id TEXT DEFAULT 'default'
+    )`);
+    await query('CREATE UNIQUE INDEX IF NOT EXISTS idx_carousel_images_slot ON carousel_images(slot, tenant_id)');
+    await query('CREATE INDEX IF NOT EXISTS idx_carousel_images_slot_order ON carousel_images(slot)');
+    await query(`CREATE TABLE IF NOT EXISTS webhook_events (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      event_id TEXT UNIQUE NOT NULL,
+      source TEXT DEFAULT 'transfer',
+      payload TEXT NOT NULL,
+      status TEXT DEFAULT 'pending',
+      processed_at DATETIME,
+      tenant_id TEXT DEFAULT 'default',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS categories (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
+      slug TEXT UNIQUE NOT NULL,
+      description TEXT DEFAULT '',
+      active BOOLEAN DEFAULT TRUE,
+      orden INTEGER DEFAULT 0,
+      emoji TEXT DEFAULT '',
+      image TEXT DEFAULT '',
+      parent_id INTEGER DEFAULT NULL,
+      image_url TEXT DEFAULT '',
+      tenant_id TEXT DEFAULT 'default',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS activity_log (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT DEFAULT 'admin',
+      action TEXT NOT NULL,
+      entity_type TEXT DEFAULT '',
+      entity_id INTEGER DEFAULT 0,
+      details TEXT DEFAULT '',
+      ip TEXT DEFAULT '',
+      related_order_id INTEGER DEFAULT 0,
+      tenant_id TEXT DEFAULT 'default',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS customers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      phone TEXT DEFAULT '',
+      address TEXT DEFAULT '',
+      city TEXT DEFAULT '',
+      zip TEXT DEFAULT '',
+      active BOOLEAN DEFAULT TRUE,
+      blocked BOOLEAN DEFAULT FALSE,
+      notes TEXT DEFAULT '',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT UNIQUE NOT NULL,
+      password_hash TEXT DEFAULT '',
+      role TEXT DEFAULT 'admin',
+      permissions TEXT DEFAULT '{}',
+      active BOOLEAN DEFAULT TRUE,
+      last_login DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS product_bulk_imports (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      filename TEXT DEFAULT '',
+      status TEXT DEFAULT 'pending',
+      total_rows INTEGER DEFAULT 0,
+      success_rows INTEGER DEFAULT 0,
+      error_rows INTEGER DEFAULT 0,
+      errors TEXT DEFAULT '',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    await query(`CREATE TABLE IF NOT EXISTS receipts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id INTEGER NOT NULL,
+      filename TEXT DEFAULT '',
+      url TEXT DEFAULT '',
+      sent_whatsapp BOOLEAN DEFAULT FALSE,
+      sent_email BOOLEAN DEFAULT FALSE,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+    logger.info('Tablas de base de datos inicializadas (SQLite)');
+    try {
+      await query('ALTER TABLE users ADD COLUMN last_login DATETIME');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna last_login ya existe o no se pudo agregar (SQLite)');
+    }
+   try {
+     await ensureAdminUser();
+   } catch (err) {
+     logger.warn({ err: err.message }, 'No se pudo asegurar usuario admin (SQLite)');
+    }
+     try {
+      await query('ALTER TABLE product_images ADD COLUMN cloudinary_public_id TEXT DEFAULT \'\'');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna cloudinary_public_id ya existe o no se pudo agregar (SQLite)');
+    }
+    try {
+      await query('ALTER TABLE product_images ADD COLUMN alt TEXT DEFAULT \'\'');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna alt ya existe o no se pudo agregar (SQLite)');
+    }
+    try {
+      await query('ALTER TABLE orders ADD COLUMN shipping_name TEXT DEFAULT \'\'');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna shipping_name ya existe o no se pudo agregar (SQLite)');
+    }
+    try {
+      await query('ALTER TABLE orders ADD COLUMN shipping_address TEXT DEFAULT \'\'');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna shipping_address ya existe o no se pudo agregar (SQLite)');
+    }
+    try {
+      await query('ALTER TABLE orders ADD COLUMN shipping_phone TEXT DEFAULT \'\'');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna shipping_phone ya existe o no se pudo agregar (SQLite)');
+    }
+    try {
+      await query('ALTER TABLE orders ADD COLUMN shipping_zip TEXT DEFAULT \'\'');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna shipping_zip ya existe o no se pudo agregar (SQLite)');
+    }
+    try {
+      await query('ALTER TABLE orders ADD COLUMN shipping_city TEXT DEFAULT \'\'');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna shipping_city ya existe o no se pudo agregar (SQLite)');
+    }
+    try {
+      await query('ALTER TABLE orders ADD COLUMN shipping_email TEXT DEFAULT \'\'');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna shipping_email ya existe o no se pudo agregar (SQLite)');
+    }
+    try {
+      await query('ALTER TABLE orders ADD COLUMN order_token TEXT DEFAULT \'\'');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna order_token ya existe o no se pudo agregar (SQLite)');
+    }
+    try {
+      await query('ALTER TABLE orders ADD COLUMN subtotal REAL DEFAULT 0');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna subtotal ya existe o no se pudo agregar (SQLite)');
+    }
+    try {
+      await query('ALTER TABLE orders ADD COLUMN shipping_cost REAL DEFAULT 0');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna shipping_cost ya existe o no se pudo agregar (SQLite)');
+    }
+    try {
+      await query('ALTER TABLE product_images ADD COLUMN descripcion TEXT DEFAULT \'\'');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna descripcion ya existe o no se pudo agregar (SQLite)');
+    }
+    try {
+      await query('ALTER TABLE product_images ADD COLUMN categoria TEXT DEFAULT \'\'');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna categoria ya existe o no se pudo agregar (SQLite)');
+    }
+      try {
+        await query('ALTER TABLE product_images ADD COLUMN filename TEXT DEFAULT \'\'');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna filename ya existe o no se pudo agregar (SQLite)');
+      }
+      try {
+        await query('ALTER TABLE products ADD COLUMN deleted BOOLEAN DEFAULT FALSE');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna deleted ya existe o no se pudo agregar (SQLite)');
+      }
+      try {
+        await query('ALTER TABLE categories ADD COLUMN image TEXT DEFAULT \'\'');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna image en categories ya existe o no se pudo agregar (SQLite)');
+      }
+      try {
+        await query('ALTER TABLE products ADD COLUMN slug TEXT DEFAULT \'\'');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna slug ya existe o no se pudo agregar (SQLite)');
+      }
+    await query('CREATE TABLE IF NOT EXISTS migrations (name TEXT PRIMARY KEY, applied_at DATETIME DEFAULT CURRENT_TIMESTAMP)');
+
+    const sqliteRenameMigrations = [
+      { name: 'rename_sort_order_to_orden', oldCol: 'sort_order', sql: 'ALTER TABLE product_images RENAME COLUMN sort_order TO orden' },
+      { name: 'rename_is_primary_to_es_principal', oldCol: 'is_primary', sql: 'ALTER TABLE product_images RENAME COLUMN is_primary TO es_principal' }
+    ];
+
+    for (const mig of sqliteRenameMigrations) {
+      const applied = await query('SELECT COUNT(*) AS count FROM migrations WHERE name = ?', [mig.name]);
+      if (applied.rows[0].count > 0) continue;
+      const pragmaResult = await query('PRAGMA table_info(product_images)');
+      const colExists = pragmaResult.rows.some(row => row.name === mig.oldCol);
+      if (colExists) {
+        await query(mig.sql);
+      }
+      await query('INSERT OR IGNORE INTO migrations (name) VALUES (?)', [mig.name]);
+    }
+    try {
+      await query('ALTER TABLE products ADD COLUMN featured BOOLEAN DEFAULT FALSE');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna featured ya existe o no se pudo agregar (SQLite)');
+    }
+    try {
+      await query('ALTER TABLE products ADD COLUMN active BOOLEAN DEFAULT TRUE');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna active ya existe o no se pudo agregar (SQLite)');
+    }
+    try {
+      await query('ALTER TABLE orders ADD COLUMN notes TEXT DEFAULT \'\'');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna notes ya existe o no se pudo agregar (SQLite)');
+    }
+    try {
+      await query('ALTER TABLE activity_log ADD COLUMN related_order_id INTEGER DEFAULT 0');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna related_order_id ya existe o no se pudo agregar (SQLite)');
+    }
+    try {
+      await query('ALTER TABLE activity_log ADD COLUMN tenant_id TEXT DEFAULT \'default\'');
+    } catch (err) {
+      logger.debug({ err: err.message }, 'Columna tenant_id ya existe o no se pudo agregar (SQLite)');
+    }
+      try {
+         await query('ALTER TABLE categories ADD COLUMN orden INTEGER DEFAULT 0');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna orden ya existe o no se pudo agregar (SQLite)');
+      }
+      try {
+         await query('ALTER TABLE categories ADD COLUMN parent_id INTEGER DEFAULT NULL');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna parent_id ya existe o no se pudo agregar (SQLite)');
+      }
+      try {
+         await query('ALTER TABLE categories ADD COLUMN image_url TEXT DEFAULT \'\'');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna image_url ya existe o no se pudo agregar (SQLite)');
+      }
+     try {
+       await query('ALTER TABLE hero_cards ADD COLUMN titulo TEXT DEFAULT \'\'');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Columna titulo ya existe o no se pudo agregar (SQLite)');
+     }
+     try {
+       await query('ALTER TABLE hero_cards ADD COLUMN subtitulo TEXT DEFAULT \'\'');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Columna subtitulo ya existe o no se pudo agregar (SQLite)');
+     }
+     try {
+       await query('ALTER TABLE hero_cards ADD COLUMN cta_texto TEXT DEFAULT \'\'');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Columna cta_texto ya existe o no se pudo agregar (SQLite)');
+     }
+     try {
+       await query('ALTER TABLE hero_cards ADD COLUMN descripcion TEXT DEFAULT \'\'');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Columna descripcion ya existe o no se pudo agregar en hero_cards (SQLite)');
+     }
+     try {
+       await query('ALTER TABLE hero_cards ADD COLUMN cta_url TEXT DEFAULT \'\'');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Columna cta_url ya existe o no se pudo agregar (SQLite)');
+     }
+     try {
+       await query('ALTER TABLE hero_cards ADD COLUMN slot INTEGER DEFAULT 0');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Columna slot ya existe o no se pudo agregar (SQLite)');
+     }
+     try {
+       await query('ALTER TABLE hero_cards ADD COLUMN tipo TEXT DEFAULT \'hero\'');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Columna tipo ya existe o no se pudo agregar (SQLite)');
+     }
+     try {
+       await query('CREATE UNIQUE INDEX IF NOT EXISTS idx_hero_cards_slot ON hero_cards(slot) WHERE slot > 0');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Índice unique slot ya existe o no se pudo agregar (SQLite)');
+     }
+     try {
+       await query('CREATE INDEX IF NOT EXISTS idx_orders_order_token ON orders(order_token)');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Índice order_token ya existe o no se pudo agregar (SQLite)');
+     }
+     try {
+       await query('CREATE INDEX IF NOT EXISTS idx_products_featured ON products(featured) WHERE featured = 1');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Índice featured ya existe o no se pudo agregar (SQLite)');
+     }
+     try {
+       await query('CREATE INDEX IF NOT EXISTS idx_webhook_events_status ON webhook_events(status)');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Índice webhook status ya existe o no se pudo agregar (SQLite)');
+     }
+     try {
+       await query('CREATE INDEX IF NOT EXISTS idx_activity_log_created_at ON activity_log(created_at DESC)');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Índice activity_log created_at ya existe o no se pudo agregar (SQLite)');
+     }
+     try {
+       await query('CREATE INDEX IF NOT EXISTS idx_activity_log_related_order ON activity_log(related_order_id)');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Índice activity_log related_order_id ya existe o no se pudo agregar (SQLite)');
+     }
+       try {
+        await query('ALTER TABLE products ADD COLUMN sku TEXT DEFAULT \'\'');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna sku ya existe o no se pudo agregar (SQLite)');
+      }
+      try {
+        await query('ALTER TABLE testimonials ADD COLUMN product_image_url TEXT DEFAULT \'\'');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna product_image_url ya existe o no se pudo agregar (SQLite)');
+      }
+      try {
+        await query('ALTER TABLE site_texts ADD COLUMN tenant_id TEXT DEFAULT \'default\'');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna tenant_id ya existe o no se pudo agregar en site_texts (SQLite)');
+      }
+      try {
+        await query('ALTER TABLE section_content ADD COLUMN tenant_id TEXT DEFAULT \'default\'');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna tenant_id ya existe o no se pudo agregar en section_content (SQLite)');
+      }
+      try {
+        await query('ALTER TABLE users ADD COLUMN tenant_id TEXT DEFAULT \'default\'');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna tenant_id ya existe o no se pudo agregar en users (SQLite)');
+      }
+      try {
+        await query('ALTER TABLE receipts ADD COLUMN tenant_id TEXT DEFAULT \'default\'');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna tenant_id ya existe o no se pudo agregar en receipts (SQLite)');
+      }
+      try {
+        await query('ALTER TABLE coupons ADD COLUMN tenant_id TEXT DEFAULT \'default\'');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna tenant_id ya existe o no se pudo agregar en coupons (SQLite)');
+      }
+      try {
+        await query('ALTER TABLE carousel_images ADD COLUMN tenant_id TEXT DEFAULT \'default\'');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna tenant_id ya existe o no se pudo agregar en carousel_images (SQLite)');
+      }
+     try {
+       await query('ALTER TABLE orders ADD COLUMN payment_method TEXT DEFAULT \'\'');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Columna payment_method ya existe o no se pudo agregar (SQLite)');
+     }
+     try {
+       await query('ALTER TABLE payment_config ADD COLUMN transfer_alias TEXT DEFAULT \'\'');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Columna transfer_alias ya existe o no se pudo agregar (SQLite)');
+     }
+     try {
+       await query('ALTER TABLE payment_config ADD COLUMN cbu_cvu TEXT DEFAULT \'\'');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Columna cbu_cvu ya existe o no se pudo agregar (SQLite)');
+     }
+     try {
+       await query('ALTER TABLE payment_config ADD COLUMN mp_enabled BOOLEAN DEFAULT FALSE');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Columna mp_enabled ya existe o no se pudo agregar (SQLite)');
+     }
+     try {
+       await query('ALTER TABLE payment_config ADD COLUMN cash_enabled BOOLEAN DEFAULT FALSE');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Columna cash_enabled ya existe o no se pudo agregar (SQLite)');
+     }
+     try {
+       await query('ALTER TABLE payment_config ADD COLUMN shipping_cost REAL DEFAULT 0');
+     } catch (err) {
+       logger.debug({ err: err.message }, 'Columna shipping_cost ya existe o no se pudo agregar (SQLite)');
+     }
+      try {
+        await query('ALTER TABLE payment_config ADD COLUMN notify_client_rejected BOOLEAN DEFAULT TRUE');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna notify_client_rejected ya existe o no se pudo agregar (SQLite)');
+      }
+      const tenantIdMigrations = [
+        'products',
+        'categories',
+        'orders',
+        'contacts',
+        'reviews',
+        'testimonials',
+        'product_images',
+        'subscribers',
+        'webhook_events',
+        'hero_cards',
+        'payment_config',
+        'payment_proofs',
+        'site_settings',
+        'site_texts'
+      ];
+      for (const table of tenantIdMigrations) {
+        try {
+          await query(`ALTER TABLE ${table} ADD COLUMN tenant_id TEXT DEFAULT 'default'`);
+        } catch (err) {
+          if (!err.message.includes('duplicate column name')) {
+            logger.debug({ err: err.message }, `Columna tenant_id ya existe o no se pudo agregar en ${table} (SQLite)`);
+          }
+        }
+      }
+      try {
+        await query('ALTER TABLE payment_config ADD COLUMN included_shipping_cost REAL DEFAULT 0');
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Columna included_shipping_cost ya existe o no se pudo agregar (SQLite)');
+      }
+      try {
+        await query(`CREATE TABLE IF NOT EXISTS shipping_rates_by_province (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          province TEXT UNIQUE NOT NULL,
+          shipping_cost REAL DEFAULT 0,
+          tenant_id TEXT DEFAULT 'default',
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )`);
+      } catch (err) {
+        logger.debug({ err: err.message }, 'Tabla shipping_rates_by_province ya existe o no se pudo crear (SQLite)');
+      }
+      const defaultProvinces = [
+        ['Buenos Aires', 1500], ['Catamarca', 1800], ['Chaco', 1800], ['Chubut', 2200],
+        ['Ciudad Autónoma de Buenos Aires', 1500], ['Córdoba', 1700], ['Corrientes', 1800],
+        ['Entre Ríos', 1500], ['Formosa', 2000], ['Jujuy', 2200], ['La Pampa', 1800],
+        ['La Rioja', 1800], ['Mendoza', 1900], ['Misiones', 1800], ['Neuquén', 2200],
+        ['Río Negro', 2200], ['Salta', 2200], ['San Juan', 1900], ['San Luis', 1700],
+        ['Santa Cruz', 2500], ['Santa Fe', 1600], ['Santiago del Estero', 1800],
+        ['Tierra del Fuego', 2800], ['Tucumán', 1700]
+      ];
+      for (const [prov, cost] of defaultProvinces) {
+        try {
+          await query('INSERT OR IGNORE INTO shipping_rates_by_province (province, shipping_cost) VALUES ($1, $2)', [prov, cost]);
+        } catch (err) {
+          logger.debug({ err: err.message }, `No se pudo insertar provincia ${prov} (SQLite)`);
+        }
+      }
+      try {
+        await query("UPDATE payment_config SET included_shipping_cost = 1500 WHERE included_shipping_cost IS NULL OR included_shipping_cost = 0");
+      } catch (err) {
+        logger.debug({ err: err.message }, 'No se pudo actualizar included_shipping_cost (SQLite)');
+      }
+      return;
+  }
+
+
+async function setTenant(tenantId) {
+    if (!tenantId || typeof tenantId !== 'string') return;
+    if (isLocal) return;
+    try {
+      await query('SELECT set_config($1, $2, false)', ['app.current_tenant', tenantId]);
+    } catch (e) {
+      // no-op si la BD no soporta set_config
+    }
+  }
+
+  async function closeDB() {
+    if (pool && typeof pool.end === 'function') {
+      try {
+        await pool.end();
+      } catch (e) {
+        // noop
+      }
+    }
+    if (isLocal && db && typeof db.close === 'function') {
+      try {
+        await new Promise((resolve, reject) => {
+          db.close((err) => err ? reject(err) : resolve());
+        });
+      } catch (e) {
+        // noop
+      }
+    }
+  }
+
+  async function seedLocalData() {
+    if (!isLocal) return;
+    try {
+      const existing = await query('SELECT COUNT(*) as count FROM products');
+      const count = parseInt(existing.rows[0].count);
+      if (count > 0) return;
+
+      const products = [
+        ['Pulsera Minimalista', 'pulsera-minimalista', 'pulseras', 4500, 'Pulsera artesanal minimalista', 12, true, '📿'],
+        ['Pulsera Hilo Natural', 'pulsera-hilo-natural', 'pulseras', 3800, 'Pulsera de hilo natural', 8, false, '📿'],
+        ['Pulsera Turquesa', 'pulsera-turquesa', 'pulseras', 5100, 'Pulsera con turquesa artesanal', 7, false, '📿'],
+        ['Accesorio Cerámico', 'accesorio-ceramico', 'accesorios', 5200, 'Accesorio de cerámica artesanal', 6, true, '💎'],
+        ['Set Artesanal', 'set-artesanal', 'accesorios', 7900, 'Set de accesorios artesanales', 10, false, '🎁'],
+        ['Llaverec Artesanal', 'llavero-artesanal', 'souvenirs', 2500, 'Llavero hecho a mano', 15, false, '🔑'],
+        ['Souvenir Gualeguay', 'souvenir-gualeguay', 'souvenirs', 3200, 'Souvenir de nuestra ciudad', 9, false, '🏛️']
+      ];
+
+      for (const [name, slug, category, price, description, stock, featured, emoji] of products) {
+        await query(
+          'INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, TRUE, $11, FALSE, $12)',
+          [name, slug, category, price, description, emoji, '', '', stock, featured, '', 'default']
+        );
+      }
+
+      const categories = [
+        ['Pulseras', 'pulseras', 'Pulseras artesanales'],
+        ['Accesorios', 'accesorios', 'Accesorios hechos a mano'],
+        ['Souvenirs', 'souvenirs', 'Souvenirs de Gualeguay']
+      ];
+      for (const [name, slug, description] of categories) {
+        await query(
+          'INSERT OR IGNORE INTO categories (name, slug, description, active, tenant_id) VALUES ($1, $2, $3, TRUE, $4)',
+          [name, slug, description, 'default']
+        );
+      }
+
+      const siteTexts = [
+        ['hero_title', 'Regalos artesanales que cuentan historias', 'default'],
+        ['hero_subtitle', 'Artesanía Gualeguay nació en el corazón de Entre Ríos con la misión de crear pulseras, souvenirs y accesorios únicos que capturen la esencia de nuestra tierra.', 'default'],
+        ['hero_cta_text', 'Explorar Catálogo', 'default'],
+        ['products_title', 'Nuestros Productos', 'default'],
+        ['products_subtitle', 'Descubrí piezas únicas hechas a mano', 'default'],
+        ['contact_title', '¿Preguntas?', 'default'],
+        ['contact_subtitle', 'Nos encantaría saber de ti', 'default'],
+        ['footer_brand', 'Artesanías Gualeguay', 'default'],
+        ['footer_description', 'Creando pulseras y souvenirs únicos desde el corazón de Gualeguay, Entre Ríos.', 'default'],
+        ['about_title', 'Sobre Nosotros', 'default'],
+        ['about_subtitle', 'La historia detrás de cada creación', 'default'],
+        ['about_text', 'En cada pieza dejamos un pedacito de Gualeguay: horas de trabajo manual, materiales elegidos con cuidado y el orgullo de hacer las cosas bien.', 'default'],
+        ['shipping_title', 'Envíos', 'default'],
+        ['shipping_subtitle', 'Información sobre envíos y entregas', 'default'],
+        ['terms_title', 'Términos y Condiciones', 'default'],
+        ['privacy_title', 'Política de Privacidad', 'default'],
+        ['returns_title', 'Cambios y Devoluciones', 'default'],
+        ['faq_title', 'Preguntas Frecuentes', 'default'],
+        ['devoluciones_title', 'Cambios y Devoluciones', 'default'],
+        ['cesion_ubicacion_title', 'Cesión de Ubicación', 'default']
+      ];
+      for (const [key, value, tenant_id] of siteTexts) {
+        await query(
+          'INSERT OR IGNORE INTO site_texts (key, value, tenant_id) VALUES ($1, $2, $3)',
+          [key, value, tenant_id]
+        );
+      }
+
+      await query(
+        "INSERT OR IGNORE INTO section_content (section_key, title, subtitle, tenant_id) VALUES ('testimonials', 'Lo que dicen nuestros clientes', 'Historias reales de personas que confiaron en nosotros', 'default')"
+      );
+      await query(
+        "INSERT OR IGNORE INTO section_content (section_key, title, subtitle, tenant_id) VALUES ('featured', 'Produtos Destacados', 'Nuestras piezas más elegidas', 'default')"
+      );
+      await query(
+        "INSERT OR IGNORE INTO section_content (section_key, title, subtitle, tenant_id) VALUES ('catalog', 'Catálogo', 'Nuestros productos', 'default')"
+      );
+      await query(
+        "INSERT OR IGNORE INTO section_content (section_key, title, subtitle, tenant_id) VALUES ('about', 'Nosotros', 'Sobre Nosotros', 'default')"
+      );
+      await query(
+        "INSERT OR IGNORE INTO section_content (section_key, title, subtitle, tenant_id) VALUES ('contact', 'Contacto', 'Contáctanos', 'default')"
+      );
+      await query(
+        "INSERT OR IGNORE INTO section_content (section_key, title, subtitle, tenant_id) VALUES ('process', 'Proceso', 'Cómo funciona', 'default')"
+      );
+
+      logger.info('Datos locales sembrados correctamente (productos, categorías, texts, sections)');
+    } catch (err) {
+      logger.warn({ err: err.message }, 'Error sembrando datos locales');
+    }
+  }
+
+async function runMigrationsOnly() {
+  // Postgres: solo correr migraciones versionadas, sin ALTER TABLE loops
+  if (runMigrations) {
+    try {
+      await runMigrations(query, false);
+      logger.info('Migraciones versionadas aplicadas (PostgreSQL)');
+    } catch (err) {
+      logger.warn({ err: err.message }, 'No se pudieron aplicar migraciones versionadas');
+    }
+  }
+  // ensureAdminUser se llama desde server.js después de initDB
+}
+
+async function runSQLiteMigrations() {
+  // SQLite: usar el migrador unificado
+  if (runMigrations) {
+    try {
+      await runMigrations(query, true);
+      logger.info('Migraciones versionadas aplicadas (SQLite)');
+    } catch (err) {
+      logger.warn({ err: err.message }, 'No se pudieron aplicar migraciones versionadas (SQLite)');
+    }
+  }
+}
+
+async function ensureAdminUser() {
+  const ADMIN_USER = process.env.ADMIN_USER;
+  const ADMIN_PASS_HASH = process.env.ADMIN_PASS_HASH;
+  if (!ADMIN_USER || !ADMIN_PASS_HASH) return;
+  const existing = await query('SELECT id, password_hash, permissions FROM users WHERE username = $1', [ADMIN_USER]);
+  if (existing.rows.length === 0) {
+    try {
+      if (isLocal) {
+        await query('INSERT OR IGNORE INTO users (username, password_hash, role, active, permissions) VALUES ($1, $2, $3, $4, $5)', [ADMIN_USER, ADMIN_PASS_HASH, 'admin', true, JSON.stringify({ all: true })]);
+      } else {
+        await query('INSERT INTO users (username, password_hash, role, active, permissions) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (username) DO NOTHING', [ADMIN_USER, ADMIN_PASS_HASH, 'admin', true, JSON.stringify({ all: true })]);
+      }
+    } catch (err) {
+      if (!err.message.includes('UNIQUE constraint failed') && !err.message.includes('duplicate key')) {
+        throw err;
+      }
+    }
+  }
+  // NO sobrescribir password/permisos existentes (idempotente sin cambios destructivos)
+}
+
+module.exports = { query, initDB, pool, connectionString: !!connectionString, getClient, transaction, isLocal, setTenant, closeDB, seedLocalData, ensureAdminUser, runMigrationsOnly };
+
+
+
+
+
+

@@ -132,6 +132,7 @@ async function loadCategories() {
         '<td class="status-cell">' + renderFeaturedCell(p.featured, p.id) + '</td>' +
         '<td class="actions-cell">' +
           '<button class="btn btn-sm btn-secondary" onclick="window.editProduct(' + p.id + ')" title="Editar">✏️</button>' +
+          '<button class="btn btn-sm btn-primary" onclick="window.quickEditProduct(' + p.id + ', ' + Number(p.price || 0) + ', ' + Number(p.stock || 0) + ')" title="Editar precio/stock rápido">💰</button>' +
           '<button class="btn btn-sm btn-secondary" onclick="window.toggleProductActive(' + p.id + ')" title="' + (p.active ? 'Desactivar' : 'Activar') + '">' + (p.active ? '⏸️' : '▶️') + '</button>' +
           '<button class="btn btn-sm btn-secondary" onclick="window.duplicateProductConfirm(' + p.id + ')" title="Duplicar">⧉</button>' +
           '<button class="btn btn-sm btn-danger" onclick="window.deleteProductConfirm(' + p.id + ')" title="Eliminar">🗑️</button>' +
@@ -165,6 +166,7 @@ renderStockBadge(stock) +
           '</div>' +
           '<div class="product-mobile-card-actions">' +
             '<button class="btn btn-sm btn-secondary" onclick="window.editProduct(' + p.id + ')" title="Editar">✏️ Editar</button>' +
+            '<button class="btn btn-sm btn-primary" onclick="window.quickEditProduct(' + p.id + ', ' + Number(p.price || 0) + ', ' + Number(p.stock || 0) + ')" title="Editar precio/stock rápido">💰 Precio/Stock</button>' +
             '<button class="btn btn-sm btn-secondary" onclick="window.toggleProductActive(' + p.id + ')" title="' + (p.active ? 'Desactivar' : 'Activar') + '">' + (p.active ? '⏸️ Pausar' : '▶️ Activar') + '</button>' +
             '<button class="btn btn-sm btn-secondary" onclick="window.duplicateProductConfirm(' + p.id + ')" title="Duplicar">⧉ Duplicar</button>' +
             '<button class="btn btn-sm btn-danger" onclick="window.deleteProductConfirm(' + p.id + ')" title="Eliminar">🗑️ Eliminar</button>' +
@@ -1241,6 +1243,5 @@ var active = document.getElementById('prod_active');
   };
   window.saveAllProductChanges = window.saveAllProductsChanges;
 })();
-
 
 

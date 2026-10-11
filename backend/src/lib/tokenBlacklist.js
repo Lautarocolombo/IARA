@@ -2,7 +2,7 @@ const logger = require('./logger');
 
 let redisClient = null;
 let useRedis = false;
-const JWT_TTL_MS = 15 * 60 * 1000;
+const JWT_TTL_MS = 30 * 60 * 1000;
 
 async function getRedis() {
   if (redisClient) return redisClient;

@@ -554,6 +554,7 @@
     var approveBtn = document.getElementById('approvePaymentBtn');
     var rejectBtn = document.getElementById('rejectPaymentBtn');
     var advanceBtn = document.getElementById('advanceOrderBtn');
+    var whatsappBtn = document.getElementById('sendWhatsAppBtn');
     if (!approveBtn || !rejectBtn) return;
 
     var blocked = whatsappChecked && !isShippingComplete(order);
@@ -580,6 +581,12 @@
       } else {
         advanceBtn.classList.add('hidden');
       }
+    }
+
+    if (whatsappBtn) {
+      var showWhatsApp = order.status === 'confirmed' && isShippingComplete(order);
+      whatsappBtn.style.display = showWhatsApp ? 'inline-flex' : 'none';
+      whatsappBtn.onclick = function () { sendOrderWhatsApp(order); };
     }
   }
 
@@ -1070,5 +1077,34 @@
         initOrdersPanel();
       }
     });
+  }
+
+  async function sendOrderWhatsApp(order) {
+    var btn = document.getElementById('sendWhatsAppBtn');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Enviando...';
+    }
+    try {
+      var res = await window.adminFetch('/api/v1/admin/orders/' + order.id + '/whatsapp', { method: 'POST' });
+      if (!res || !res.ok) {
+        var errorData = await res.json().catch(function () { return {}; });
+        throw new Error(errorData.error || 'Error generando link WhatsApp');
+      }
+      var data = await res.json();
+      if (data.whatsappUrl) {
+        window.open(data.whatsappUrl, '_blank');
+        showToast('✅', 'WhatsApp abierto con mensaje prearmado', 'success');
+      } else if (data.message) {
+        showToast('✅', 'Mensaje generado: ' + data.message, 'success');
+      }
+    } catch (err) {
+      showToast('❌', err.message || 'Error enviando por WhatsApp', 'error');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = '📱 Notificar por WhatsApp';
+      }
+    }
   }
 })();

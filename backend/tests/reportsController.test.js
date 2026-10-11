@@ -24,7 +24,6 @@ describe('reportsController', () => {
   let db;
   let getSalesReport;
   let getSalesTrend;
-  let resetMetrics;
   let getWeeklySummary;
   let getSalesSummary;
   let loggerError;
@@ -40,7 +39,6 @@ describe('reportsController', () => {
     const controller = require('../src/controllers/reportsController');
     getSalesReport = controller.getSalesReport;
     getSalesTrend = controller.getSalesTrend;
-    resetMetrics = controller.resetMetrics;
     getWeeklySummary = controller.getWeeklySummary;
     getSalesSummary = controller.getSalesSummary;
     loggerError = require('../src/lib/logger').error;
@@ -129,78 +127,6 @@ describe('reportsController', () => {
       query.mockRejectedValueOnce(new Error('DB error'));
 
       await getSalesTrend(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-    });
-  });
-
-  describe('resetMetrics', () => {
-    test('reinicia metricas guardando timestamp', async () => {
-      const req = { query: {}, body: { confirm: true }, user: { user: 'admin', tenant_id: 'default' }, ip: '', headers: {} };
-      const res = {
-        status: jest.fn(() => res),
-        json: jest.fn()
-      };
-
-      query.mockResolvedValue({ rows: [{ value: new Date().toISOString() }] });
-
-      await resetMetrics(req, res);
-
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ ok: true })
-      );
-    });
-
-    test('rechaza sin confirmacion', async () => {
-      const req = { query: {}, body: {} };
-      const res = {
-        status: jest.fn(() => res),
-        json: jest.fn()
-      };
-
-      await resetMetrics(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
-    });
-
-    test('maneja error de base de datos', async () => {
-      const req = { query: {}, body: { confirm: true } };
-      const res = {
-        status: jest.fn(() => res),
-        json: jest.fn()
-      };
-
-      query.mockRejectedValueOnce(new Error('DB error'));
-
-      await resetMetrics(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(500);
-    });
-
-    test('rechaza sin confirmación', async () => {
-      const req = { query: {}, body: {} };
-      const res = {
-        status: jest.fn(() => res),
-        json: jest.fn()
-      };
-
-      await resetMetrics(req, res);
-
-      expect(res.status).toHaveBeenCalledWith(400);
-      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: expect.any(String) }));
-    });
-
-    test('maneja error de base de datos', async () => {
-      const req = { query: {}, body: { confirm: true } };
-      const res = {
-        status: jest.fn(() => res),
-        json: jest.fn()
-      };
-
-      query.mockRejectedValueOnce(new Error('DB error'));
-
-      await resetMetrics(req, res);
 
       expect(res.status).toHaveBeenCalledWith(500);
     });

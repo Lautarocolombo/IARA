@@ -50,7 +50,7 @@ function csrfProtection(req, res, next) {
 
   // ---- Origin check: applies to all state-changing requests ----
   const origin = req.headers.origin || req.headers.referer || '';
-  const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || '').split(',').filter(Boolean);
+  const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean);
 
   if (allowedOrigins.length > 0) {
     const isAllowed = allowedOrigins.some(allowed => {

@@ -59,6 +59,12 @@
           var message = data.error || data.message || ('Error ' + res.status);
           if (res.status === 401) {
             setToken('');
+            // Si hay un login overlay (admin.js), dejar que ese maneje el 401
+            var loginOverlay = document.getElementById('loginOverlay');
+            if (loginOverlay) {
+              loginOverlay.classList.remove('hidden');
+              throw new Error('Sesión expirada. Iniciá sesión nuevamente.');
+            }
             window.location.href = 'admin.html';
           }
           throw new Error(message);

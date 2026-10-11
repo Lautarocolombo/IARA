@@ -23,8 +23,8 @@ CREATE INDEX IF NOT EXISTS idx_products_featured ON products(featured) WHERE fea
 -- webhook_events: filtrado por status
 CREATE INDEX IF NOT EXISTS idx_webhook_events_status ON webhook_events(status);
 
--- carousel_images: ordenamiento
-CREATE INDEX IF NOT EXISTS idx_carousel_images_orden ON carousel_images(orden) WHERE orden > 0;
+-- carousel_images: ordenamiento por slot
+CREATE INDEX IF NOT EXISTS idx_carousel_images_slot ON carousel_images(slot) WHERE slot > 0;
 
 -- hero_cards: slot único
 CREATE UNIQUE INDEX IF NOT EXISTS idx_hero_cards_slot ON hero_cards(slot) WHERE slot > 0;

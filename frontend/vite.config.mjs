@@ -83,6 +83,14 @@ export default defineConfig({
           copyRecursive(srcDir, destDir);
           console.log('[vite] Imágenes copiadas a dist/imagenes/');
         }
+        // Ver comentario en vite.config.mjs raíz: los <script src="js/...">
+        // clásicos no los empaqueta Vite, hay que copiarlos a dist/js/.
+        const jsSrc = resolve(__dirname, 'js');
+        const jsDest = resolve(__dirname, '..', 'dist', 'js');
+        if (existsSync(jsSrc)) {
+          copyRecursive(jsSrc, jsDest);
+          console.log('[vite] Scripts clásicos copiados a dist/js/');
+        }
       }
     }
   ]

@@ -2,7 +2,7 @@
 
 // Valores por defecto (fallback si falla la API)
 const DEFAULT_CONFIG = {
-  REVIEWS: {
+REVIEWS: {
     GOOGLE_PLACE_ID: '',
     GOOGLE_WRITE_REVIEW_URL: ''
   },

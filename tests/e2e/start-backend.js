@@ -55,13 +55,14 @@ async function seedE2EData() {
   }
 
   await query(
-    'INSERT OR IGNORE INTO orders (items, total, customer, status, shipping_name, shipping_city, subtotal, shipping_cost, payment_method, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)',
+    'INSERT OR IGNORE INTO orders (items, total, customer, status, shipping_name, shipping_email, shipping_city, subtotal, shipping_cost, payment_method, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)',
     [
       JSON.stringify([{ name: 'Pulsera Minimalista', price: 4500, quantity: 1, category_slug: 'pulseras' }]),
       4500,
       JSON.stringify({ name: 'Cliente Test', email: 'test@test.com' }),
       'completed',
       'Cliente Test',
+      'test@test.com',
       'Gualeguay',
       4500,
       500,

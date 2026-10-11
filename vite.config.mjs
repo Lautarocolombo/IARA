@@ -101,6 +101,16 @@ export default defineConfig(({ mode }) => ({
             console.log(`[vite] ${file} copiado a dist/`);
           }
         }
+        // Los scripts clásicos (<script src="js/..."> sin type="module") no los
+        // empaqueta Vite: hay que copiarlos tal cual para que dist/index.html
+        // los encuentre. Sin esto el sitio queda en blanco (sin header,
+        // sin productos, sin textos: todo depende de esos JS + .reveal).
+        const jsSrc = resolve(__dirname, 'frontend', 'js');
+        const jsDest = resolve(__dirname, 'dist', 'js');
+        if (existsSync(jsSrc)) {
+          copyRecursive(jsSrc, jsDest);
+          console.log('[vite] Scripts clásicos copiados a dist/js/');
+        }
       }
     }
   ]
