@@ -7,7 +7,7 @@
   },
   "scripts": {
     "build:qrcode": "npx browserify -r qrcode -s QRCode -o frontend/js/vendor/qrcode.js",
-    "build": "node build.js",
+    "build": "npx vite build --config vite.config.mjs",
     "preview": "npx vite preview",
     "test": "jest --config tests/unit/jest.config.js --testEnvironment jsdom --passWithNoTests",
     "test:coverage": "jest --config tests/unit/jest.config.js --testEnvironment jsdom --coverage",

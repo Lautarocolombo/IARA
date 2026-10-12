@@ -6,6 +6,10 @@ module.exports = {
   testTimeout: 60000,
   setupFiles: ['<rootDir>/tests/jest.setup.js'],
   globalTeardown: '<rootDir>/tests/globalTeardown.js',
+  moduleNameMapper: {
+    '^redis$': '<rootDir>/tests/__mocks__/redis.js',
+    '^connect-redis$': '<rootDir>/tests/__mocks__/connect-redis.js',
+  },
   coverageDirectory: 'coverage',
   collectCoverageFrom: [
     'src/**/*.js',

@@ -37,6 +37,18 @@ async function getAppliedMigrations(query) {
   return new Set(result.rows.map(r => r.name));
 }
 
+function getMigrationFiles() {
+  if (!fs.existsSync(MIGRATIONS_DIR)) return [];
+  return fs.readdirSync(MIGRATIONS_DIR)
+    .filter(file => file.endsWith('.sql'))
+    .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+}
+
+async function checkMigrations(query) {
+  const applied = await getAppliedMigrations(query);
+  return getMigrationFiles().filter(file => !applied.has(file));
+}
+
 /**
  * Repara conflictos de migraciones heredados:
  * - Elimina registros huérfanos de versiones antiguas del sistema (ej: "001_add_order_token")
@@ -182,4 +194,4 @@ async function runMigrations(query, isLocalDb) {
   }
 }
 
-module.exports = { runMigrations };
+module.exports = { runMigrations, checkMigrations };

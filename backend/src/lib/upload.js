@@ -331,9 +331,10 @@ async function processFile(file, _baseUrl) {
   
   if (!isBlobConfigured()) {
     if (isProd) {
-      const err = new Error('Almacenamiento no configurado: falta BLOB_READ_WRITE_TOKEN en producción');
+      removeIfExists(file.path);
+      const err = new Error('BLOB_READ_WRITE_TOKEN no configurado o inválido. Configurá Vercel Blob y agregá el token en Render.');
       err.code = 'BLOB_NOT_CONFIGURED';
-      err.status = 503;
+      err.statusCode = 503;
       throw err;
     }
     // Development: fallback to local filesystem

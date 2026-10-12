@@ -1,5 +1,5 @@
 const { query, isLocal } = require('../lib/db');
-const { productSchema } = require('../lib/validators');
+const { productSchema, roundMoney } = require('../lib/validators');
 const logger = require('../lib/logger');
 const { deleteImageAsset, getPublicUrl, handleImageUpload, updateImageField, getTenantId } = require('../lib/imageService');
 const { syncBus } = require('../routes/sync');
@@ -355,10 +355,14 @@ const getPublicProducts = async (req, res) => {
       where += ` AND price <= $${idx}`;
       params.push(Number(maxPrice));
     }
-    const result = await query(`SELECT * FROM products ${where} ORDER BY id ASC`, params);
+    const result = await query(`SELECT * FROM products ${where} ORDER BY id ASC LIMIT 500`, params);
     const enriched = await attachImagesToProducts(result.rows, baseUrl);
     if (applyETag(req, res, enriched)) return;
     res.json(enriched);
+    // NOTA: las lecturas NO emiten 'products_updated'. Emitirlo acá generaba
+    // un eco por SSE/Sync que re-renderizaba el catálogo (rompía los filtros)
+    // y provocaba tormentas de refetch entre clientes. Los writes (crear,
+    // editar, toggle, duplicar, eliminar) sí emiten su propio evento.
   } catch (err) {
     logger.error('Error obteniendo productos:', err);
     if (err.message && (err.message.includes('does not exist') || err.message.includes('no existe') || err.code === '42P01' || err.code === '42703')) {
@@ -401,7 +405,7 @@ const searchProducts = async (req, res) => {
       params.push(Number(maxPrice));
     }
     const baseUrl = process.env.BACKEND_URL || process.env.SITE_URL || '';
-    const result = await query(`SELECT * FROM products ${where} ORDER BY id ASC`, params);
+    const result = await query(`SELECT * FROM products ${where} ORDER BY id ASC LIMIT 50`, params);
     const enriched = await attachImagesToProducts(result.rows, baseUrl);
     res.json(enriched);
   } catch (err) {
@@ -449,8 +453,10 @@ const getAdminProducts = async (req, res) => {
     return res.json({ products: enriched, total: enriched.length, page: 1, pages: 1, hasMore: false });
     }
 
-    const pageNum = Number(page) || 1;
-    const limitNum = Number(limit) || 30;
+    const pageNum = Math.max(Number(page) || 1, 1);
+    // Tope anti-abuso: el admin pide limit=100; más de 100 filas por página
+    // no se justifica y encarece cada respuesta (cada producto trae imágenes).
+    const limitNum = Math.min(Math.max(Number(limit) || 30, 1), 100);
     const offset = (pageNum - 1) * limitNum;
     const sortField = ['name', 'price', 'created_at', 'updated_at', 'stock', 'id'].includes(sort_by) ? sort_by : 'id';
     const sortDir = sort_order?.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
@@ -513,7 +519,7 @@ const createProduct = async (req, res) => {
     const tenantId = getTenantId(req);
     const result = await query(
       `INSERT INTO products (name, slug, category, price, description, emoji, image, badge, stock, featured, active, sku, deleted, tenant_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, FALSE, $13) RETURNING *`,
-      [data.name, slug, data.category, Number(data.price), data.description || '', data.emoji || '📿', imageUrl, data.badge || '', Number(data.stock), data.featured || false, data.active !== false, data.sku || '', tenantId]
+      [data.name, slug, data.category, roundMoney(data.price), data.description || '', data.emoji || '📿', imageUrl, data.badge || '', Number(data.stock), data.featured || false, data.active !== false, data.sku || '', tenantId]
     );
     logger.info({ productId: result.rows[0].id, name: data.name, slug }, 'createProduct: producto creado');
     res.status(201).json(result.rows[0]);
@@ -569,7 +575,7 @@ const updateProduct = async (req, res) => {
     const fields = rawFields.filter(f => f !== 'image' || data[f]);
     if (!fields.length && !(req.files && req.files.length > 0)) return res.status(400).json({ error: 'Sin datos para actualizar' });
     const setClause = fields.map((_, i) => `${fields[i]} = $${i + 1}`).join(', ');
-    const values = fields.map(f => (['price', 'stock'].includes(f) ? Number(data[f]) : data[f]));
+    const values = fields.map(f => (f === 'price' ? roundMoney(data[f]) : (f === 'stock' ? Number(data[f]) : data[f])));
     values.push(id, tenantId);
 
     let previousStock = 0;
@@ -798,53 +804,45 @@ const bulkDeleteProducts = async (req, res) => {
 const quickUpdateProduct = async (req, res) => {
   const id = Number(req.params.id);
   const tenantId = getTenantId(req);
-  const { price, stock, active } = req.body || {};
-  
-  if (price === undefined && stock === undefined && active === undefined) {
+  const validation = productSchema.pick({ price: true, stock: true, active: true }).partial().safeParse(req.body || {});
+  if (!validation.success) {
+    return res.status(400).json({ error: validation.error.issues[0]?.message || 'Datos inválidos' });
+  }
+
+  const updates = validation.data;
+  const fields = Object.keys(updates);
+  if (!fields.length) {
     return res.status(400).json({ error: 'Se requiere al menos uno: price, stock o active' });
   }
-  
-  const updates = {};
-  if (price !== undefined) {
-    const priceNum = Number(price);
-    if (isNaN(priceNum) || priceNum < 0) return res.status(400).json({ error: 'Precio inválido' });
-    updates.price = priceNum;
-  }
-  if (stock !== undefined) {
-    const stockNum = Number(stock);
-    if (isNaN(stockNum) || stockNum < 0) return res.status(400).json({ error: 'Stock inválido' });
-    updates.stock = stockNum;
-  }
-  if (active !== undefined) {
-    updates.active = Boolean(active);
-  }
-  
-  const fields = Object.keys(updates);
-  if (!fields.length) return res.status(400).json({ error: 'Sin datos para actualizar' });
-  
-  const values = fields.map(f => updates[f]);
-  values.push(id);
-  values.push(tenantId);
-  const setClause = fields.map((_, i) => `${fields[i]} = $${i + 1}`).join(', ');
-  
+
+  const values = fields.map(field => {
+    if (field === 'price') return roundMoney(updates[field]);
+    if (field === 'stock') return Number(updates[field]);
+    return updates[field];
+  });
+  values.push(id, tenantId);
+  const setClause = fields.map((field, index) => `${field} = $${index + 1}`).join(', ');
+
   try {
     const result = await query(
       `UPDATE products SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = $${values.length - 1} AND deleted = FALSE AND tenant_id = $${values.length} RETURNING *`,
       values
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Producto no encontrado' });
-    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+
     res.json(result.rows[0]);
-    try { syncBus.emit('products_updated', { id }); } catch (e) { /* noop */ }
+    try { syncBus.emit('products_updated', { id }); } catch (err) { logger.debug({ err: err.message }, 'No se pudo emitir products_updated'); }
     logAudit({
       user: req.user?.user || 'admin',
       action: 'quick_update',
       entityType: 'product',
       entityId: id,
-      details: `Actualización rápida: ${fields.map(f => `${f}=${updates[f]}`).join(', ')}`,
+      details: `Actualización rápida: ${fields.map(field => `${field}=${updates[field]}`).join(', ')}`,
       ip: req.ip || '',
       tenantId
-    }).catch(() => {});
+    }).catch(err => logger.warn({ err: err.message }, 'No se pudo registrar quick_update'));
   } catch (err) {
     logger.error('Error actualizando producto rápido:', err);
     res.status(500).json({ error: 'Error interno del servidor' });

@@ -3,6 +3,13 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
+jest.mock('../src/lib/logger', () => ({
+  error: jest.fn(),
+  warn: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+}));
+
 const { optimizeImage, generateVariant, generateAllVariants } = require('../src/lib/imageOptimizer');
 
 const TEST_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'image-optimizer-test-'));

@@ -13,12 +13,14 @@
   var currentGroupId = null;
 
   function loadCarouselData() {
-    return fetchWithRetry(CONFIG.API.BASE + '/api/carousel/public', {}, 3, 1000, 15000, false)
-      .then(function (res) {
-        if (!res || !res.ok) throw new Error('No se pudo cargar carousel');
-        return res.json();
-      })
+    return fetchWithRetry(CONFIG.API.BASE + '/api/carousel/public', {}, {
+      retries: 4,
+      firstAttemptTimeoutMs: 50000,
+      retryTimeoutMs: 25000,
+      showToastOnError: false
+    })
       .then(function (data) {
+        if (!data) throw new Error('No se pudo cargar carousel');
         carouselData = data.slots || {};
         updateCaptionForSlide(0);
       })

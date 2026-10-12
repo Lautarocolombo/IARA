@@ -26,7 +26,7 @@
     if (syncLoading) syncLoading.classList.remove('hidden');
 
     try {
-      var res = await window.adminFetch('/api/admin/reports/summary?view=' + view, { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/reports/summary?view=' + view, { method: 'GET' });
       if (!res || !res.ok) {
         throw new Error('No se pudieron cargar los reportes');
       }
@@ -69,7 +69,7 @@
 
   async function loadProductsForSale() {
     try {
-      var res = await window.adminFetch('/api/products?limit=100', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/products?limit=100', { method: 'GET' });
       if (res && res.ok) {
         var data = await res.json();
         productsForSale = Array.isArray(data) ? data : (data.products || []);
@@ -87,7 +87,7 @@
     if (!tbody) return;
 
     try {
-      var res = await window.adminFetch('/api/admin/earnings', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/earnings', { method: 'GET' });
       if (!res || !res.ok) {
         throw new Error('No se pudieron cargar las transacciones');
       }
@@ -126,7 +126,7 @@ transactions.forEach(function (t) {
           '<td style="text-align:center;"><span class="' + escapeAttr(statusClass) + '">' + escapeAttr(statusLabel) + '</span></td>' +
           '<td style="text-align:right;">$' + Number(t.total || 0).toLocaleString('es-AR') + '</td>' +
           '<td style="text-align:center;">' +
-            '<button type="button" class="btn-delete-tx" data-tx-id="' + escapeAttr(rawId) + '" data-tx-type="' + (isManual ? 'manual' : 'order') + '" title="Eliminar transacción" style="background:none;border:none;color:#94a3b8;cursor:pointer;padding:0.3rem;border-radius:6px;">' +
+            '<button type="button" class="btn-delete-tx" data-tx-id="' + escapeAttr(rawId) + '" data-tx-type="' + (isManual ? 'manual' : 'order') + '" title="Archivar transacción" style="background:none;border:none;color:#94a3b8;cursor:pointer;padding:0.3rem;border-radius:6px;">' +
               '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>' +
             '</button>' +
           '</td>';
@@ -158,8 +158,8 @@ transactions.forEach(function (t) {
 
   function deleteTransaction(txId, txType) {
     window.showConfirmModal(
-      'Eliminar transacción',
-      '¿Eliminar esta transacción (' + txId + ')? Esta acción no se puede deshacer.',
+      'Archivar transacción',
+      '¿Archivar esta transacción (' + txId + ')? Dejará de aparecer en las listas (no se borra definitivamente).',
       function () { processDeleteTransaction(txId, txType); }
     );
   }
@@ -167,8 +167,8 @@ transactions.forEach(function (t) {
   async function processDeleteTransaction(txId, txType) {
     var numericId = txId.replace(/^V-/, '');
     var url = txType === 'manual'
-      ? '/api/admin/sales/' + numericId
-      : '/api/admin/orders/' + numericId;
+      ? '/api/v1/admin/sales/' + numericId
+      : '/api/v1/admin/orders/' + numericId;
 
     console.warn('[Sales] Eliminando transacción:', { txId, txType, numericId, url });
 
@@ -176,17 +176,17 @@ transactions.forEach(function (t) {
       var res = await window.adminFetch(url, { method: 'DELETE' });
       if (!res || !res.ok) {
         var errData = await res.json().catch(function () { return {}; });
-        throw new Error(errData.error || 'Error eliminando transacción');
+        throw new Error(errData.error || 'Error archivando transacción');
       }
-      window.showToast('✅', 'Transacción eliminada', 'success');
+      window.showToast('✅', 'Transacción archivada', 'success');
       await loadTransactions();
       await loadSalesSummary(currentView);
       if (window.dispatchEvent) {
         window.dispatchEvent(new CustomEvent('sync', { detail: { event: 'transactions_updated' } }));
       }
     } catch (err) {
-      console.error('[Sales] Error eliminando transacción:', err);
-      window.showToast('❌', err.message || 'Error eliminando transacción', 'error');
+      console.error('[Sales] Error archivando transacción:', err);
+      window.showToast('❌', err.message || 'Error archivando transacción', 'error');
     }
   }
 
@@ -452,7 +452,7 @@ transactions.forEach(function (t) {
     if (btnLoading) btnLoading.classList.remove('hidden');
 
     try {
-      var res = await window.adminFetch('/api/admin/sales', {
+      var res = await window.adminFetch('/api/v1/admin/sales', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -516,7 +516,7 @@ transactions.forEach(function (t) {
     if (btnLoading) btnLoading.classList.remove('hidden');
 
     try {
-      var res = await window.adminFetch('/api/admin/reports/reset', {
+      var res = await window.adminFetch('/api/v1/admin/reports/reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ confirm: true })
@@ -570,7 +570,7 @@ transactions.forEach(function (t) {
     if (btnLoading) btnLoading.classList.remove('hidden');
 
     try {
-      var res = await window.adminFetch('/api/admin/earnings/history', {
+      var res = await window.adminFetch('/api/v1/admin/earnings/history', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ confirm: 'ELIMINAR' })
@@ -601,10 +601,26 @@ transactions.forEach(function (t) {
     });
   }
 
+  /* Zona avanzada: los botones nacen deshabilitados y se habilitan solo
+     cuando se escribe ELIMINAR en el input inline. Sin esto, las acciones
+     destructivas quedaban inalcanzables (botón disabled para siempre). */
+  function wireAdvancedConfirm(inputId, btnId, feedbackId) {
+    var input = document.getElementById(inputId);
+    var btn = document.getElementById(btnId);
+    var feedback = document.getElementById(feedbackId);
+    if (!input || !btn) return;
+    input.addEventListener('input', function () {
+      var ok = input.value.trim() === 'ELIMINAR';
+      btn.disabled = !ok;
+      if (feedback) {
+        feedback.textContent = ok ? 'Confirmado. Podés continuar.' : '';
+      }
+    });
+  }
+
   /* ===== INIT ===== */
 
-  function initSalesPanel() {
-    var rangeSelect = document.getElementById('sales_range');
+  function initSalesPanel() {    var rangeSelect = document.getElementById('sales_range');
     var customDateRange = document.getElementById('customDateRange');
 
     if (rangeSelect) {
@@ -642,6 +658,9 @@ transactions.forEach(function (t) {
         openClearHistoryModal();
       });
     }
+
+    wireAdvancedConfirm('confirmDeleteHistoryInput', 'resetSalesBtn', 'confirmDeleteHistoryFeedback');
+    wireAdvancedConfirm('confirmResetMetricsInput', 'resetMetricsBtn', 'confirmResetMetricsFeedback');
 
     var confirmOverlay = document.getElementById('confirmModalOverlay');
     if (confirmOverlay) {

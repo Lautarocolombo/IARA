@@ -22,6 +22,11 @@ global.renderProductImage = jest.fn(() => '<img src="" alt="product" />');
 
 global.URL.createObjectURL = jest.fn(() => 'blob:test');
 
+function normalizeMockResponse(response) {
+  if (!response || response.ok === false) return null;
+  return typeof response.json === 'function' ? response.json() : response;
+}
+
 describe('productImages.js', () => {
   let fetchWithRetryMock;
 
@@ -29,7 +34,8 @@ describe('productImages.js', () => {
     jest.clearAllMocks();
     jest.resetModules();
     fetchWithRetryMock = jest.fn();
-    global.fetchWithRetry = fetchWithRetryMock;
+    global.fetchWithRetry = (...args) => Promise.resolve(fetchWithRetryMock(...args)).then(normalizeMockResponse);
+    window.fetchWithRetry = global.fetchWithRetry;
     document.body.innerHTML = '';
   });
 
@@ -230,14 +236,16 @@ describe('productImages.js', () => {
       const mockImages = [
         { id: 1, url: 'img1.jpg', descripcion: 'Test', es_principal: true }
       ];
-      fetchWithRetryMock.mockResolvedValue({
-        ok: true,
-        json: async () => mockImages
-      });
+      fetchWithRetryMock.mockResolvedValue(mockImages);
 
       document.body.innerHTML = '<div id="productImageGallery"></div>';
       await window.ProductImages.loadImages('123');
-      expect(fetchWithRetryMock).toHaveBeenCalledWith('/api/v1/products/123/images', {}, 2, 1000);
+      expect(fetchWithRetryMock).toHaveBeenCalledWith('/api/v1/products/123/images', {}, {
+        retries: 2,
+        firstAttemptTimeoutMs: 30000,
+        retryTimeoutMs: 15000,
+        showToastOnError: true
+      });
     });
 
     test('maneja error al cargar imágenes', async () => {
@@ -366,19 +374,18 @@ describe('productImages.js', () => {
 
   describe('deleteImage', () => {
     test('elimina imagen exitosamente', async () => {
-      window.fetchWithRetry = jest.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+      fetchWithRetryMock.mockResolvedValue({ ok: true });
       require('../../frontend/js/productImages');
       await window.ProductImages.deleteImage('123', '1');
-      expect(window.fetchWithRetry).toHaveBeenCalledWith(
+      expect(fetchWithRetryMock).toHaveBeenCalledWith(
         expect.stringContaining('/api/v1/products/123/images/1'),
         expect.objectContaining({ method: 'DELETE' }),
-        2,
-        1000
+        { retries: 2, firstAttemptTimeoutMs: 30000, retryTimeoutMs: 15000, showToastOnError: true }
       );
     });
 
     test('maneja error al eliminar', async () => {
-      window.fetchWithRetry = jest.fn().mockResolvedValue({ ok: false, json: async () => ({ error: 'No encontrado' }) });
+      fetchWithRetryMock.mockResolvedValue({ ok: false, error: 'No encontrado' });
       require('../../frontend/js/productImages');
       await window.ProductImages.deleteImage('123', '1');
     });
@@ -386,15 +393,14 @@ describe('productImages.js', () => {
 
   describe('replaceImage', () => {
     test('reemplaza imagen exitosamente', async () => {
-      window.fetchWithRetry = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ url: 'new.jpg' }) });
+      fetchWithRetryMock.mockResolvedValue({ ok: true, url: 'new.jpg' });
       require('../../frontend/js/productImages');
       const file = { type: 'image/jpeg', size: 1024 };
       await window.ProductImages.replaceImage('123', '1', file);
-      expect(window.fetchWithRetry).toHaveBeenCalledWith(
+      expect(fetchWithRetryMock).toHaveBeenCalledWith(
         expect.stringContaining('/api/v1/products/123/images/1/replace'),
         expect.objectContaining({ method: 'PUT' }),
-        2,
-        1000
+        { retries: 2, firstAttemptTimeoutMs: 30000, retryTimeoutMs: 15000, showToastOnError: true }
       );
     });
 
@@ -409,42 +415,39 @@ describe('productImages.js', () => {
 
   describe('markPrincipal', () => {
     test('marca imagen como principal', async () => {
-      window.fetchWithRetry = jest.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+      fetchWithRetryMock.mockResolvedValue({ ok: true });
       require('../../frontend/js/productImages');
       await window.ProductImages.markPrincipal('123', '1');
-      expect(window.fetchWithRetry).toHaveBeenCalledWith(
+      expect(fetchWithRetryMock).toHaveBeenCalledWith(
         expect.stringContaining('/api/v1/products/123/images/1'),
         expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ es_principal: true }) }),
-        2,
-        1000
+        { retries: 2, firstAttemptTimeoutMs: 30000, retryTimeoutMs: 15000, showToastOnError: true }
       );
     });
   });
 
   describe('updateImageMeta', () => {
     test('actualiza metadatos de imagen', async () => {
-      window.fetchWithRetry = jest.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+      fetchWithRetryMock.mockResolvedValue({ ok: true });
       require('../../frontend/js/productImages');
       await window.ProductImages.updateImageMeta('123', '1', { descripcion: 'Nueva desc', categoria: 'pulseras' });
-      expect(window.fetchWithRetry).toHaveBeenCalledWith(
+      expect(fetchWithRetryMock).toHaveBeenCalledWith(
         expect.stringContaining('/api/v1/products/123/images/1'),
         expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ descripcion: 'Nueva desc', categoria: 'pulseras' }) }),
-        2,
-        1000
+        { retries: 2, firstAttemptTimeoutMs: 30000, retryTimeoutMs: 15000, showToastOnError: true }
       );
     });
   });
 
   describe('syncOrder', () => {
     test('sincroniza orden de imágenes', async () => {
-      window.fetchWithRetry = jest.fn().mockResolvedValue({ ok: true, json: async () => ({}) });
+      fetchWithRetryMock.mockResolvedValue({ ok: true });
       require('../../frontend/js/productImages');
       await window.ProductImages.syncOrder('123', [1, 2, 3]);
-      expect(window.fetchWithRetry).toHaveBeenCalledWith(
+      expect(fetchWithRetryMock).toHaveBeenCalledWith(
         expect.stringContaining('/api/v1/products/123/images/sync-order'),
         expect.objectContaining({ method: 'POST', body: JSON.stringify({ orden: [1, 2, 3] }) }),
-        2,
-        1000
+        { retries: 2, firstAttemptTimeoutMs: 30000, retryTimeoutMs: 15000, showToastOnError: true }
       );
     });
   });
@@ -779,8 +782,7 @@ describe('productImages.js', () => {
         expect(fetchWithRetryMock).toHaveBeenCalledWith(
           expect.stringContaining('/api/v1/products/123/images/sync-order'),
           expect.objectContaining({ method: 'POST' }),
-          2,
-          1000
+          { retries: 2, firstAttemptTimeoutMs: 30000, retryTimeoutMs: 15000, showToastOnError: true }
         );
       });
 
@@ -793,8 +795,7 @@ describe('productImages.js', () => {
         expect(fetchWithRetryMock).toHaveBeenCalledWith(
           expect.stringContaining('/api/v1/products/123/images/1'),
           expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ es_principal: true }) }),
-          2,
-          1000
+          { retries: 2, firstAttemptTimeoutMs: 30000, retryTimeoutMs: 15000, showToastOnError: true }
         );
         // edit-meta abre formulario
         var editBtn = items[0].querySelector('[data-action="edit-meta"]');
@@ -814,8 +815,7 @@ describe('productImages.js', () => {
         expect(fetchWithRetryMock).toHaveBeenCalledWith(
           expect.stringContaining('/api/v1/products/123/images/1'),
           expect.objectContaining({ method: 'DELETE' }),
-          2,
-          1000
+          { retries: 2, firstAttemptTimeoutMs: 30000, retryTimeoutMs: 15000, showToastOnError: true }
         );
       });
     });
@@ -843,7 +843,7 @@ describe('productImages.js', () => {
           <div id="productImageUploadProgress"></div>
         `;
         require('../../frontend/js/productImages');
-        fetchWithRetryMock.mockResolvedValue({ ok: true, json: async () => [] });
+        fetchWithRetryMock.mockResolvedValue([]);
         global.__getAdminToken = function () { return 'token'; };
         window.ProductImages.init('123');
 
@@ -898,7 +898,7 @@ describe('productImages.js', () => {
       test('change del input de reemplazo llama a replaceImage', async () => {
         document.body.innerHTML = '<div id="productImageGallery"></div><div id="productImageUploadStatus"></div>';
         require('../../frontend/js/productImages');
-        fetchWithRetryMock.mockResolvedValue({ ok: true, json: async () => ({ url: 'new.jpg' }) });
+        fetchWithRetryMock.mockResolvedValue({ ok: true, url: 'new.jpg' });
         global.__getAdminToken = function () { return 'token'; };
         var container = document.getElementById('productImageGallery');
         window.ProductImages.renderGallery(container, [{ id: 1, url: 'img1.jpg', descripcion: 'd', categoria: 'pulseras', es_principal: true, orden: 1 }], '123');
@@ -909,8 +909,7 @@ describe('productImages.js', () => {
         expect(fetchWithRetryMock).toHaveBeenCalledWith(
           expect.stringContaining('/api/v1/products/123/images/1/replace'),
           expect.objectContaining({ method: 'PUT' }),
-          2,
-          1000
+          { retries: 2, firstAttemptTimeoutMs: 30000, retryTimeoutMs: 15000, showToastOnError: true }
         );
         jest.advanceTimersByTime(3000);
       });
@@ -932,7 +931,7 @@ describe('productImages.js', () => {
         require('../../frontend/js/productImages');
         var file = { type: 'image/jpeg', size: 1024, name: 'a.jpg' };
         installXhr({ status: 200, responseText: JSON.stringify({ images: [{ id: 1, url: 'x.jpg' }] }), progress: { loaded: 50, total: 100 } });
-        fetchWithRetryMock.mockResolvedValue({ ok: true, json: async () => [] });
+        fetchWithRetryMock.mockResolvedValue([]);
         await window.ProductImages.uploadFiles('123', [file]);
         var status = document.getElementById('productImageUploadStatus');
         expect(status.textContent).toContain('Subidas');
@@ -1070,9 +1069,9 @@ describe('productImages.js', () => {
       test('maneja error del servidor (!res.ok)', async () => {
         document.body.innerHTML = '<div id="productImageGallery"></div><div id="productImageUploadStatus"></div>';
         require('../../frontend/js/productImages');
-        fetchWithRetryMock.mockResolvedValue({ ok: false, json: async () => ({ error: 'nope' }) });
+        fetchWithRetryMock.mockResolvedValue(null);
         await window.ProductImages.replaceImage('123', '1', { type: 'image/jpeg', size: 100 });
-        expect(global.showToast).toHaveBeenCalledWith('nope', 'error');
+        expect(global.showToast).toHaveBeenCalledWith('Error de red', 'error');
         jest.advanceTimersByTime(3000);
       });
 
@@ -1080,7 +1079,7 @@ describe('productImages.js', () => {
         document.body.innerHTML = '<div id="productImageGallery"></div><div id="productImageUploadStatus"></div>';
         require('../../frontend/js/productImages');
         global.__getAdminToken = function () { return 'token'; };
-        fetchWithRetryMock.mockResolvedValue({ ok: true, json: async () => ({ url: 'new.jpg' }) });
+        fetchWithRetryMock.mockResolvedValue({ ok: true, url: 'new.jpg' });
         await window.ProductImages.replaceImage('123', '1', { type: 'image/jpeg', size: 1024 });
         var status = document.getElementById('productImageUploadStatus');
         expect(status.textContent).toContain('reemplazada');
@@ -1095,9 +1094,9 @@ describe('productImages.js', () => {
         fetchWithRetryMock.mockResolvedValue(null);
         await window.ProductImages.markPrincipal('123', '1');
         expect(global.showToast).toHaveBeenCalledWith('Error de red', 'error');
-        fetchWithRetryMock.mockResolvedValue({ ok: false, json: async () => ({ error: 'denegado' }) });
+        fetchWithRetryMock.mockResolvedValue(null);
         await window.ProductImages.markPrincipal('123', '1');
-        expect(global.showToast).toHaveBeenCalledWith('denegado', 'error');
+        expect(global.showToast).toHaveBeenCalledWith('Error de red', 'error');
       });
 
       test('updateImageMeta: error de red y error del servidor', async () => {
@@ -1106,9 +1105,9 @@ describe('productImages.js', () => {
         fetchWithRetryMock.mockResolvedValue(null);
         await window.ProductImages.updateImageMeta('123', '1', { descripcion: 'x' });
         expect(global.showToast).toHaveBeenCalledWith('Error de red', 'error');
-        fetchWithRetryMock.mockResolvedValue({ ok: false, json: async () => ({ error: 'bad meta' }) });
+        fetchWithRetryMock.mockResolvedValue(null);
         await window.ProductImages.updateImageMeta('123', '1', { descripcion: 'x' });
-        expect(global.showToast).toHaveBeenCalledWith('bad meta', 'error');
+        expect(global.showToast).toHaveBeenCalledWith('Error de red', 'error');
       });
 
       test('deleteImage: error de red y error del servidor', async () => {
@@ -1117,9 +1116,9 @@ describe('productImages.js', () => {
         fetchWithRetryMock.mockResolvedValue(null);
         await window.ProductImages.deleteImage('123', '1');
         expect(global.showToast).toHaveBeenCalledWith('Error de red', 'error');
-        fetchWithRetryMock.mockResolvedValue({ ok: false, json: async () => ({ error: 'no delete' }) });
+        fetchWithRetryMock.mockResolvedValue(null);
         await window.ProductImages.deleteImage('123', '1');
-        expect(global.showToast).toHaveBeenCalledWith('no delete', 'error');
+        expect(global.showToast).toHaveBeenCalledWith('Error de red', 'error');
       });
 
       test('syncOrder: error de red y error del servidor', async () => {
@@ -1128,23 +1127,23 @@ describe('productImages.js', () => {
         fetchWithRetryMock.mockResolvedValue(null);
         await window.ProductImages.syncOrder('123', [1, 2, 3]);
         expect(global.showToast).toHaveBeenCalledWith('Error de red', 'error');
-        fetchWithRetryMock.mockResolvedValue({ ok: false, json: async () => ({ error: 'no sync' }) });
+        fetchWithRetryMock.mockResolvedValue(null);
         await window.ProductImages.syncOrder('123', [1, 2, 3]);
-        expect(global.showToast).toHaveBeenCalledWith('no sync', 'error');
+        expect(global.showToast).toHaveBeenCalledWith('Error de red', 'error');
       });
 
       test('data.error ausente usa mensaje por defecto en todos los métodos', async () => {
         document.body.innerHTML = '<div id="productImageGallery"></div>';
         require('../../frontend/js/productImages');
-        fetchWithRetryMock.mockResolvedValue({ ok: false, json: async () => ({}) });
+        fetchWithRetryMock.mockResolvedValue(null);
         await window.ProductImages.markPrincipal('123', '1');
-        expect(global.showToast).toHaveBeenCalledWith('Error al actualizar', 'error');
+        expect(global.showToast).toHaveBeenCalledWith('Error de red', 'error');
         await window.ProductImages.updateImageMeta('123', '1', { descripcion: 'x' });
-        expect(global.showToast).toHaveBeenCalledWith('Error al actualizar metadatos', 'error');
+        expect(global.showToast).toHaveBeenCalledWith('Error de red', 'error');
         await window.ProductImages.deleteImage('123', '1');
-        expect(global.showToast).toHaveBeenCalledWith('Error al eliminar', 'error');
+        expect(global.showToast).toHaveBeenCalledWith('Error de red', 'error');
         await window.ProductImages.syncOrder('123', [1, 2, 3]);
-        expect(global.showToast).toHaveBeenCalledWith('Error al sincronizar orden', 'error');
+        expect(global.showToast).toHaveBeenCalledWith('Error de red', 'error');
       });
     });
 
@@ -1177,7 +1176,7 @@ describe('productImages.js', () => {
         document.body.innerHTML = '<input id="productImageUrl" value="https://x.com/a.jpg"><div id="productImageFilesList"></div>';
         window.ProductImages.addPendingUrl();
         installXhr({ status: 200, responseText: '' });
-        fetchWithRetryMock.mockResolvedValue({ ok: true, json: async () => [] });
+        fetchWithRetryMock.mockResolvedValue([]);
         var result = await window.ProductImages.uploadPending('7');
         expect(result).toBe(1);
       });
@@ -1208,7 +1207,7 @@ describe('productImages.js', () => {
       test('replaceImage: sin status element en path success', async () => {
         document.body.innerHTML = '<div id="productImageGallery"></div>';
         require('../../frontend/js/productImages');
-        fetchWithRetryMock.mockResolvedValue({ ok: true, json: async () => ({ url: 'new.jpg' }) });
+        fetchWithRetryMock.mockResolvedValue({ ok: true, url: 'new.jpg' });
         await window.ProductImages.replaceImage('123', '1', { type: 'image/jpeg', size: 1024 });
         jest.advanceTimersByTime(3000);
       });
@@ -1216,9 +1215,9 @@ describe('productImages.js', () => {
       test('replaceImage: ok con data.error ausente', async () => {
         document.body.innerHTML = '<div id="productImageGallery"></div><div id="productImageUploadStatus"></div>';
         require('../../frontend/js/productImages');
-        fetchWithRetryMock.mockResolvedValue({ ok: false, json: async () => ({}) });
+        fetchWithRetryMock.mockResolvedValue(null);
         await window.ProductImages.replaceImage('123', '1', { type: 'image/jpeg', size: 100 });
-        expect(global.showToast).toHaveBeenCalledWith('Error al reemplazar', 'error');
+        expect(global.showToast).toHaveBeenCalledWith('Error de red', 'error');
         jest.advanceTimersByTime(3000);
       });
     });
@@ -1465,9 +1464,9 @@ describe('productImages.js', () => {
         jest.useFakeTimers();
         document.body.innerHTML = '<div id="productImageGallery"></div>';
         require('../../frontend/js/productImages');
-        fetchWithRetryMock.mockResolvedValue({ ok: false, json: async () => ({ error: 'fail' }) });
+        fetchWithRetryMock.mockResolvedValue(null);
         await window.ProductImages.replaceImage('123', '1', { type: 'image/jpeg', size: 100 });
-        expect(global.showToast).toHaveBeenCalledWith('fail', 'error');
+        expect(global.showToast).toHaveBeenCalledWith('Error de red', 'error');
         jest.advanceTimersByTime(3000);
         jest.useRealTimers();
       });
@@ -1526,7 +1525,7 @@ describe('productImages.js', () => {
         document.body.innerHTML = '<div id="productImageGallery"></div>';
         require('../../frontend/js/productImages');
         var container = document.getElementById('productImageGallery');
-        fetchWithRetryMock.mockResolvedValue({ ok: true, json: async () => ({}) });
+        fetchWithRetryMock.mockResolvedValue({ ok: true });
         window.ProductImages.renderGallery(container, [{ id: 1, url: 'i.jpg', es_principal: true, orden: 1 }], '123');
         var item = container.querySelector('.product-image-item');
         var descInput = item.querySelector('.product-image-item-desc-input');
@@ -1538,8 +1537,7 @@ describe('productImages.js', () => {
         expect(fetchWithRetryMock).toHaveBeenCalledWith(
           expect.stringContaining('/api/v1/products/123/images/1'),
           expect.objectContaining({ method: 'PATCH', body: JSON.stringify({ descripcion: '', categoria: '' }) }),
-          2,
-          1000
+          { retries: 2, firstAttemptTimeoutMs: 30000, retryTimeoutMs: 15000, showToastOnError: true }
         );
       });
 
@@ -1548,7 +1546,7 @@ describe('productImages.js', () => {
         document.body.innerHTML = '<div id="productImageDropzone"></div><input id="productImageFiles" type="file" /><div id="productImageGallery"></div><div class="image-meta-inputs"></div>';
         require('../../frontend/js/productImages');
         global.__getAdminToken = function () { return 'token'; };
-        fetchWithRetryMock.mockResolvedValue({ ok: true, json: async () => [] });
+        fetchWithRetryMock.mockResolvedValue([]);
         window.ProductImages.init('123');
         fetchWithRetryMock.mockClear();
         var input = document.getElementById('productImageFiles');
@@ -1619,13 +1617,12 @@ describe('productImages.js', () => {
         jest.useFakeTimers();
         document.body.innerHTML = '<div id="productImageGallery"></div><div id="productImageUploadStatus"></div>';
         require('../../frontend/js/productImages');
-        fetchWithRetryMock.mockResolvedValue({ ok: false, json: async () => ({}) });
+        fetchWithRetryMock.mockResolvedValue(null);
         await window.ProductImages.replaceImage('123', '1', { type: 'image/jpeg', size: 100 });
-        expect(global.showToast).toHaveBeenCalledWith('Error al reemplazar', 'error');
+        expect(global.showToast).toHaveBeenCalledWith('Error de red', 'error');
         jest.advanceTimersByTime(3000);
         jest.useRealTimers();
       });
     });
   });
 });
-

@@ -18,31 +18,31 @@
       return;
     }
 
-    try {
-      const order = JSON.parse(raw);
-      sessionStorage.removeItem('ag_last_order');
-      if (order.number) {
-        document.getElementById('successOrderNumber').textContent = order.number;
-      }
-      if (order.total) {
-        document.getElementById('successTransferTotal').textContent = formatARS(order.total);
-      }
-      if (Array.isArray(order.items) && order.items.length) {
-        const summaryHtml = order.items.map(i => `
-          <div class="summary-item-row">
-            <div class="summary-item-meta">
-              <span class="summary-item-name">${i.name}</span>
-              <span class="summary-item-qty">Cant: ${i.qty}</span>
+try {
+        const order = JSON.parse(raw);
+        sessionStorage.removeItem('ag_last_order');
+        if (order.number) {
+          document.getElementById('successOrderNumber').textContent = order.number;
+        }
+        if (order.total) {
+          document.getElementById('successTransferTotal').textContent = formatARS(order.total);
+        }
+        if (Array.isArray(order.items) && order.items.length) {
+          const summaryHtml = order.items.map(i => `
+            <div class="summary-item-row">
+              <div class="summary-item-meta">
+                <span class="summary-item-name">${i.name}</span>
+                <span class="summary-item-qty">Cant: ${i.qty}</span>
+              </div>
+              <div class="summary-item-price">${formatARS(i.price * i.qty)}</div>
             </div>
-            <div class="summary-item-price">${formatARS(i.price * i.qty)}</div>
-          </div>
-        `).join('');
-        const summaryContainer = document.getElementById('successSummaryItems');
-        if (summaryContainer) summaryContainer.innerHTML = summaryHtml;
-      }
+          `).join('');
+          const summaryContainer = document.getElementById('successSummaryItems');
+          if (summaryContainer) summaryContainer.innerHTML = summaryHtml;
+        }
 
-      const statusBadge = document.getElementById('successStatusBadge');
-      if (statusBadge) statusBadge.textContent = 'Esperando Comprobante';
+        const statusBadge = document.getElementById('successStatusBadge');
+        if (statusBadge) statusBadge.textContent = 'Esperando confirmación por WhatsApp';
 
       const trackingBtn = document.getElementById('trackingBtn');
       if (trackingBtn && order.id) {
@@ -96,9 +96,13 @@
 
   async function loadSuccessPaymentConfig(_order) {
     try {
-      const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/payment-config`, {}, 2, 1000);
-      if (!res) return;
-      const data = await res.json();
+      const data = await fetchWithRetry(`${CONFIG.API.BASE}/api/payment-config`, {}, {
+        retries: 2,
+        firstAttemptTimeoutMs: 30000,
+        retryTimeoutMs: 15000,
+        showToastOnError: false
+      });
+      if (!data) return;
       const alias = data.transferAlias || CONFIG.CONTACT.WHATSAPP_ALIAS || '';
       const holderName = data.holderName || '';
       const message = data.message || '';
@@ -140,4 +144,5 @@
       } catch (e) { /* noop */ }
     }
   });
+
 })();

@@ -76,19 +76,19 @@ export default defineConfig(({ mode }) => ({
       name: 'copy-static-assets',
       closeBundle() {
         const pairs = [
-          ['imagenes', 'imagenes'],
-          ['assets', 'assets'],
-          ['js', 'js'],
+          ['public/imagenes', 'imagenes'],
+          ['frontend/assets', 'assets'],
+          ['frontend/js', 'js'],
         ];
         for (const [srcName, destName] of pairs) {
-          const srcDir = resolve(__dirname, 'frontend', srcName);
+          const srcDir = resolve(__dirname, srcName);
           const destDir = resolve(__dirname, 'dist', destName);
           if (existsSync(srcDir)) {
             copyRecursive(srcDir, destDir);
             console.log(`[vite] ${srcName}/ copiado a dist/${destName}/`);
           }
         }
-        const rootFiles = ['sw-v4.js', 'robots.txt', 'sitemap.xml'];
+        const rootFiles = ['sw-v5.js', 'sw-v4.js', 'robots.txt', 'sitemap.xml'];
         try {
           for (const f of readdirSync(resolve(__dirname, 'frontend'))) {
             if (f.startsWith('google') && f.endsWith('.html')) rootFiles.push(f);

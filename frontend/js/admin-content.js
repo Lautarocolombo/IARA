@@ -54,7 +54,7 @@
   };
 
   var DEFAULT_SETTINGS = {
-    email: 'CONFIGURAR_EMAIL',
+    email: 'contacto@artesaniagualeguay.com',
     phone: '+54 (3444) 634-4444',
     whatsapp: '+543444634444',
     address: 'San Antonio Norte 473, Gualeguay, Entre Ríos, Argentina',
@@ -153,14 +153,9 @@
   async function loadQuill() {
     if (quillLoaded) return true;
     try {
-      var QuillModule = await import('quill');
-      window.Quill = QuillModule.default || QuillModule;
-      // Load Quill CSS
-      if (!document.querySelector('link[href*="quill.snow.css"]')) {
-        var link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = 'https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css';
-        document.head.appendChild(link);
+      if (typeof window.Quill === 'undefined') {
+        console.error('[Content] Quill no está disponible globalmente');
+        return false;
       }
       quillLoaded = true;
       return true;
@@ -173,6 +168,8 @@
   async function initQuillEditor() {
     var container = document.getElementById('about_text_editor');
     if (!container) return;
+    var aboutPanel = document.querySelector('.content-tab-panel[data-content-tab="about"]');
+    if (aboutPanel && !aboutPanel.classList.contains('active')) return;
     var loaded = await loadQuill();
     if (!loaded) return;
     quillEditor = new Quill(container, {

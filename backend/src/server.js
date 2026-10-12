@@ -8,6 +8,9 @@ const pino = require('pino');
 
 dotenv.config({ override: false });
 
+const { validateEnv } = require('./config/env');
+validateEnv();
+
 const { initDB } = require('./lib/db');
 const { handleUploadError, processFile, uploadSingle, getPublicUrl, isBlobConfigured } = require('./lib/upload');
 const { errorHandler } = require('./middleware/errorHandler');
@@ -18,6 +21,7 @@ const { sanitizeBody } = require('./middleware/xssClean');
 const { nonceMiddleware } = require('./middleware/nonce');
 const { cspMiddleware } = require('./middleware/csp');
 const { apiVersioningMiddleware } = require('./middleware/apiVersioning');
+const { initSession } = require('./middleware/session');
 
 const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
 
@@ -28,7 +32,7 @@ logger.info('[Blob] Configuración al arrancar:', {
   isRender: !!process.env.RENDER_EXTERNAL_HOSTNAME
 });
 if (!blobConfigured && process.env.NODE_ENV === 'production') {
-  logger.warn('[Blob] BLOB_READ_WRITE_TOKEN ausente en producción: las imágenes se guardan como base64 en DB (funciona pero sin CDN).');
+  logger.info('[Blob] BLOB_READ_WRITE_TOKEN no configurado: usando almacenamiento base64 en Neon DB (funciona sin CDN).');
 }
 if (!process.env.RESEND_API_KEY) {
   logger.warn('[Email] RESEND_API_KEY ausente: los emails se omiten con log (verificación/pedidos siguen funcionando).');
@@ -73,6 +77,12 @@ async function gracefulShutdown(signal) {
     }
   } catch (err) {
     logger.error({ err: err.message }, 'Error cerrando pool de DB');
+  }
+  try {
+    const { closeSession } = require('./middleware/session');
+    await closeSession();
+  } catch (err) {
+    logger.error({ err: err.message }, 'Error cerrando session Redis');
   }
   process.exit(0);
 }
@@ -157,7 +167,7 @@ app.use(require('compression')({
   }
 }));
 
-const envOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean);
+const envOrigins = (process.env.ALLOWED_ORIGINS || process.env.ALLOWED_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean);
 const defaultOrigins = [
   'https://artesaniagualeguay.com',
   'https://www.artesaniagualeguay.com',
@@ -169,7 +179,9 @@ const defaultOrigins = [
   'http://127.0.0.1:3000',
   'http://127.0.0.1:5173'
 ];
-const allowedOrigins = [...new Set([...defaultOrigins, ...envOrigins])];
+// Si hay orígenes configurados por env, SÓLO esos valen (producción).
+// Los defaults quedan como fallback para desarrollo local sin env.
+const allowedOrigins = envOrigins.length ? [...new Set(envOrigins)] : defaultOrigins;
 
 function isOriginAllowed(origin) {
   if (!origin) return true;
@@ -193,10 +205,10 @@ app.use((req, res, next) => {
     if (isAllowed) {
       res.setHeader('Access-Control-Allow-Origin', origin || '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Accept-Language, Origin, X-Requested-With, X-Request-ID');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Accept-Language, Origin, X-Requested-With, X-Request-ID, X-CSRF-Token');
       res.setHeader('Access-Control-Allow-Credentials', 'true');
       res.setHeader('Access-Control-Max-Age', '86400');
-      logger.info('[CORS] Preflight respondido para:', { path: req.path, origin });
+      res.setHeader('Vary', 'Origin');
       return res.status(204).send();
     }
     logger.warn('[CORS] Preflight rechazado para:', { path: req.path, origin });
@@ -206,12 +218,24 @@ app.use((req, res, next) => {
   if (isAllowed && origin) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Vary', 'Origin');
   }
 
   next();
 });
 
 app.use(require('cookie-parser')());
+
+// Session middleware (required for CSRF token storage)
+let sessionMiddleware = null;
+initSession().then(mw => { sessionMiddleware = mw; });
+app.use((req, res, next) => {
+  if (sessionMiddleware) {
+    return sessionMiddleware(req, res, next);
+  }
+  next();
+});
+
 app.use(tenantContext);
 
 let rateLimitStore = undefined;
@@ -250,7 +274,7 @@ const contactLimiter = rateLimit({
 
 const ordersLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: process.env.NODE_ENV === 'test' ? 10000 : 60,
+  max: 60,
   standardHeaders: true,
   legacyHeaders: false,
   store: rateLimitStore,
@@ -343,12 +367,14 @@ app.use('/api', (req, res, next) => {
 app.use('/api', apiVersioningMiddleware);
 app.use('/api/v1', apiVersioningMiddleware);
 
-// Mount routes at /api/v1 (current version)
+// Mount routes at /api/v1 (current version - CANONICAL)
 app.use('/api/v1/auth', require('./routes/auth'));
 app.use('/api/v1/admin', require('./routes/auth'));
+app.use('/api/v1/admin', require('./routes/admin'));
 
 // Public config route (must be before tenantContext/csrfProtection)
 app.use('/api/v1', require('./routes/config'));
+app.use('/api/v1', require('./routes/settings'));
 
 app.use('/api/v1', tenantContext);
 app.use('/api/v1', csrfProtection);
@@ -371,14 +397,13 @@ app.use('/api/v1', require('./routes/health'));
 app.use('/api/v1', require('./routes/categories'));
 app.use('/api/v1', require('./routes/media'));
 app.use('/api/v1', require('./routes/reports'));
-  app.use('/api/v1', require('./routes/receipts'));
-  app.use('/api/v1', require('./routes/heroCards'));
-  app.use('/api/v1', require('./routes/sales'));
-  app.use('/api/v1', require('./routes/earnings'));
-  app.use('/api/v1', require('./routes/adminConfig'));
-  app.use('/api/v1', require('./routes/carousel'));
-  app.use('/api/v1', require('./routes/dashboard'));
-  // CRITICAL: mount /api/v1/sync BEFORE /api/v1/users so the literal path wins over
+app.use('/api/v1', require('./routes/receipts'));
+app.use('/api/v1', require('./routes/heroCards'));
+app.use('/api/v1', require('./routes/sales'));
+app.use('/api/v1', require('./routes/earnings'));
+app.use('/api/v1', require('./routes/adminConfig'));
+app.use('/api/v1', require('./routes/carousel'));
+// CRITICAL: mount /api/v1/sync BEFORE /api/v1/users so the literal path wins over
 // users' catch-all GET /:id (which would otherwise 401 every public SSE client).
 app.use('/api/v1/sync', require('./routes/sync'));
 app.use('/api/v1', require('./routes/users'));
@@ -393,13 +418,22 @@ app.use('/docs', require('./routes/docs'));
 app.use('/api/v1/admin', require('./routes/coupons'));
 app.use('/api/v1/admin/inventory', require('./routes/inventory'));
 
-// Backward compatibility: mount at /api with deprecation headers
+// Backward compatibility: /api as alias of /api/v1 with deprecation headers
+const deprecatedApiMiddleware = (req, res, next) => {
+  res.setHeader('Deprecation', 'true');
+  res.setHeader('Sunset', 'Sat, 01 Jan 2026 00:00:00 GMT');
+  res.setHeader('Link', '<https://api.example.com/api/v1/>; rel="successor-version"');
+  res.setHeader('X-API-Deprecated', 'true');
+  res.setHeader('Warning', '299 - "This API version is deprecated. Use /api/v1/ instead."');
+  next();
+};
+
+// Mount /api as alias of /api/v1 with deprecation headers
+app.use('/api', deprecatedApiMiddleware);
+app.use('/api', apiVersioningMiddleware);
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/admin', require('./routes/auth'));
-
-// Public config route (must be before tenantContext/csrfProtection)
 app.use('/api', require('./routes/config'));
-
 app.use('/api', tenantContext);
 app.use('/api', csrfProtection);
 app.use('/api', require('./routes/products'));
@@ -421,14 +455,12 @@ app.use('/api', require('./routes/health'));
 app.use('/api', require('./routes/categories'));
 app.use('/api', require('./routes/media'));
 app.use('/api', require('./routes/reports'));
-  app.use('/api', require('./routes/receipts'));
-  app.use('/api', require('./routes/heroCards'));
-  app.use('/api', require('./routes/sales'));
-  app.use('/api', require('./routes/earnings'));
-  app.use('/api', require('./routes/adminConfig'));
-  app.use('/api', require('./routes/carousel'));
-// CRITICAL: mount /api/sync BEFORE /api/users so the literal path wins over
-// users' catch-all GET /:id (which would otherwise 401 every public SSE client).
+app.use('/api', require('./routes/receipts'));
+app.use('/api', require('./routes/heroCards'));
+app.use('/api', require('./routes/sales'));
+app.use('/api', require('./routes/earnings'));
+app.use('/api', require('./routes/adminConfig'));
+app.use('/api', require('./routes/carousel'));
 app.use('/api/sync', require('./routes/sync'));
 app.use('/api', require('./routes/users'));
 app.use('/api', require('./routes/docs'));
@@ -477,30 +509,27 @@ try {
 }
 
 app.get('/health', async (req, res) => {
+  // Lightweight health check for warm-up (no DB query)
+  // Used by frontend to wake up the server without loading the database
   const health = {
     status: 'ok',
     uptime: process.uptime(),
     timestamp: new Date().toISOString(),
-    env: process.env.NODE_ENV || 'development',
-    checks: {}
+    env: process.env.NODE_ENV || 'development'
   };
+  res.setHeader('X-Commit', gitCommit);
+  res.status(200).json(health);
+});
 
+app.get('/health/db', async (req, res) => {
   try {
     const { query } = require('./lib/db');
     await query('SELECT 1');
-    health.checks.database = 'ok';
+    res.status(200).json({ status: 'ok', database: 'connected' });
   } catch (err) {
-    health.checks.database = 'error';
-    health.status = 'degraded';
+    logger.warn({ err: err.message }, 'Database health check failed');
+    res.status(503).json({ status: 'degraded', database: 'error' });
   }
-
-  health.checks.sentry = Sentry ? 'ok' : 'disabled';
-
-  health.checks.blob = blobConfigured ? 'configured' : 'not_configured';
-  health.blob = { configured: blobConfigured };
-
-  res.setHeader('X-Commit', gitCommit);
-  res.status(health.status === 'ok' ? 200 : 503).json(health);
 });
 
 app.get('/ready', async (req, res) => {
@@ -539,10 +568,12 @@ app.post('/api/admin/upload', require('./middleware/auth').adminAuth, uploadSing
     logger.error('[Upload] Error procesando imagen:', { message: err.message, stack: err.stack });
     logger.error('[Upload] Error completo:', { name: err.name, message: err.message, stack: err.stack, code: err.code });
     const message = err.message || 'Error al procesar la imagen';
-    res.status(500).json({ error: message });
+    const status = err.statusCode || (err.code === 'IMAGE_TOO_HEAVY_FOR_DB' ? 413 : 500);
+    res.status(status).json({ error: message, code: err.code || 'UPLOAD_FAILED' });
   }
 });
 
+const fs = require('fs');
 const uploadsStaticDir = path.join(__dirname, '..', '..', 'uploads');
 
 const UPLOAD_PLACEHOLDER_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Imagen no disponible"><rect width="200" height="200" rx="14" fill="#fde8ef"/><text x="100" y="110" text-anchor="middle" font-family="system-ui,serif" font-size="40" fill="#d47090">📷</text><text x="100" y="150" text-anchor="middle" font-family="system-ui,serif" font-size="14" fill="#d47090">Imagen no disponible</text></svg>`;
@@ -561,13 +592,34 @@ app.use('/uploads', (req, res, next) => {
     }
   });
 });
-const staticDir = path.join(__dirname, '..', '..', 'frontend');
+// Static frontend: en producción (Render) el frontend vive en Vercel (dist/).
+// El backend solo sirve estáticos si existe dist/ o en desarrollo local.
+// Esto evita servir 60+ archivos sin minificar y acelera el cold start.
+const distDir = path.join(__dirname, '..', '..', 'dist');
+const frontendDir = path.join(__dirname, '..', '..', 'frontend');
+const hasDist = fs.existsSync(path.join(distDir, 'index.html'));
+const serveFrontend = process.env.SERVE_FRONTEND === 'true' || process.env.NODE_ENV !== 'production' || !process.env.DATABASE_URL;
+const staticDir = (process.env.NODE_ENV === 'production' && hasDist) ? distDir : frontendDir;
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(staticDir, 'index.html'));
-});
+if (serveFrontend) {
+  app.get('/', (req, res) => {
+    res.sendFile(path.join(staticDir, 'index.html'));
+  });
 
-app.use(express.static(staticDir, { maxAge: '1h', etag: true, lastModified: true }));
+  // Assets con hash de Vite: cache inmutable largo. HTML: sin cache.
+  app.use('/assets', express.static(path.join(staticDir, 'assets'), {
+    maxAge: '1y',
+    immutable: true,
+    etag: true,
+    lastModified: true
+  }));
+  app.use(express.static(staticDir, { maxAge: '1h', etag: true, lastModified: true }));
+} else {
+  // Producción API-only: '/' informa estado en vez de servir HTML pesado.
+  app.get('/', (req, res) => {
+    res.json({ status: 'ok', service: 'iara-backend', frontend: 'https://artesania-gualeguay-v3.vercel.app' });
+  });
+}
 
 app.use((req, res, next) => {
   if (res.getHeader('Content-Type')?.includes('text/html') && !res.getHeader('Content-Type')?.includes('charset')) {
@@ -579,11 +631,18 @@ app.use((req, res, next) => {
 app.get('/sitemap.xml', require('./routes/sitemap'));
 
 app.get('/*', (req, res) => {
+  // Exclude health check endpoints from frontend catch-all
+  if (req.path === '/health' || req.path === '/health/db' || req.path === '/ready') {
+    return res.status(404).json({ error: 'Not Found' });
+  }
   if (req.path.startsWith('/api/')) {
     return res.status(404).json({ error: 'Not Found' });
   }
   if (req.path.startsWith('/uploads/')) {
     return res.status(404).json({ error: 'Image not found' });
+  }
+  if (!serveFrontend) {
+    return res.status(404).json({ error: 'Not Found' });
   }
   res.sendFile(path.join(staticDir, 'index.html'));
 });
@@ -596,51 +655,24 @@ if (Sentry) {
 
 app.use(errorHandler);
 
-const dbReady = (async () => {
-    try {
-      await initDB();
-      logger.info('Base de datos inicializada correctamente');
+const dbReady = initDB().then(async () => {
+    logger.info('Base de datos inicializada correctamente');
+    // Seed local solo en desarrollo o con flag explícito: en producción con
+    // Postgres NO se siembra (evita INSERTs + COUNT en cada cold start).
+    if (!process.env.DATABASE_URL || process.env.SEED_LOCAL_DATA === 'true') {
       try {
         const { seedLocalData } = require('./lib/db');
-        if (process.env.SEED === 'true') {
-          await seedLocalData();
-        }
+        await seedLocalData();
       } catch (err) {
         logger.warn({ err: err.message }, 'No se pudo sembrar datos locales');
       }
-      try {
-        const { query } = require('./lib/db');
-        const result = await query('SELECT COUNT(*) FROM users');
-        if ((result.rows[0]?.count || 0) === 0 && process.env.ADMIN_USER && process.env.ADMIN_PASS_HASH) {
-          try {
-            await query(
-              'INSERT INTO users (username, password_hash, role, permissions, active) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (username) DO NOTHING',
-              [process.env.ADMIN_USER, process.env.ADMIN_PASS_HASH, 'admin', JSON.stringify({ all: true }), true]
-            );
-          } catch (err) {
-            if (!err.message.includes('UNIQUE constraint failed') && !err.message.includes('duplicate key')) {
-              throw err;
-            }
-          }
-          logger.info(`Usuario admin inicial creado: ${process.env.ADMIN_USER}`);
-        } else if (process.env.ADMIN_USER && process.env.ADMIN_PASS_HASH) {
-          const existing = await query('SELECT password_hash, permissions FROM users WHERE username = $1', [process.env.ADMIN_USER]);
-          if (existing.rows.length > 0) {
-            const needsUpdate = existing.rows[0].password_hash !== process.env.ADMIN_PASS_HASH || existing.rows[0].permissions !== JSON.stringify({ all: true });
-            if (needsUpdate) {
-              await query('UPDATE users SET password_hash = $1, permissions = $2, updated_at = CURRENT_TIMESTAMP WHERE username = $3', [process.env.ADMIN_PASS_HASH, JSON.stringify({ all: true }), process.env.ADMIN_USER]);
-              logger.info(`Hash/permisos de admin actualizados para: ${process.env.ADMIN_USER}`);
-            }
-          }
-        }
-      } catch (err) {
-        logger.warn({ err: err.message }, 'No se pudo verificar/crear usuario admin inicial');
-      }
-    } catch (err) {
-      logger.error({ err: err.message, stack: err.stack }, 'Error inicializando DB');
-      throw err;
     }
-  })();
+    // El usuario admin ya lo asegura initDB()->ensureAdminUser(). No duplicar
+    // queries aquí: solo log informativo.
+  }).catch(err => {
+    logger.error({ err: err.message, stack: err.stack }, 'Error inicializando DB');
+    throw err;
+  });
 
 if (process.env.REDIS_URL) {
   try {

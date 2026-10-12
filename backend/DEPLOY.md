@@ -98,6 +98,28 @@ El script `src/scripts/backup.js` genera backups de PostgreSQL.
 - **Plan**: Free (ejecuta una vez al día)
 
 Los backups se guardan en `/backups/` con retención de 7 días.
+El script cubre todas las tablas de negocio (usuarios, productos, pedidos,
+items, ventas, comprobantes, recibos, inventario, cupones, contenido, etc.).
+
+### 5b. Backups de Neon (PostgreSQL producción)
+
+Estrategia en 3 capas (ninguna requiere código, solo consola/comandos):
+
+1. **PITR de Neon (recuperación ante desastres)**: en el dashboard de Neon
+   (proyecto → Backups) está el historial point-in-time. Ante un problema
+   grave, restaurar a un timestamp anterior desde la consola. Verificar el
+   plan contratado: la ventana de recuperación depende del plan.
+2. **Branch de staging antes de migraciones riesgosas**: crear un branch de
+   Neon desde producción, apuntar `DATABASE_URL` de staging a ese branch y
+   correr las migraciones ahí primero (`npm run migrate`). Solo promover a
+   producción si el boot y los tests pasan.
+3. **pg_dump manual antes de cada migración**: `pg_dump $DATABASE_URL > backup.sql`
+   y para rollback `psql $DATABASE_URL < backup.sql` (ver raíz `DEPLOY.md`).
+   El Cron Job del punto 5 es el respaldo diario automático (retención 7 días).
+
+NOTA: las imágenes viven en Vercel Blob (fuera de la DB) y NO están en estos
+backups. Los comprobantes en base64 sí quedan respaldados con la DB. Si las
+imágenes del Blob son críticas, programar su propio ciclo de respaldo.
 
 ### 6. Deploy Backend (Render)
 

@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const { login, refresh, logout, changePassword, requestPasswordReset, resetPassword } = require('../controllers/authController');
 const { exportUserData, deleteUserData } = require('../controllers/dataController');
 const { adminAuth } = require('../middleware/auth');
+const { generateCsrfToken } = require('../middleware/session');
 
 function userOrAdminAuth(req, res, next) {
   const authHeader = req.headers.authorization || '';
@@ -37,5 +38,13 @@ router.post('/forgot-password', requestPasswordReset);
 router.post('/reset-password', resetPassword);
 router.get('/user/data-export', userOrAdminAuth, exportUserData);
 router.delete('/user/data-delete', userOrAdminAuth, deleteUserData);
+
+// CSRF token endpoint
+router.get('/csrf-token', (req, res) => {
+  if (!req.session.csrfToken) {
+    req.session.csrfToken = generateCsrfToken();
+  }
+  res.json({ csrfToken: req.session.csrfToken });
+});
 
 module.exports = router;

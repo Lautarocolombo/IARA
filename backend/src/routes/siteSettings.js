@@ -9,8 +9,14 @@ const {
   getPublicPaymentConfig
 } = require('../controllers/siteSettingsController');
 
-router.get('/site-settings', getSiteSettings);
-router.get('/payment-config', getPublicPaymentConfig);
+// Cache-Control para GET públicos de contenido: 60s cache, 5min stale-while-revalidate
+const publicCache = (req, res, next) => {
+  res.setHeader('Cache-Control', 'public, max-age=60, stale-while-revalidate=300');
+  next();
+};
+
+router.get('/site-settings', publicCache, getSiteSettings);
+router.get('/payment-config', publicCache, getPublicPaymentConfig);
 
 router.get('/admin/settings', adminAuth, adminOnly, getSiteSettings);
 router.put('/admin/settings', adminAuth, adminOnly, updateSiteSettings);

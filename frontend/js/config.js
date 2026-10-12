@@ -10,7 +10,7 @@ REVIEWS: {
     WHATSAPP: '+543444634444',
     WHATSAPP_ALIAS: 'iara-salgueiro',
     PHONE: '+54 (3444) 634-4444',
-    EMAIL: 'noreply@artesaniagualeguay.com',
+    EMAIL: 'contacto@artesaniagualeguay.com',
     ADDRESS: 'San Antonio Norte 473, Gualeguay, Entre Ríos, Argentina',
     COORDINATES: { lat: -33.1400009, lng: -59.3136349 },
     GOOGLE_MAPS_API_KEY: ''
@@ -47,7 +47,7 @@ REVIEWS: {
     BACKEND_URL: '',
     // Prefijo único de la API. El backend responde en /api y /api/v1
     // (compatibilidad); el frontend usa siempre PREFIX.
-    PREFIX: '/api'
+    PREFIX: '/api/v1'
   },
   PLACEHOLDER: {
     IMAGE: 'assets/placeholder-product.svg'
@@ -89,24 +89,30 @@ async function loadConfigFromAPI() {
 
   configPromise = (async () => {
     try {
-      // Prefijo único: /api/config, con fallback a /api/v1/config por compatibilidad.
+      // Nuevo endpoint público de configuración
       const base = (CONFIG.API && CONFIG.API.BASE) || '';
-      const prefix = (CONFIG.API && CONFIG.API.PREFIX) || '/api';
+      const prefix = (CONFIG.API && CONFIG.API.PREFIX) || '/api/v1';
       let res = null;
       try {
-        res = await fetch(`${base}${prefix}/config`, { cache: 'no-store' });
+        res = await fetch(`${base}${prefix}/settings/public`, { cache: 'no-store' });
       } catch (e) { res = null; }
       if (!res || !res.ok) {
+        // Fallback al endpoint legacy /config
         try {
-          res = await fetch(`${base}/api/v1/config`, { cache: 'no-store' });
+          res = await fetch(`${base}${prefix}/config`, { cache: 'no-store' });
         } catch (e) { res = null; }
+        if (!res || !res.ok) {
+          try {
+            res = await fetch(`${base}/api/v1/config`, { cache: 'no-store' });
+          } catch (e) { res = null; }
+        }
       }
       if (res && res.ok) {
         const apiConfig = await res.json();
         CONFIG = deepMerge(DEFAULT_CONFIG, apiConfig);
         // No permitir que la API pise el prefijo con un valor inválido.
         if (!CONFIG.API || typeof CONFIG.API.PREFIX !== 'string' || !CONFIG.API.PREFIX.startsWith('/')) {
-          CONFIG.API = { ...(CONFIG.API || {}), PREFIX: '/api' };
+          CONFIG.API = { ...(CONFIG.API || {}), PREFIX: '/api/v1' };
         }
       }
     } catch (err) {

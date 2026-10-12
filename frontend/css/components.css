@@ -1611,9 +1611,9 @@ html, body { overflow-x: hidden; }
   position: absolute;
   top: 12px;
   left: 12px;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--blush);
   backdrop-filter: blur(8px);
-  padding: 10px 14px;
+  padding: 10px 16px;
   border-radius: var(--radius-sm);
   box-shadow: var(--shadow-sm);
   font-size: 0.8rem;
@@ -1622,9 +1622,19 @@ html, body { overflow-x: hidden; }
   z-index: 10;
   border: 1px solid var(--border);
   max-width: calc(100% - 24px);
+  width: fit-content;
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 8px;
+  box-sizing: border-box;
+  overflow: visible;
+  white-space: nowrap;
+}
+
+.map-location-card > span:first-child {
+  flex-shrink: 0;
+  font-size: 14px;
+  line-height: 1;
 }
 
 [data-theme="dark"] .map-location-card {
@@ -2141,6 +2151,10 @@ html, body { overflow-x: hidden; }
   .filter-bar input[type="number"] { width: 100px; font-size: 11px; padding: 6px 10px; }
   .products-grid, .catalog-grid { grid-template-columns: 1fr; }
   .how-grid { grid-template-columns: 1fr; }
+  .map-location-card {
+    white-space: normal;
+    width: auto;
+  }
 }
 
 @media (max-width: 375px) {

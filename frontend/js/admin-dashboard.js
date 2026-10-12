@@ -5,6 +5,7 @@
   'use strict';
 
   var SECTION_ROLES = {
+    home:       ['admin', 'editor', 'viewer'],
     content:    ['admin', 'editor', 'viewer'],
     carousel:   ['admin', 'editor', 'viewer'],
     products:   ['admin', 'editor', 'viewer'],
@@ -17,6 +18,7 @@
   };
 
   var SECTION_MAP = {
+    home:       { title: 'Resumen',            breadcrumb: 'Ventas, pedidos pendientes y actividad reciente' },
     content:    { title: 'Contenido del sitio',  breadcrumb: 'Editar textos visibles del frontend' },
     carousel:   { title: 'Editor de Carrusel',   breadcrumb: 'Gestionar imágenes del carrusel (5 slots)' },
     products:   { title: 'Productos',          breadcrumb: 'Crear, editar y gestionar productos' },

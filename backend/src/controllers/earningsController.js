@@ -23,7 +23,7 @@ const getEarnings = async (req, res) => {
       return res.status(400).json({ error: 'start_date no puede ser posterior a end_date' });
     }
 
-    const whereClauses = ["status != 'cancelled'"];
+    const whereClauses = ['deleted_at IS NULL', "status != 'cancelled'"];
     const whereParams = [];
     if (start_date) {
       whereParams.push(start_date);
@@ -33,7 +33,7 @@ const getEarnings = async (req, res) => {
       whereParams.push(end_date);
       whereClauses.push('substr(created_at, 1, 10) <= $' + whereParams.length);
     }
-    const whereSql = 'WHERE ' + whereClauses.join(' AND ');
+    const whereSql = whereClauses.length ? 'WHERE ' + whereClauses.join(' AND ') : 'WHERE deleted_at IS NULL';
 
     let resetAt = null;
     try {
@@ -52,7 +52,7 @@ const getEarnings = async (req, res) => {
       kpiWhereParams.push(resetAt.toISOString());
       kpiWhereClauses.push('created_at > $' + kpiWhereParams.length);
     }
-    const kpiWhereSql = kpiWhereClauses.length ? 'WHERE ' + kpiWhereClauses.join(' AND ') : 'WHERE TRUE';
+    const kpiWhereSql = kpiWhereClauses.length ? 'WHERE ' + kpiWhereClauses.join(' AND ') : 'WHERE deleted_at IS NULL';
 
     const countResult = await query('SELECT COUNT(*) as total FROM orders ' + kpiWhereSql, kpiWhereParams);
     const totalOrders = Number(countResult.rows[0]?.total || 0);
@@ -67,7 +67,7 @@ const getEarnings = async (req, res) => {
       [...whereParams, limitNum, offset]
     );
 
-    const salesWhereClauses = [];
+    const salesWhereClauses = ['deleted_at IS NULL'];
     const salesParams = [];
     if (start_date) {
       salesParams.push(start_date);
@@ -77,7 +77,7 @@ const getEarnings = async (req, res) => {
       salesParams.push(end_date);
       salesWhereClauses.push('substr(sale_date, 1, 10) <= $' + salesParams.length);
     }
-    const salesWhereSql = salesWhereClauses.length ? 'WHERE ' + salesWhereClauses.join(' AND ') : '';
+    const salesWhereSql = salesWhereClauses.length ? 'WHERE ' + salesWhereClauses.join(' AND ') : 'WHERE deleted_at IS NULL';
 
     const kpiSalesWhereClauses = Array.from(salesWhereClauses);
     const kpiSalesParams = Array.from(salesParams);
@@ -85,7 +85,7 @@ const getEarnings = async (req, res) => {
       kpiSalesParams.push(resetAt.toISOString().split('T')[0]);
       kpiSalesWhereClauses.push('sale_date > $' + kpiSalesParams.length);
     }
-    const kpiSalesWhereSql = kpiSalesWhereClauses.length ? 'WHERE ' + kpiSalesWhereClauses.join(' AND ') : '';
+    const kpiSalesWhereSql = kpiSalesWhereClauses.length ? 'WHERE ' + kpiSalesWhereClauses.join(' AND ') : 'WHERE deleted_at IS NULL';
 
     const manualSalesTotalResult = await query('SELECT COALESCE(SUM(total),0) as total FROM sales ' + kpiSalesWhereSql, kpiSalesParams);
     const manualSalesTotal = Number(manualSalesTotalResult.rows[0]?.total || 0);
@@ -97,7 +97,7 @@ const getEarnings = async (req, res) => {
     const totalRevenue = ordersTotal + manualSalesTotal;
     const avgOrderValue = totalOrders > 0 ? ordersTotal / totalOrders : 0;
 
-    const monthWhereClauses = ["status != 'cancelled'"];
+    const monthWhereClauses = ['deleted_at IS NULL', "status != 'cancelled'"];
     const monthWhereParams = [];
     if (start_date) {
       monthWhereParams.push(start_date);
@@ -114,7 +114,7 @@ const getEarnings = async (req, res) => {
       chartWhereParams.push(resetAt.toISOString());
       chartWhereClauses.push('created_at > $' + chartWhereParams.length);
     }
-    const chartWhereSql = chartWhereClauses.length ? 'WHERE ' + chartWhereClauses.join(' AND ') : '';
+    const chartWhereSql = chartWhereClauses.length ? 'WHERE ' + chartWhereClauses.join(' AND ') : 'WHERE deleted_at IS NULL';
 
     var monthExpr = 'substr(created_at, 1, 7)';
     if (!isLocal) {

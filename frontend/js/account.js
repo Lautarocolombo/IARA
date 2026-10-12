@@ -109,11 +109,14 @@
     var loading = document.getElementById('accountOrdersLoading');
     if (!container || !email) return;
     if (loading) window.showLoading(loading, { label: 'Cargando pedidos...' });
-    window.fetchWithRetry(CONFIG.API.BASE + '/api/v1/orders?email=' + encodeURIComponent(email), {}, 2, 1000)
-      .then(function (res) {
-        if (!res || !res.ok) throw new Error('No se pudieron cargar los pedidos');
-        return res.json();
-      }).then(function (orders) {
+    fetchWithRetry(CONFIG.API.BASE + '/api/v1/orders?email=' + encodeURIComponent(email), {}, {
+      retries: 2,
+      firstAttemptTimeoutMs: 30000,
+      retryTimeoutMs: 15000,
+      showToastOnError: true
+    })
+      .then(function (orders) {
+        if (!orders) throw new Error('No se pudieron cargar los pedidos');
         renderOrders(Array.isArray(orders) ? orders : []);
       }).catch(function (err) {
         window.showToast('!', err.message || 'Error al cargar pedidos', 'error');

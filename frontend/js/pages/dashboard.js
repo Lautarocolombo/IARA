@@ -1,5 +1,4 @@
 /* global loadDashboardStats */
-/* ==================== ADMIN DASHBOARD PAGE ==================== */
 (function() {
   if (window.location.protocol === 'file:') {
     document.body.innerHTML = '<div style="padding:2rem;text-align:center;"><h2>⚠️ Panel de administración</h2><p>Este panel debe abrirse desde el servidor, no desde el sistema de archivos.</p></div>';
@@ -15,6 +14,7 @@
     }
 
     if (typeof initAdminDashboard === 'function') initAdminDashboard();
+    if (typeof initHomePanel === 'function') initHomePanel();
     if (typeof initContentEditor === 'function') initContentEditor();
     if (typeof initProductManager === 'function') initProductManager();
     if (typeof initCategoryManager === 'function') initCategoryManager();

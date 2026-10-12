@@ -17,6 +17,10 @@ jest.mock('../src/routes/sync', () => ({
   syncBus: { emit: jest.fn() }
 }));
 
+jest.mock('../src/lib/audit', () => ({
+  logAudit: jest.fn().mockResolvedValue(undefined)
+}));
+
 jest.mock('fs', () => ({
   existsSync: jest.fn(() => true),
   unlinkSync: jest.fn(),
@@ -52,6 +56,7 @@ const {
   syncToNeon,
   bulkImportProducts,
   getFeaturedProducts,
+  quickUpdateProduct,
   attachImagesToProducts
 } = require('../src/controllers/productsController');
 
@@ -83,6 +88,43 @@ describe('productsController', () => {
       const result = await attachImagesToProducts(products, 'http://localhost');
 
       expect(result).toEqual(products);
+    });
+  });
+
+  describe('quickUpdateProduct', () => {
+    test('valida y actualiza precio y stock rápidamente', async () => {
+      query.mockResolvedValueOnce({ rows: [{ id: 7, price: 150, stock: 4 }] });
+      const req = {
+        params: { id: '7' },
+        body: { price: '150', stock: '4' },
+        headers: { 'x-tenant-id': 'default' },
+        user: { user: 'admin' },
+        ip: '127.0.0.1'
+      };
+      const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+
+      await quickUpdateProduct(req, res);
+
+      expect(query).toHaveBeenCalledWith(
+        expect.stringContaining('UPDATE products SET price = $1, stock = $2'),
+        [150, 4, 7, 'default']
+      );
+      expect(res.json).toHaveBeenCalledWith({ id: 7, price: 150, stock: 4 });
+    });
+
+    test('rechaza datos rápidos inválidos antes de consultar la base', async () => {
+      const req = {
+        params: { id: '7' },
+        body: { price: '-1' },
+        headers: {},
+        user: {}
+      };
+      const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
+
+      await quickUpdateProduct(req, res);
+
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(query).not.toHaveBeenCalled();
     });
   });
 

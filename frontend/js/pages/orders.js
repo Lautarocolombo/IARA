@@ -9,9 +9,13 @@
     const lookup = document.getElementById('ordersLookup');
     if (!container) return;
     try {
-      const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/orders?email=${encodeURIComponent(email)}`, {}, 2, 1000);
-      if (!res) throw new Error('Error al cargar pedidos');
-      const orders = await res.json();
+      const orders = await fetchWithRetry(`${CONFIG.API.BASE}/api/orders?email=${encodeURIComponent(email)}`, {}, {
+        retries: 2,
+        firstAttemptTimeoutMs: 30000,
+        retryTimeoutMs: 15000,
+        showToastOnError: true
+      });
+      if (!orders) throw new Error('Error al cargar pedidos');
       currentOrderEmail = email;
       if (!orders.length) {
         container.innerHTML = '<div class="empty-orders"><h2>No tenés pedidos</h2><p>No encontramos pedidos asociados a ese email.</p><a href="../index.html#catalog" class="btn-primary" style="margin-top:1rem;">Ver catálogo</a></div>';

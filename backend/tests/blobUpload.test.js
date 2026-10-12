@@ -5,6 +5,21 @@ const os = require('os');
 
 const TINY_PNG_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
+jest.mock('../src/lib/db', () => ({
+  query: jest.fn(),
+  transaction: jest.fn(async (fn) => fn({ query: jest.fn().mockResolvedValue({ rows: [], rowCount: 0 }) })),
+  getPool: jest.fn(),
+  getDb: jest.fn(),
+  getIsLocal: jest.fn(() => true),
+}));
+
+jest.mock('../src/lib/logger', () => ({
+  error: jest.fn(),
+  warn: jest.fn(),
+  info: jest.fn(),
+  debug: jest.fn(),
+}));
+
 jest.mock('@vercel/blob', () => ({
   put: jest.fn(),
   del: jest.fn()
@@ -117,7 +132,7 @@ describe('Vercel Blob helpers', () => {
     expect(put).not.toHaveBeenCalled();
   });
 
-  test('processFile lanza error 503 en producción cuando no hay token', async () => {
+  test('processFile en producción sin token rechaza la subida y elimina el temporal', async () => {
     const originalNodeEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
     delete process.env.BLOB_READ_WRITE_TOKEN;
@@ -131,9 +146,10 @@ describe('Vercel Blob helpers', () => {
       size: Buffer.from(TINY_PNG_BASE64, 'base64').length
     })).rejects.toMatchObject({
       code: 'BLOB_NOT_CONFIGURED',
-      status: 503
+      statusCode: 503
     });
     expect(put).not.toHaveBeenCalled();
+    expect(fs.existsSync(tmpFile)).toBe(false);
 
     process.env.NODE_ENV = originalNodeEnv;
   });
@@ -183,7 +199,7 @@ describe('Vercel Blob helpers', () => {
     delete process.env.BLOB_READ_WRITE_TOKEN;
   });
 
-  test('processFile en producción (token inválido) lanza error 503', async () => {
+  test('processFile en producción con token inválido rechaza la subida', async () => {
     const originalNodeEnv = process.env.NODE_ENV;
     process.env.NODE_ENV = 'production';
     process.env.BLOB_READ_WRITE_TOKEN = 'token-con-formato-invalido';
@@ -197,9 +213,10 @@ describe('Vercel Blob helpers', () => {
       size: Buffer.from(TINY_PNG_BASE64, 'base64').length
     })).rejects.toMatchObject({
       code: 'BLOB_NOT_CONFIGURED',
-      status: 503
+      statusCode: 503
     });
     expect(put).not.toHaveBeenCalled();
+    expect(fs.existsSync(tmpFile)).toBe(false);
 
     process.env.NODE_ENV = originalNodeEnv;
     delete process.env.BLOB_READ_WRITE_TOKEN;

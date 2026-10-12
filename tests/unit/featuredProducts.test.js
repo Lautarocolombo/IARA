@@ -78,6 +78,7 @@ describe('featured products — regresión', () => {
       productsModule.setProducts([
         { id: 2, name: 'Normal', category: 'pulseras', price: 200, description: 'd', emoji: 'P', image: '', featured: false, badge: '', stock: 10 }
       ]);
+      productsModule.setProductsLoadingState('loaded');
 
       productsModule.renderProducts(productsModule.getProducts());
 

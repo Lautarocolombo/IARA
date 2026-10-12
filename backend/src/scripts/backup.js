@@ -6,14 +6,35 @@ const logger = require('../lib/logger');
 const BACKUP_DIR = path.join(__dirname, '..', '..', 'backups');
 const MAX_BACKUPS = 7;
 const TABLES = [
+  'users',
+  'user_tenants',
   'products',
   'product_images',
+  'media_assets',
   'categories',
   'orders',
+  'order_items',
+  'customers',
+  'contacts',
   'testimonials',
+  'reviews',
+  'sales',
+  'subscribers',
+  'payment_config',
+  'payment_proofs',
+  'receipts',
+  'site_texts',
+  'site_settings',
+  'section_content',
   'hero_cards',
+  'carousel_images',
   'webhook_events',
-  'receipts'
+  'activity_log',
+  'product_bulk_imports',
+  'coupons',
+  'shipping_rates_by_province',
+  'inventory_movements',
+  'inventory_alerts'
 ];
 
 async function backupDatabase() {
@@ -21,7 +42,7 @@ async function backupDatabase() {
   
   if (!databaseUrl) {
     logger.warn('DATABASE_URL no configurada, saltando backup');
-    console.error('ERROR: DATABASE_URL no configurada');
+    logger.error('ERROR: DATABASE_URL no configurada');
     process.exit(1);
   }
 
@@ -96,7 +117,7 @@ async function backupDatabase() {
     process.exit(0);
   } catch (err) {
     logger.error({ err: err.message, stack: err.stack }, 'Error en backup de base de datos');
-    console.error('ERROR en backup:', err);
+    logger.error('ERROR en backup:', err);
     try {
       await pool.end();
     } catch (e) {

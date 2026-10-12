@@ -90,6 +90,7 @@
       "initSalesPanel": "readonly",
       "initOrdersPanel": "readonly",
       "initPaymentsPanel": "readonly",
+      "initHomePanel": "readonly",
       "doLogout": "readonly",
       "loadOrders": "readonly",
       "loadSalesReport": "readonly",

@@ -1,5 +1,3 @@
-const emailService = require('../src/services/emailService');
-
 jest.mock('../src/lib/logger', () => ({
   error: jest.fn(),
   warn: jest.fn(),
@@ -8,8 +6,11 @@ jest.mock('../src/lib/logger', () => ({
 }));
 
 describe('emailService', () => {
+  let emailService;
+
   beforeEach(() => {
-    jest.resetAllMocks();
+    jest.resetModules();
+    emailService = require('../src/services/emailService');
     process.env.RESEND_API_KEY = 'test_key';
     process.env.EMAIL_FROM = 'test@test.com';
     process.env.BUSINESS_NAME = 'Test Store';

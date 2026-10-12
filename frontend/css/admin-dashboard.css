@@ -3459,6 +3459,47 @@ select.card-filter {
   width: 100%;
 }
 
+/* ==================== 17b. TABLAS SIN SCROLL HORIZONTAL (Fase 3) ==================== */
+/* Columnas de baja prioridad que se ocultan en pantallas chicas. El detalle
+   completo sigue disponible (modal, panel de detalle o vista desktop).
+   Se usa nth-child por tabla para no tocar el JS que renderiza las filas. */
+@media (max-width: 900px) {
+  /* Testimonios: Cargo */
+  #testimonialsTable th:nth-child(3),
+  #testimonialsTable td:nth-child(3) { display: none; }
+  /* Productos (vista tabla 481-900px): Categoría */
+  #productsTable th:nth-child(3),
+  #productsTable td:nth-child(3) { display: none; }
+  /* Inventario movimientos: Stock ant., Referencia */
+  #inventoryMovementsTable th:nth-child(5),
+  #inventoryMovementsTable td:nth-child(5),
+  #inventoryMovementsTable th:nth-child(8),
+  #inventoryMovementsTable td:nth-child(8) { display: none; }
+  /* Inventario alertas: SKU */
+  #inventoryAlertsTable th:nth-child(3),
+  #inventoryAlertsTable td:nth-child(3) { display: none; }
+}
+@media (max-width: 640px) {
+  /* Pedidos: Productos (se ven al seleccionar el pedido) */
+  #ordersTable th:nth-child(5),
+  #ordersTable td:nth-child(5) { display: none; }
+  /* Transacciones: Fecha */
+  #transactionsTable th:nth-child(2),
+  #transactionsTable td:nth-child(2) { display: none; }
+  /* Testimonios: Foto */
+  #testimonialsTable th:nth-child(5),
+  #testimonialsTable td:nth-child(5) { display: none; }
+  /* Productos: Destacado */
+  #productsTable th:nth-child(7),
+  #productsTable td:nth-child(7) { display: none; }
+  /* Comprobantes de pago: Fecha */
+  #pmProofsTable th:nth-child(2),
+  #pmProofsTable td:nth-child(2) { display: none; }
+  /* Inventario movimientos: Tipo */
+  #inventoryMovementsTable th:nth-child(3),
+  #inventoryMovementsTable td:nth-child(3) { display: none; }
+}
+
 /* ==================== 18. UTILIDADES ==================== */
 
 .hidden {

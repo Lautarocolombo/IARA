@@ -211,9 +211,13 @@ const ITEM_CLASS = 'product-image-item';
     const gallery = document.getElementById('productImageGallery');
     if (!gallery) return;
     try {
-      const res = await window.fetchWithRetry(`/api/v1/products/${productId}/images`, {}, 2, 1000);
-      if (!res) throw new Error('Error de red');
-      const images = await res.json();
+      const images = await fetchWithRetry(`/api/v1/products/${productId}/images`, {}, {
+        retries: 2,
+        firstAttemptTimeoutMs: 30000,
+        retryTimeoutMs: 15000,
+        showToastOnError: true
+      });
+      if (!images) throw new Error('Error de red');
       renderGallery(gallery, images, productId);
     } catch (err) {
       gallery.innerHTML = '<p class="empty-state">No se pudieron cargar las imágenes</p>';
@@ -461,14 +465,17 @@ const ITEM_CLASS = 'product-image-item';
     try {
       const formData = new FormData();
       formData.append('image', file);
-      const res = await window.fetchWithRetry(`/api/v1/products/${productId}/images/${imageId}/replace`, {
+      const data = await fetchWithRetry(`/api/v1/products/${productId}/images/${imageId}/replace`, {
         method: 'PUT',
         credentials: 'include',
         body: formData
-      }, 2, 1000);
-      if (!res) throw new Error('Error de red');
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error al reemplazar');
+      }, {
+        retries: 2,
+        firstAttemptTimeoutMs: 30000,
+        retryTimeoutMs: 15000,
+        showToastOnError: true
+      });
+      if (!data) throw new Error('Error de red');
       if (status) {
         status.textContent = 'Imagen reemplazada';
         status.style.color = '#10b981';
@@ -487,19 +494,20 @@ const ITEM_CLASS = 'product-image-item';
 
 async function markPrincipal(productId, imageId) {
     try {
-      const res = await window.fetchWithRetry(`/api/v1/products/${productId}/images/${imageId}`, {
+      const data = await fetchWithRetry(`/api/v1/products/${productId}/images/${imageId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
         },
         credentials: 'include',
         body: JSON.stringify({ es_principal: true })
-      }, 2, 1000);
-      if (!res) throw new Error('Error de red');
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Error al actualizar');
-      }
+      }, {
+        retries: 2,
+        firstAttemptTimeoutMs: 30000,
+        retryTimeoutMs: 15000,
+        showToastOnError: true
+      });
+      if (!data) throw new Error('Error de red');
       showToast('Imagen principal actualizada', 'success');
     } catch (err) {
       showToast(err.message, 'error');
@@ -508,19 +516,20 @@ async function markPrincipal(productId, imageId) {
 
 async function updateImageMeta(productId, imageId, meta) {
     try {
-      const res = await window.fetchWithRetry(`/api/v1/products/${productId}/images/${imageId}`, {
+      const data = await fetchWithRetry(`/api/v1/products/${productId}/images/${imageId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
         },
         credentials: 'include',
         body: JSON.stringify(meta)
-      }, 2, 1000);
-      if (!res) throw new Error('Error de red');
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Error al actualizar metadatos');
-      }
+      }, {
+        retries: 2,
+        firstAttemptTimeoutMs: 30000,
+        retryTimeoutMs: 15000,
+        showToastOnError: true
+      });
+      if (!data) throw new Error('Error de red');
       showToast('Metadatos actualizados', 'success');
     } catch (err) {
       showToast(err.message, 'error');
@@ -529,15 +538,16 @@ async function updateImageMeta(productId, imageId, meta) {
 
 async function deleteImage(productId, imageId) {
     try {
-      const res = await window.fetchWithRetry(`/api/v1/products/${productId}/images/${imageId}`, {
+      const data = await fetchWithRetry(`/api/v1/products/${productId}/images/${imageId}`, {
         method: 'DELETE',
         credentials: 'include'
-      }, 2, 1000);
-      if (!res) throw new Error('Error de red');
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Error al eliminar');
-      }
+      }, {
+        retries: 2,
+        firstAttemptTimeoutMs: 30000,
+        retryTimeoutMs: 15000,
+        showToastOnError: true
+      });
+      if (!data) throw new Error('Error de red');
       showToast('Imagen eliminada', 'success');
     } catch (err) {
       showToast(err.message, 'error');
@@ -546,19 +556,20 @@ async function deleteImage(productId, imageId) {
 
 async function syncOrder(productId, orderedIds) {
     try {
-      const res = await window.fetchWithRetry(`/api/v1/products/${productId}/images/sync-order`, {
+      const data = await fetchWithRetry(`/api/v1/products/${productId}/images/sync-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         credentials: 'include',
         body: JSON.stringify({ orden: orderedIds })
-      }, 2, 1000);
-      if (!res) throw new Error('Error de red');
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Error al sincronizar orden');
-      }
+      }, {
+        retries: 2,
+        firstAttemptTimeoutMs: 30000,
+        retryTimeoutMs: 15000,
+        showToastOnError: true
+      });
+      if (!data) throw new Error('Error de red');
     } catch (err) {
       showToast(err.message, 'error');
     }

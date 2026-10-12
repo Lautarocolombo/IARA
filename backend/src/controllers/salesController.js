@@ -2,11 +2,12 @@ const { query } = require('../lib/db');
 const logger = require('../lib/logger');
 const { syncBus } = require('../routes/sync');
 const { logAudit } = require('../lib/audit');
+const { roundMoney } = require('../lib/validators');
 
 const getSales = async (req, res) => {
   try {
     const { start_date, end_date, product_id, limit, offset } = req.query;
-    let where = 'WHERE TRUE';
+    let where = 'WHERE deleted_at IS NULL';
     const params = [];
 
     if (start_date) { params.push(start_date); where += ` AND date(sale_date) >= $${params.length}`; }
@@ -70,7 +71,7 @@ const createManualSale = async (req, res) => {
       return res.status(400).json({ error: 'El precio del producto es inválido' });
     }
 
-    const total = unitPrice * qty;
+    const total = roundMoney(unitPrice * qty);
 
     const insertResult = await query(
       `INSERT INTO sales (product_id, quantity, unit_price, total, sale_date, created_at, tenant_id)
@@ -118,7 +119,7 @@ const deleteSale = async (req, res) => {
   }
   try {
     const result = await query(
-      'DELETE FROM sales WHERE id = $1 AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') RETURNING id',
+      'UPDATE sales SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1 AND deleted_at IS NULL AND (tenant_id = current_setting(\'app.current_tenant\', TRUE) OR tenant_id = \'default\') RETURNING id',
       [id]
     );
     if (result.rows.length === 0) {
@@ -127,14 +128,14 @@ const deleteSale = async (req, res) => {
     try { syncBus.emit('sales_updated', { id: id }); } catch (e) { /* noop */ }
     logAudit({
       user: req.user?.user || 'admin',
-      action: 'delete',
+      action: 'archive',
       entityType: 'sale',
       entityId: id,
-      details: `Venta manual #${id} eliminada`,
+      details: `Venta manual #${id} archivada (borrado lógico)`,
       ip: req.ip || '',
       tenantId: req.headers?.['x-tenant-id'] || req.user?.tenant_id || 'default'
     }).catch(() => {});
-    res.json({ ok: true, deletedId: id });
+    res.json({ ok: true, archived: true, deletedId: id });
   } catch (err) {
     logger.error({ err: err.message, stack: err.stack }, 'Error eliminando venta manual');
     res.status(500).json({ error: 'Error interno del servidor' });

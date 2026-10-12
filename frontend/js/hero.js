@@ -1,6 +1,26 @@
 (function () {
   'use strict';
 
+  // Datos de fallback para hero (se muestran mientras carga o si falla todo)
+  const HERO_FALLBACK = [
+    {
+      imagen: '',
+      titulo: 'Regalos <em>artesanales</em> que cuentan historias',
+      subtitulo: 'Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es única.',
+      cta_texto: 'Explorar Catálogo',
+      cta_url: '#catalog',
+      polaroid_text: 'Hecho con alma en Gualeguay 🌸'
+    },
+    {
+      imagen: '',
+      titulo: 'Anillo Cerámica',
+      subtitulo: 'Artesanía con alma',
+      cta_texto: 'Ver producto',
+      cta_url: '#catalog',
+      polaroid_text: 'Pieza única para momentos únicos ✨'
+    }
+  ];
+
   function updateGreeting() {
     var greetingEl = document.getElementById('heroGreeting');
     if (!greetingEl) return;
@@ -16,15 +36,41 @@
     greetingEl.textContent = greeting + ' 🌸';
   }
 
-  async function loadHeroCards() {
-    try {
-      const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/hero-cards`, {}, 3, 1000, 15000, false);
-      if (!res) {
-        renderHeroCards([]);
-        return;
+  // Mostrar estado de carga en hero
+  function showHeroLoading() {
+    const heroVisual = document.getElementById('heroCardsContainer');
+    if (heroVisual) {
+      heroVisual.innerHTML = `
+        <div class="hero-card loading" data-hero-card="1">
+          <div class="hero-card-img skeleton" id="heroCard1Img"></div>
+        </div>
+        <div class="hero-card loading" data-hero-card="2">
+          <div class="hero-card-img skeleton" id="heroCard2Img"></div>
+        </div>
+      `;
+    }
+    const heroContent = document.querySelector('.hero-content');
+    if (heroContent) {
+      const subtitleEl = heroContent.querySelector('.hero-subtitle');
+      const primaryBtn = heroContent.querySelector('.btn-primary');
+      if (subtitleEl) subtitleEl.textContent = 'Cargando...';
+      if (primaryBtn) {
+        primaryBtn.textContent = 'Cargando...';
+        primaryBtn.href = '#';
       }
-      const cards = await res.json();
-      if (!Array.isArray(cards)) {
+    }
+  }
+
+  async function loadHeroCards() {
+    showHeroLoading();
+    try {
+      const cards = await fetchWithRetry(`${CONFIG.API.BASE}/api/hero-cards`, {}, {
+        retries: 4,
+        firstAttemptTimeoutMs: 50000,
+        retryTimeoutMs: 25000,
+        showToastOnError: false
+      });
+      if (!cards || !Array.isArray(cards)) {
         renderHeroCards([]);
         return;
       }
@@ -65,8 +111,14 @@
     try {
       let siteTexts = {};
       try {
-        const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-texts`, {}, 3, 1000, 15000, false);
-        if (res && res.ok) siteTexts = await res.json();
+        const data = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-texts`, {}, {
+          retries: 4,
+          firstAttemptTimeoutMs: 50000,
+          retryTimeoutMs: 25000,
+          showToastOnError: false,
+          skipCache: true // Skip cache to get fresh data for rendering
+        });
+        if (data) siteTexts = data;
       } catch (err) {
         console.error('[Hero] Error cargando site-texts:', err);
       }
@@ -75,30 +127,18 @@
 
       let featuredProducts = [];
       try {
-        const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/products/featured`, {}, 3, 1000, 15000, false);
-        if (res && res.ok) featuredProducts = await res.json();
+        const data = await fetchWithRetry(`${CONFIG.API.BASE}/api/products/featured`, {}, {
+          retries: 4,
+          firstAttemptTimeoutMs: 50000,
+          retryTimeoutMs: 25000,
+          showToastOnError: false
+        });
+        if (data) featuredProducts = data;
       } catch (err) {
         console.error('[Hero] Error cargando productos destacados:', err);
       }
 
-      const defaults = [
-        {
-          imagen: '',
-          titulo: 'Regalos <em>artesanales</em> que cuentan historias',
-          subtitulo: 'Pulseras, souvenirs y llaveros hechos a mano. Cada pieza es única.',
-          cta_texto: 'Explorar Catálogo',
-          cta_url: '#catalog',
-          polaroid_text: 'Hecho con alma en Gualeguay 🌸'
-        },
-        {
-          imagen: '',
-          titulo: 'Anillo Cerámica',
-          subtitulo: 'Artesanía con alma',
-          cta_texto: 'Ver producto',
-          cta_url: '#catalog',
-          polaroid_text: 'Pieza única para momentos únicos ✨'
-        }
-      ];
+      const defaults = HERO_FALLBACK;
 
       const card1 = Array.isArray(cards) && cards.length > 0 ? cards[0] : {};
       const card2 = Array.isArray(cards) && cards.length > 1 ? cards[1] : {};
@@ -140,8 +180,8 @@
       if (heroContent) {
         const subtitleEl = heroContent.querySelector('.hero-subtitle');
         const primaryBtn = heroContent.querySelector('.btn-primary');
-        if (subtitleEl && data[0].subtitulo) subtitleEl.textContent = data[0].subtitulo;
-        if (primaryBtn && data[0].cta_texto) {
+        if (subtitleEl && data[0].subtitulo !== undefined) subtitleEl.textContent = data[0].subtitulo;
+        if (primaryBtn && data[0].cta_texto !== undefined) {
           primaryBtn.textContent = data[0].cta_texto;
           primaryBtn.href = data[0].cta_url || '#catalog';
         }

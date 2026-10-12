@@ -254,12 +254,7 @@ async function adminFetch(url, opts = {}, isRetry = false) {
         errorMsg = await res.text().catch(() => res.statusText);
         responseBodyForLog = errorMsg;
       }
-      console.error('[adminFetch] Error response:', {
-        status: res.status,
-        statusText: res.statusText,
-        url: fullUrl,
-        body: responseBodyForLog
-      });
+      console.error('[adminFetch] Error response:', res.status, res.statusText, fullUrl, responseBodyForLog);
       throw new Error(errorMsg || `Error ${res.status}`);
     }
     return res;

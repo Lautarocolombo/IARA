@@ -8,15 +8,13 @@
     if (!container) return;
 
     try {
-      const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/orders/${orderId}/track`, { method: 'GET' });
-      if (!res) throw new Error('Error al cargar el pedido');
-      const data = await res.json();
-      if (!data || res.status === 404) {
-        if (container) container.style.display = 'none';
-        if (lookup) lookup.style.display = 'none';
-        if (fallback) fallback.style.display = 'block';
-        return;
-      }
+      const data = await fetchWithRetry(`${CONFIG.API.BASE}/api/orders/${orderId}/track`, { method: 'GET' }, {
+        retries: 4,
+        firstAttemptTimeoutMs: 50000,
+        retryTimeoutMs: 25000,
+        showToastOnError: true
+      });
+      if (!data) throw new Error('Error al cargar el pedido');
 
       const order = data;
       const items = (() => { try { return JSON.parse(order.items || '[]'); } catch (e) { return []; } })();

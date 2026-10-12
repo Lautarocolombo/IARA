@@ -7,6 +7,7 @@
 
   var selectedOrderId = null;
   var ordersList = [];
+  var ordersError = null;
   var paymentConfig = {};
   var currentReceipt = null;
   var whatsappChecked = false;
@@ -159,19 +160,21 @@
       var params = new URLSearchParams();
       if (q) params.set('q', q);
       params.set('limit', '100');
-      var res = await window.adminFetch('/api/admin/orders?' + params.toString(), { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/orders?' + params.toString(), { method: 'GET' });
       if (!res || !res.ok) throw new Error('Error cargando pedidos');
       var data = await res.json();
+      ordersError = null;
       return data.orders || [];
     } catch (err) {
-      showToast('❌', err.message || 'Error al cargar pedidos', 'error');
+      ordersError = err.message || 'Error al cargar pedidos';
+      showToast('❌', ordersError, 'error');
       return [];
     }
   }
 
   async function fetchOrderDetail(id) {
     try {
-      var res = await window.adminFetch('/api/admin/orders/' + id, { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/orders/' + id, { method: 'GET' });
       if (!res || !res.ok) throw new Error('Error cargando detalle');
       var data = await res.json();
       return data;
@@ -183,7 +186,7 @@
 
   async function fetchPaymentConfig() {
     try {
-      var res = await window.adminFetch('/api/admin/payment-config', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/payment-config', { method: 'GET' });
       if (!res || !res.ok) return {};
       var data = await res.json();
       return data || {};
@@ -194,7 +197,7 @@
 
   async function fetchReceipt(orderId) {
     try {
-      var res = await window.adminFetch('/api/admin/orders/' + orderId + '/receipt', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/orders/' + orderId + '/receipt', { method: 'GET' });
       if (!res || !res.ok) return null;
       var data = await res.json();
       return data;
@@ -205,7 +208,7 @@
 
   async function fetchActivities(orderId) {
     try {
-      var res = await window.adminFetch('/api/admin/orders/' + orderId + '/activity', { method: 'GET' });
+      var res = await window.adminFetch('/api/v1/admin/orders/' + orderId + '/activity', { method: 'GET' });
       if (!res || !res.ok) return [];
       var data = await res.json();
       return data.activities || [];
@@ -278,7 +281,7 @@
         '<td><span class="status-badge status-' + order.status + '">' + status + '</span></td>' +
         '<td>' + getOrderItemsSummary(order) + '</td>' +
         '<td style="text-align:right;white-space:nowrap;">' +
-          '<button class="btn-delete-order" data-order-id="' + order.id + '" title="Eliminar pedido" style="background:none;border:none;color:#94a3b8;cursor:pointer;padding:0.3rem;border-radius:6px;transition:all 0.2s;display:inline-flex;align-items:center;justify-content:center;">' +
+          '<button class="btn-delete-order" data-order-id="' + order.id + '" title="Archivar pedido" style="background:none;border:none;color:#94a3b8;cursor:pointer;padding:0.3rem;border-radius:6px;transition:all 0.2s;display:inline-flex;align-items:center;justify-content:center;">' +
             '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>' +
           '</button>' +
         '</td>' +
@@ -550,6 +553,7 @@
   async function updateOrderActions(order) {
     var approveBtn = document.getElementById('approvePaymentBtn');
     var rejectBtn = document.getElementById('rejectPaymentBtn');
+    var advanceBtn = document.getElementById('advanceOrderBtn');
     var whatsappBtn = document.getElementById('sendWhatsAppBtn');
     if (!approveBtn || !rejectBtn) return;
 
@@ -562,12 +566,27 @@
       approveBtn.title = isPaymentValidated(order) ? 'Pago ya validado' : '';
     }
     rejectBtn.disabled = order.status === 'cancelled';
-    
-    // Mostrar botón WhatsApp cuando el pago está aprobado y hay datos de envío
+
+    var nextMap = {
+      confirmed: { status: 'preparing', label: 'Preparar envío' },
+      preparing: { status: 'shipped', label: 'Marcar enviado' },
+      shipped: { status: 'delivered', label: 'Marcar entregado' }
+    };
+    var next = nextMap[order.status];
+    if (advanceBtn) {
+      if (next && !blocked && order.status !== 'cancelled') {
+        advanceBtn.classList.remove('hidden');
+        advanceBtn.textContent = next.label;
+        advanceBtn.disabled = false;
+      } else {
+        advanceBtn.classList.add('hidden');
+      }
+    }
+
     if (whatsappBtn) {
       var showWhatsApp = order.status === 'confirmed' && isShippingComplete(order);
       whatsappBtn.style.display = showWhatsApp ? 'inline-flex' : 'none';
-      whatsappBtn.onclick = function() { sendOrderWhatsApp(order); };
+      whatsappBtn.onclick = function () { sendOrderWhatsApp(order); };
     }
   }
 
@@ -592,7 +611,7 @@
     setLoading('saveShippingBtn', 'saveShippingBtnLoading', true, 'Guardar', 'Guardando...');
 
     try {
-      var res = await window.adminFetch('/api/admin/orders/' + selectedOrderId, {
+      var res = await window.adminFetch('/api/v1/admin/orders/' + selectedOrderId, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -638,7 +657,7 @@
     if (rejectBtn) rejectBtn.disabled = true;
 
     try {
-      var res = await window.adminFetch('/api/admin/orders/' + id + '/status', {
+      var res = await window.adminFetch('/api/v1/admin/orders/' + id + '/status', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'confirmed' })
@@ -703,7 +722,7 @@
     if (rejectBtn) rejectBtn.disabled = true;
 
     try {
-      var res = await window.adminFetch('/api/admin/orders/' + id + '/status', {
+      var res = await window.adminFetch('/api/v1/admin/orders/' + id + '/status', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'pending' })
@@ -729,22 +748,115 @@
     }
   }
 
+  var NEXT_STATUS = {
+    confirmed: { status: 'preparing', label: 'Preparar envío' },
+    preparing: { status: 'shipped', label: 'Marcar enviado' },
+    shipped: { status: 'delivered', label: 'Marcar entregado' }
+  };
+
+  async function advanceOrder() {
+    if (!selectedOrderId) return;
+    var order = await fetchOrderDetail(selectedOrderId);
+    if (!order) return;
+    var next = NEXT_STATUS[order.status];
+    if (!next) {
+      showToast('ℹ️', 'Este pedido no tiene un siguiente estado.', 'info');
+      return;
+    }
+    window.showConfirmModal(
+      next.label,
+      '¿Cambiar el pedido #' + selectedOrderId + ' a "' + getStatusLabel(next.status) + '"?',
+      function () { processAdvance(selectedOrderId, next); }
+    );
+  }
+
+  async function processAdvance(id, next) {
+    try {
+      var res = await window.adminFetch('/api/v1/admin/orders/' + id + '/status', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: next.status })
+      });
+      if (!res || !res.ok) {
+        var data = await res.json().catch(function () { return {}; });
+        throw new Error(data.error || 'Error cambiando estado');
+      }
+      await postActivity(id, 'Status cambiado a ' + next.status, 'Estado actualizado por el administrador');
+      showToast('✅', 'Pedido actualizado a "' + getStatusLabel(next.status) + '"', 'success');
+      var order = await fetchOrderDetail(id);
+      if (order) {
+        currentReceipt = await fetchReceipt(id);
+        renderWizard(order);
+        renderPaymentDetails(order);
+        renderShippingInfo(order);
+        updateOrderActions(order);
+        var idx = ordersList.findIndex(function (o) { return o.id === id; });
+        if (idx !== -1) ordersList[idx].status = next.status;
+        renderOrdersList(ordersList);
+      }
+    } catch (err) {
+      showToast('❌', err.message || 'Error cambiando estado', 'error');
+    }
+  }
+
+  function getClientPhone(order) {
+    var raw = order.shipping_phone || '';
+    try {
+      var customer = typeof order.customer === 'string' ? JSON.parse(order.customer) : (order.customer || {});
+      raw = raw || customer.phone || '';
+    } catch (e) { /* noop */ }
+    if (typeof window.normalizeWhatsAppPhone === 'function') {
+      return window.normalizeWhatsAppPhone(raw);
+    }
+    return String(raw || '').replace(/[^\d]/g, '');
+  }
+
+  function getClientPlainName(order) {
+    try {
+      var customer = typeof order.customer === 'string' ? JSON.parse(order.customer) : (order.customer || {});
+      return customer.name || order.shipping_name || 'cliente';
+    } catch (e) {
+      return order.shipping_name || 'cliente';
+    }
+  }
+
+  async function notifyClient() {
+    if (!selectedOrderId) {
+      showToast('⚠️', 'Seleccioná un pedido primero.', 'error');
+      return;
+    }
+    var order = await fetchOrderDetail(selectedOrderId);
+    if (!order) return;
+    var phone = getClientPhone(order);
+    if (!phone) {
+      showToast('⚠️', 'Este pedido no tiene teléfono para avisar por WhatsApp.', 'error');
+      return;
+    }
+    var msg = 'Hola ' + getClientPlainName(order) + ', somos de Artesanías Gualeguay. ' +
+      'Tu pedido #' + order.id + ' está: ' + getStatusLabel(order.status) +
+      ' (total ' + formatCurrency(order.total) + '). ¡Gracias por tu compra!';
+    var url = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(msg);
+    window.open(url, '_blank', 'noopener,noreferrer');
+    await postActivity(selectedOrderId, 'Aviso por WhatsApp', 'Se abrió chat con el cliente para avisar el estado');
+    showToast('✅', 'Abriendo WhatsApp con mensaje prearmado.', 'success');
+  }
+
   async function deleteOrder(id) {
     window.showConfirmModal(
-      'Eliminar pedido',
-      '¿Eliminar este pedido #' + id + '? Esta acción no se puede deshacer.',
+      'Archivar pedido',
+      '¿Archivar este pedido #' + id + '? Dejará de aparecer en las listas (no se borra definitivamente).',
       function () { processDeleteOrder(id); }
     );
   }
 
   async function processDeleteOrder(id) {
     try {
-      var res = await window.adminFetch('/api/admin/orders/' + id, { method: 'DELETE' });
+      var res = await window.adminFetch('/api/v1/admin/orders/' + id, { method: 'DELETE' });
       if (!res || !res.ok) {
         var data = await res.json().catch(function () { return {}; });
-        throw new Error(data.error || 'Error eliminando pedido');
+        throw new Error(data.error || 'Error archivando pedido');
       }
-      showToast('✅', 'Pedido eliminado correctamente', 'success');
+      showToast('✅', 'Pedido archivado correctamente', 'success');
       if (selectedOrderId === id) {
         selectedOrderId = null;
         document.getElementById('orderWizardEmpty').style.display = '';
@@ -756,36 +868,36 @@
       renderOrdersList(ordersList);
       if (window.reloadSales) window.reloadSales();
     } catch (err) {
-      showToast('❌', err.message || 'Error eliminando pedido', 'error');
+      showToast('❌', err.message || 'Error archivando pedido', 'error');
     }
   }
 
   async function batchDeleteOrders(status) {
     var label = status === 'cancelled' ? 'cancelados' : 'pendientes';
     window.showConfirmModal(
-      'Eliminar pedidos',
-      '¿Eliminar todos los pedidos ' + label + '? Esta acción no se puede deshacer.',
+      'Archivar pedidos',
+      '¿Archivar todos los pedidos ' + label + '? Dejarán de aparecer en las listas (no se borran definitivamente).',
       function () { processBatchDelete(status); }
     );
   }
 
   async function processBatchDelete(status) {
     try {
-      var res = await window.adminFetch('/api/admin/orders/batch', {
+      var res = await window.adminFetch('/api/v1/admin/orders/batch', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: status })
       });
       if (!res || !res.ok) {
         var data = await res.json().catch(function () { return {}; });
-        throw new Error(data.error || 'Error eliminando pedidos en lote');
+        throw new Error(data.error || 'Error archivando pedidos en lote');
       }
       var result = await res.json();
-      showToast('✅', result.deleted + ' pedidos eliminados', 'success');
+      showToast('✅', result.deleted + ' pedidos archivados', 'success');
       await loadOrders();
       if (window.reloadSales) window.reloadSales();
     } catch (err) {
-      showToast('❌', err.message || 'Error eliminando pedidos en lote', 'error');
+      showToast('❌', err.message || 'Error archivando pedidos en lote', 'error');
     }
   }
 
@@ -808,31 +920,31 @@
       });
     }
 
+    var dateFromInput = document.getElementById('orderDateFrom');
+    if (dateFromInput) {
+      dateFromInput.addEventListener('change', function () {
+        loadOrders();
+      });
+    }
+
+    var dateToInput = document.getElementById('orderDateTo');
+    if (dateToInput) {
+      dateToInput.addEventListener('change', function () {
+        loadOrders();
+      });
+    }
+
     var approveBtn = document.getElementById('approvePaymentBtn');
     if (approveBtn) approveBtn.addEventListener('click', approvePayment);
 
     var rejectBtn = document.getElementById('rejectPaymentBtn');
     if (rejectBtn) rejectBtn.addEventListener('click', rejectPayment);
 
-    var uploadBtn = document.getElementById('uploadReceiptBtn');
-    var fileInput = document.getElementById('receiptFileInput');
-    if (uploadBtn && fileInput) {
-      uploadBtn.addEventListener('click', function () {
-        fileInput.click();
-      });
-      fileInput.addEventListener('change', function () {
-        if (!fileInput.files || !fileInput.files[0] || !selectedOrderId) return;
-        uploadReceipt(fileInput.files[0]);
-      });
-    }
+    var advanceBtn = document.getElementById('advanceOrderBtn');
+    if (advanceBtn) advanceBtn.addEventListener('click', advanceOrder);
 
-    var guideLink = document.getElementById('receiptGuideLink');
-    if (guideLink) {
-      guideLink.addEventListener('click', function (e) {
-        e.preventDefault();
-        showReceiptGuide();
-      });
-    }
+    var notifyBtn = document.getElementById('notifyClientBtn');
+    if (notifyBtn) notifyBtn.addEventListener('click', notifyClient);
 
     var saveShippingBtn = document.getElementById('saveShippingBtn');
     if (saveShippingBtn) saveShippingBtn.addEventListener('click', saveShippingInfo);
@@ -888,61 +1000,42 @@
     }
   }
 
-  async function uploadReceipt(file) {
-    if (!selectedOrderId) return;
-    var formData = new FormData();
-    formData.append('file', file);
-    try {
-      var res = await window.adminFetch('/api/admin/orders/' + selectedOrderId + '/receipt', {
-        method: 'POST',
-        body: formData
-      });
-      if (!res || !res.ok) {
-        var data = await res.json().catch(function () { return {}; });
-        throw new Error(data.error || 'Error subiendo comprobante');
-      }
-      showToast('✅', 'Comprobante subido correctamente', 'success');
-      currentReceipt = await fetchReceipt(selectedOrderId);
-      var order = await fetchOrderDetail(selectedOrderId);
-      if (order) {
-        renderPaymentDetails(order);
-        renderWizard(order);
-        updateOrderActions(order);
-      }
-    } catch (err) {
-      showToast('❌', err.message || 'Error subiendo comprobante', 'error');
-    }
-  }
-
-  function showReceiptGuide() {
-    var modal = document.getElementById('confirmModalOverlay');
-    var msg = document.getElementById('confirmModalMessage');
-    var actionBtn = document.getElementById('confirmModalAction');
-    if (modal) {
-      // El modal se reutiliza: resetear primero para no arrastrar el input
-      // de la confirmación destructiva ni botones de otros usos.
-      if (typeof window.resetConfirmModal === 'function') window.resetConfirmModal();
-      if (msg) msg.innerHTML = '<strong>Cómo generar el comprobante desde tu banco:</strong><br>1) Ingresá a la app de tu banco.<br>2) Buscá la transferencia realizada a <strong>' + escapeHtml(getPaymentAlias(paymentConfig) || 'el alias configurado') + '</strong>.<br>3) Descargá o capturá el comprobante de la operación.<br>4) Subilo acá con el botón "Subir Comprobante".';
-      if (actionBtn) {
-        actionBtn.textContent = 'Entendido';
-        actionBtn.className = 'btn btn-primary';
-        actionBtn.onclick = function () {
-          if (modal) modal.classList.remove('active');
-          if (msg) msg.textContent = '¿Estás seguro?';
-        };
-      }
-      modal.classList.add('active');
-    }
-  }
-
   async function loadOrders() {
+    var tbody = document.getElementById('ordersTableBody');
+    var empty = document.getElementById('ordersEmptyState');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="6" class="loading-row">Cargando pedidos...</td></tr>';
+    if (empty) empty.style.display = 'none';
     var search = document.getElementById('orderSearch');
     var status = document.getElementById('orderStatusFilter');
+    var dateFrom = document.getElementById('orderDateFrom');
+    var dateTo = document.getElementById('orderDateTo');
     var q = search ? search.value : '';
     var s = status ? status.value : '';
+    var from = dateFrom && dateFrom.value ? dateFrom.value : '';
+    var to = dateTo && dateTo.value ? dateTo.value : '';
     ordersList = await fetchOrders(q);
     if (s) {
       ordersList = ordersList.filter(function (o) { return o.status === s; });
+    }
+    if (from) {
+      ordersList = ordersList.filter(function (o) {
+        var d = o.created_at ? String(o.created_at).slice(0, 10) : '';
+        return d >= from;
+      });
+    }
+    if (to) {
+      ordersList = ordersList.filter(function (o) {
+        var d = o.created_at ? String(o.created_at).slice(0, 10) : '';
+        return d <= to;
+      });
+    }
+    if (ordersError && !ordersList.length) {
+      if (tbody) {
+        var retry = '<button type="button" class="btn btn-sm btn-secondary" onclick="window.loadOrders()">Reintentar</button>';
+        tbody.innerHTML = '<tr><td colspan="6" class="error-row">Error: ' + escapeHtml(ordersError) + ' ' + retry + '</td></tr>';
+      }
+      resetOrderDetail();
+      return;
     }
     ordersList.sort(function (a, b) { return new Date(b.created_at) - new Date(a.created_at); });
     renderOrdersList(ordersList);
@@ -953,10 +1046,6 @@
     bindEvents();
     await loadOrders();
     resetOrderDetail();
-
-    if (typeof window.initFormPersistence === 'function') {
-      window.initFormPersistence();
-    }
 
     if (typeof window.updatePendingOrdersBadge === 'function') {
       window.updatePendingOrdersBadge();
@@ -982,6 +1071,14 @@
     });
   };
 
+  if (typeof window !== 'undefined') {
+    window.addEventListener('dashboard:section-changed', function (e) {
+      if (e.detail && e.detail.section === 'orders') {
+        initOrdersPanel();
+      }
+    });
+  }
+
   async function sendOrderWhatsApp(order) {
     var btn = document.getElementById('sendWhatsAppBtn');
     if (btn) {
@@ -991,14 +1088,15 @@
     try {
       var res = await window.adminFetch('/api/v1/admin/orders/' + order.id + '/whatsapp', { method: 'POST' });
       if (!res || !res.ok) {
-        var data = await res.json().catch(function () { return {}; });
-        throw new Error(data.error || 'Error generando link WhatsApp');
+        var errorData = await res.json().catch(function () { return {}; });
+        throw new Error(errorData.error || 'Error generando link WhatsApp');
       }
-      if (res.whatsappUrl) {
-        window.open(res.whatsappUrl, '_blank');
+      var data = await res.json();
+      if (data.whatsappUrl) {
+        window.open(data.whatsappUrl, '_blank');
         showToast('✅', 'WhatsApp abierto con mensaje prearmado', 'success');
-      } else if (res.message) {
-        showToast('✅', 'Mensaje generado: ' + res.message, 'success');
+      } else if (data.message) {
+        showToast('✅', 'Mensaje generado: ' + data.message, 'success');
       }
     } catch (err) {
       showToast('❌', err.message || 'Error enviando por WhatsApp', 'error');
@@ -1009,5 +1107,4 @@
       }
     }
   }
-
 })();

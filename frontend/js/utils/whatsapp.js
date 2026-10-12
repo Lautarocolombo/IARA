@@ -136,8 +136,8 @@ export function buildWhatsAppLinks(phone, message) {
   const cleanPhone = sanitizePhone(phone);
   let waPhone = cleanPhone.startsWith('54') ? cleanPhone : `54${cleanPhone}`;
 
-  if (waPhone.startsWith('54') && !waPhone.startsWith('549')) {
-    waPhone = '549' + waPhone.slice(2);
+  if (waPhone.startsWith('549')) {
+    waPhone = '54' + waPhone.slice(3);
   }
 
   const encodedMessage = encodeURIComponent(message);

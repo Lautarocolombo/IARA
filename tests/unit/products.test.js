@@ -39,11 +39,15 @@ describe('products.js', () => {
     const mockProducts = [
       { id: 1, name: 'Test', category: 'pulseras', price: 100 }
     ];
-    const mockRes = { ok: true, json: async () => mockProducts };
-    window.fetchWithRetry = jest.fn().mockResolvedValue(mockRes);
+    window.fetchWithRetry = jest.fn().mockResolvedValue(mockProducts);
 
     await productsModule.fetchProducts();
-    expect(window.fetchWithRetry).toHaveBeenCalledWith('/api/products', {}, 3, 1000, 15000, false);
+    expect(window.fetchWithRetry).toHaveBeenCalledWith('/api/products', {}, {
+      retries: 4,
+      firstAttemptTimeoutMs: 50000,
+      retryTimeoutMs: 25000,
+      showToastOnError: false
+    });
   });
 
   test('fetchProducts maneja error de red', async () => {
@@ -51,6 +55,22 @@ describe('products.js', () => {
 
     await productsModule.fetchProducts();
     expect(productsModule.getProducts()).toEqual(productsModule.defaultProducts || []);
+  });
+
+  test('fetchProducts ignora respuestas atrasadas de solicitudes anteriores', async () => {
+    let resolveInitialRequest;
+    window.fetchWithRetry = jest.fn()
+      .mockImplementationOnce(() => new Promise(resolve => { resolveInitialRequest = resolve; }))
+      .mockResolvedValueOnce([{ id: 2, name: 'Filtrada', category: 'pulseras' }]);
+
+    const initialRequest = productsModule.fetchProducts();
+    await productsModule.fetchProducts({ category: 'pulseras' });
+    resolveInitialRequest([{ id: 1, name: 'Obsoleta', category: 'accesorios' }]);
+    await initialRequest;
+
+    expect(productsModule.getProducts()).toEqual([
+      { id: 2, name: 'Filtrada', category: 'pulseras' }
+    ]);
   });
 
   test('formatARS formatea moneda argentina', () => {
@@ -107,6 +127,7 @@ describe('products.js', () => {
     window.revealObserver = { observe: jest.fn() };
     window.formatARS = (n) => `$${n}`;
 
+    productsModule.setProductsLoadingState('loaded');
     productsModule.renderProducts(productsModule.getProducts());
     expect(grid.innerHTML).toContain('Pulsera');
     expect(grid.innerHTML).toContain('pulseras');
@@ -118,6 +139,7 @@ describe('products.js', () => {
     document.body.appendChild(grid);
     document.getElementById = (id) => id === 'productsGrid' ? grid : null;
 
+    productsModule.setProductsLoadingState('loaded');
     productsModule.renderProducts([]);
     expect(grid.innerHTML).toContain('No se encontraron productos');
   });

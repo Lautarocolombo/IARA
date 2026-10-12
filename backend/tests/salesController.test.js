@@ -290,7 +290,7 @@ describe('salesController', () => {
   });
 
   describe('deleteSale', () => {
-    test('elimina venta manual exitosamente', async () => {
+    test('archiva venta manual exitosamente (borrado lógico)', async () => {
       const req = { params: { id: '5' } };
       const res = { json: jest.fn() };
 
@@ -298,9 +298,9 @@ describe('salesController', () => {
 
       await deleteSale(req, res);
 
-      expect(query.mock.calls[0][0]).toContain('DELETE FROM sales');
+      expect(query.mock.calls[0][0]).toContain('UPDATE sales SET deleted_at');
       expect(query.mock.calls[0][1]).toEqual([5]);
-      expect(res.json).toHaveBeenCalledWith({ ok: true, deletedId: 5 });
+      expect(res.json).toHaveBeenCalledWith({ ok: true, archived: true, deletedId: 5 });
     });
 
     test('retorna 404 si la venta no existe', async () => {

@@ -1,4 +1,9 @@
-﻿jest.mock('../src/lib/logger', () => ({
+﻿jest.mock('../src/lib/db', () => ({
+  query: jest.fn(),
+  transaction: jest.fn(async (fn) => fn({ query: jest.fn().mockResolvedValue({ rows: [], rowCount: 0 }) }))
+}));
+
+jest.mock('../src/lib/logger', () => ({
   error: jest.fn(),
   warn: jest.fn(),
   info: jest.fn()

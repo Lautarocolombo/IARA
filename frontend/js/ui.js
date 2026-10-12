@@ -226,46 +226,50 @@ function initContactForm() {
   const form = document.getElementById('contactForm');
   if (!form) return;
 
-form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-      const name = document.getElementById('name').value;
-      const email = document.getElementById('email').value;
-      const message = document.getElementById('message').value;
+    const name = document.getElementById('name').value;
+    const email = document.getElementById('email').value;
+    const message = document.getElementById('message').value;
 
-      if (!name || !email || !message) {
-        showToast('', 'Por favor completa todos los campos', 'error');
-        return;
+    if (!name || !email || !message) {
+      showToast('', 'Por favor completa todos los campos', 'error');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      showToast('', 'Ingresá un email válido', 'error');
+      return;
+    }
+
+    const whatsappMessage = `Nuevo mensaje de contacto\n\nNombre: ${name}\nEmail: ${email}\n\nMensaje:\n${message}`;
+
+    try {
+      const data = await fetchWithRetry(`${CONFIG.API.BASE}/api/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, message })
+      }, {
+        retries: 2,
+        firstAttemptTimeoutMs: 30000,
+        retryTimeoutMs: 15000,
+        showToastOnError: true
+      });
+      if (!data) return;
+      if (data && data.ok !== false) {
+        showToast('', 'Mensaje enviado con éxito. Nos pondremos en contacto pronto.', 'success');
+        form.reset();
+        window.open(getWhatsAppLink(whatsappMessage), '_blank');
+      } else {
+        showToast('', 'Error al enviar el mensaje. Intentá de nuevo.', 'error');
       }
-
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        showToast('', 'Ingresá un email válido', 'error');
-        return;
-      }
-
-      const whatsappMessage = `Nuevo mensaje de contacto\n\nNombre: ${name}\nEmail: ${email}\n\nMensaje:\n${message}`;
-
-      try {
-        const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/contact`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, message })
-        });
-        if (!res) return;
-        const data = await res.json();
-        if (data && data.ok !== false) {
-          showToast('', 'Mensaje enviado con éxito. Nos pondremos en contacto pronto.', 'success');
-          form.reset();
-          window.open(getWhatsAppLink(whatsappMessage), '_blank');
-        } else {
-          showToast('', 'Error al enviar el mensaje. Intentá de nuevo.', 'error');
-        }
-      } catch (err) {
-        console.error('Error enviando contacto:', err);
-        showToast('', getFetchErrorMessage(err), 'error');
-      }
-    });
+    } catch (err) {
+      console.error('Error enviando contacto:', err);
+      showToast('', getFetchErrorMessage(err), 'error');
+    }
+  });
 }
 
 // Newsletter Form Handler
@@ -289,13 +293,17 @@ function initNewsletterForm() {
       }
 
       try {
-        const res = await window.fetchWithRetry(`${CONFIG.API.BASE}/api/subscribe`, {
+        const data = await fetchWithRetry(`${CONFIG.API.BASE}/api/subscribe`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email })
+        }, {
+          retries: 2,
+          firstAttemptTimeoutMs: 30000,
+          retryTimeoutMs: 15000,
+          showToastOnError: true
         });
-        if (!res) return;
-        const data = await res.json();
+        if (!data) return;
         if (data && data.ok !== false) {
           showToast('', 'Te has suscrito al newsletter. ¡Gracias!', 'success');
           form.reset();
@@ -546,6 +554,193 @@ function initSakuraInteraction() {
   });
 }
 
+/* ==================== FETCH DEDUPLICATION & CONCURRENCY CONTROL ==================== */
+// Mapa de promesas en vuelo para deduplicar GET idénticos
+const inflightGet = new Map();
+
+// Promesa compartida de warm-up (una sola llamada a /health al arrancar)
+var warmupPromise = null;
+var warmupStarted = false;
+
+// Cola de requests al arranque con límite de concurrencia
+const STARTUP_CONCURRENCY_LIMIT = 3;
+let startupActiveCount = 0;
+const startupQueue = [];
+let isStartupPhase = true;
+
+// Marca fin de fase de arranque (después de ~3s o cuando la cola se vacía)
+function markStartupComplete() {
+  isStartupPhase = false;
+  processStartupQueue();
+}
+
+function processStartupQueue() {
+  while (startupQueue.length > 0 && startupActiveCount < STARTUP_CONCURRENCY_LIMIT) {
+    const { fn, resolve, reject } = startupQueue.shift();
+    startupActiveCount++;
+    Promise.resolve()
+      .then(fn)
+      .then(resolve, reject)
+      .then(() => {
+        startupActiveCount--;
+        processStartupQueue();
+      }, () => {
+        startupActiveCount--;
+        processStartupQueue();
+      });
+  }
+}
+
+// Encolar request durante fase de arranque con límite de concurrencia
+function enqueueStartupRequest(fn) {
+  return new Promise((resolve, reject) => {
+    if (!isStartupPhase || startupActiveCount < STARTUP_CONCURRENCY_LIMIT) {
+      if (isStartupPhase) startupActiveCount++;
+      Promise.resolve()
+        .then(fn)
+        .then(resolve, reject)
+        .then(() => {
+          if (isStartupPhase) {
+            startupActiveCount--;
+            processStartupQueue();
+          }
+        }, () => {
+          if (isStartupPhase) {
+            startupActiveCount--;
+            processStartupQueue();
+          }
+        });
+    } else {
+      startupQueue.push({ fn, resolve, reject });
+    }
+  });
+}
+
+// Warm-up compartido: una sola promesa para /health, reutilizable
+function getWarmupPromise() {
+  if (warmupPromise) return warmupPromise;
+  if (warmupStarted) {
+    return new Promise(resolve => setTimeout(() => resolve(getWarmupPromise()), 10));
+  }
+  if (typeof fetch !== 'function') {
+    return Promise.resolve(false);
+  }
+  warmupStarted = true;
+  const base = (typeof CONFIG !== 'undefined' && CONFIG.API && CONFIG.API.BASE) ? CONFIG.API.BASE : '';
+  let fetchResult;
+  try {
+    fetchResult = fetch(`${base}/health`, { cache: 'no-store', keepalive: true });
+  } catch (e) {
+    warmupStarted = false;
+    return Promise.resolve(false);
+  }
+  if (!fetchResult || typeof fetchResult.then !== 'function') {
+    warmupStarted = false;
+    return Promise.resolve(false);
+  }
+  warmupPromise = fetchResult
+    .then(res => {
+      warmupPromise = null;
+      warmupStarted = false;
+      return res.ok;
+    })
+    .catch(() => {
+      warmupPromise = null;
+      warmupStarted = false;
+      return false;
+    });
+  return warmupPromise;
+}
+
+// Exportar para uso interno y tests
+window.__fetchInternals = {
+  inflightGet,
+  getWarmupPromise,
+  enqueueStartupRequest,
+  markStartupComplete,
+  STARTUP_CONCURRENCY_LIMIT
+};
+
+// Auto-marcar fin de fase de arranque tras 3s (fallback)
+setTimeout(markStartupComplete, 3000);
+
+/* ==================== STALE-WHILE-REVALIDATE CACHE ==================== */
+const CACHEABLE_ENDPOINTS = [
+  '/api/site-texts',
+  '/api/hero-cards',
+  '/api/carousel/public',
+  '/api/section-content/',
+  '/api/site-settings',
+  '/api/products'
+];
+
+const CACHE_PREFIX = 'cache:v1:';
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
+function isCacheableUrl(url) {
+  try {
+    const urlObj = new URL(url, window.location.origin);
+    const path = urlObj.pathname;
+    if (/\/api\/(auth|admin|orders|payments|payment|checkout|users|cart|wishlist)/i.test(path)) {
+      return false;
+    }
+    return CACHEABLE_ENDPOINTS.some(endpoint => path.startsWith(endpoint));
+  } catch {
+    return false;
+  }
+}
+
+function getCacheKey(url) {
+  try {
+    const urlObj = new URL(url, window.location.origin);
+    return CACHE_PREFIX + urlObj.pathname + urlObj.search;
+  } catch {
+    return CACHE_PREFIX + url;
+  }
+}
+
+function readFromCache(url) {
+  try {
+    const key = getCacheKey(url);
+    const stored = localStorage.getItem(key);
+    if (!stored) return null;
+    const { data, timestamp } = JSON.parse(stored);
+    const age = Date.now() - timestamp;
+    if (age > CACHE_TTL_MS) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function writeToCache(url, data) {
+  try {
+    const key = getCacheKey(url);
+    const payload = JSON.stringify({ data, timestamp: Date.now() });
+    localStorage.setItem(key, payload);
+  } catch {
+    // Cache storage is best-effort; a quota or privacy restriction must not break the request.
+  }
+}
+
+window.__cacheInternals = {
+  isCacheableUrl,
+  getCacheKey,
+  readFromCache,
+  writeToCache,
+  CACHEABLE_ENDPOINTS,
+  CACHE_TTL_MS
+};
+
+// Warm-up: despierta al backend con un ping a /health al cargar la página.
+function warmBackend() {
+  getWarmupPromise().catch(() => {});
+}
+window.warmBackend = warmBackend;
+
 // Initialize Everything on DOM Ready
 function initUI() {
   warmBackend();
@@ -557,7 +752,21 @@ function initUI() {
   initSmoothScroll();
   if (typeof window.updateCartBadge === 'function') window.updateCartBadge();
   initSakuraInteraction();
+
+  // Ping de salud temprano para despertar el backend (fire-and-forget)
+  pingHealth();
 }
+
+// Ping ligero a /health para despertar el servidor temprano
+async function pingHealth() {
+  try {
+    const base = (typeof CONFIG !== 'undefined' && CONFIG.API && CONFIG.API.BASE) ? CONFIG.API.BASE : '';
+    await fetch(`${base}/health`, { cache: 'no-store', keepalive: true });
+  } catch (e) {
+    // Silencioso: solo es un ping para despertar
+  }
+}
+window.pingHealth = pingHealth;
 
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initUI);
@@ -626,8 +835,6 @@ function getFetchErrorMessage(err) {
   }
 
   if (status === 401 || status === 403) {
-    // Surface the actual server error/code so the user (and support) can act
-    // instead of getting the opaque "Contactá al administrador" message.
     const serverMsg = (err && (err.serverError || err.error)) ? String(err.serverError || err.error) : '';
     const serverCode = (err && err.serverCode) ? String(err.serverCode) : '';
     const detail = serverCode ? `[${serverCode}] ${serverMsg}`.trim() : serverMsg;
@@ -656,90 +863,238 @@ function getFetchErrorMessage(err) {
   return 'Error de conexión. Intentá nuevamente.';
 }
 
-async function safeFetch(url, opts = {}, timeoutMs = 15000) {
-  return fetchWithRetry(url, opts, 3, 1000, timeoutMs);
-}
-
-async function fetchWithRetry(url, opts = {}, retries = 3, backoffMs = 1000, timeoutMs = 15000, showToastOnError = true) {
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    try {
-      const fetchPromise = fetch(url, opts);
-      const res = timeoutMs > 0
-        ? await Promise.race([
-            fetchPromise,
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeoutMs))
-          ])
-        : await fetchPromise;
-      if (res.status === 404) {
-        console.warn('Endpoint no encontrado:', url);
-        if (showToastOnError) showToast('', 'Recurso no disponible en este momento.', 'error');
-        return null;
+/**
+ * fetchWithRetry - Fetch con reintentos, deduplicación y manejo robusto de errores
+ *
+ * @param {string} url - URL a consultar
+ * @param {Object} opts - Opciones de fetch (method, headers, body, etc.)
+ * @param {Object} options - Opciones de control
+ *   @param {number} options.retries - Número máximo de reintentos (default: 4)
+ *   @param {number} options.backoffMs - Backoff inicial en ms (default: 1000)
+ *   @param {number} options.firstAttemptTimeoutMs - Timeout del primer intento en ms (default: 50000)
+ *   @param {number} options.retryTimeoutMs - Timeout de reintentos en ms (default: 25000)
+ *   @param {boolean} options.showToastOnError - Mostrar toast en error final (default: true)
+ *   @param {boolean} options.skipCache - Saltar cache stale-while-revalidate (default: false)
+ * @returns {Promise<any|null>} Datos parseados (JSON) o null en error
+ */
+async function fetchWithRetry(url, opts = {}, options = {}, legacyBackoffMs, legacyTimeoutMs, legacyShowToastOnError = true) {
+  const usesLegacySignature = typeof options === 'number';
+  const normalizedOptions = usesLegacySignature
+    ? {
+        retries: options,
+        backoffMs: typeof legacyBackoffMs === 'number' ? legacyBackoffMs : 1000,
+        firstAttemptTimeoutMs: typeof legacyTimeoutMs === 'number' ? legacyTimeoutMs : 50000,
+        retryTimeoutMs: typeof legacyTimeoutMs === 'number' ? Math.min(legacyTimeoutMs, 15000) : 25000,
+        showToastOnError: legacyShowToastOnError
       }
-      if (!res.ok) {
-        // Attach the server's error body/code so callers can surface it.
-        const err = new Error(`HTTP ${res.status}: ${res.statusText}`);
-        err.status = res.status;
-        try {
-          const clone = res.clone();
-          const body = await clone.text();
-          if (body) {
-            try {
-              const parsed = JSON.parse(body);
-              if (parsed && typeof parsed === 'object') {
-                if (parsed.error) err.serverError = parsed.error;
-                if (parsed.code) err.serverCode = parsed.code;
-                if (parsed.message) err.serverError = err.serverError || parsed.message;
-              } else {
+    : options;
+  const {
+    retries = 4,
+    backoffMs = 1000,
+    firstAttemptTimeoutMs = 50000,
+    retryTimeoutMs = 25000,
+    showToastOnError = true,
+    skipCache = false
+  } = normalizedOptions;
+
+  const method = (opts.method || 'GET').toUpperCase();
+  const isGet = method === 'GET';
+  const isIdempotent = isGet || method === 'HEAD';
+  const isPaymentOrOrder = /\/api\/(orders|payments|payment|checkout)/i.test(url);
+
+  // Para endpoints de pagos/pedidos con métodos no idempotentes, no reintentar nunca
+  const shouldNeverRetry = !isIdempotent && isPaymentOrOrder;
+
+  // Verificar si la URL es cacheable (solo GET en endpoints públicos permitidos)
+  const cacheable = isGet && isCacheableUrl(url) && !skipCache;
+
+  // Normalizar URL para deduplicación (ignorar cache-busting params)
+  const urlKey = isGet
+    ? `${usesLegacySignature ? 'response:' : 'data:'}${url.replace(/[?&]_v=\d+/, '').replace(/[?&]_=\d+/, '')}`
+    : null;
+
+  // Deduplicación: si ya hay un GET en vuelo para esta URL, devolver esa promesa
+  if (isGet && inflightGet.has(urlKey)) {
+    return inflightGet.get(urlKey);
+  }
+
+  // Mantener el contrato antiguo para consumidores que pasan opciones posicionales.
+  function createCachedResponse(data) {
+    return {
+      ok: true,
+      status: 200,
+      json: async () => data,
+      text: async () => JSON.stringify(data),
+      clone() { return createCachedResponse(data); }
+    };
+  }
+
+  // Función interna que ejecuta el fetch con reintentos.
+  async function executeFetch() {
+    // 1. Para GET cacheable: intentar leer del cache primero (stale-while-revalidate)
+    if (cacheable) {
+      const cached = readFromCache(url);
+      if (cached) {
+        // Revalidar en background (fire-and-forget)
+        executeFetchInternal(true)
+          .then(freshData => {
+            if (freshData !== null) writeToCache(url, freshData);
+          })
+          .catch(() => {}); // Silencioso: revalidación opcional
+        return usesLegacySignature ? createCachedResponse(cached) : cached;
+      }
+    }
+
+    // 2. Sin cache o no cacheable: ejecutar fetch real
+    return executeFetchInternal(false);
+  }
+
+  // Fetch real con reintentos; la API nueva retorna datos y la firma antigua Response.
+  async function executeFetchInternal(isRevalidation) {
+    let currentBackoffMs = backoffMs;
+
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      let abortController = null;
+      let timeoutId = null;
+
+      // Calcular timeout: primer intento largo, siguientes más cortos
+      const attemptTimeoutMs = attempt === 0 ? firstAttemptTimeoutMs : retryTimeoutMs;
+
+      try {
+        abortController = new AbortController();
+        const signal = abortController.signal;
+
+        if (attemptTimeoutMs > 0) {
+          timeoutId = setTimeout(() => abortController.abort(), attemptTimeoutMs);
+        }
+
+        const fetchPromise = fetch(url, { ...opts, signal });
+        const res = await fetchPromise;
+
+        if (res.status === 404) {
+          console.warn('Endpoint no encontrado:', url);
+          if (showToastOnError && !isRevalidation) {
+            showToast('', 'Recurso no disponible en este momento.', 'error');
+          }
+          return null;
+        }
+
+        if (!res.ok) {
+          // Attach the server's error body/code so callers can surface it.
+          const err = new Error(`HTTP ${res.status}: ${res.statusText}`);
+          err.status = res.status;
+          try {
+            const clone = res.clone();
+            const body = await clone.text();
+            if (body) {
+              try {
+                const parsed = JSON.parse(body);
+                if (parsed && typeof parsed === 'object') {
+                  if (parsed.error) err.serverError = parsed.error;
+                  if (parsed.code) err.serverCode = parsed.code;
+                  if (parsed.message) err.serverError = err.serverError || parsed.message;
+                } else {
+                  err.serverError = body;
+                }
+              } catch {
                 err.serverError = body;
               }
-            } catch {
-              err.serverError = body;
             }
-          }
-        } catch (e) { /* body already consumed or unavailable */ }
-        throw err;
-      }
-      return res;
-    } catch (err) {
-      // Only retry transient failures: 5xx, network errors and timeouts.
-      // 4xx responses (including 401/403/400) are deterministic client-side
-      // or auth problems — retrying them just burns the rate limit and
-      // produces a confusing "reintentando..." toast.
-      const status = err && err.status;
-      const isTransient = !status || status >= 500
-        || err.name === 'AbortError'
-        || /timeout/i.test(err.message || '')
-        || /Failed to fetch|NetworkError/i.test(err.message || '');
-
-      if (attempt === retries || !isTransient) {
-        console.error('Fetch error after retries:', err);
-        if (showToastOnError) {
-          showToast('', getFetchErrorMessage(err), 'error', {
-            onRetry: isTransient ? () => fetchWithRetry(url, opts, retries, backoffMs, timeoutMs, showToastOnError) : null,
-            duration: 0
-          });
+          } catch (e) { /* body already consumed or unavailable */ }
+          throw err;
         }
-        return null;
+
+        if (usesLegacySignature && !isRevalidation) {
+          if (cacheable) {
+            const cachedResponse = res.clone();
+            const contentType = cachedResponse.headers?.get('content-type') || 'application/json';
+            const data = contentType.includes('application/json')
+              ? await cachedResponse.json()
+              : await cachedResponse.text();
+            writeToCache(url, data);
+          }
+          return res;
+        }
+
+        // Leer y parsear el body UNA sola vez.
+        const contentType = res.headers?.get('content-type') || 'application/json';
+        const data = contentType.includes('application/json')
+          ? await res.json()
+          : await res.text();
+
+        if (cacheable && !isRevalidation) writeToCache(url, data);
+        return data;
+      } catch (err) {
+        // Only retry transient failures: timeout, network errors, HTTP 502/503/504
+        // NEVER retry 4xx (client errors)
+        // NEVER retry non-idempotent methods for payment/order endpoints
+        const status = err && err.status;
+        const isTimeout = err.name === 'AbortError' || /timeout/i.test(err.message || '');
+        const isNetworkError = /Failed to fetch|NetworkError/i.test(err.message || '');
+        const isRetriableStatus = status === 502 || status === 503 || status === 504;
+        const isTransient = isTimeout || isNetworkError || isRetriableStatus;
+
+        // No reintentar si: se agotaron intentos, error no transitorio, o método no idempotente en pagos/pedidos
+        if (attempt === retries || !isTransient || shouldNeverRetry) {
+          console.error('Fetch error after retries:', err);
+          if (showToastOnError && !isRevalidation) {
+            showToast('', getFetchErrorMessage(err), 'error', {
+              onRetry: (isTransient && !shouldNeverRetry) ? () => fetchWithRetry(url, opts, options) : null,
+              duration: 0
+            });
+          }
+          return null;
+        }
+
+        // Log con mensaje claro de "servidor despertando" para cold start
+        const wakeMsg = isTimeout ? ' (servidor despertando)' : '';
+        console.warn(`Intento ${attempt + 1} fallido para ${url}${wakeMsg}, reintentando en ${currentBackoffMs}ms...`, err);
+
+        // Esperar con backoff exponencial + jitter (±25%)
+        const jitter = currentBackoffMs * 0.25 * (Math.random() * 2 - 1);
+        const waitMs = Math.max(0, Math.round(currentBackoffMs + jitter));
+        await new Promise(r => setTimeout(r, waitMs));
+
+        // Backoff exponencial para siguiente intento
+        currentBackoffMs *= 2;
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
       }
-      console.warn(`Intento ${attempt + 1} fallido para ${url}, reintentando en ${backoffMs}ms...`, err);
-      await new Promise(r => setTimeout(r, backoffMs));
-      backoffMs *= 2;
     }
   }
+
+  // Envolver en deduplicación y control de concurrencia para GET
+  if (isGet) {
+    const promise = (async () => {
+      // Durante fase de arranque: esperar warm-up y limitar concurrencia
+      if (isStartupPhase) {
+        await getWarmupPromise(); // No bloquea si falla
+        return enqueueStartupRequest(executeFetch);
+      }
+      return executeFetch();
+    })();
+
+    // Guardar en mapa de deduplicación
+    inflightGet.set(urlKey, promise);
+
+    // Limpiar del mapa al terminar (éxito o fallo)
+    const clearInflightGet = () => inflightGet.delete(urlKey);
+    promise.then(clearInflightGet, clearInflightGet);
+
+    return promise;
+  }
+
+  // Para non-GET: ejecutar directamente sin deduplicación ni cola de arranque
+  return executeFetch();
+}
+
+async function safeFetch(url, opts = {}, timeoutMs = 50000) {
+  return fetchWithRetry(url, opts, 3, 1000, timeoutMs);
 }
 
 window.safeFetch = safeFetch;
 window.fetchWithRetry = fetchWithRetry;
 
-// Warm-up: despierta al backend (Render free se duerme ~30-60 s) con un ping
-// fire-and-forget a /health al cargar la página. Nunca bloquea ni muestra toast.
-function warmBackend() {
-  try {
-    const base = (typeof CONFIG !== 'undefined' && CONFIG.API && CONFIG.API.BASE) ? CONFIG.API.BASE : '';
-    fetch(`${base}/api/health`, { cache: 'no-store', keepalive: true }).catch(() => {});
-  } catch (e) { /* noop */ }
-}
-window.warmBackend = warmBackend;
 window.showToast = showToast;
 window.getFetchErrorMessage = getFetchErrorMessage;
 window.escapeHtml = escapeHtml;
@@ -786,11 +1141,15 @@ window.sanitizeAboutText = sanitizeAboutText;
 
 async function loadSiteTexts() {
   try {
-    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-texts`, {}, 3, 1000, 15000, false);
-    if (!res) {
+    const data = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-texts`, {}, {
+      retries: 4,
+      firstAttemptTimeoutMs: 50000,
+      retryTimeoutMs: 25000,
+      showToastOnError: false
+    });
+    if (!data) {
       return;
     }
-    const data = await res.json();
 
     if (data.__updatedAt) {
       window.__siteTextsUpdatedAt = data.__updatedAt;
@@ -869,9 +1228,13 @@ function updateStatsFromTexts(data) {
 
 async function loadSiteSettings() {
   try {
-    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-settings`, {}, 3, 1000, 15000, false);
-    if (!res) return;
-    const settings = await res.json();
+    const settings = await fetchWithRetry(`${CONFIG.API.BASE}/api/site-settings`, {}, {
+      retries: 4,
+      firstAttemptTimeoutMs: 50000,
+      retryTimeoutMs: 25000,
+      showToastOnError: false
+    });
+    if (!settings) return;
 
     const instagramLink = document.getElementById('instagramLink');
     if (instagramLink) {
@@ -944,9 +1307,13 @@ async function loadTestimonials() {
   if (section) section.style.display = '';
 
   try {
-    const contentRes = await fetchWithRetry(`${CONFIG.API.BASE}/api/section-content/testimonials`, {}, 3, 1000, 15000, false);
-    if (contentRes && contentRes.ok) {
-      const content = await contentRes.json();
+    const content = await fetchWithRetry(`${CONFIG.API.BASE}/api/section-content/testimonials`, {}, {
+      retries: 4,
+      firstAttemptTimeoutMs: 50000,
+      retryTimeoutMs: 25000,
+      showToastOnError: false
+    });
+    if (content) {
       if (titleEl && content.title) titleEl.textContent = content.title;
       if (subtitleEl && content.subtitle) subtitleEl.textContent = content.subtitle;
     }
@@ -955,19 +1322,34 @@ async function loadTestimonials() {
   }
 
   try {
-    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/testimonials`, {}, 3, 1000, 15000, false);
-    if (!res) {
+    const testimonials = await fetchWithRetry(`${CONFIG.API.BASE}/api/testimonials`, {}, {
+      retries: 4,
+      firstAttemptTimeoutMs: 50000,
+      retryTimeoutMs: 25000,
+      showToastOnError: false
+    });
+    if (!testimonials) {
       if (skeleton) skeleton.style.display = 'none';
+      showTestimonialsError(grid);
       return;
     }
-    const testimonials = await res.json();
     if (skeleton) skeleton.style.display = 'none';
     renderTestimonials(testimonials);
   } catch (err) {
     console.error('Error cargando testimonios:', err);
     if (skeleton) skeleton.style.display = 'none';
-    if (grid) grid.innerHTML = '<p style="text-align:center;color:var(--text-muted);grid-column:1/-1;">No se pudieron cargar los testimonios.</p>';
+    showTestimonialsError(grid);
   }
+}
+
+function showTestimonialsError(grid) {
+  if (!grid) return;
+  grid.innerHTML = `
+    <div style="text-align:center;color:var(--text-muted);grid-column:1/-1;padding:2rem;">
+      <p>No se pudieron cargar los testimonios en este momento.</p>
+      <button type="button" class="btn btn-primary btn-sm" onclick="window.loadTestimonials()" style="margin-top:0.75rem;">Reintentar</button>
+    </div>
+  `;
 }
 
 function renderTestimonials(testimonials) {
@@ -1034,9 +1416,13 @@ window.loadTestimonials = loadTestimonials;
 
 async function loadPaymentConfig() {
   try {
-    const res = await fetchWithRetry(`${CONFIG.API.BASE}/api/payment-config`, {}, 3, 1000, 15000, false);
-    if (!res || !res.ok) return;
-    const data = await res.json();
+    const data = await fetchWithRetry(`${CONFIG.API.BASE}/api/payment-config`, {}, {
+      retries: 4,
+      firstAttemptTimeoutMs: 50000,
+      retryTimeoutMs: 25000,
+      showToastOnError: false
+    });
+    if (!data || !data.ok) return;
     if (data.shippingCost !== undefined) CONFIG.CART.SHIPPING_COST = Number(data.shippingCost);
     if (data.freeShippingFrom !== undefined) CONFIG.CART.SHIPPING_THRESHOLD = Number(data.freeShippingFrom);
   } catch (err) {
