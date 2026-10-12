@@ -4,6 +4,7 @@ process.env.NODE_ENV = 'test';
 process.env.ADMIN_USER = 'admin';
 process.env.ADMIN_PASS_HASH = bcrypt.hashSync('admin', 10);
 process.env.JWT_SECRET = 'e2e-only-secret';
+process.env.CSRF_SECRET = 'e2e-only-csrf-secret-for-tests-32chars';
 process.env.PORT = process.env.PORT || '3000';
 
 const { app, dbReady } = require('../../backend/src/server.js');

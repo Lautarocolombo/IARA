@@ -13,7 +13,7 @@ test('products: filtro por categoría pulseras muestra solo pulseras', async ({ 
   await page.waitForResponse('**/api/products*');
   await page.locator('.filter-btn[data-filter="pulseras"]').click();
   await page.waitForFunction(
-    () => document.querySelectorAll('.product-card.cat-pulseras').length > 0,
+    () => document.querySelectorAll('#productsGrid .product-card.cat-pulseras').length > 0,
     { timeout: 15000 }
   );
   const cards = page.locator('#productsGrid .product-card');
@@ -26,10 +26,13 @@ test('products: filtro por categoría pulseras muestra solo pulseras', async ({ 
 
 test('products: filtro por categoría accesorios muestra solo accesorios', async ({ page }) => {
   await page.goto('/#catalog');
-  await page.waitForResponse('**/api/products*');
+  await expect(page.locator('#productsGrid .product-card').first()).toBeVisible();
   await page.locator('.filter-btn[data-filter="accesorios"]').click();
+  await page.waitForResponse(response =>
+    response.url().includes('/api/products?category=accesorios') && response.status() === 200
+  );
   await page.waitForFunction(
-    () => document.querySelectorAll('.product-card.cat-accesorios').length > 0,
+    () => document.querySelectorAll('#productsGrid .product-card.cat-accesorios').length > 0,
     { timeout: 15000 }
   );
   const cards = page.locator('#productsGrid .product-card');

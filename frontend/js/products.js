@@ -14,6 +14,7 @@ const defaultProducts = [];
 
 let products = [];
 let productsLoadingState = 'idle';
+let productsRequestSequence = 0;
 
 function setProducts(newProducts) {
   products = newProducts;
@@ -28,6 +29,7 @@ function getProductsLoadingState() {
 }
 
 async function fetchProducts(filters = {}) {
+  const requestSequence = ++productsRequestSequence;
   const grid = document.getElementById('productsGrid');
   setProductsLoadingState('loading');
   if (grid) {
@@ -47,10 +49,12 @@ async function fetchProducts(filters = {}) {
       showToastOnError: false
     });
     if (data) {
+      if (requestSequence !== productsRequestSequence) return;
       products = data;
       setProductsLoadingState('loaded');
       renderProducts(getProducts());
     } else {
+      if (requestSequence !== productsRequestSequence) return;
       setProductsLoadingState('error');
       if (grid) {
         grid.innerHTML = '<div class="error-state" style="grid-column:1/-1;text-align:center;padding:3rem;"><h3>No pudimos cargar el catálogo</h3><p>El servidor puede estar iniciando (tarda ~30 segundos la primera vez). Intentá de nuevo.</p><button type="button" class="btn btn-primary" onclick="window.retryLoadProducts()" style="margin-top:1rem;">Reintentar</button></div>';
@@ -58,6 +62,7 @@ async function fetchProducts(filters = {}) {
       }
     }
   } catch (err) {
+    if (requestSequence !== productsRequestSequence) return;
     console.error('Error cargando productos:', err);
     setProductsLoadingState('error');
     products = defaultProducts;

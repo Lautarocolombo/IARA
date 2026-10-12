@@ -57,6 +57,22 @@ describe('products.js', () => {
     expect(productsModule.getProducts()).toEqual(productsModule.defaultProducts || []);
   });
 
+  test('fetchProducts ignora respuestas atrasadas de solicitudes anteriores', async () => {
+    let resolveInitialRequest;
+    window.fetchWithRetry = jest.fn()
+      .mockImplementationOnce(() => new Promise(resolve => { resolveInitialRequest = resolve; }))
+      .mockResolvedValueOnce([{ id: 2, name: 'Filtrada', category: 'pulseras' }]);
+
+    const initialRequest = productsModule.fetchProducts();
+    await productsModule.fetchProducts({ category: 'pulseras' });
+    resolveInitialRequest([{ id: 1, name: 'Obsoleta', category: 'accesorios' }]);
+    await initialRequest;
+
+    expect(productsModule.getProducts()).toEqual([
+      { id: 2, name: 'Filtrada', category: 'pulseras' }
+    ]);
+  });
+
   test('formatARS formatea moneda argentina', () => {
     const configModule = require('../../frontend/js/config');
     const formatted = configModule.formatARS(1500);

@@ -28,19 +28,21 @@ test('categories: click en Pulseras filtra productos', async ({ page }) => {
 
 test('categories: cambiar de categoría actualiza vista', async ({ page }) => {
   await page.goto('/#catalog');
-  await page.waitForResponse('**/api/products*');
+  await expect(page.locator('#productsGrid .product-card').first()).toBeVisible();
   await page.locator('.filter-btn[data-filter="pulseras"]').click();
-  await page.waitForFunction(
-    () => document.querySelectorAll('.product-card.cat-pulseras').length > 0,
-    { timeout: 15000 }
+  await page.waitForResponse(response =>
+    response.url().includes('/api/products?category=pulseras') && response.status() === 200
   );
-  const pulserasCount = await page.locator('.product-card').count();
+  const pulseras = page.locator('#productsGrid .product-card');
+  await expect(pulseras.first()).toHaveClass(/cat-pulseras/);
+  const pulserasCount = await pulseras.count();
   await page.locator('.filter-btn[data-filter="accesorios"]').click();
-  await page.waitForFunction(
-    () => document.querySelectorAll('.product-card.cat-accesorios').length > 0,
-    { timeout: 15000 }
+  await page.waitForResponse(response =>
+    response.url().includes('/api/products?category=accesorios') && response.status() === 200
   );
-  const accesoriosCount = await page.locator('.product-card').count();
+  const accesorios = page.locator('#productsGrid .product-card');
+  await expect(accesorios.first()).toHaveClass(/cat-accesorios/);
+  const accesoriosCount = await accesorios.count();
   expect(pulserasCount).not.toBe(accesoriosCount);
 });
 
