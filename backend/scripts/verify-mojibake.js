@@ -3,8 +3,9 @@
  * verify-mojibake.js — Detección de mojibake (UTF-8 mal decodificado) en Neon
  *
  * Uso:
- *   DATABASE_URL=postgresql://... node scripts/verify-mojibake.js
- *   DRY_RUN=true DATABASE_URL=... node scripts/verify-mojibake.js  (solo reporte)
+ *   Configurá DATABASE_URL en el entorno o backend/.env y ejecutá:
+ *   node scripts/verify-mojibake.js
+ *   DRY_RUN=true node scripts/verify-mojibake.js  (solo reporte)
  *
  * Detecta patrones típicos de mojibake en columnas de texto:
  *   Ã¡  -> á    (latin1 leído como utf8)

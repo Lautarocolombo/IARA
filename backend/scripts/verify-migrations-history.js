@@ -3,7 +3,8 @@
  * verify-migrations-history.js — Verifica historial de migraciones en Neon
  *
  * Uso:
- *   DATABASE_URL=postgresql://... node scripts/verify-migrations-history.js
+ *   Configurá DATABASE_URL en el entorno o backend/.env y ejecutá:
+ *   node scripts/verify-migrations-history.js
  *
  * Compara:
  * 1. Tabla `migrations` (aplicadas por migrador custom)
